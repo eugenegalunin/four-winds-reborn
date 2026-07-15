@@ -31,19 +31,27 @@ if ($DebugBuild) { $options += "--debug" }
 $command = "export PATH=/ucrt64/bin:/usr/bin:`$PATH; cd '$unixRepo' && ./scripts/build-windows-msys2.sh $($options -join ' ')"
 $previousMsystem = $env:MSYSTEM
 $previousChere = $env:CHERE_INVOKING
+$previousErrorActionPreference = $ErrorActionPreference
+$buildExitCode = 1
 
 try {
     $env:MSYSTEM = "UCRT64"
     $env:CHERE_INVOKING = "1"
+
+    # Windows PowerShell wraps native stderr as NativeCommandError. Pacman writes
+    # harmless warnings there, so use the process exit code as the authority.
+    $ErrorActionPreference = "Continue"
     & $bash -lc $command
+    $buildExitCode = $LASTEXITCODE
 }
 finally {
+    $ErrorActionPreference = $previousErrorActionPreference
     $env:MSYSTEM = $previousMsystem
     $env:CHERE_INVOKING = $previousChere
 }
 
-if ($LASTEXITCODE -ne 0) {
-    throw "Windows build failed with exit code $LASTEXITCODE."
+if ($buildExitCode -ne 0) {
+    throw "Windows build failed with exit code $buildExitCode."
 }
 
 Write-Host "Built: $repoRoot\dist\windows\four-winds-reborn.exe"
