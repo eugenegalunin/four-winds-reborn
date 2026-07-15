@@ -68,12 +68,12 @@ public:
 
 std::string Application::domain(void)
 {
-    return "runewars-na";
+    return "four-winds-reborn";
 }
 
 std::string Application::name(void)
 {
-    return "RuneWars: New Age";
+    return "Four Winds Reborn";
 }
 
 std::string Application::version(void)
@@ -229,6 +229,7 @@ bool RuneWarsClient::exec(void)
 
     int menu = Systems::isFile(savefile) ? Menu::GameLoadPart : Menu::SelectPerson;
     Person selectedPerson;
+    AI::Difficulty selectedDifficulty = AI::Difficulty::Normal;
 
 #ifdef BUILD_DEBUG
     if(part)
@@ -274,10 +275,12 @@ bool RuneWarsClient::exec(void)
 		SelectPersonScreen scr;
 		menu = scr.exec();
 		selectedPerson = fixedEmptyPerson(scr.selectedPerson());
+		selectedDifficulty = scr.selectedDifficulty();
 	    }
 	    break;
 
 	    case Menu::ShowPlayers:
+		GameData::setAIDifficulty(selectedDifficulty);
 		GameData::initPersons(selectedPerson);
 		menu = ShowPlayersScreen().exec();
 	    break;
@@ -335,6 +338,7 @@ bool RuneWarsClient::exec(void)
     return true;
 }
 
+#ifndef RUNEWARS_NO_MAIN
 int main(int argc, char **argv)
 {
     Systems::setLocale(LC_ALL, "");
@@ -353,3 +357,4 @@ int main(int argc, char **argv)
 
     return EXIT_SUCCESS;
 }
+#endif

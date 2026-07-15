@@ -24,6 +24,7 @@
 #define _RWNA_SELECTPERSON_
 
 #include "gamedata.h"
+#include "aiprofile.h"
 
 class AvatarItem : public ListWidgetItem
 {
@@ -44,6 +45,10 @@ class SelectPersonScreen : public JsonWindow
 
     Avatar		selectedAvatar;
     Clan		selectedClan;
+    AI::Difficulty      difficulty;
+    Rect                difficultyArea;
+    JsonTextInfo        difficultyTitle;
+    JsonTextInfo        difficultyValue;
 
     Texture		gray, marker;
     Point		personImagePos, creaturesPos, textPos;
@@ -71,6 +76,7 @@ public:
 
     void	renderWindow(void) override;
     Person	selectedPerson(void) const;
+    AI::Difficulty selectedDifficulty(void) const { return difficulty; }
 };
 
 #endif

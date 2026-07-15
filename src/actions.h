@@ -38,14 +38,14 @@ namespace Action
 
 	    ClientReady, ClientButtonGame, ClientButtonPass, ClientChaoVariant, ClientButtonPung, ClientButtonKong1,
 	    ClientButtonKong2, ClientDropIndex, ClientSayGame, ClientSayChao, ClientSayPung, ClientSayKong,
-	    ClientSummonCreature, ClientCastSpell, ClientUnitMoved, ClientBattleReady,
+	    ClientSummonCreature, ClientCastSpell, ClientUnitMoved, ClientLandClaim, ClientAdventureUndo, ClientBattleReady,
 
 	    MahjongBegin, MahjongTurn, MahjongDrop, MahjongGame, MahjongPass, MahjongChao, MahjongPung,
 	    MahjongKong1, MahjongKong2, MahjongSummon, MahjongCast, MahjongData, MahjongInfo, MahjongEnd, 
 
-            AdventureBegin, AdventureTurn, AdventureMoves, AdventureCombat, AdventureEnd,
+            AdventureBegin, AdventureTurn, AdventureMoves, AdventureClaim, AdventureCombat, AdventureEnd,
 
-            MahjongDropSelected, MahjongOutOfTime, MahjongGameQuit,
+            MahjongDropSelected, MahjongOutOfTime, MahjongGameQuit, ButtonOrder,
             Last };
 }
 
@@ -331,6 +331,25 @@ struct AdventureMoves : AdventureMessage
     Land land(void) const { return Land(getString("land")); }
 };
 
+struct AdventureClaim : AdventureMessage
+{
+    AdventureClaim(const Wind & currentWind, const Land & land, const Clan & previousOwner, const Clan & owner, int cost, bool reverted = false)
+	: AdventureMessage(Action::AdventureClaim, currentWind)
+    {
+	addString("land", land.toString());
+	addString("previousOwner", previousOwner.toString());
+	addString("owner", owner.toString());
+	addInteger("cost", cost);
+	addBoolean("reverted", reverted);
+    }
+
+    Land land(void) const { return Land(getString("land")); }
+    Clan previousOwner(void) const { return Clan(getString("previousOwner")); }
+    Clan owner(void) const { return Clan(getString("owner")); }
+    int cost(void) const { return getInteger("cost"); }
+    bool reverted(void) const { return getBoolean("reverted"); }
+};
+
 struct AdventureCombat : AdventureMessage
 {
     AdventureCombat(const Wind & currentWind, const BattleLegend & legend, const BattleStrikes & strikes)
@@ -498,6 +517,22 @@ struct ClientUnitMoved : ClientMessage
 
     Land land(void) const { return Land(getString("land")); }
     int unit(void) const { return getInteger("unit"); }
+};
+
+struct ClientLandClaim : ClientMessage
+{
+    ClientLandClaim(const Land & land)
+	: ClientMessage(Action::ClientLandClaim)
+    {
+	addString("land", land.toString());
+    }
+
+    Land land(void) const { return Land(getString("land")); }
+};
+
+struct ClientAdventureUndo : ClientMessage
+{
+    ClientAdventureUndo() : ClientMessage(Action::ClientAdventureUndo) {}
 };
 
 struct ClientBattleReady : ClientMessage

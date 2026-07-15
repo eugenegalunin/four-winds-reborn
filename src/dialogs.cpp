@@ -368,7 +368,10 @@ void RuneCastContent::addRow(const Enum & id, const Stones & stones, const std::
     back().name = name;
     back().description = desc;
     back().cost = cost;
-    back().allowCast = !player.isCasted() && cost <= player.points && player.stones.allowCast(stones, newStone);
+    back().allowCast = !player.isCasted() &&
+	!player.isAffectedSpell(Spell::Silence) &&
+	!player.isAffectedSpell(Spell::ManaFog) &&
+	cost <= player.points && player.stones.allowCast(stones, newStone);
     back().pos = pos;
 
     if(id.isCreature())
@@ -865,9 +868,9 @@ void MapStatusDialog::renderWindSection(const RemotePlayer & player, const Point
     {
 	if(player.clan() != clan)
 	{
-	    const ClanInfo & other = GameData::clanInfo(clan);
-	    renderTexture(GameTheme::texture(other.button), pos + offsetClanIcons[index]);
-	    renderText(defaultFont, "FIXME" /* */, textColor, pos + offsetClanValues[index]);
+		    const ClanInfo & other = GameData::clanInfo(clan);
+		    renderTexture(GameTheme::texture(other.button), pos + offsetClanIcons[index]);
+		    renderText(defaultFont, String::number(player.landClaimPoints(clan)), textColor, pos + offsetClanValues[index]);
 	    index++;
 	}
     }

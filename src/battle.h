@@ -23,11 +23,30 @@
 #ifndef _RWNA_BATTLE_
 #define _RWNA_BATTLE_
 
+#include <functional>
+
 #include "gametheme.h"
+
+namespace AI
+{
+    enum class BehaviorProfile;
+}
 
 namespace Battle
 {
+    using RandomRoll = std::function<int(int, int)>;
+
+    int                 rangedDamage(int strength, int reduction);
+    int                 meleeHitChance(int attack, int defense);
+    int                 mergeDefenseBonus(const BattleParty &, const BattleCreature &);
     BattleStrikes       doAttackParty(BattleParty & attackers, BattleTown & town, BattleParty* defenders);
+    BattleStrikes       doAttackParty(BattleParty & attackers, BattleTown & town, BattleParty* defenders,
+                                      AI::BehaviorProfile attackersProfile,
+                                      AI::BehaviorProfile defendersProfile);
+    BattleStrikes       doAttackParty(BattleParty & attackers, BattleTown & town, BattleParty* defenders,
+                                      AI::BehaviorProfile attackersProfile,
+                                      AI::BehaviorProfile defendersProfile,
+                                      const RandomRoll &, bool logEffects);
 }
 
 #endif

@@ -27,6 +27,8 @@
 #include "gametheme.h"
 #include "dialogs.h"
 #include "actions.h"
+#include "aibattle.h"
+#include "aiprofile.h"
 #include "adventurepart.h"
 
 enum { LandPolygonClickLeft = 1111, LandPolygonClickRight, LandPolygonFocus, LandPolygonFlagAnimationReInit, LandPolygonCombatStatus, LandPolygonCombatStatusReset,
@@ -150,12 +152,12 @@ bool LandPolygon::userEvent(int act, void* data)
 
 bool LandPolygon::mousePressEvent(const ButtonEvent & be)
 {
-    auto win = static_cast<const MapScreenBase*>(parent());
+    auto win = static_cast<MapScreenBase*>(parent());
 
     if(be.isButtonLeft() && win && win->isAllowMoveFlag(landInfo))
     {
-	pushEventAction(AdventureTurnMoveStart, parent(), const_cast<LandInfo*>(& landInfo));
-	return true;
+	// Start immediately so a quick trackpad drag cannot outrun the queued event.
+	return win->userEvent(AdventureTurnMoveStart, const_cast<LandInfo*>(& landInfo));
     }
 
     return false;
@@ -198,7 +200,17 @@ void LandPolygon::renderWindow(void)
 		renderTexture(combatFightTexture, landInfo.center - position() - Size(combatFightTexture.width() / 2, combatFightTexture.height()) + offy);
 	    else
 	    // render animation flag
-    	    if(animationFlag.isEnabled()) animationFlag.render(*this);
+	    if(animationFlag.isEnabled()) animationFlag.render(*this);
+
+	    if(win->isAllowLandClaim(landInfo))
+	    {
+		for(auto it = poly.begin(); it != poly.end(); ++it)
+		{
+		    auto next = std::next(it);
+		    if(next == poly.end()) next = poly.begin();
+		    renderLine(Color::Yellow, *it - position(), *next - position());
+		}
+	    }
 	}
 	else
 	// TowerOf4Winds: all army flags render
@@ -377,7 +389,8 @@ void AffectedSpellsIcon::setVisible(bool f)
 }
 
 MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("screen_adventurepart.json", win), ld(data),
-    selectedLand(Land(Land::TowerOf4Winds)), affectedSpells(jobject), bar1(*this), bar2(*this)
+    selectedLand(Land(Land::TowerOf4Winds)), forecastSamples(0), forecastCaptureChance(0),
+    forecastAttackerSurvival(0), affectedSpells(jobject), bar1(*this), bar2(*this)
 {
     townTowerWindsTexture = GameTheme::jsonSprite(jobject, "sprite:town_tower_winds");
     townTowerWindsPos = GameData::landInfo(Land::TowerOf4Winds).center - townTowerWindsTexture.size() / 2;
@@ -395,6 +408,14 @@ MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("
     info2NamePos = GameTheme::jsonPoint(jobject, "offset:info2");
     viewMapPos = GameTheme::jsonPoint(jobject, "offset:viewmap");
     selectedIconPos = GameTheme::jsonRect(jobject, "area:icon_portrait");
+
+    const JsonObject* forecast = jobject.getObject("battle:forecast");
+    if(forecast)
+    {
+        forecastTitle = GameTheme::jsonTextInfo(*forecast, "textinfo:title");
+        forecastCapture = GameTheme::jsonTextInfo(*forecast, "textinfo:capture");
+        forecastSurvival = GameTheme::jsonTextInfo(*forecast, "textinfo:survival");
+    }
 
     // const Texture & tmp = GameTheme::texture(GameData::clanInfo(Clan::Red).button);
 
@@ -483,9 +504,9 @@ const Color & MapScreenBase::getBaseStatColor(int base, int current) const
     return defaultColor;
 }
 
-void MapScreenBase::renderLandInfo(void)
+void MapScreenBase::renderLandInfo(const Land & land)
 {
-    const LandInfo & landInfo = GameData::landInfo(selectedLand);
+    const LandInfo & landInfo = GameData::landInfo(land);
     const FontRender & frs = GameTheme::fontRender(defaultFont);
 
     // name
@@ -509,6 +530,56 @@ void MapScreenBase::renderLandInfo(void)
 
     renderTexture(spriteLandStat6);
     renderText(frs, String::number(landInfo.stat.point), defaultColor, spriteLandStat6.position() + Size(2 + spriteLandStat6.width(), -4));
+}
+
+void MapScreenBase::clearBattleForecast(void)
+{
+    forecastTarget.reset();
+    forecastSamples = 0;
+    forecastCaptureChance = 0;
+    forecastAttackerSurvival = 0;
+}
+
+void MapScreenBase::updateBattleForecast(const Land & origin, const Land & target)
+{
+    clearBattleForecast();
+    if(!origin.isValid() || !target.isValid() || origin == target || target.isTowerWinds()) return;
+
+    const LocalPlayer & player = ld.myPlayer();
+    const Clan owner = GameData::landInfo(target).clan;
+    if(!owner.isValid() || owner == player.clan) return;
+
+    const BattleCreatures selected = player.army.partySelected(origin);
+    if(selected.empty()) return;
+
+    BattleParty attackers(player.clan, origin);
+    for(const BattleCreature* creature : selected)
+        attackers.join(*creature);
+    if(attackers.isEmpty()) return;
+
+    const RemotePlayer & defender = ld.playerOfClan(owner);
+    const BattleParty* defenders = defender.army.findPartyConst(target);
+    const AI::BehaviorProfile defenderProfile = defender.isAI() ?
+        AI::behaviorProfile(defender) : AI::BehaviorProfile::Balanced;
+    const int samples = AI::difficultyRules(GameData::aiDifficulty()).battleForecastSamples;
+    const AI::BattleForecast result = AI::forecastBattle(attackers, BattleTown(target), defenders,
+        AI::BehaviorProfile::Balanced, defenderProfile, samples);
+
+    forecastTarget = target;
+    forecastSamples = result.samples;
+    forecastCaptureChance = result.captureChance;
+    forecastAttackerSurvival = result.attackerSurvival;
+}
+
+void MapScreenBase::renderBattleForecast(void)
+{
+    if(!forecastTarget.isValid() || forecastSamples <= 0) return;
+
+    renderTextInfo(forecastTitle, _("Battle Forecast"));
+    renderTextInfo(forecastCapture,
+                   StringFormat(_("Capture: %1%")).arg(forecastCaptureChance));
+    renderTextInfo(forecastSurvival,
+                   StringFormat(_("Attackers remain: %1%")).arg(forecastAttackerSurvival));
 }
 
 void MapScreenBase::renderCreatureInfo(const BattleCreature & battle)
@@ -581,14 +652,15 @@ void MapScreenBase::renderWindow(void)
     // town tower winds image
     renderTexture(townTowerWindsTexture, townTowerWindsPos);
 
-    if(selectedCreature.isValid())
+    if(selectedCreature.isValid() && !forecastTarget.isValid())
 	renderCreatureInfo(selectedCreature);
 
-    if(selectedClan.isValid())
+    if(selectedClan.isValid() && !forecastTarget.isValid())
 	renderClanAvatarInfo(ld.playerOfClan(selectedClan));
 
-    if(selectedLand.isValid())
-        renderLandInfo();
+    const Land infoLand = forecastTarget.isValid() ? forecastTarget : selectedLand;
+    if(infoLand.isValid()) renderLandInfo(infoLand);
+    renderBattleForecast();
 }
 
 bool MapScreenBase::userEvent(int event, void* data)
@@ -643,6 +715,7 @@ bool MapScreenBase::userEvent(int event, void* data)
 	// click clan icon
 	case ClanIconClickLeft:
 	case ClanIconClickRight:
+	    clearBattleForecast();
 	    if(selectedLand.isTowerWinds())
 	    {
 		Clan clan1, clan2;
@@ -688,6 +761,7 @@ bool MapScreenBase::userEvent(int event, void* data)
 	// click creatures icon
 	case CreatureIconClickLeft:
 	case CreatureIconClickRight:
+	    clearBattleForecast();
 	    if(data)
 	    {
 		auto bcr = static_cast<BattleCreature*>(data);
@@ -705,6 +779,7 @@ bool MapScreenBase::userEvent(int event, void* data)
 	    return true;
 
 	case AdventureTurnPlayer:
+	    clearBattleForecast();
 	    if(data)
 	    {
 		auto player = static_cast<RemotePlayer*>(data);
@@ -721,6 +796,11 @@ bool MapScreenBase::userEvent(int event, void* data)
     }
 
     return false;
+}
+
+bool MapScreenBase::isAllowLandClaim(const LandInfo & info) const
+{
+    return isAdventureMode() && ld.yourTurn() && GameData::canClaimLand(ld.myPlayer(), info.id);
 }
 
 /* ShowMapDialog */
@@ -829,7 +909,7 @@ void ShowSummonCreatureDialog::renderLabel(void)
 
 /* ShowCastSpellDialog */
 ShowCastSpellDialog::ShowCastSpellDialog(const LocalData & data, const Spell & sp, Window & win)
-    : MapScreenBase(data, & win), spell(sp)
+    : MapScreenBase(data, & win), spell(sp), targetUnit(-1)
 {
     setVisible(true);
     buttons.setVisible(false);
@@ -863,17 +943,46 @@ bool ShowCastSpellDialog::userEvent(int act, void* data)
 		    setVisible(false);
 		}
 	    }
+	    else
+	    if(spell() == Spell::Teleport && landInfo && 0 < targetUnit)
+	    {
+		const BattleParty* party = player.army.findPartyConst(landInfo->id);
+		const bool friendlyLand = landInfo->id.isTowerWinds() || landInfo->clan == player.clan;
+		const bool canJoin = ! party || party->canJoin();
+
+		if(friendlyLand && canJoin && landInfo->id != targetSource)
+		{
+		    std::string msg = StringFormat(_("Teleport selected creature to %1?")).arg(landInfo->name);
+		    if(MessageBox(_("Teleport"), msg, *this, true).exec())
+		    {
+			setResultCode(3);
+			setVisible(false);
+		    }
+		}
+		else
+		{
+		    MessageBox(_("Error"), _("Select another friendly territory with a free party slot."), *this, false).exec();
+		}
+	    }
 	}
 
 	// click creature icon
 	if(act == CreatureIconClickLeft)
 	{
-	    if(info.target() != SpellTarget::Land &&
+	    if(info.target() != SpellTarget::Land && selectedCreature.canReceiveSpell(spell) &&
 		(((info.target() & SpellTarget::Friendly) && player.clan == selectedCreature.clan()) ||
 		((info.target() & SpellTarget::Enemy) && player.clan != selectedCreature.clan())))
 	    {
-		setResultCode(2);
-		setVisible(false);
+		if(spell() == Spell::Teleport)
+		{
+		    targetUnit = selectedCreature.battleUnit();
+		    targetSource = selectedLand;
+		}
+		else
+		{
+		    setResultCode(2);
+		    setVisible(false);
+		}
 	    }
 	    else
 	    {
@@ -895,7 +1004,7 @@ const Land & ShowCastSpellDialog::land(void) const
 
 int ShowCastSpellDialog::unit(void) const
 {
-    return selectedCreature.battleUnit();
+    return 0 < targetUnit ? targetUnit : selectedCreature.battleUnit();
 }
 
 void ShowCastSpellDialog::renderLabel(void)
@@ -945,7 +1054,7 @@ void MoveFlagWindow::setVisible(bool f)
 
 /* AdventurePartScreen */
 AdventurePartScreen::AdventurePartScreen(const Avatar & ava) : MapScreenBase(GameData::toLocalData(ava), nullptr), myAvatar(ava), allowTickEvent(true),
-    moveFlag(ld.myPlayer().clan, *this)
+    moveFlag(ld.myPlayer().clan, *this), buttonOrder(nullptr), buttonDone(nullptr), buttonUndo(nullptr), buttonDismiss(nullptr)
 {
     history.reserve(6);
     LocalPlayer & player = ld.myPlayer();
@@ -959,11 +1068,12 @@ AdventurePartScreen::AdventurePartScreen(const Avatar & ava) : MapScreenBase(Gam
     delayCombatResult = jobject.getInteger("delay:combatresult", 600);
     JsonButton* button = nullptr;
 
-    button = buttons.findIds("but_chat");
-    if(button)
+    buttonOrder = buttons.findIds("but_order");
+    if(buttonOrder)
     {
-	button->setVisible(true);
-	button->setAction(Action::ButtonChat);
+	buttonOrder->setVisible(true);
+	buttonOrder->setAction(Action::ButtonOrder);
+	buttonOrder->setDisabled(true);
     }
 
     button = buttons.findIds("but_info");
@@ -974,6 +1084,7 @@ AdventurePartScreen::AdventurePartScreen(const Avatar & ava) : MapScreenBase(Gam
     }
 
     button = buttons.findIds("but_menu");
+    if(button)
     {
 	button->setVisible(true);
 	button->setAction(Action::ButtonMenu);
@@ -1013,31 +1124,121 @@ AdventurePartScreen::AdventurePartScreen(const Avatar & ava) : MapScreenBase(Gam
 void AdventurePartScreen::renderLabel(void)
 {
     const FontRender & frs = GameTheme::fontRender(defaultFont);
-    renderText(frs, _("Movement Phase"), defaultColor, viewMapPos, AlignCenter);
+    renderText(frs, orderSource.isValid() ? _("Select destination") : _("Movement Phase"),
+	       defaultColor, viewMapPos, AlignCenter);
 }
 
-void AdventurePartScreen::updateButtonDismiss(void)
+void AdventurePartScreen::updateCommandButtons(void)
 {
-    if(buttonDismiss)
-    {
-	bool selected = selectedClan == ld.myPlayer().clan && 
-			selectedLand.isValid() && 0 < ld.myPlayer().army.partySelected(selectedLand).size();
-	buttonDismiss->setDisabled(! selected);
-    }
+    const bool hasSelected = selectedLand.isValid() &&
+	0 < ld.myPlayer().army.partySelected(selectedLand).size();
+    const bool canDismiss = ld.yourTurn() && selectedClan == ld.myPlayer().clan && hasSelected;
+    const bool canOrder = ld.yourTurn() && selectedLand.isValid() &&
+	isAllowMoveFlag(GameData::landInfo(selectedLand));
+
+    if(buttonDismiss) buttonDismiss->setDisabled(!canDismiss);
+    if(buttonOrder) buttonOrder->setDisabled(!orderSource.isValid() && !canOrder);
+}
+
+bool AdventurePartScreen::isAllowMoveFlag(const LandInfo & info) const
+{
+    return !orderSource.isValid() && MapScreenBase::isAllowMoveFlag(info);
+}
+
+void AdventurePartScreen::cancelOrderMode(bool redraw)
+{
+    if(!orderSource.isValid()) return;
+
+    orderSource.reset();
+    clearBattleForecast();
+    updateCommandButtons();
+    if(redraw) renderWindow();
+}
+
+bool AdventurePartScreen::moveSelectedParty(const Land & fromLand, const Land & toLand)
+{
+    LocalPlayer & player = ld.myPlayer();
+    const std::vector<int> moved = player.army.moveSelectedCreatures(fromLand, toLand);
+    if(moved.empty()) return false;
+
+    for(const int unit : moved)
+	history.emplace_back(unit, toLand);
+
+    // A split leaves the remaining source party ready for the next command.
+    player.army.partySetAllSelected(fromLand);
+    selectedCreature.reset();
+    affectedSpells.setVisible(false);
+    bar1.reset();
+    bar2.reset();
+
+    if(buttonUndo) buttonUndo->setDisabled(false);
+    playSound("snddrop");
+
+    const LandInfo & landInfo = GameData::landInfo(toLand);
+    if(player.clan != landInfo.clan)
+	DisplayScene::pushEvent(nullptr, LandPolygonCombatStatus, const_cast<LandInfo*>(& landInfo));
+
+    DisplayScene::pushEvent(nullptr, LandPolygonFlagAnimationReInit, nullptr);
+    pushEventAction(MapScreenSelectLand, this, const_cast<LandInfo*>(& landInfo));
+    updateCommandButtons();
+    return true;
 }
 
 bool AdventurePartScreen::userEvent(int act, void* data)
 {
+    if(act == LandPolygonClickLeft || act == LandPolygonClickRight)
+        clearBattleForecast();
+
+    if(orderSource.isValid() && (act == LandPolygonClickLeft || act == LandPolygonClickRight))
+    {
+	if(act == LandPolygonClickRight || !data)
+	{
+	    cancelOrderMode();
+	    return true;
+	}
+
+	const Land target = static_cast<LandInfo*>(data)->id;
+	if(target == orderSource)
+	{
+	    cancelOrderMode();
+	    return true;
+	}
+
+	const Land source = orderSource;
+	if(moveSelectedParty(source, target))
+	    cancelOrderMode();
+	else
+	{
+	    updateBattleForecast(source, target);
+	    MessageBox(_("Order"), _("Selected creatures cannot move to this territory."), *this, false).exec();
+	    renderWindow();
+	}
+	return true;
+    }
+
+    bool requestClaim = false;
+    if(act == LandPolygonClickLeft && data && ld.yourTurn())
+    {
+	auto landInfo = static_cast<LandInfo*>(data);
+	// The first click selects the territory; a second click claims its deed.
+	requestClaim = selectedLand == landInfo->id && GameData::canClaimLand(ld.myPlayer(), landInfo->id);
+    }
+
     if(MapScreenBase::userEvent(act, data))
     {
-	updateButtonDismiss();
+	if(requestClaim)
+	{
+	    auto landInfo = static_cast<LandInfo*>(data);
+	    GameData::client2Adventure(myAvatar, ClientLandClaim(landInfo->id), actions);
+	}
+	updateCommandButtons();
 	return true;
     }
 
     switch(act)
     {
 	case Action::ButtonDone:	actionButtonDone(); return true;
-	case Action::ButtonChat:	actionButtonChat(); return true;
+	case Action::ButtonOrder:	actionButtonOrder(); return true;
 	case Action::ButtonDismiss:	actionButtonDismiss(); return true;
 	case Action::ButtonInfo:	actionButtonInfo(); return true;
 	case Action::ButtonUndo:	actionButtonUndo(); return true;
@@ -1057,19 +1258,22 @@ bool AdventurePartScreen::userEvent(int act, void* data)
 	}
         else
 #endif
-        if(act == AdventureTurnCreatureSelect)
+	if(act == AdventureTurnCreatureSelect)
 	{
+	    clearBattleForecast();
 	    auto bcr = data ? static_cast<BattleCreature*>(data) : nullptr;
 	    if(bcr)
 	    {
 		bcr->switchSelected();
-		updateButtonDismiss();
+		updateCommandButtons();
 	    }
 	    return true;
 	}
 	else
 	if(act == AdventureTurnMoveStart)
 	{
+	    cancelOrderMode(false);
+	    clearBattleForecast();
 	    moveFlag.setLand(selectedLand);
 	    moveFlag.setVisible(true);
 	    playSound("sndtake");
@@ -1078,51 +1282,26 @@ bool AdventurePartScreen::userEvent(int act, void* data)
 	else
 	if(act == AdventureTurnMoveStop)
 	{
+	    clearBattleForecast();
 	    moveFlag.setVisible(false);
 
-    	    LocalPlayer & player = ld.myPlayer();
-	    BattleCreatures selectedCreatures = player.army.partySelected(moveFlag.fromLand());
-
-	    // move party to selectedLand (focused land)
-	    if(moveFlag.fromLand() != selectedLand && selectedCreatures.size())
-	    {
-		for(auto & bcrs : selectedCreatures)
-		{
-		    history.push_back(CreatureMoved((*bcrs).battleUnit(), selectedLand));
-		    player.army.moveCreature(*bcrs, selectedLand);
-		}
-
-		// may be separated party, and set selected for others
-		player.army.partySetAllSelected(moveFlag.fromLand());
-
-	        selectedCreature.reset();
-		affectedSpells.setVisible(false);
-		bar1.reset();
-		bar2.reset();
-
-		if(buttonUndo) buttonUndo->setDisabled(false);
-		playSound("snddrop");
-
-		const LandInfo & landInfo = GameData::landInfo(selectedLand);
-
-		// broadscast event: set combat status
-		if(player.clan != landInfo.clan)
-		    DisplayScene::pushEvent(nullptr, LandPolygonCombatStatus, const_cast<LandInfo*>(& landInfo));
-
-		// broadscast event: update flags
-		DisplayScene::pushEvent(nullptr, LandPolygonFlagAnimationReInit, nullptr);
-
-		// set selected land event
-		pushEventAction(MapScreenSelectLand, this, const_cast<LandInfo*>(& landInfo));
-
-		return true;
-	    }
+	    moveSelectedParty(moveFlag.fromLand(), selectedLand);
+	    return true;
 	}
 	else
 	if(act == LandPolygonFocus)
 	{
-	    if(data && moveFlag.isVisible())
-		pushEventAction(MapScreenSelectLand, this, data);
+	    if(data)
+	    {
+		auto landInfo = static_cast<LandInfo*>(data);
+		const Land origin = moveFlag.isVisible() ? moveFlag.fromLand() :
+		    (orderSource.isValid() ? orderSource : selectedLand);
+		updateBattleForecast(origin, landInfo->id);
+		renderWindow();
+
+		if(moveFlag.isVisible())
+		    pushEventAction(MapScreenSelectLand, this, data);
+	    }
 
 	    return true;
 	}
@@ -1131,9 +1310,23 @@ bool AdventurePartScreen::userEvent(int act, void* data)
     return false;
 }
 
-void AdventurePartScreen::actionButtonChat(void)
+void AdventurePartScreen::actionButtonOrder(void)
 {
-    FIXME("chat not implemented... sorry");
+    if(orderSource.isValid())
+    {
+	cancelOrderMode();
+	return;
+    }
+
+    if(!ld.yourTurn() || !selectedLand.isValid()) return;
+    const LandInfo & info = GameData::landInfo(selectedLand);
+    if(!isAllowMoveFlag(info)) return;
+
+    orderSource = selectedLand;
+    clearBattleForecast();
+    updateCommandButtons();
+    playSound("sndtake");
+    renderWindow();
 }
 
 void AdventurePartScreen::actionButtonMenu(void)
@@ -1157,7 +1350,8 @@ void AdventurePartScreen::actionButtonDismiss(void)
 
 	player.army.partySetAllSelected(selectedLand);
 
-	updateButtonDismiss();
+	cancelOrderMode(false);
+	updateCommandButtons();
 	if(buttonUndo) buttonUndo->setDisabled(false);
 
         selectedCreature.reset();
@@ -1177,6 +1371,8 @@ void AdventurePartScreen::actionButtonInfo(void)
 
 void AdventurePartScreen::actionButtonUndo(void)
 {
+    cancelOrderMode(false);
+    GameData::client2Adventure(myAvatar, ClientAdventureUndo(), actions);
     MapScreenBase::ld = GameData::toLocalData(myAvatar);
     const LandInfo & landInfo = GameData::landInfo(selectedLand);
 
@@ -1191,7 +1387,7 @@ void AdventurePartScreen::actionButtonUndo(void)
     DEBUG("all changes revert");
     history.clear();
 
-    updateButtonDismiss();
+    updateCommandButtons();
     if(buttonUndo) buttonUndo->setDisabled(true);
 
     // broadscast event
@@ -1203,6 +1399,7 @@ void AdventurePartScreen::actionButtonUndo(void)
 
 void AdventurePartScreen::actionButtonDone(void)
 {
+    cancelOrderMode(false);
     if(buttonDone) buttonDone->setDisabled(true);
 
     for(auto & creatureMoved : history)
@@ -1233,6 +1430,10 @@ void AdventurePartScreen::tickEvent(u32 ms)
 		    redraw = actionAdventureMoves(action);
 		    break;
 
+		case Action::AdventureClaim:
+		    redraw = actionAdventureClaim(action);
+		    break;
+
 		case Action::AdventureCombat:
 		    redraw = actionAdventureCombat(action);
 		    break;
@@ -1258,6 +1459,9 @@ bool AdventurePartScreen::actionAdventureTurn(const ActionMessage & v)
     ld.currentWind = action.currentWind();
     const RemotePlayer & player = ld.playerOfWind(ld.currentWind);
 
+    if(!ld.yourTurn()) cancelOrderMode(false);
+    updateCommandButtons();
+
     if(ld.yourTurn() && buttonDone)
     {
 	buttonDone->setDisabled(false);
@@ -1281,6 +1485,22 @@ bool AdventurePartScreen::actionAdventureMoves(const ActionMessage & v)
     }
 
     DEBUG("current wind: " << ld.currentWind.toString() << ", uid: " << action.unit() << ", to land: " << action.land().toString());
+    return true;
+}
+
+bool AdventurePartScreen::actionAdventureClaim(const ActionMessage & v)
+{
+    auto action = static_cast<const AdventureClaim &>(v);
+    ld = GameData::toLocalData(myAvatar);
+    ld.currentWind = action.currentWind();
+
+    const LandInfo & info = GameData::landInfo(action.land());
+    DisplayScene::pushEvent(nullptr, LandPolygonFlagAnimationReInit, const_cast<LandInfo*>(& info));
+    pushEventAction(MapScreenSelectLand, this, const_cast<LandInfo*>(& info));
+
+    DEBUG("land owner changed: " << action.land().toString() << ", previous owner: " <<
+          action.previousOwner().toString() << ", owner: " << action.owner().toString() <<
+          ", cost: " << action.cost() << ", reverted: " << action.reverted());
     return true;
 }
 
@@ -1363,6 +1583,12 @@ bool AdventurePartScreen::actionAdventureEnd(const ActionMessage & v)
 
 bool AdventurePartScreen::keyPressEvent(const KeySym & ks)
 {
+    if(ks.keycode() == SWE::Key::ESCAPE && orderSource.isValid())
+    {
+	cancelOrderMode();
+	return true;
+    }
+
 #ifdef BUILD_DEBUG
     if(ks.keycode() == SWE::Key::BACKQUOTE)
     {

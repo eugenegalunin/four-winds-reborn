@@ -33,6 +33,11 @@
 			            ]
                       }
 		],
+    "ai:difficulty": {
+                    "area": [ 925, 660, 86, 44 ],
+                    "textinfo:title": { "position": [ 968, 660 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" },
+                    "textinfo:value": { "position": [ 968, 681 ], "font": "dejavus18", "color": "OrangeRed", "align": "center" }
+            },
     "area:clans":	[
                     { "id": "red", "area": [ 330, 612, 142, 142 ] },
                     { "id": "yellow", "area": [ 478, 612, 142, 142 ] },

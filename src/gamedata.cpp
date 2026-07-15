@@ -25,6 +25,7 @@
 #include <algorithm>
 
 #include "settings.h"
+#include "aiprofile.h"
 #include "aiturn.h"
 #include "actions.h"
 #include "battle.h"
@@ -50,10 +51,10 @@ std::string SpellInfo::effectDescription(void) const
 
 	case Spell::Heroism:		return StringFormat(_("+%1 Attack, +%2 Max Loyalty")).arg(std::abs(effect.attack)).arg(std::abs(effect.loyalty));
 	case Spell::MysticalFountain:	return StringFormat(_("+%1 Attack or +%2 Missile or +%3 Max Loyalty")).arg(std::abs(effect.attack)).arg(std::abs(effect.ranger)).arg(std::abs(effect.loyalty));
-	case Spell::BlindAmbition:	return StringFormat(_("+%1 Attack, +%2 Defense, -%3 Max Loyalty")).arg(std::abs(effect.attack)).arg(std::abs(effect.defense)).arg(std::abs(effect.loyalty));
+	case Spell::BlindAmbition:	return StringFormat(_("+%1 Attack, +%2 Missile, -%3 Max Loyalty")).arg(std::abs(effect.attack)).arg(std::abs(effect.ranger)).arg(std::abs(effect.loyalty));
 	case Spell::Healing:		return StringFormat(_("+%1 Loyalty, up to max")).arg(std::abs(effect.loyalty));
 	case Spell::Reduction:		return StringFormat(_("-%1 Defense, -%2 Attack")).arg(std::abs(effect.defense)).arg(std::abs(effect.attack));
-	case Spell::ForceShield:	return StringFormat(_("Missile attacks do %1 less damage")).arg(std::abs(effect.ranger));
+	case Spell::ForceShield:	return StringFormat(_("Missile attacks do %1 less damage")).arg(value);
 
 	case Spell::Paralyze:		return _("Freeze creature");
 	case Spell::Teleport:		return _("Move one unit to any friendly territory");
@@ -130,6 +131,7 @@ bool GameData::init(const JsonObject & jo)
 	return false;
 
     bonusStart = jo.getInteger("bonus:start", 250);
+    bonusGame = jo.getInteger("bonus:game", 50);
     bonusPass = jo.getInteger("bonus:pass", 10);
     bonusChao = jo.getInteger("bonus:chao", 20);
     bonusPung = jo.getInteger("bonus:pung", 30);
@@ -320,7 +322,22 @@ namespace GameData
     bool				skipNewTurn = false;
     int					gamePart = 0;
     int					battleUnitId = 1;
+    AI::Difficulty                      difficulty = AI::Difficulty::Normal;
     JsonObject				stateGUI;
+
+    struct LandClaimRecord
+    {
+	Avatar player;
+	Land land;
+	Clan previousOwner;
+	int cost;
+
+	LandClaimRecord(const Avatar & avatar, const Land & territory, const Clan & owner, int value)
+	    : player(avatar), land(territory), previousOwner(owner), cost(value) {}
+    };
+    std::vector<LandClaimRecord>          landClaimJournal;
+    Avatar                                adventureSnapshotPlayer;
+    BattleArmy                           adventureArmySnapshot;
 
     Wind                                prevWindCompass(const Wind &);
     Wind                                nextWindCompass(const Wind &);
@@ -346,6 +363,8 @@ namespace GameData
     bool				clientSummonCreature(const Avatar &, const ClientMessage &, ActionList &);
     bool				clientCastSpell(const Avatar &, const ClientMessage &, ActionList &);
     bool				clientUnitMoved(const Avatar &, const ClientMessage &, ActionList &);
+    bool                                clientLandClaim(const Avatar &, const ClientMessage &, ActionList &);
+    bool                                clientAdventureUndo(const Avatar &, const ClientMessage &, ActionList &);
     bool				clientBattleReady(const Avatar &, const ClientMessage &, ActionList &);
 
     JsonObject                  	toJsonObject(const JsonObject &);
@@ -398,6 +417,16 @@ const Person & GameData::myPerson(void)
     return person;
 }
 
+AI::Difficulty GameData::aiDifficulty(void)
+{
+    return difficulty;
+}
+
+void GameData::setAIDifficulty(AI::Difficulty value)
+{
+    difficulty = value;
+}
+
 JsonObject GameData::toJsonObject(const JsonObject & gui)
 {
     JsonObject jo;
@@ -412,11 +441,20 @@ JsonObject GameData::toJsonObject(const JsonObject & gui)
     jo.addBoolean("skipturn", skipNewTurn);
     jo.addInteger("gamepart", gamePart);
     jo.addInteger("nextBattleUnitId", battleUnitId);
+    jo.addString("ai:difficulty", AI::difficultyName(difficulty));
 
     jo.addObject("myperson", person.toJsonObject());
     jo.addObject("croupier", croupier.toJsonObject());
     jo.addObject("winresult", winResult.toJsonObject());
     jo.addArray("players", gamers.toJsonArray());
+
+    JsonObject landOwners;
+    for(auto landId : lands_all)
+    {
+        const Land land(landId);
+        landOwners.addString(land.toString(), landInfo(land).clan.toString());
+    }
+    jo.addObject("landOwners", landOwners);
 
     JsonArray ja;
     for(auto & legend : battleHistory)
@@ -451,6 +489,7 @@ bool GameData::fromJsonObject(const JsonObject & jo)
     skipRepeatSay = false; // initial say need! jo.getBoolean("skiprepeat");
     gamePart = jo.getInteger("gamepart");
     battleUnitId = jo.getInteger("nextBattleUnitId");
+    difficulty = AI::difficultyFromString(jo.getString("ai:difficulty", "normal"));
 
     const JsonObject* jo2 = nullptr;
 
@@ -487,6 +526,21 @@ bool GameData::fromJsonObject(const JsonObject & jo)
 	return false;
     }
     gamers = LocalPlayers::fromJsonArray(*ja2);
+    landClaimJournal.clear();
+    adventureSnapshotPlayer = Avatar();
+    adventureArmySnapshot.clear();
+
+    // Older saves did not persist captured territory owners and keep theme defaults.
+    jo2 = jo.getObject("landOwners");
+    if(jo2)
+    {
+        for(auto landId : lands_all)
+        {
+            const Land land(landId);
+            const Clan owner(jo2->getString(land.toString(), landInfo(land).clan.toString()));
+            if(!land.isTowerWinds() && owner.isValid()) landsInfo[land()].clan = owner;
+        }
+    }
 
     battleHistory.clear();
 
@@ -575,10 +629,10 @@ LocalData GameData::toLocalData(const Avatar & ava)
     if(lp) ld.players[3] = *lp;
     else ERROR("player not found" << ", wind: " << ld.compass.bottom().toString());
 
-    // check: Affected ScryRunes
+    // Only the caster can see the hand marked by Scry Runes.
     for(int it = 0; it < 3; ++it)
     {
-	if(! ld.players[it].isAffectedSpell(Spell::ScryRunes))
+	if(! ld.players[it].isAffectedSpell(Spell::ScryRunes, ava))
 	{
 	    // hide: private game info
 	    ld.players[it].stones.clear();
@@ -872,6 +926,12 @@ bool GameData::clientSayGame(const Avatar & avatar, const ClientMessage & act, A
 {
     LocalPlayer & client = playerOfAvatar(avatar);
 
+    if(client.isAffectedSpell(Spell::Silence))
+    {
+	ERROR("player silence mode: " << client.name());
+	return false;
+    }
+
     // need fill winResult
     if(client.isWinMahjong(currentWind, roundWind, dropStone, & winResult))
     {
@@ -969,6 +1029,16 @@ bool GameData::clientButtonGame(const Avatar & avatar, const ClientMessage & act
     DEBUG(client.toString());
 
     client.setMahjongGame(winResult);
+
+    const int score = winResult.totalScore();
+    if(0 < score)
+    {
+        for(const auto & fine : winResult.opponentFines())
+        {
+            const LocalPlayer & opponent = playerOfWind(fine.wind());
+            client.addLandClaimPoints(opponent.clan, score * fine.value());
+        }
+    }
 
     actions.push_back(MahjongGame(client.wind));
     AI::mahjongOtherPass(currentWind, actions, client.wind);
@@ -1117,6 +1187,12 @@ bool GameData::clientSummonCreature(const Avatar & avatar, const ClientMessage &
 	return false;
     }
 
+    if(client.isAffectedSpell(Spell::ManaFog) && !ca.isForce())
+    {
+	ERROR("player mana fog mode: " << client.name());
+	return false;
+    }
+
     if(client.isCasted() && !ca.isForce())
     {
 	ERROR("player casted: " << client.name());
@@ -1200,6 +1276,12 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	return false;
     }
 
+    if(client.isAffectedSpell(Spell::ManaFog) && !ca.isForce())
+    {
+	ERROR("player mana fog mode: " << client.name());
+	return false;
+    }
+
     if(client.isCasted() && !ca.isForce())
     {
 	ERROR("player already casted: " << client.name());
@@ -1227,22 +1309,37 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	return false;
     }
 
-    if(spellInfo.target() == SpellTarget::AllPlayers ||
-       spellInfo.target() == SpellTarget::MyPlayer)
+    if(spellInfo.target() == SpellTarget::AllPlayers)
     {
 	DEBUG(client.toString() << ", " << "spell: " << spell.toString());
 
 	actions.push_back(MahjongCast(currentWind, spell));
-	client.mahjongApplySpell(spell);
+	for(auto & player : gamers)
+	    player.mahjongApplySpell(spell, client.avatar);
+    }
+    else
+    if(spellInfo.target() == SpellTarget::MyPlayer)
+    {
+	DEBUG(client.toString() << ", " << "spell: " << spell.toString());
+
+	actions.push_back(MahjongCast(currentWind, spell));
+	client.mahjongApplySpell(spell, client.avatar);
     }
     else
     if(spellInfo.target() == SpellTarget::OtherPlayer)
     {
 	Avatar target = ca.target();
 	DEBUG(client.toString() << ", " << "spell: " << spell.toString() << ", " << "target: " << target.toString());
+	LocalPlayer* targetPlayer = gamers.playerOfAvatar(target);
+
+	if(! targetPlayer || target == client.avatar)
+	{
+	    ERROR("other player target invalid: " << target.toString());
+	    return false;
+	}
 
 	actions.push_back(MahjongCast(currentWind, spell, target));
-	playerOfAvatar(target).mahjongApplySpell(spell);
+	targetPlayer->mahjongApplySpell(spell, client.avatar);
     }
     else
     {
@@ -1255,6 +1352,21 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	BattleTargets targets;
 	targets.reserve(10);
 
+	if(spell() == Spell::Teleport)
+	{
+	    BattleCreature* target = client.army.findBattleUnit(unit);
+	    const bool friendlyLand = land.isValid() &&
+		(land.isTowerWinds() || GameData::landInfo(land).clan == client.clan);
+
+	    if(! target || ! friendlyLand || ! client.army.teleportCreature(*target, land))
+	    {
+		ERROR("teleport target error" << ", " << "unit: " << String::hex(unit, 8) << ", " << "land: " << land.toString());
+		return false;
+	    }
+
+	    targets << client.army.findBattleUnit(unit);
+	}
+	else
 	if(spellInfo.target() == SpellTarget::Land)
 	{
 	    for(auto & lp : gamers)
@@ -1266,64 +1378,81 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	else
 	if(spellInfo.target() & SpellTarget::Party)
 	{
-	    if(spellInfo.target() & SpellTarget::Friendly)
+	    BattleParty* party = 0 < unit ? getBattleParty(unit) : nullptr;
+	    const bool friendly = party && party->clan() == client.clan;
+	    const bool allowed = party && party->land() == land &&
+		(((spellInfo.target() & SpellTarget::Friendly) && friendly) ||
+		 ((spellInfo.target() & SpellTarget::Enemy) && !friendly));
+
+	    if(! allowed)
 	    {
-		auto party = client.army.findPartyConst(land);
-		if(party) targets << BattleTargets(party->toBattleCreatures());
+		ERROR("party spell target invalid" << ", " << "unit: " << String::hex(unit, 8) << ", " << "land: " << land.toString());
+		return false;
 	    }
-	    else
-	    if(spellInfo.target() & SpellTarget::Enemy)
-	    {
-		for(auto & lp : gamers)
-		{
-	    	    if(client.clan != lp.clan)
-		    {
-			auto party = lp.army.findPartyConst(land);
-			if(party) targets << BattleTargets(party->toBattleCreatures());
-		    }
-		}
-	    }
+
+	    targets << BattleTargets(party->toBattleCreatures());
 	}
 	else
 	if(unit)
 	{
 	    BattleCreature* bcr = getBattleCreature(unit);
-	    if(bcr) targets.push_back(bcr);
+	    BattleParty* party = getBattleParty(unit);
+	    const bool friendly = bcr && bcr->clan() == client.clan;
+	    const bool allowed = bcr && party && party->land() == land && bcr->canReceiveSpell(spell) &&
+		(((spellInfo.target() & SpellTarget::Friendly) && friendly) ||
+		 ((spellInfo.target() & SpellTarget::Enemy) && !friendly));
+
+	    if(! allowed)
+	    {
+		ERROR("unit spell target invalid" << ", " << "unit: " << String::hex(unit, 8) << ", " << "land: " << land.toString());
+		return false;
+	    }
+
+	    targets.push_back(bcr);
 	}
 
-	// targets: apply spell
+	if(targets.empty())
+	{
+	    ERROR("spell has no valid targets: " << spell.toString());
+	    return false;
+	}
+
 	std::vector<int> resistence;
 	resistence.reserve(5);
 
-	for(auto & tgt : targets)
+	if(spell() != Spell::Teleport)
 	{
-	    if(! tgt->applySpell(spell))
-		resistence.push_back(tgt->battleUnit());
-	}
-
-	actions.push_back(MahjongCast(currentWind, spell, land, targets, resistence));
-	std::set<Clan> checkArmy;
-
-	// check dead creatures
-	for(auto & tgt : targets)
-	{
-	    if(0 >= tgt->loyalty())
+	    for(auto & tgt : targets)
 	    {
-		const LocalPlayer & other = playerOfClan(tgt->clan());
-		const std::string & info = StringFormat("%1's %2 vas vanquished").arg(other.name()).arg(tgt->name());
-		actions.push_back(MahjongInfo(currentWind, info));
-		checkArmy.insert(tgt->clan());
+		if(! tgt->applySpell(spell))
+		    resistence.push_back(tgt->battleUnit());
 	    }
-	}
 
-	if(checkArmy.size())
-	{
+	    // Serialize target ids before dead creatures are removed from their parties.
+	    actions.push_back(MahjongCast(currentWind, spell, land, targets, resistence));
+
+	    std::set<Clan> checkArmy;
+
+	    // check dead creatures
+	    for(auto & tgt : targets)
+	    {
+		if(0 >= tgt->loyalty())
+		{
+		    const LocalPlayer & other = playerOfClan(tgt->clan());
+		    const std::string & info = StringFormat("%1's %2 was vanquished").arg(other.name()).arg(tgt->name());
+		    actions.push_back(MahjongInfo(currentWind, info));
+		    checkArmy.insert(tgt->clan());
+		}
+	    }
+
 	    for(auto & clan : checkArmy)
 	    {
 		LocalPlayer & other = playerOfClan(clan);
-		other.army.shrinkEmpty();
+		other.army.removeUnloyalty();
 	    }
 	}
+	else
+	    actions.push_back(MahjongCast(currentWind, spell, land, targets, resistence));
     }
 
     // client apply
@@ -1395,17 +1524,6 @@ void GameData::validateMahjongSummary(void)
     DEBUG("game total: " << total << ", " << "(" << (total != 136 ? "FALSE" : "TRUE") << ")");
 }
 
-namespace Battle
-{
-    BattleStrike	applyRangerAttack(const BattleUnit &, BattleCreature &);
-    BattleStrike	applyMeleeAttack(BattleUnit &, BattleUnit &, int bonus);
-    BattleStrikes	rangersAttack(const BattleCreatures &, BattleParty &);
-    BattleStrikes	meleeAttack(BattleUnit &, BattleParty &);
-    BattleStrikes	meleesAttack(BattleCreatures, BattleParty &);
-    BattleStrikes	doAttackParty(BattleParty &, BattleTown &, BattleParty*);
-    int			calculateDamage(const BattleUnit &, const BattleUnit &, int bonus);
-}
-
 bool GameData::initAdventure(void)
 {
     VERBOSE("wind round: " << roundWind.toString());
@@ -1417,6 +1535,9 @@ bool GameData::initAdventure(void)
     for(auto & lp : gamers)
 	lp.initAdventurePart();
 
+    landClaimJournal.clear();
+    adventureSnapshotPlayer = Avatar();
+    adventureArmySnapshot.clear();
     skipRepeatSay = false;
     return true;
 }
@@ -1429,7 +1550,7 @@ bool GameData::adventure2Client(const Avatar & avatar, ActionList & actions)
     {
 	if(gamePart == Menu::AdventurePart)
 	{
-	    adventureBattleAction(avatar, actions);
+	    adventureBattleAction(player.avatar, actions);
 	    if(currentWind() == Wind::North) gamePart = Menu::BattleSummaryPart;
 	    currentWind.shift();
 	}
@@ -1442,6 +1563,12 @@ bool GameData::adventure2Client(const Avatar & avatar, ActionList & actions)
     else
     {
 	// DEBUG("wind: " << currentWind.toString() << ", " << "person: " << player.name());
+	if(adventureSnapshotPlayer != player.avatar)
+	{
+	    adventureSnapshotPlayer = player.avatar;
+	    adventureArmySnapshot = player.army;
+	    landClaimJournal.clear();
+	}
 
 	if(player.isAI())
 	{
@@ -1467,6 +1594,8 @@ bool GameData::client2Adventure(const Avatar & avatar, const ClientMessage & act
     switch(act.type())
     {
 	case Action::ClientUnitMoved:	return clientUnitMoved(avatar, act, actions);
+	case Action::ClientLandClaim:	return clientLandClaim(avatar, act, actions);
+	case Action::ClientAdventureUndo: return clientAdventureUndo(avatar, act, actions);
 	case Action::ClientBattleReady:	return clientBattleReady(avatar, act, actions);
 	default: break;
     }
@@ -1478,6 +1607,12 @@ bool GameData::clientUnitMoved(const Avatar & avatar, const ClientMessage & act,
 {
     LocalPlayer & client = playerOfAvatar(avatar);
     auto ca = static_cast<const ClientUnitMoved &>(act);
+
+    if(gamePart != Menu::AdventurePart || currentWind != client.wind || client.adventurePartDone())
+    {
+	ERROR("adventure action outside current turn: " << client.toString());
+	return false;
+    }
 
     Land land = ca.land();
     int unit = ca.unit();
@@ -1492,6 +1627,13 @@ bool GameData::clientUnitMoved(const Avatar & avatar, const ClientMessage & act,
         return false;
     }
 
+    if(!land.isValid())
+    {
+	client.army.remove(*bcr);
+	actions.push_back(AdventureMoves(currentWind, unit, land));
+	return true;
+    }
+
     if(client.army.moveCreature(*bcr, land))
     {
 	actions.push_back(AdventureMoves(currentWind, unit, land));
@@ -1501,14 +1643,121 @@ bool GameData::clientUnitMoved(const Avatar & avatar, const ClientMessage & act,
     return false;
 }
 
+bool GameData::canClaimLand(const RemotePlayer & player, const Land & land)
+{
+    if(!land.isValid() || land.isTowerWinds() || !player.clan.isValid()) return false;
+
+    const LandInfo & target = landInfo(land);
+    const Clan previousOwner = target.clan;
+    if(!previousOwner.isValid() || previousOwner == player.clan) return false;
+    if(player.landClaimPoints(previousOwner) < target.stat.point) return false;
+
+    const bool sharesBorder = std::any_of(target.borders.begin(), target.borders.end(), [&](const Land & border)
+    {
+        return !border.isTowerWinds() && landInfo(border).clan == player.clan;
+    });
+    if(!sharesBorder) return false;
+
+    // A deed cannot hide a creature: all parties, including invisible ones, block a claim.
+    for(const auto & other : gamers)
+    {
+        const BattleParty* party = other.army.findPartyConst(land);
+        if(party && !party->isEmpty()) return false;
+    }
+
+    return true;
+}
+
+Lands GameData::claimableLands(const RemotePlayer & player)
+{
+    Lands result;
+    for(auto landId : lands_all)
+    {
+        const Land land(landId);
+        if(canClaimLand(player, land)) result.push_back(land);
+    }
+    return result;
+}
+
+bool GameData::clientLandClaim(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
+{
+    LocalPlayer & player = playerOfAvatar(avatar);
+    if(gamePart != Menu::AdventurePart || currentWind != player.wind || player.adventurePartDone())
+    {
+	ERROR("land claim outside current turn: " << player.toString());
+	return false;
+    }
+
+    const Land land = static_cast<const ClientLandClaim &>(act).land();
+    if(!canClaimLand(player, land))
+    {
+	ERROR("land claim rejected: " << land.toString());
+	return false;
+    }
+
+    LandInfo & target = landsInfo[land()];
+    const Clan previousOwner = target.clan;
+    const int cost = target.stat.point;
+    if(!player.spendLandClaimPoints(previousOwner, cost)) return false;
+
+    target.clan = player.clan;
+    landClaimJournal.emplace_back(player.avatar, land, previousOwner, cost);
+    actions.push_back(AdventureClaim(currentWind, land, previousOwner, player.clan, cost));
+    return true;
+}
+
+bool GameData::clientAdventureUndo(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
+{
+    LocalPlayer & player = playerOfAvatar(avatar);
+    if(gamePart != Menu::AdventurePart || currentWind != player.wind || player.adventurePartDone())
+    {
+	ERROR("adventure undo outside current turn: " << player.toString());
+	return false;
+    }
+
+    if(adventureSnapshotPlayer != avatar)
+    {
+	ERROR("adventure undo snapshot missing: " << player.toString());
+	return false;
+    }
+
+    while(!landClaimJournal.empty() && landClaimJournal.back().player == avatar)
+    {
+	const LandClaimRecord record = landClaimJournal.back();
+	landClaimJournal.pop_back();
+
+	LandInfo & target = landsInfo[record.land()];
+	const Clan claimedOwner = target.clan;
+	target.clan = record.previousOwner;
+	player.addLandClaimPoints(record.previousOwner, record.cost);
+	actions.push_back(AdventureClaim(currentWind, record.land, claimedOwner,
+	                                 record.previousOwner, record.cost, true));
+    }
+
+    player.army = adventureArmySnapshot;
+    return true;
+}
+
 bool GameData::clientBattleReady(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
 {
     LocalPlayer & player = playerOfAvatar(avatar);
+
+    if(gamePart != Menu::AdventurePart || currentWind != player.wind || player.adventurePartDone())
+    {
+	ERROR("battle ready outside current turn: " << player.toString());
+	return false;
+    }
 
     //auto ca = static_cast<const ClientBattleReady &>(act);
     DEBUG(player.toString());
 
     player.setAdventurePartDone();
+    landClaimJournal.erase(std::remove_if(landClaimJournal.begin(), landClaimJournal.end(), [&](const LandClaimRecord & record)
+    {
+	return record.player == avatar;
+    }), landClaimJournal.end());
+    adventureSnapshotPlayer = Avatar();
+    adventureArmySnapshot.clear();
     return true;
 }
 
@@ -1538,8 +1787,13 @@ bool GameData::adventureBattleAction(const Avatar & avatar, ActionList & actions
 
 	    BattleLegend legend(player.avatar, *it, other.avatar, (defenders ? *defenders : BattleParty()), town, false);
 
-	    // doAttackParty: modify BattleParties
-	    const BattleStrikes strikes = Battle::doAttackParty(*it, town, defenders);
+            // Human battles retain the neutral automatic resolver; AI avatars use their doctrine.
+            const AI::BehaviorProfile attackersProfile = player.isAI() ?
+                AI::behaviorProfile(player) : AI::BehaviorProfile::Balanced;
+            const AI::BehaviorProfile defendersProfile = other.isAI() ?
+                AI::behaviorProfile(other) : AI::BehaviorProfile::Balanced;
+            const BattleStrikes strikes = Battle::doAttackParty(*it, town, defenders,
+                                                                 attackersProfile, defendersProfile);
 
 	    // wins?
 	    if(! town.isAlive())

@@ -23,6 +23,7 @@
 #ifndef _RWNA_GAMEOBJECTS_
 #define _RWNA_GAMEOBJECTS_
 
+#include <array>
 #include <set>
 
 #include "libswe.h"
@@ -509,16 +510,21 @@ public:
 
 struct AffectedSpell : Spell
 {
+    static constexpr int	Permanent = -1;
+
     int				duration;
+    Avatar			source;
 
     AffectedSpell() : duration(0) {}
     AffectedSpell(const Spell &);
     AffectedSpell(const Spell & sp, int duration);
+    AffectedSpell(const Spell & sp, int duration, const Avatar & source);
 
     void			actionReduceDuration(void);
 
     bool			operator== (const Spell & sp) const { return id() == sp(); }
-    bool			isValid(void) const { return 0 < duration; }
+    bool			isPermanent(void) const { return Permanent == duration; }
+    bool			isValid(void) const { return 0 != duration; }
 
     JsonObject			toJsonObject(void) const;
     static AffectedSpell	fromJsonObject(const JsonObject &);
@@ -529,13 +535,14 @@ struct AffectedSpells : std::vector<AffectedSpell>
     AffectedSpells() { reserve(10); }
 
     bool			isAffected(const Spell &) const;
+    bool			isAffected(const Spell &, const Avatar &) const;
 
     int				attack(void) const;
     int				ranger(void) const;
     int				defense(void) const;
     int				loyalty(void) const;
 
-    void			initMahjongPart(void);
+    void			advanceAdventureRound(void);
     void			insert(const AffectedSpell &);
     void			spellAffected(const Spell &);
 
@@ -616,10 +623,11 @@ protected:
 
 public:
     BattleCreature() : buid(-1), selected(false) {  }
-    BattleCreature(const Clan &, const Creature &, const CreatureSkill &);
+    BattleCreature(const Clan &, const Creature &, const CreatureSkill &, int battleUid = -1);
     BattleCreature(const Clan &, const Creature &, int battleUid);
     virtual ~BattleCreature() {}
 
+    bool			operator== (const BattleCreature & other) const { return battleUnit() == other.battleUnit(); }
     bool			operator== (const Creature & cr) const { return cr.id() == id(); }
 
     bool			isSelected(void) const { return selected; }
@@ -629,6 +637,7 @@ public:
     const AffectedSpells &	affectedSpells(void) const { return affected; }
 
     bool			isAffectedSpell(const Spell &) const;
+    bool			canReceiveSpell(const Spell &) const;
 
     int				attack(void) const override;
     int				ranger(void) const override;
@@ -697,6 +706,7 @@ public:
     bool			isPosition(const Land & land) const { return land == position; }
     bool			canJoin(void) const;
     bool			join(const Creature &);
+    bool			join(const BattleCreature &);
     bool			remove(const BattleCreature &);
     void			removeUnloyalty(void);
     int				count(void) const;
@@ -733,12 +743,15 @@ public:
     BattleCreature*		findBattleUnit(int);
     const BattleCreature*	findBattleUnitConst(int) const;
 
-    BattleCreatures		partySelected(const Land &) const;
-    void			partySetAllSelected(const Land &);
-    void			setAllSelected(void);
+	    BattleCreatures		partySelected(const Land &) const;
+	    void			partySetAllSelected(const Land &);
+	    void			setAllSelected(void);
 
-    bool			canMoveCreature(const BattleCreature &, const Land &, const Lands &) const;
-    bool			moveCreature(const BattleCreature &, const Land &);
+	    bool			canGateParty(const Land &, const Land &) const;
+	    bool			canMoveCreature(const BattleCreature &, const Land &, const Lands &) const;
+	    bool			moveCreature(const BattleCreature &, const Land &);
+    std::vector<int>		moveSelectedCreatures(const Land &, const Land &);
+    bool			teleportCreature(const BattleCreature &, const Land &);
     bool			isMaximumSummoning(void) const;
 
     BattleCreatures		toBattleCreatures(void) const;
@@ -748,6 +761,7 @@ public:
     bool			canJoin(const Land &) const;
     bool			join(const Creature &, const Land &);
     void			remove(const BattleCreature &);
+    void			removeUnloyalty(void);
     void			applyInvisibility(void);
     void			shrinkEmpty(void);
     bool			isFullHouse(void) const;
@@ -1015,6 +1029,7 @@ struct WinResults
     int				totalPoints(void) const;
     int				scoreRules(void) const;
     int				totalScore(void) const;
+    static int			scoreMultiplier(int doubles);
 
     int                         baseScore(void) const;
     int                         pairBonus(void) const;
@@ -1062,25 +1077,42 @@ struct Persons : public std::vector<Person>
     Persons(const Person &);
 };
 
+struct LandClaims
+{
+    std::array<int, Clan::Purple + 1> values{};
+
+    int                         points(const Clan &) const;
+    void                        add(const Clan &, int);
+    bool                        spend(const Clan &, int);
+
+    JsonObject                  toJsonObject(void) const;
+    static LandClaims           fromJsonObject(const JsonObject &);
+};
+
 struct RemotePlayer : public Person
 {
     WinRules			rules;
     BattleArmy			army;
     AffectedSpells		affected;
+    LandClaims                 landClaims;
     int				points;
 
     RemotePlayer();
     RemotePlayer(const Person &);
 
     Lands			lands(void) const;
+    int                         landClaimPoints(const Clan & clan) const { return landClaims.points(clan); }
+    void                        addLandClaimPoints(const Clan & clan, int value) { landClaims.add(clan, value); }
+    bool                        spendLandClaimPoints(const Clan & clan, int value) { return landClaims.spend(clan, value); }
     void			initAdventurePart(void);
     bool			isAffectedSpell(const Spell &) const;
+    bool			isAffectedSpell(const Spell &, const Avatar &) const;
     void			affectedSpellActivate(const Spell &);
 
     void			setAdventurePartDone(void);
     bool			adventurePartDone(void) const;
 
-    bool			mahjongApplySpell(const Spell &);
+    bool			mahjongApplySpell(const Spell &, const Avatar & source = Avatar());
     BattleTargets		toBattleTargets(void) const;
 
     JsonObject			toJsonObject(void) const;

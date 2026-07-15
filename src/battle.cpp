@@ -1,302 +1,318 @@
 /***************************************************************************
  *   Copyright (C) 2020 by RuneWarsNA team <runewars.newage@gmail.com>     *
  *                                                                         *
- *   Part of the RuneWars: NewAge engine:                                  *
- *   https://github.com/AndreyBarmaley/runewars.newage                     *
+ *   Part of the RuneWars: NewAge engine.                                  *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
  *   the Free Software Foundation; either version 3 of the License, or     *
  *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <random>
 #include <algorithm>
 
+#include "aibattle.h"
 #include "battle.h"
 
-namespace Battle
+namespace
 {
-    int			calculateDamage(const BattleUnit & skill1, const BattleUnit & skill2, int bonus);
-    BattleStrike	applyRangerAttack(const BattleUnit & skill, BattleCreature & target);
-    BattleStrikes	rangersAttack(const BattleCreatures & rangers, BattleParty & enemy);
-    BattleStrikes	applyMeleeAttack(BattleUnit & skill1, BattleUnit & skill2, int bonus);
-    BattleStrikes	meleeAttack(BattleUnit & skill, BattleParty & enemy);
-    BattleStrikes	meleesAttack(BattleCreatures attackers, BattleParty & enemy);
-    BattleStrikes	doTargetStrike(BattleCreature & bcr, const BattleCreatures & party, BattleCreature & target);
-}
+    using RangedPlan = std::vector<std::pair<const BattleUnit*, BattleCreature*>>;
 
-BattleStrike Battle::applyRangerAttack(const BattleUnit & skill, BattleCreature & target)
-{
-    int damage = skill.ranger();
-
-    if(target.isAffectedSpell(Spell::ForceShield))
+    BattleCreature* partyLeader(BattleParty & party, AI::BehaviorProfile profile, bool opening)
     {
-	VERBOSE("Affected spell: Force Shield!");
-	damage -= 1;
+        const std::vector<int> initiative =
+            AI::chooseBattleInitiative(party, AI::BattleAttackMode::Melee, profile, opening);
+        return initiative.empty() ? nullptr : party.findBattleUnit(initiative.front());
     }
 
-    target.applyDamage(damage);
-
-    DEBUG("attacker: " << skill.name() << ", " << "do damage: " << damage << ", " <<
-	"target: " << target.name() << ", " << "loyalty: " << target.loyalty() << ", " <<
-	"status: " << (target.isAlive() ? "is alive" : (target.isTown() ? " is captured" : " is dead")));
-
-    return BattleStrike(skill, skill.ranger(), target, BattleStrike::Ranger);
-}
-
-BattleStrikes Battle::rangersAttack(const BattleCreatures & rangers, BattleParty & enemy)
-{
-    BattleStrikes res;
-
-    std::random_device rd;
-    std::mt19937 mtg(rd());
-
-    for(auto & bcr : rangers)
+    int supportBonus(const BattleParty & party)
     {
-	BattleCreatures bcrs = enemy.toBattleCreatures(Specials() << Speciality::IgnoreMissiles, false);
-
-        std::shuffle(bcrs.begin(), bcrs.end(), mtg);
-
-	auto tgt = bcrs.size() ? bcrs.front() : nullptr;
-	if(bcr && tgt) res << applyRangerAttack(*bcr, *tgt);
+        return std::max(0, party.count() - 1);
     }
 
-    return res;
-}
-
-int Battle::calculateDamage(const BattleUnit & skill1, const BattleUnit & skill2, int bonus)
-{
-    int mighty_blow = 0;
-
-    if(skill1.haveSpeciality(Speciality::MightyBlow))
+    RangedPlan makeRangedPlan(const BattleParty & shooters, BattleParty & targets,
+                              AI::BehaviorProfile profile)
     {
-	SpecialityMightyBlow blow;
-
-	if(blow.chance() > Tools::rand(1, 100))
-	{
-	    VERBOSE("Speciality: " << "Mighty Blow!");
-	    mighty_blow = blow.strength();
-	}
-    }
-
-    int damage = skill1.attack() + mighty_blow - skill2.defense();
-    if(0 < bonus) damage += bonus;
-
-    if(damage <= 0)
-    {
-	int rnd = Tools::rand(1, 100);
-
-	switch(std::abs(damage))
+        RangedPlan plan;
+        const AI::BattleRoundPlan decisions = AI::chooseRangedBattlePlan(shooters, targets, profile);
+        for(const AI::BattleAttackPlan & decision : decisions.attacks)
         {
-	    // 50%
-	    case 0:	damage = 50 >= rnd ? 1 : 0; break;
-	    // 25%
-            case 1:	damage = 25 >= rnd ? 1 : 0; break;
-	    // 12%
-            case 2:	damage = 12 >= rnd ? 1 : 0; break;
-	    // 6%
-	    case 3:	damage = 6  >= rnd ? 1 : 0; break;
-	    // 3%
-	    case 4:	damage = 3  >= rnd ? 1 : 0; break;
-	    // 1%
-	    default:	damage = 55 == rnd ? 1 : 0; break;
-	}
+            const BattleCreature* shooter = shooters.findBattleUnitConst(decision.attacker);
+            BattleCreature* target = decision.targets.empty() ? nullptr :
+                                     targets.findBattleUnit(decision.targets.front());
+            if(shooter && target) plan.emplace_back(shooter, target);
+        }
+        return plan;
     }
 
-    return damage;
+    int calculateDamage(const BattleUnit & attacker, const BattleUnit & defender, int modifier,
+                        const Battle::RandomRoll & randomRoll, bool logEffects)
+    {
+        int mightyBlow = 0;
+        bool mightyBlowHit = false;
+
+        if(attacker.haveSpeciality(Speciality::MightyBlow))
+        {
+            const SpecialityMightyBlow blow;
+            mightyBlowHit = blow.chance() >= randomRoll(1, 100);
+            if(mightyBlowHit)
+            {
+                if(logEffects) VERBOSE("Speciality: Mighty Blow!");
+                mightyBlow = blow.strength();
+            }
+        }
+
+        int damage = attacker.attack() + mightyBlow + modifier - defender.defense();
+        if(0 < damage) return damage;
+        if(mightyBlowHit) return 1;
+
+        return Battle::meleeHitChance(attacker.attack() + modifier, defender.defense()) >=
+               randomRoll(1, 100) ? 1 : 0;
+    }
+
+    BattleStrike applyRangedAttack(const BattleUnit & attacker, BattleCreature & target,
+                                   bool logEffects)
+    {
+        int reduction = 0;
+        if(target.isAffectedSpell(Spell::ForceShield))
+        {
+            if(logEffects) VERBOSE("Affected spell: Force Shield!");
+            reduction = GameData::spellInfo(Spell::ForceShield).value;
+        }
+
+        const int damage = Battle::rangedDamage(attacker.ranger(), reduction);
+        target.applyDamage(damage);
+        return BattleStrike(attacker, damage, target, BattleStrike::Ranger);
+    }
+
+    BattleStrikes applyRangedPlan(const RangedPlan & plan, bool logEffects)
+    {
+        BattleStrikes strikes;
+        for(const auto & attack : plan)
+            strikes << applyRangedAttack(*attack.first, *attack.second, logEffects);
+        return strikes;
+    }
+
+    BattleStrikes applyMeleeAttack(BattleUnit & attacker, BattleUnit & target, int modifier,
+                                   const Battle::RandomRoll & randomRoll, bool logEffects)
+    {
+        BattleStrikes strikes;
+        const int damage = calculateDamage(attacker, target, modifier, randomRoll, logEffects);
+        target.applyDamage(damage);
+        strikes << BattleStrike(attacker, damage, target, BattleStrike::Melee);
+
+        if(!attacker.isTown() && target.haveSpeciality(Speciality::FireShield))
+        {
+            if(logEffects) VERBOSE("Speciality: Fire Shield!");
+            attacker.applyDamage(1);
+            strikes << BattleStrike(target, 1, attacker, BattleStrike::FireShield);
+        }
+        return strikes;
+    }
+
+    BattleStrikes strikeParty(BattleParty & allies, BattleParty & enemies,
+                              AI::BehaviorProfile profile, const Battle::RandomRoll & randomRoll,
+                              bool logEffects)
+    {
+        BattleStrikes strikes;
+        const AI::BattleAttackPlan plan = AI::chooseMeleeBattlePlan(allies, enemies, profile);
+        BattleCreature* attacker = plan.isValid() ? allies.findBattleUnit(plan.attacker) : nullptr;
+        if(!attacker) return strikes;
+
+        for(int unit : plan.targets)
+        {
+            if(!attacker->isAlive()) break;
+            BattleCreature* target = enemies.findBattleUnit(unit);
+            if(!target || !target->isAlive()) continue;
+            const int modifier = supportBonus(allies) - Battle::mergeDefenseBonus(enemies, *target);
+            strikes << applyMeleeAttack(*attacker, *target, modifier, randomRoll, logEffects);
+        }
+        return strikes;
+    }
+
+    BattleStrikes strikeTown(BattleParty & attackers, BattleTown & town,
+                             AI::BehaviorProfile profile, const Battle::RandomRoll & randomRoll,
+                             bool logEffects)
+    {
+        BattleStrikes strikes;
+        const AI::BattleAttackPlan plan = AI::chooseTownBattlePlan(attackers, town, profile);
+        BattleCreature* attacker = plan.isValid() ? attackers.findBattleUnit(plan.attacker) : nullptr;
+        if(attacker)
+            strikes << applyMeleeAttack(*attacker, town, supportBonus(attackers),
+                                        randomRoll, logEffects);
+        return strikes;
+    }
+
+    BattleStrikes strikeFromTown(BattleTown & town, BattleParty & attackers,
+                                 AI::BehaviorProfile profile, bool ranged,
+                                 const Battle::RandomRoll & randomRoll, bool logEffects)
+    {
+        BattleStrikes strikes;
+        const AI::BattleAttackMode mode = ranged ? AI::BattleAttackMode::Ranged :
+                                                   AI::BattleAttackMode::Melee;
+        const int targetId = AI::chooseBattleTarget(town, attackers, mode, profile);
+        BattleCreature* target = attackers.findBattleUnit(targetId);
+        if(!target) return strikes;
+
+        if(ranged)
+            strikes << applyRangedAttack(town, *target, logEffects);
+        else
+            strikes << applyMeleeAttack(town, *target,
+                                        -Battle::mergeDefenseBonus(attackers, *target),
+                                        randomRoll, logEffects);
+        return strikes;
+    }
+
+    BattleCreature* hellBlastCaster(BattleParty & party)
+    {
+        BattleCreatures casters = party.toBattleCreatures(Specials() << Speciality::CastHellblast, true);
+        return casters.empty() ? nullptr : casters.front();
+    }
+
+    BattleStrikes applyHellBlast(BattleCreature* caster, BattleParty & targets)
+    {
+        BattleStrikes strikes;
+        if(!caster) return strikes;
+
+        const int damage = std::max(1, std::abs(GameData::spellInfo(Spell::HellBlast).effect.loyalty));
+        for(auto target : targets.toBattleCreatures())
+        {
+            target->applyDamage(damage);
+            strikes << BattleStrike(*caster, damage, *target, BattleStrike::Melee);
+        }
+        return strikes;
+    }
 }
 
-BattleStrikes Battle::applyMeleeAttack(BattleUnit & skill1, BattleUnit & skill2, int bonus)
+int Battle::rangedDamage(int strength, int reduction)
 {
-    BattleStrikes res;
-
-    int damage = calculateDamage(skill1, skill2, bonus);
-    skill2.applyDamage(damage);
-
-    DEBUG("attacker: " << skill1.name() << ", " << "do damage: " << damage << ", " << "bonus: " << bonus << ", " <<
-	"target: " << skill2.name() << ", " << "loyalty: " << skill2.loyalty() << ", " <<
-	"status: " << (skill2.isAlive() ? "is alive" : (skill2.isTown() ? "is captured" : "is dead")));
-
-
-    res << BattleStrike(skill1, damage, skill2, BattleStrike::Melee);
-
-    if(! skill1.isTown() && skill2.haveSpeciality(Speciality::FireShield))
-    {
-	VERBOSE("Speciality: " << "Fire Shield!");
-
-	damage = 1;
-	skill1.applyDamage(damage);
-
-	DEBUG("attacker: " << skill2.name() << ", " << "do damage: " << damage << ", " <<
-	    "target: " << skill1.name() << ", " << "loyalty: " << skill1.loyalty() << ", " <<
-	    "status: " << (skill1.isAlive() ? "is alive" : "is dead"));
-
-	res << BattleStrike(skill2, damage, skill1, BattleStrike::FireShield);
-    }
-
-    return res;
+    return std::max(0, strength - std::max(0, reduction));
 }
 
-BattleStrikes Battle::meleeAttack(BattleUnit & skill, BattleParty & enemy)
+int Battle::meleeHitChance(int attack, int defense)
 {
-    BattleStrikes res;
-    BattleCreatures bcrs = enemy.toBattleCreatures();
-
-    std::random_device rd;
-    std::mt19937 mtg(rd());
-    std::shuffle(bcrs.begin(), bcrs.end(), mtg);
-
-    auto target = bcrs.size() ? bcrs.front() : nullptr;
-
-    if(target && target->isAlive() && skill.isAlive())
-    {
-	res << applyMeleeAttack(skill, *target, 0);
-
-	if(target->isAlive())
-	    res << applyMeleeAttack(*target, skill, 0);
-    }
-
-    return res;
+    if(attack > defense) return 100;
+    const int difference = std::max(0, defense - attack);
+    return std::max(1, 100 >> (difference + 1));
 }
 
-BattleStrikes Battle::doTargetStrike(BattleCreature & bcr, const BattleCreatures & party, BattleCreature & target)
+int Battle::mergeDefenseBonus(const BattleParty & party, const BattleCreature & target)
 {
-    BattleStrikes res;
+    if(!target.haveSpeciality(Speciality::Merge)) return 0;
 
-    auto it = std::find(party.begin(), party.end(), & bcr);
+    int matching = 0;
+    for(auto creature : party.toBattleCreatures())
+        if(creature->id() == target.id() && creature->haveSpeciality(Speciality::Merge)) matching++;
 
-    if(it != party.end())
-    {
-	// bonus: see comment below
-	int bonus = party.size() - std::distance(party.begin(), it) - 1;
-	res << applyMeleeAttack(bcr, target, bonus);
-    }
-
-    return res;
-}
-
-BattleStrikes Battle::meleesAttack(BattleCreatures attackers, BattleParty & enemy)
-{
-    BattleStrikes res;
-    std::random_device rd;
-    std::mt19937 mtg(rd());
-
-    for(auto & bcr : attackers)
-    {
-	BattleCreatures bcrs = enemy.toBattleCreatures();
-        std::shuffle(bcrs.begin(), bcrs.end(), mtg);
-
-	auto tgt = bcrs.size() ? bcrs.front() : nullptr;
-	if(bcr && tgt)
-	{
-	    if(tgt->haveSpeciality(Speciality::FirstStrike))
-	    {
-		VERBOSE("Speciality: " << "First Strike!");
-		res << doTargetStrike(*tgt, bcrs, *bcr);
-
-		if(bcr->isAlive())
-		    res << doTargetStrike(*bcr, attackers, *tgt);
-	    }
-	    else
-	    {
-		res << doTargetStrike(*bcr, attackers, *tgt);
-
-		if(tgt->isAlive())
-		    res << doTargetStrike(*tgt, bcrs, *bcr);
-	    }
-	}
-    }
-
-    return res;
+    return std::max(0, matching - 1);
 }
 
 BattleStrikes Battle::doAttackParty(BattleParty & attackers, BattleTown & town, BattleParty* defenders)
 {
-    BattleStrikes res;
+    return doAttackParty(attackers, town, defenders, AI::BehaviorProfile::Balanced,
+                         AI::BehaviorProfile::Balanced);
+}
 
-    /*
-	The first round of combat is ranged combat.
-	Ranged combat is simultaneous, and includes the territory ranged attack.
-	The territory does ranged damage to one of the enemy creatures, and all creatures (attacking and defending)
-	with a ranged attack rating of one or better shoot missiles at the enemy.
-	Damage is then resolved for this round.
-	Territories and creatures that ignore missiles are not targeted by ranged attacks.
-	Apart from this, targets are chosen randomly by each creature.
-	Target creature loyalty is reduced by the ranged attack strength of the opponent, with no defensive adjustment.
-    */
-
-    if(town.isRanger())
+BattleStrikes Battle::doAttackParty(BattleParty & attackers, BattleTown & town, BattleParty* defenders,
+                                    AI::BehaviorProfile attackersProfile,
+                                    AI::BehaviorProfile defendersProfile)
+{
+    const RandomRoll randomRoll = [](int minimum, int maximum)
     {
-	BattleCreatures bcrs = attackers.toBattleCreatures(Specials() << Speciality::IgnoreMissiles, false);
+        return Tools::rand(minimum, maximum);
+    };
+    return doAttackParty(attackers, town, defenders, attackersProfile, defendersProfile,
+                         randomRoll, true);
+}
 
-        std::random_device rd;
-        std::mt19937 mtg(rd());
-        std::shuffle(bcrs.begin(), bcrs.end(), mtg);
+BattleStrikes Battle::doAttackParty(BattleParty & attackers, BattleTown & town, BattleParty* defenders,
+                                    AI::BehaviorProfile attackersProfile,
+                                    AI::BehaviorProfile defendersProfile,
+                                    const RandomRoll & randomRoll, bool logEffects)
+{
+    BattleStrikes strikes;
 
-	auto target = bcrs.size() ? bcrs.front() : nullptr;
-
-	if(target)
-	{
-	    res << applyRangerAttack(town, *target);
-	    attackers.removeUnloyalty();
-	}
-    }
-
+    // Hellblast is simultaneous at combat entry.
     if(defenders)
     {
-	BattleCreatures bcrs1 = attackers.toBattleCreatures(Specials() << Speciality::RangerAttack, true);
-	res << rangersAttack(bcrs1, *defenders);
-	defenders->removeUnloyalty();
-
-	BattleCreatures bcrs2 = defenders->toBattleCreatures(Specials() << Speciality::RangerAttack, true);
-	res << rangersAttack(bcrs2, attackers);
-	attackers.removeUnloyalty();
+        BattleCreature* attackerCaster = hellBlastCaster(attackers);
+        BattleCreature* defenderCaster = hellBlastCaster(*defenders);
+        strikes << applyHellBlast(attackerCaster, *defenders);
+        strikes << applyHellBlast(defenderCaster, attackers);
+        attackers.removeUnloyalty();
+        defenders->removeUnloyalty();
     }
 
-    /*
-	After the ranged combat round, melee combat commences.
-	In melee combat, the team that holds the territory goes first.
-	The first battle pits the leading creatures of the two parties.
-	Melee attack value of a creature is raised by one for each additional creature in the party
-	behind the one currently attacking.
-	(Thus, a party of maximum size, 3 creatures, confers a bonus of 2 to the melee value of the leading creature.)
-	There is no such bonus to the defense or loyalty values, except for parties containing 2 or more creatures
-	with the merge special ability.
-        In combat, if the melee strength of a combatant is less than or equal to the defense of the creature
-	it is in combat with, the following table applies:
+    BattleCreature* initialLeader = partyLeader(attackers, attackersProfile, true);
+    const bool attackersFirst = initialLeader && initialLeader->haveSpeciality(Speciality::FirstStrike);
 
-        Defense - Melee                 % chance to hit
-                0                               50
-                1                               25
-                2                               12
-                3                                6
-                n                             1/(n+1)
-*/
+    // Territory missiles resolve before creature missiles.
+    if(town.isRanger())
+    {
+        strikes << strikeFromTown(town, attackers, defendersProfile, true,
+                                  randomRoll, logEffects);
+        attackers.removeUnloyalty();
+    }
+
+    // Creature missile attacks are planned before any damage is applied.
+    if(defenders && !attackersFirst && attackers.count() && defenders->count())
+    {
+        const RangedPlan attackerPlan = makeRangedPlan(attackers, *defenders, attackersProfile);
+        const RangedPlan defenderPlan = makeRangedPlan(*defenders, attackers, defendersProfile);
+        strikes << applyRangedPlan(attackerPlan, logEffects);
+        strikes << applyRangedPlan(defenderPlan, logEffects);
+        attackers.removeUnloyalty();
+        defenders->removeUnloyalty();
+    }
+
     while(attackers.count() && town.isAlive())
     {
-	if(defenders && defenders->count())
-	{
-	    res << meleesAttack(defenders->toBattleCreatures(), attackers);
-	    attackers.removeUnloyalty();
-	    defenders->removeUnloyalty();
-	}
-	else
-	{
-	    res << meleeAttack(town, attackers);
-	    attackers.removeUnloyalty();
-	}
+        if(defenders && defenders->count())
+        {
+            if(attackersFirst)
+            {
+                strikes << strikeParty(attackers, *defenders, attackersProfile,
+                                       randomRoll, logEffects);
+                attackers.removeUnloyalty();
+                defenders->removeUnloyalty();
+                if(attackers.count() && defenders->count())
+                    strikes << strikeParty(*defenders, attackers, defendersProfile,
+                                           randomRoll, logEffects);
+            }
+            else
+            {
+                strikes << strikeParty(*defenders, attackers, defendersProfile,
+                                       randomRoll, logEffects);
+                attackers.removeUnloyalty();
+                defenders->removeUnloyalty();
+                if(attackers.count() && defenders->count())
+                    strikes << strikeParty(attackers, *defenders, attackersProfile,
+                                           randomRoll, logEffects);
+            }
+
+            attackers.removeUnloyalty();
+            defenders->removeUnloyalty();
+            continue;
+        }
+
+        if(attackersFirst)
+        {
+            strikes << strikeTown(attackers, town, attackersProfile, randomRoll, logEffects);
+            attackers.removeUnloyalty();
+            if(attackers.count() && town.isAlive())
+                strikes << strikeFromTown(town, attackers, defendersProfile, false,
+                                          randomRoll, logEffects);
+        }
+        else
+        {
+            strikes << strikeFromTown(town, attackers, defendersProfile, false,
+                                      randomRoll, logEffects);
+            attackers.removeUnloyalty();
+            if(attackers.count() && town.isAlive())
+                strikes << strikeTown(attackers, town, attackersProfile, randomRoll, logEffects);
+        }
+        attackers.removeUnloyalty();
     }
 
-    return res;
+    return strikes;
 }

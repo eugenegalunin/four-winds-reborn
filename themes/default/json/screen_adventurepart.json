@@ -13,7 +13,7 @@
 			{ "id": "but_close", "sprites": [ "but_close1", "but_close2" ], "position": [ 926, 710 ] },
 			{ "id": "but_cancel", "sprites": [ "but_cancel1", "but_cancel2" ], "position": [ 926, 710 ] },
 			{ "id": "but_done", "sprites": [ "but_done1", "but_done2" ], "position": [ 926, 710 ] },
-			{ "id": "but_chat", "sprites": [ "but_chat1", "but_chat2" ], "position": [ 824, 588 ] },
+			{ "id": "but_order", "sprites": [ "but_order1", "but_order2" ], "position": [ 824, 588 ], "tooltip": "Order selected creatures" },
 			{ "id": "but_dismiss", "sprites": [ "but_dismiss1", "but_dismiss2" ], "position": [ 926, 588 ] },
 			{ "id": "but_info", "sprites": [ "but_info1", "but_info2" ], "position": [ 824, 648 ] },
 			{ "id": "but_undo", "sprites": [ "but_undo1", "but_undo2" ], "position": [ 926, 648 ] },
@@ -107,6 +107,12 @@
     "area:icon_portrait": [ 826, 260, 140, 140 ],
     "area:spell_affected1": [ 782, 260, 28, 140 ],
     "area:spell_affected2": [ 982, 260, 28, 140 ],
+
+    "battle:forecast": {
+        "textinfo:title": { "position": [ 898, 420 ], "font": "dejavus22", "color": "#efe4ae", "align": "center" },
+        "textinfo:capture": { "position": [ 898, 454 ], "font": "dejavus22", "color": "OrangeRed", "align": "center" },
+        "textinfo:survival": { "position": [ 898, 488 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" }
+    },
 
     "sprite:town_tower_winds": { "id": "town0", "type": "file", "file": "map.png", "crop": [984, 918, 24, 50], "colorkey": "#ffd2d2" },
     "sprite:combat_fight": { "id": "combat_fight", "type": "file", "file": "map.png", "crop": [566, 975, 80, 46], "colorkey": "#ffd2d2" },

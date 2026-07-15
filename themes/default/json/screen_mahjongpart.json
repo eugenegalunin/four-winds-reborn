@@ -34,7 +34,7 @@
     "affected:number": { "sprite": "affected_number", "info": "affected spell: draw number", "offset": [ 10, 678 ] },
     "affected:discard": { "sprite": "affected_discard", "info": "affected spell: random discard", "offset": [ 42, 720 ] },
     "affected:silence": { "sprite": "affected_silence", "info": "affected spell: silence", "offset": [ 42, 678 ] },
-    "affected:scry": { "sprite": "affected_scry", "info": "affected spell: draw scry runes", "offset": [ 10, 720 ] },
+    "affected:scry": { "sprite": "affected_scry", "info": "affected spell: scry runes, hand revealed", "offset": [ 10, 720 ] },
 
     "points:init": 250,
     "points:game": 50,

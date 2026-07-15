@@ -1,6 +1,7 @@
 [
 	{
 	    "id": "orachi",
+	    "ai_profile": "aggressive",
 	    "name": "Orachi",
 	    "clans": [ "red", "purple" ],
 	    "dignity": "Lord of the Dead",
@@ -12,6 +13,7 @@
 	},
 	{
 	    "id": "lakkho",
+	    "ai_profile": "economic",
 	    "name": "Lakkho",
 	    "clans": [ "yellow" ],
 	    "dignity": "High Lord Templar",
@@ -23,6 +25,7 @@
 	},
 	{
 	    "id": "dayla",
+	    "ai_profile": "control",
 	    "name": "Dayla",
 	    "clans": [ "purple" ],
 	    "dignity": "Sea Princess",
@@ -30,22 +33,24 @@
 	    "portrait": "port3",
 	    "spells": [ "smoke", "mystical_fountain", "blind_ambition", "brilliant_lights", "teleport", "dispel_magic", "lightning_bolt", "healing" ],
 	    "creatures": [ "sand_wraith", "stone_golem", "learra_siren", "thunder_bird", "ki_lin", "tornado", "white_dragon", "water_elemental" ],
-	    "description": "There is a point in the development of a powerful wizard when a teacher realizes his pupil is truly gifted. %1, a disciple of Kierac, never attained this peak. Kierac recognized her potential early, and acknowledges her as a competent, if unspectacular wizard, never to be seen within the confines of the Mage Tower for a rune war though.	No one can pinpoint the moment when she became a legitimate contender within the marz wizard hierarchy to be their preferred rune war mage. Her best quality seems to be the fact that she is constantly underestimated. Her tactics and spells are unspectacular for the most part, but in the end she always delivers a very strong impression. Being full blooded marz means that she is a dual breather, and fully amphibious. Being underwater gives her lots of freedom. The entire island is littered with channels and rivers so it is easy for her to get around quietly and secretly. Her stealth rivals that of Kierac himself, though this is a very little known fact."
+	    "description": "There is a point in the development of a powerful wizard when a teacher realizes his pupil is truly gifted. %1, a disciple of Kierac, never attained this peak. Kierac recognized her potential early, and acknowledges her as a competent, if unspectacular wizard, never to be seen within the confines of the Mage Tower for a rune war though. No one can pinpoint the moment when she became a legitimate contender within the marz wizard hierarchy to be their preferred rune war mage. Her best quality seems to be the fact that she is constantly underestimated. Her tactics and spells are unspectacular for the most part, but in the end she always delivers a very strong impression. Being full blooded marz means that she is a dual breather, and fully amphibious. Being underwater gives her lots of freedom. The entire island is littered with channels and rivers so it is easy for her to get around quietly and secretly. Her stealth rivals that of Kierac himself, though this is a very little known fact."
 	},
 	{
 	    "id": "ziag",
+	    "ai_profile": "balanced",
 	    "name": "Ziag",
 	    "ability": "monacle",
 	    "clans": [ "aqua" ],
 	    "dignity": "The Tactician",
 	    "image": "char4",
 	    "portrait": "port4",
-	    "spells": [ "smoke", "demonic_compulsion", "mass_panic", "paralyze", "reduction", "battle_fury", "guidance", "force_shield", "dust_cloud", "heroism", "mystical_fountain", "blind_ambition", "brilliant_lights", "magical_aura", "teleport", "dispel_magic", "lightning_bolt", "healing" ],
+	    "spells": [ "smoke", "demonic_compulsion", "mass_panic", "paralyze", "reduction", "battle_fury", "guidance", "force_shield", "dust_cloud", "heroism", "mystical_fountain", "blind_ambition", "brilliant_lights", "magical_aura", "teleport", "mass_dispel", "dispel_magic", "lightning_bolt", "healing" ],
 	    "creatures": [ "durlock", "kilor_celsbane", "sand_wraith", "chameleon" ],
 	    "description": "According to %1, conditions for his victory are extremely ripe. His clan has become somewhat negligible in the eyes the other races due to the failure of past leaders to achieve success in previous Rune Wars. %1 is extremely determined to surprise the other wizards at the next competition. He has learned from past failure and has cited self betterment as the only possible course of action that will undo what has been done to his sorry nation. %1 has traveled the four corners of the Isle in order to obtain delicate magical information to quench his thirst for victory. Most of his magical essence is by choice self taught, having decided not to take on a mentor because of the pathetic pool of past leaders and wizards. %1 is very much in touch with the tides of magic which wash within his soul. He has learned to tap the innate magical nature of his clansfolk. Through intense magical study, %1 has discovered a way to harness the magical energy of his peoples desires. He will use this as a flagship of power to exact revenge over all the nations which call him weak. There is a distinct property of war which %1 holds in high regard which may make him a potent foe in the next Rune War competition. %1 is a tactical genius and through intense study, thought and magic, %1 has become a master of tactical application. %1 has trained himself to sort and apply strategy with calculating speed. He has repeated his training methods so often that it has become instinct for him to adapt to different scenarios effectively. %1 prides himself on lightning quick thought, and will definitely outclass his opponents in this area of cerebral battle. He is able to see all invisible creatures with his controversial monocle. As well, all of his creatures are invisible. The nature of %1's magic is inherently versatile. Although the focus of his summoning is based in the realm of skulls, he utilizes all areas of tactical spell casting, enchanting his creatures with a full complement of supplemental spells. %1 is never seen hoarding or saving the power that may come his way during a competition. He is constantly expending his power attempting to bolster his army with the various spells he has at his command. %1 is a very flashy fighter who relies on speed and finesse rather than pure power. He does not allow himself to be overwhelmed or overmatched. His intense grasp of enchantment magic demonstrates this. %1's crusade for knowledge has certainly raised the hopes of his people. He can feel their excitement as the magical energies flow through his blood. %1's ability to harness the hopes of his nation will make him a match for all wizards, especially those who regard the Iz as nothing more than a petty annoyance."
 	},
 	{
 	    "id": "niana",
+	    "ai_profile": "aggressive",
 	    "name": "Niana",
 	    "ability": "catasrophic",
 	    "clans": [ "yellow", "aqua" ],
@@ -58,6 +63,7 @@
 	},
 	{
 	    "id": "kierac",
+	    "ai_profile": "economic",
 	    "name": "Kierac",
 	    "clans": [ "aqua", "purple" ],
 	    "dignity": "The Shapeshifter",
@@ -69,6 +75,7 @@
 	},
 	{
 	    "id": "logun",
+	    "ai_profile": "control",
 	    "name": "Logun",
 	    "ability": "bard",
 	    "clans": [ "red", "yellow", "aqua", "purple" ],
@@ -81,6 +88,7 @@
 	},
 	{
 	    "id": "nucrus",
+	    "ai_profile": "economic",
 	    "name": "Nucrus",
 	    "ability": "luck",
 	    "clans": [ "red" ],
@@ -93,18 +101,20 @@
 	},
 	{
 	    "id": "javed",
+	    "ai_profile": "control",
 	    "name": "Javed",
 	    "ability": "telepath",
 	    "clans": [ "red", "yellow" ],
 	    "dignity": "Master of the Skies",
 	    "image": "char9",
 	    "portrait": "port9",
-	    "spells": [ "paralyze", "force_shield", "dust_cloud", "heroism", "dispel_magic", "lightning_bolt", "healing" ],
+	    "spells": [ "paralyze", "force_shield", "dust_cloud", "heroism", "mass_dispel", "dispel_magic", "lightning_bolt", "healing" ],
 	    "creatures": [ "wraith", "thunder_bird", "ki_lin", "air_elemental", "griffon" ],
 	    "description": "%1's affiliation to a clan is torn due to his lack of a true birthright. He is born of native persuasion, however, he shares the blood of two races. %1's mother was a Maithan Elder and his father was a dedicated Karthan Crusader, making %1 the offspring of two high ranking individuals of conflicting races. While %1 received the favor of both races, sharp Maithan intellect and intense Karthan dedication, he became a source of great conflict. He was an incredible specimen, bred for wizardry and participation in coming Rune Wars. The leaders of each of his clans recognized this and as a result began vying for control of him. %1 left his home, a neutral township between the two clan regions, to seek peace and to concentrate on summoning and enchantment. By putting distance between himself and the clans, %1 forced the leaders to take action in hopes of resolving this issue. It was thought by each clan that if he were to have only one living parent then %1 would become partisan to the clan of the survivor. The Maithans and Karthans agreed to pit the two against each other in a mock Rune War, with the loser to be put to death.. %1, still away in training, did not learn of this event and continued his studies. His mother and father decided it their way. They poisoned themselves and ended this horrible conflict in tragedy. To this day it has been kept secret to %1 and the two nations have resolved to fairly commission %1 when the Rune War comes. %1's magical aura was shaped when he left his home. He sought refuge in the mountains where he became one with the crisp mountain air. He dipped into the magic of the air and learned to harness and control the wonders contained within it. Therefore, without knowledge of a distinct realm, all his summonings are related to flight and the winds. %1 became the self taught master of the air, able to call upon such mystical beings as the Ki-Lin, Griffon, and Air Elemental. His supplemental magic was shaped from a genetic trait given to him by his father. The Karthan dedication to the sword was strong within him so %1 focused on it, allowing it to bubble within him, creating the substance for his enchantments. It is not known as to which clan %1 will be representing in the coming Rune War. His ignorance towards the fate of his parents protects his relationship with his two native clans. Until %1 discovers the truth he will remain loyal to these clans, having to decide which one he will unite with. If %1 is to learn of the demise of his parents, no one knows what will come of the rage that will boil inside him."
 	},
 	{
 	    "id": "random",
+	    "ai_profile": "balanced",
 	    "name": "Random",
 	    "clans": [ "red", "yellow", "aqua", "purple" ],
 	    "image": "char0",

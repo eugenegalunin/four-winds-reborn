@@ -27,6 +27,7 @@
 #include <forward_list>
 #include <random>
 #include <algorithm>
+#include <utility>
 
 #include "gamedata.h"
 
@@ -260,8 +261,8 @@ Spell Speciality::toSpell(void) const
 	case CastDrawSword:	return Spell::DrawSword;
 	case CastDrawSkull:	return Spell::DrawSkull;
 	case CastRandomDiscard:	return Spell::RandomDiscard;
-	case CastSilence:	return Spell::ScryRunes;
-	case CastScryRunes:	return Spell::Silence;
+	case CastSilence:	return Spell::Silence;
+	case CastScryRunes:	return Spell::ScryRunes;
 	case CastManaFog:	return Spell::ManaFog;
 	default: break;
     }
@@ -1413,12 +1414,12 @@ void CreatureSkill::initAdventurePart(const Ability & ability, const Specials & 
     	stat4 += 2;
     }
 
-    // regeneration speciality: +1 loyalty restore
+    // Regeneration restores the creature completely at the start of the map phase.
     const Speciality specialityRegeneration(Speciality::Regeneration);
     if(specials.check(specialityRegeneration) && stat4.current() < stat4.base())
     {
 	VERBOSE("Speciality: " << specialityRegeneration.toString());
-    	stat4 += 1;
+	stat4.reset();
     }
 
     // devotion speciality: +2 loyalty restore
@@ -1543,9 +1544,15 @@ AffectedSpell::AffectedSpell(const Spell & sp) : Spell(sp), duration(0)
 {
     const SpellInfo & si = GameData::spellInfo(sp);
     duration = si.duration();
+    if(si.persistent && 0 == duration) duration = Permanent;
 }
 
 AffectedSpell::AffectedSpell(const Spell & sp, int val) : Spell(sp), duration(val)
+{
+}
+
+AffectedSpell::AffectedSpell(const Spell & sp, int val, const Avatar & caster)
+    : Spell(sp), duration(val), source(caster)
 {
 }
 
@@ -1560,6 +1567,7 @@ JsonObject AffectedSpell::toJsonObject(void) const
     JsonObject jo;
     jo.addString("spell", Spell::toString());
     jo.addInteger("duration", duration);
+    if(source.isValid()) jo.addString("source", source.toString());
     return jo;
 }
 
@@ -1567,8 +1575,16 @@ AffectedSpell AffectedSpell::fromJsonObject(const JsonObject & jo)
 {
     Spell spell(jo.getString("spell", "none"));
     int val = jo.getInteger("duration", 0);
+    Avatar source(jo.getString("source", "none"));
 
-    return AffectedSpell(spell, val);
+    // Older saves encoded permanent enchantments as duration 0.
+    if(0 == val)
+    {
+	const SpellInfo & info = GameData::spellInfo(spell);
+	if(info.persistent && 0 == info.duration()) val = Permanent;
+    }
+
+    return AffectedSpell(spell, val, source);
 }
 
 int AffectedSpells::attack(void) const
@@ -1616,8 +1632,18 @@ bool AffectedSpells::isAffected(const Spell & spell) const
     return end() != std::find(begin(), end(), spell);
 }
 
+bool AffectedSpells::isAffected(const Spell & spell, const Avatar & source) const
+{
+    return end() != std::find_if(begin(), end(), [&](const AffectedSpell & affectedSpell)
+    {
+	return affectedSpell == spell && affectedSpell.source == source;
+    });
+}
+
 void AffectedSpells::insert(const AffectedSpell & as)
 {
+    if(! as.isValid()) return;
+
     auto it = std::find(begin(), end(), as);
     if(it != end())
     {
@@ -1645,7 +1671,7 @@ AffectedSpells AffectedSpells::fromJsonArray(const JsonArray & ja)
     for(int it = 0; it < ja.size(); ++it)
     {
 	const JsonObject* jj = ja.getObject(it);
-	if(jj) res.push_back(AffectedSpell::fromJsonObject(*jj));
+	if(jj) res.insert(AffectedSpell::fromJsonObject(*jj));
     }
     return res;
 }
@@ -1662,7 +1688,7 @@ void AffectedSpells::spellAffected(const Spell & spell)
     }
 }
 
-void AffectedSpells::initMahjongPart(void)
+void AffectedSpells::advanceAdventureRound(void)
 {
     for(auto & as : *this)
 	as.actionReduceDuration();
@@ -1738,8 +1764,8 @@ BattleCreature::BattleCreature(const Clan & clan, const Creature & cr, int uid)
 {
 }
 
-BattleCreature::BattleCreature(const Clan & clan, const Creature & cr, const CreatureSkill & cs)
-    : Creature(cr), CreatureSkill(cs), buid(-1), selected(false), owner(clan)
+BattleCreature::BattleCreature(const Clan & clan, const Creature & cr, const CreatureSkill & cs, int uid)
+    : Creature(cr), CreatureSkill(cs), buid(uid), selected(false), owner(clan)
 {
 }
 
@@ -1780,6 +1806,12 @@ bool BattleCreature::isAffectedSpell(const Spell & spell) const
     return affected.isAffected(spell);
 }
 
+bool BattleCreature::canReceiveSpell(const Spell & spell) const
+{
+    // Guidance improves an existing ranged attack; it does not grant one.
+    return spell() != Spell::Guidance || 0 < baseRanger();
+}
+
 bool BattleCreature::applySpell(const Spell & spell)
 {
     if(haveSpeciality(Speciality::MagicResistence))
@@ -1796,7 +1828,7 @@ bool BattleCreature::applySpell(const Spell & spell)
     switch(spell())
     {
 	case Spell::Paralyze:
-	    affected.insert(AffectedSpell(spell, GameData::spellInfo(spell).extval));
+	    affected.insert(AffectedSpell(spell));
 	    return true;
 
 	case Spell::Smoke:
@@ -1823,6 +1855,10 @@ bool BattleCreature::applySpell(const Spell & spell)
 
 
 	case Spell::Healing:
+	    applyStats(GameData::spellInfo(spell).effect);
+	    if(stat4.current() > stat4.base()) stat4.reset();
+	    return true;
+
 	case Spell::LightningBolt:
 	case Spell::HellBlast:
 	    applyStats(GameData::spellInfo(spell).effect);
@@ -1851,8 +1887,8 @@ bool BattleCreature::applySpell(const Spell & spell)
 
 void BattleCreature::initMahjongPart(const Ability & ability)
 {
-    // affected spells turn
-    affected.initMahjongPart();
+    // The previous Adventure phase consumes one round of timed enchantments.
+    affected.advanceAdventureRound();
 
     // skills turn
     const CreatureInfo & info = GameData::creatureInfo(*this);
@@ -1902,8 +1938,7 @@ BattleCreature BattleCreature::fromJsonObject(const JsonObject & jo)
 {
     Creature cr(jo.getString("creature", "none"));
     CreatureSkill bs = CreatureSkill::fromJsonObject(jo);
-    BattleCreature res(Clan(jo.getString("owner", "none")), cr, bs);
-    res.buid = jo.getInteger("battleUnit", 0);
+    BattleCreature res(Clan(jo.getString("owner", "none")), cr, bs, jo.getInteger("battleUnit", 0));
     res.selected = true;
 
     const JsonArray* ja = jo.getArray("affected");
@@ -2161,6 +2196,25 @@ bool BattleParty::join(const Creature & cr)
     return true;
 }
 
+bool BattleParty::join(const BattleCreature & bcr)
+{
+    if(! bcr.isValid() || bcr.clan() != owner)
+    {
+	ERROR("invalid creature for party");
+	return false;
+    }
+
+    auto it = std::find_if(begin(), end(), [](const BattleCreature & current){ return ! current.isValid(); });
+    if(it == end())
+    {
+	ERROR("party: is full");
+	return false;
+    }
+
+    *it = bcr;
+    return true;
+}
+
 bool BattleParty::remove(const BattleCreature & bcr)
 {
     auto it = std::find(begin(), end(), bcr);
@@ -2202,10 +2256,16 @@ bool BattleParty::findCreature(const Creature & cr) const
 
 int BattleParty::movePoint(void) const
 {
-    int res = size();
+    int res = 0;
 
     for(auto it = begin(); it != end(); ++it)
-	res = std::min(res, (*it).freeMovePoint());
+    {
+	if(! (*it).isValid()) continue;
+
+	const int move = (*it).freeMovePoint();
+	res = res ? std::min(res, move) : move;
+	if(! res) break;
+    }
 
     return res;
 }
@@ -2411,6 +2471,14 @@ void BattleArmy::remove(const BattleCreature & bcr)
     shrinkEmpty();
 }
 
+void BattleArmy::removeUnloyalty(void)
+{
+    for(auto & party : *this)
+	party.removeUnloyalty();
+
+    shrinkEmpty();
+}
+
 void BattleArmy::applyInvisibility(void)
 {
     auto findLandInvisible = [](const std::vector<Land> & lands, const Clan & clan) -> Land
@@ -2479,20 +2547,47 @@ std::string BattleArmy::toString(void) const
 }
 
 
+bool BattleArmy::canGateParty(const Land & fromLand, const Land & toLand) const
+{
+    if(!fromLand.isValid() || !toLand.isValid() || fromLand == toLand) return false;
+
+    const BattleParty* source = findPartyConst(fromLand);
+    if(!source || source->isEmpty()) return false;
+
+    const LandInfo & destination = GameData::landInfo(toLand);
+    if(!toLand.isTowerWinds() && (!destination.stat.power || destination.clan != source->clan()))
+	return false;
+
+    const BattleCreatures creatures = source->toBattleCreatures();
+    return std::any_of(creatures.begin(), creatures.end(), [](const BattleCreature* creature)
+    {
+	return creature && creature->haveSpeciality(Speciality::Gate);
+    });
+}
+
 bool BattleArmy::canMoveCreature(const BattleCreature & bcr, const Land & fromLand, const Lands & path) const
 {
+    if(path.empty())
+    {
+	ERROR("creature can't move: empty path from " << fromLand.toString());
+	return false;
+    }
+
     const Land & toLand = path.back();
 
+    const bool gate = canGateParty(fromLand, toLand);
+    const int movementCost = gate ? 1 : static_cast<int>(path.size());
+
     // check move point
-    if(! bcr.canMove(path.size()))
+    if(! bcr.canMove(movementCost))
     {
-	ERROR("creature can't move: " << "path size: " << path.size() << ", " << bcr.toString() << " " << "point: " << bcr.freeMovePoint() << ", " <<
+	ERROR("creature can't move: " << "move cost: " << movementCost << ", " << bcr.toString() << " " << "point: " << bcr.freeMovePoint() << ", " <<
 	    "from: " << fromLand.toString() << ", " << "to: " << toLand.toString());
 	return false;
     }
 
     // long jump
-    if(1 < path.size())
+    if(!gate && 1 < path.size())
     {
 	const CreatureInfo & info = GameData::creatureInfo(bcr);
 
@@ -2511,6 +2606,62 @@ bool BattleArmy::canMoveCreature(const BattleCreature & bcr, const Land & fromLa
     return true;
 }
 
+std::vector<int> BattleArmy::moveSelectedCreatures(const Land & fromLand, const Land & toLand)
+{
+    std::vector<int> units;
+    if(!fromLand.isValid() || !toLand.isValid() || fromLand == toLand) return units;
+
+    const BattleCreatures selected = partySelected(fromLand);
+    if(selected.empty()) return units;
+
+    const BattleParty* destination = findPartyConst(toLand);
+    const int occupied = destination ? destination->count() : 0;
+    if(3 < occupied + static_cast<int>(selected.size())) return units;
+
+    const bool gate = canGateParty(fromLand, toLand);
+    Lands path;
+    if(gate) path << toLand;
+    else path = Lands::pathfind(fromLand, toLand);
+    if(path.empty()) return units;
+
+    BattleCreatures ordered = selected;
+    if(gate)
+    {
+	// Keep the portal open until every selected companion has moved.
+	std::stable_sort(ordered.begin(), ordered.end(), [](const BattleCreature* left, const BattleCreature* right)
+	{
+	    const bool leftGate = left && left->haveSpeciality(Speciality::Gate);
+	    const bool rightGate = right && right->haveSpeciality(Speciality::Gate);
+	    return leftGate < rightGate;
+	});
+    }
+
+    units.reserve(selected.size());
+    for(const BattleCreature* creature : ordered)
+    {
+	if(!creature || !canMoveCreature(*creature, fromLand, path))
+	{
+	    units.clear();
+	    return units;
+	}
+	units.push_back(creature->battleUnit());
+    }
+
+    BattleArmy planned(*this);
+    for(const int unit : units)
+    {
+	BattleCreature* creature = planned.findBattleUnit(unit);
+	if(!creature || !planned.moveCreature(*creature, toLand))
+	{
+	    units.clear();
+	    return units;
+	}
+    }
+
+    *this = std::move(planned);
+    return units;
+}
+
 bool BattleArmy::moveCreature(const BattleCreature & bcr, const Land & toLand)
 {
     auto it = std::find_if(begin(), end(), [&](BattleParty & party){ return party.findBattleUnit(bcr.battleUnit()); });
@@ -2524,6 +2675,9 @@ bool BattleArmy::moveCreature(const BattleCreature & bcr, const Land & toLand)
     BattleParty* toParty = findParty(toLand);
     const Land & fromLand = fromParty.land();
 
+    if(fromLand == toLand)
+	return false;
+
     DEBUG(bcr.toString() << ", from land: " << fromParty.land().toString() << ", to land: " << toLand.toString());
 
     if(toParty && ! toParty->canJoin())
@@ -2532,8 +2686,12 @@ bool BattleArmy::moveCreature(const BattleCreature & bcr, const Land & toLand)
 	return false;
     }
 
-    // check path algorithm
-    Lands path = Lands::pathfind(fromLand, toLand);
+    const bool gate = canGateParty(fromLand, toLand);
+
+    // Gate ignores map distance but still costs one movement point.
+    Lands path;
+    if(gate) path << toLand;
+    else path = Lands::pathfind(fromLand, toLand);
     if(path.empty())
     {
 	ERROR("path not found: " << fromLand.toString() << ", " << toLand.toString());
@@ -2557,14 +2715,49 @@ bool BattleArmy::moveCreature(const BattleCreature & bcr, const Land & toLand)
 
     if(battle)
     {
-    	battle->moved(path.size());
-	toParty->join(*battle);
+	const int battleUnit = battle->battleUnit();
+	if(! toParty->join(*battle)) return false;
+
+	BattleCreature* moved = toParty->findBattleUnit(battleUnit);
+	if(moved) moved->moved(gate ? 1 : path.size());
     }
+
+    if(! battle) return false;
 
     // remove
     fromParty.remove(bcr);
     remove_if([](const BattleParty & party){ return party.isEmpty(); });
 
+    return true;
+}
+
+bool BattleArmy::teleportCreature(const BattleCreature & bcr, const Land & toLand)
+{
+    auto it = std::find_if(begin(), end(), [&](BattleParty & party){ return party.findBattleUnit(bcr.battleUnit()); });
+    if(it == end() || it->land() == toLand)
+	return false;
+
+    BattleParty & fromParty = *it;
+    BattleParty* toParty = findParty(toLand);
+
+    if(toParty && ! toParty->canJoin())
+	return false;
+
+    if(! toParty)
+    {
+	push_back(BattleParty(fromParty.clan(), toLand));
+	toParty = & back();
+    }
+
+    BattleCreature* battle = findBattleUnit(bcr.battleUnit());
+    if(! battle || ! toParty->join(*battle))
+    {
+	shrinkEmpty();
+	return false;
+    }
+
+    fromParty.remove(bcr);
+    shrinkEmpty();
     return true;
 }
 
@@ -2974,6 +3167,49 @@ Persons::Persons(const Person & person)
 	ERROR("incorrect size");
 }
 
+/* LandClaims */
+int LandClaims::points(const Clan & clan) const
+{
+    return clan.isValid() && clan() < static_cast<int>(values.size()) ? values[clan()] : 0;
+}
+
+void LandClaims::add(const Clan & clan, int value)
+{
+    if(clan.isValid() && clan() < static_cast<int>(values.size()) && 0 < value)
+        values[clan()] += value;
+}
+
+bool LandClaims::spend(const Clan & clan, int value)
+{
+    if(!clan.isValid() || clan() >= static_cast<int>(values.size()) || value < 0 || values[clan()] < value)
+        return false;
+
+    values[clan()] -= value;
+    return true;
+}
+
+JsonObject LandClaims::toJsonObject(void) const
+{
+    JsonObject jo;
+    for(auto clanId : clans_all)
+    {
+        const Clan clan(clanId);
+        jo.addInteger(clan.toString(), points(clan));
+    }
+    return jo;
+}
+
+LandClaims LandClaims::fromJsonObject(const JsonObject & jo)
+{
+    LandClaims res;
+    for(auto clanId : clans_all)
+    {
+        const Clan clan(clanId);
+        res.values[clan()] = std::max(0, jo.getInteger(clan.toString(), 0));
+    }
+    return res;
+}
+
 /* RemotePlayer */
 RemotePlayer::RemotePlayer()
 {
@@ -3014,7 +3250,7 @@ BattleTargets RemotePlayer::toBattleTargets(void) const
     return army.toBattleTargets(clan);
 }
 
-bool RemotePlayer::mahjongApplySpell(const Spell & spell)
+bool RemotePlayer::mahjongApplySpell(const Spell & spell, const Avatar & source)
 {
     switch(spell())
     {
@@ -3023,10 +3259,13 @@ bool RemotePlayer::mahjongApplySpell(const Spell & spell)
         case Spell::DrawNumber:
 	//
         case Spell::RandomDiscard:
-        case Spell::ScryRunes:
 	//
         case Spell::ManaFog:
 	    affected.insert(AffectedSpell(spell));
+            return true;
+
+        case Spell::ScryRunes:
+	    affected.insert(AffectedSpell(spell, GameData::spellInfo(spell).duration(), source));
             return true;
 
         case Spell::Silence:
@@ -3054,6 +3293,11 @@ bool RemotePlayer::isAffectedSpell(const Spell & spell) const
     return affected.isAffected(spell);
 }
 
+bool RemotePlayer::isAffectedSpell(const Spell & spell, const Avatar & source) const
+{
+    return affected.isAffected(spell, source);
+}
+
 void RemotePlayer::affectedSpellActivate(const Spell & spell)
 {
     affected.spellAffected(spell);
@@ -3066,6 +3310,7 @@ JsonObject RemotePlayer::toJsonObject(void) const
     jo.addArray("army", army.toJsonArray());
     jo.addInteger("points", points);
     jo.addArray("affected", affected.toJsonArray());
+    jo.addObject("landClaims", landClaims.toJsonObject());
 
     return jo;
 }
@@ -3085,6 +3330,9 @@ RemotePlayer RemotePlayer::fromJsonObject(const JsonObject & jo)
 
     ja = jo.getArray("affected");
     if(ja) res.affected = AffectedSpells::fromJsonArray(*ja);
+
+    const JsonObject* claims = jo.getObject("landClaims");
+    if(claims) res.landClaims = LandClaims::fromJsonObject(*claims);
 
     return res;
 }
@@ -3129,17 +3377,6 @@ void LocalPlayer::newTurnEvent(CroupierSet & croupier, bool skipNewStone /* pung
 	DEBUG("new stone: " << newStone() << ", " << "(" << newStone.toString() << ")");
     }
 
-    if(isAffectedSpell(Spell::Silence))
-    {
-        DEBUG("affected spell over: " << "silence");
-        affectedSpellActivate(Spell::Silence);
-    }
-
-    if(isAffectedSpell(Spell::ScryRunes))
-    {
-        DEBUG("affected spell over: " << "scryrunes");
-        affectedSpellActivate(Spell::ScryRunes);
-    }
 }
 
 void LocalPlayer::initMahjongPart(void)
@@ -3162,7 +3399,7 @@ bool LocalPlayer::haveKong(void) const
 
 bool LocalPlayer::allowCastSpell(const Spell & spell) const
 {
-    if(isAffectedSpell(Spell::Silence))
+    if(isAffectedSpell(Spell::Silence) || isAffectedSpell(Spell::ManaFog))
         return false;
 
     // check avatar info spells
@@ -3226,6 +3463,9 @@ bool LocalPlayer::isMahjongKong2(const Wind & currentWind) const
 
 bool LocalPlayer::isWinMahjong(const Wind & currentWind, const Wind & roundWind, const Stone & dropStone, WinResults* winResult) const
 {
+    if(isAffectedSpell(Spell::Silence))
+        return false;
+
     Stone winStone;
 
     if(newStone.isValid())
@@ -3316,6 +3556,25 @@ Stone LocalPlayer::setMahjongDrop(int indexDrop)
 
     newStone = GameStone(Stone::None, true);
     points += GameData::bonusPass;
+
+    if(isAffectedSpell(Spell::Silence))
+    {
+	DEBUG("affected spell turn: " << "silence");
+	affectedSpellActivate(Spell::Silence);
+    }
+
+    if(isAffectedSpell(Spell::ScryRunes))
+    {
+	DEBUG("affected spell turn: " << "scry runes");
+	affectedSpellActivate(Spell::ScryRunes);
+    }
+
+    // The casting turn must not consume the first blocked turn.
+    if(isAffectedSpell(Spell::ManaFog) && !isCasted())
+    {
+	DEBUG("affected spell turn: " << "mana fog");
+	affectedSpellActivate(Spell::ManaFog);
+    }
 
     return dropStone;
 }
@@ -3988,10 +4247,17 @@ int WinResults::totalScore(void) const
     DoubleBonusList list = bonusDoubles();
     for(auto it = list.begin(); it != list.end(); ++it) doubles += (*it).value();
 
-    int res = baseScore() * (doubles ? (2 << (doubles - 1)) : 1);
+    int res = baseScore() * scoreMultiplier(doubles);
     if(res > 500) res = 500;
 
     return res;
+}
+
+int WinResults::scoreMultiplier(int doubles)
+{
+    if(doubles <= 0) return 1;
+    if(5 < doubles) doubles = 5;
+    return 1 << doubles;
 }
 
 OpponentFinesList WinResults::opponentFines(void) const

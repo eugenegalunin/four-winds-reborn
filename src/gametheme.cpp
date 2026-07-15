@@ -1143,6 +1143,7 @@ const JsonValue & operator>> (const JsonValue & jv, SpellInfo & st)
 	st.persistent = jo->getBoolean("persistent");
 	st.cost = jo->getInteger("cost");
 	st.extval = jo->getInteger("duration");
+	st.value = jo->getInteger("value");
 	st.image =jo->getString("image");
 	st.sound =jo->getString("sound");
 	st.description = _(jo->getString("description"));
@@ -1167,6 +1168,7 @@ const JsonValue & operator>> (const JsonValue & jv, AvatarInfo & st)
 	st.dignity = _(jo->getString("dignity"));
 	st.portrait = jo->getString("portrait");
 	st.image = jo->getString("image");
+	st.aiProfile = jo->getString("ai_profile", "balanced");
 	st.description = _(jo->getString("description"));
 
 	if(jo->hasKey("ability")) st.ability = Ability(jo->getString("ability"));

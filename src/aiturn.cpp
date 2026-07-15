@@ -25,6 +25,8 @@
 #include <algorithm>
 
 #include "aiturn.h"
+#include "aiadventure.h"
+#include "aispell.h"
 
 namespace GameData
 {
@@ -51,7 +53,7 @@ bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecS
     else
     if(showKong)
     {
-	GameData::client2Mahjong(avatar, ClientSayKong(1), actions);
+	GameData::client2Mahjong(avatar, ClientSayKong(2), actions);
 	GameData::client2Mahjong(avatar, ClientButtonKong2(), actions);
 	return true;
     }
@@ -73,7 +75,8 @@ bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecS
     // cast or summon
     const AvatarInfo & avatarInfo = GameData::avatarInfo(avatar);
 
-    if(! player.isCasted())
+    if(!player.isCasted() && !player.isAffectedSpell(Spell::Silence) &&
+       !player.isAffectedSpell(Spell::ManaFog))
     {
 	Creatures summons;
         Spells casts;
@@ -88,15 +91,7 @@ bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecS
 		player.stones.allowCast(creatureInfo.stones)) summons.push_back(creatureInfo.id);
 	}
 
-	// allow cast spells
-	for(auto & sp : avatarInfo.spells)
-	{
-    	    const SpellInfo & spellInfo = GameData::spellInfo(sp);
-
-	    // allow cast
-	    if(spellInfo.cost <= player.points &&
-		player.stones.allowCast(spellInfo.stones)) casts.push_back(spellInfo.id);
-	}
+	casts = availableSpellCasts(player);
 
 	if(summons.size() || casts.size())
 	    mahjongSummonCast(avatar, summons, casts, actions);
@@ -107,152 +102,60 @@ bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecS
     return GameData::client2Mahjong(avatar, ClientDropIndex(dropIndex), actions);
 }
 
-struct ArmyFullHousePredicate
+namespace
 {
-    const BattleArmy &army;
-
-    ArmyFullHousePredicate(const BattleArmy & a) : army(a)
+    bool trySummon(const LocalPlayer & player, Creatures summons, ActionList & actions)
     {
-    }
+        if(summons.empty() || player.army.isMaximumSummoning()) return false;
 
-    bool operator() (const Land & land) const
-    {
-	const BattleParty* bp = army.findPartyConst(land);
-	return bp && ! bp->canJoin();
+        const AI::BehaviorProfile profile = AI::behaviorProfile(player);
+
+        summons.erase(std::remove_if(summons.begin(), summons.end(), [&](const Creature & creature)
+        {
+            const CreatureInfo & info = GameData::creatureInfo(creature);
+            return info.unique && GameData::findCreatureUnique(creature);
+        }), summons.end());
+        std::sort(summons.begin(), summons.end(), [&](const Creature & left, const Creature & right)
+        {
+            const int leftValue = AI::creatureSummonScore(left, profile);
+            const int rightValue = AI::creatureSummonScore(right, profile);
+            return leftValue == rightValue ? left() < right() : leftValue > rightValue;
+        });
+
+        Lands lands = Lands::thisClan(player.clan).powerOnly();
+        lands.erase(std::remove_if(lands.begin(), lands.end(), [&](const Land & land)
+        {
+            const BattleParty* party = player.army.findPartyConst(land);
+            return party && !party->canJoin();
+        }), lands.end());
+        std::sort(lands.begin(), lands.end(), [&](const Land & left, const Land & right)
+        {
+            const BattleParty* leftParty = player.army.findPartyConst(left);
+            const BattleParty* rightParty = player.army.findPartyConst(right);
+            const int leftValue = (leftParty ? 100 : 0) + GameData::landInfo(left).stat.point;
+            const int rightValue = (rightParty ? 100 : 0) + GameData::landInfo(right).stat.point;
+            return leftValue == rightValue ? left() < right() : leftValue > rightValue;
+        });
+
+        for(const Creature & creature : summons)
+            for(const Land & land : lands)
+                if(GameData::client2Mahjong(player.avatar, ClientSummonCreature(creature, land), actions))
+                    return true;
+
+        return false;
     }
-};
+}
 
 void AI::mahjongSummonCast(const Avatar & avatar, const Creatures & summons, const Spells & casts, ActionList & actions)
 {
     const LocalPlayer & player = GameData::playerOfAvatar(avatar);
+    const SpellCastPlan spellPlan = chooseSpellCast(player, casts);
 
-    FIXME("fixme add AI person priority action(cast or summon) to json...");
-    bool summonPriority = summons.size();
-    bool castPriority = false;
+    // Each profile decides when a tactical plan is worth delaying a summon.
+    if(shouldCastBeforeSummon(spellPlan) && executeSpellCast(player, spellPlan, actions)) return;
+    if(trySummon(player, summons, actions)) return;
 
-    if(summonPriority)
-    {
-	Lands powerLands = Lands::thisClan(player.clan).powerOnly();
-	if(powerLands.size())
-	{
-	    const ArmyFullHousePredicate armyFullHouse(player.army);
-
-	    // remove powerLands: if army full house
-	    powerLands.resize(std::distance(powerLands.begin(),
-			std::remove_if(powerLands.begin(), powerLands.end(), armyFullHouse)));
-
-	    if(powerLands.size())
-	    {
-		auto land = Tools::random_n(powerLands.begin(), powerLands.end());
-		auto creature = Tools::random_n(summons.begin(), summons.end());
-
-		GameData::client2Mahjong(avatar, ClientSummonCreature(*creature, *land), actions);
-		castPriority = false;
-	    }
-	    else
-	    {
-		DEBUG("summon false, powerLands is full house");
-		castPriority = true;
-	    }
-	}
-	else
-	{
-	    DEBUG("summon false, powerLands not found");
-	    castPriority = true;
-	}
-    }
-
-    if(castPriority)
-    {
-	DEBUG("cast spell priority");
-
-	auto spell = Tools::random_n(casts.begin(), casts.end());
-
-	if(spell != casts.end())
-	{
-	    const SpellInfo & spellInfo = GameData::spellInfo(*spell);
-
-	    BattleTargets targets;
-
-	    for(auto & other : GameData::gamers)
-	    {
-		for(auto & tgt : other.toBattleTargets())
-		{
-		    switch(spellInfo.target())
-		    {
-			case SpellTarget::Land: // Any | Party
-			    targets << tgt;
-			    break;
-
-			case SpellTarget::Enemy:
-			    if(player.clan != other.clan) targets << tgt;
-			    break;
-
-			case SpellTarget::Friendly:
-			    if(player.clan == other.clan) targets << tgt;
-			    break;
-
-			case SpellTarget::Party:
-
-			case SpellTarget::Any: // Friendly | Enemy
-			case SpellTarget::MyPlayer:
-			case SpellTarget::OtherPlayer:
-			case SpellTarget::AllPlayers:
-			default: break;
-		    }
-		}
-	    }
-/*
-    BattleTargets targets;
-    targets.reserve(10);
-
-    if(spellInfo.target() == SpellTarget::Land)
-    {
-	for(auto it = GameData::gamers.begin(); it != GameData::gamers.end(); ++it)
-	{
-	    auto party = (*it).army.findPartyConst(land);
-	    if(party) targets << party->toBattleTargets((*it).clan);
-	}
-    }
-    else
-    if(spellInfo.target() & SpellTarget::Party)
-    {
-	if(spellInfo.target() & SpellTarget::Friendly)
-	{
-	    auto party = client.army.findPartyConst(land);
-	    if(party) targets << party->toBattleTargets(client.clan);
-	}
-	else
-	if(spellInfo.target() & SpellTarget::Enemy)
-	{
-	    for(auto it = GameData::gamers.begin(); it != GameData::gamers.end(); ++it)
-	        if(client.clan != (*it).clan)
-	    {
-		auto party = (*it).army.findPartyConst(land);
-		if(party) targets << party->toBattleTargets((*it).clan);
-	    }
-	}
-    }
-    else
-    if(unit)
-    {
-	BattleCreature* bcr = nullptr;
-
-	for(auto it = GameData::gamers.begin(); it != GameData::gamers.end() && !bcr; ++it)
-	{
-	    auto party = (*it).army.findParty(land);
-	    bcr = party ? party->findBattleUnit(unit) : nullptr;
-	    if(bcr) targets.push_back(BattleTarget(bcr, (*it).clan, land));
-	}
-    }
-*/
-
-	    // Spell spell;
-	    // Land land;
-	    // BattleTarget uid;
-	    // GameData::client2Mahjong(avatar, ClientCastSpell(spell, land, uid, actions);
-	}
-    }
+    executeSpellCast(player, spellPlan, actions);
 }
 
 void AI::mahjongOtherPass(const Wind & currentWind, ActionList & actions, const Wind & skip)
@@ -447,95 +350,52 @@ int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const 
     return Tools::rand(0, stones.size());
 }
 
-namespace AI
-{
-    Lands findTargetsFor(const BaseStat &, const Clan &);
-}
-
-Lands AI::findTargetsFor(const BaseStat & bs, const Clan & clan)
-{
-    Lands res;
-
-    for(auto & land : Lands::enemyAroundOnly(clan))
-	if(! land.isTowerWinds())
-    {
-	const LandInfo & landInfo = GameData::landInfo(land);
-	BaseStat stat = landInfo.stat;
-
-	const BattleParty* party = GameData::getBattleArmy(clan).findPartyConst(land);
-	if(party)
-	    stat += party->toBaseStatSummary();
-
-	if(bs.loyalty > stat.attack - bs.defense + stat.ranger &&
-	    stat.loyalty < bs.attack - stat.defense + bs.ranger)
-	    res.push_back(land);
-    }
-
-    return res;
-}
-
 void AI::adventureMove(const RemotePlayer & player, ActionList & actions)
 {
-    // FIXME: army
-    // toLocalData(const Avatar &)
+    const BehaviorProfile profile = behaviorProfile(player);
 
-/*
-    Lands Lands::pathfind(const Land &, const Land &);
-    Lands Lands::thisClan(const Clan &);
-    Lands Lands::enemyAroundOnly(const Clan &);
-
-    const BattleParty* party = player.army.findPartyConst(*it);
-*/
-
-    for(auto & party : player.army)
+    // Claims can open another border, so recalculate after each successful deed.
+    while(true)
     {
-	if(party.moveTarget().isValid())
-	{
-	    Lands path = Lands::pathfind(party.land(), party.moveTarget());
+        const AdventureClaimPlan claim = chooseAdventureClaim(player, profile);
+        if(!claim.isValid()) break;
+        DEBUG("AI profile: " << behaviorProfileName(profile) << ", claim: " << claim.land.toString() <<
+              ", score: " << claim.score);
+        if(!GameData::client2Adventure(player.avatar, ClientLandClaim(claim.land), actions)) break;
+    }
 
-	    if(path.empty())
-	    {
-		ERROR("path is empty" << ", " << "from: " << party.land().toString() << ", " << "to: " << party.moveTarget().toString());
-		continue;
-	    }
+    const AdventureTurnPlan turnPlan = chooseAdventureTurn(player, profile);
+    for(const AdventureThreat & threat : turnPlan.threats)
+    {
+        DEBUG("AI profile: " << behaviorProfileName(profile) << ", avatar: " << player.avatar.toString() <<
+              ", predicted threat: " << threat.land.toString() << ", enemy origin: " <<
+              threat.enemyOrigin.toString() << ", score: " << threat.score << ", strength: " <<
+              threat.enemyStrength << "/" << threat.defenseStrength << ", capture: " <<
+              threat.captureChance << "%" << ", survival: " << threat.attackerSurvival << "%");
+    }
 
-	    if(1 < party.movePoint() && 1 < path.size())
-	    {
-		//const CreatureInfo & info = GameData::creatureInfo(*it);
-		bool info_fly = true;
+    for(const AdventurePartyOrder & order : turnPlan.orders)
+    {
+        if(order.hold)
+        {
+            DEBUG("AI profile: " << behaviorProfileName(profile) << ", avatar: " << player.avatar.toString() <<
+                  ", hold: " << order.origin.toString() <<
+                  (order.defend.isValid() ? ", reserve for: " + order.defend.toString() : ""));
+            continue;
+        }
 
-		if(info_fly)
-		{
-		    // move to path[1]
-		}
-		else
-		{
-		    // if clan != path[0] move to path[0] else path[1]
-		}
-	    }
-	    else
-	    if(0 < party.movePoint())
-	    {
-		// move to path.front()
-		// client2Adventure(avatar, ClientUnitMoved((*it).first, (*it).second), actions);
-	    }
-	}
-	else
-	// set target land
-	{
-	    Lands lands = AI::findTargetsFor(party.toBaseStatSummary(), player.clan);
+        if(!order.move.isValid()) continue;
+        DEBUG("AI profile: " << behaviorProfileName(profile) << ", avatar: " << player.avatar.toString() <<
+              ", target: " << order.move.target.toString() << ", destination: " <<
+              order.move.destination.toString() << ", score: " << order.score << ", strength: " <<
+              order.move.attackStrength << "/" << order.move.defenseStrength << ", capture: " <<
+              order.move.captureChance << "%" << ", survival: " << order.move.attackerSurvival << "%" <<
+              (order.defend.isValid() ? ", reinforce: " + order.defend.toString() : ""));
 
-            std::random_device rd;
-            std::mt19937 mtg(rd());
-	    std::shuffle(lands.begin(), lands.end(), mtg);
-
-	    if(lands.size())
-	    {
-                auto & tgtLand = lands.front();
-
-		// FIXME: sort to distance
-		DEBUG("avatar: " << player.avatar.toString() << ", " << "target: " << tgtLand.toString());
-	    }
-	}
+        for(int unit : order.units)
+        {
+            if(player.army.findBattleUnitConst(unit))
+                GameData::client2Adventure(player.avatar, ClientUnitMoved(unit, order.move.destination), actions);
+        }
     }
 }

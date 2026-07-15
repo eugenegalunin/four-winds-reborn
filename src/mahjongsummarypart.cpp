@@ -151,16 +151,8 @@ MahjongSummaryPartScreen::MahjongSummaryPartScreen() : JsonWindow("screen_mahjon
 
     int doubles = std::accumulate(doubleBonusList.begin(), doubleBonusList.end(), 0,
 				    [](int v, const DoubleBonus & bonus){ return v + bonus.value(); });
-    if(doubles > 4)
-    {
-	multiplier = 16;
-	totalScore = 500;
-    }
-    else
-    {
-	multiplier = doubles;
-	totalScore = ld.winResult.totalPoints() * multiplier;
-    }
+    multiplier = WinResults::scoreMultiplier(doubles);
+    totalScore = ld.winResult.totalScore();
 
     setVisible(true);
 }

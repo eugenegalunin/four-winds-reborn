@@ -15,7 +15,7 @@
 	    "id": "blind_ambition",
 	    "name": "Blind Ambition",
 	    "cost": 20,
-	    "effect": [ 1, 0, 1, -2 ],
+	    "effect": [ 1, 1, 0, -2 ],
 	    "image": "spell12",
 	    "persistent": true,
 	    "stones": [ "number6" ],
@@ -71,6 +71,7 @@
 	    "name": "Force Shield",
 	    "cost": 30,
 	    "effect": [ 0, 0, 0, 0 ],
+	    "value": 1,
 	    "image": "spell08",
 	    "persistent": true,
 	    "stones": [ "sword7", "sword9" ],
@@ -108,7 +109,7 @@
 	    "image": "spell19",
 	    "sound": "spell1023",
 	    "stones": [ "skull6", "dragon3" ],
-	    "target": "land",
+	    "target": "enemy_party",
 	    "description": "The most destructive spell in the lands, hellblast surrounds a targeted enemy army with a searing hot firestorm causing some major damage."
 	},
 	{
@@ -154,7 +155,7 @@
 	    "stones": [],
 	    "sound": "spell1032",
 	    "target": "land",
-	    "description": "Removes all enchantments from the target creature. Does not affect any special abilities."
+	    "description": "Removes all enchantments from every creature in the selected territory. Does not affect any special abilities."
 	},
 	{
 	    "id": "mass_panic",
@@ -265,15 +266,18 @@
 	    "cost": 30,
 	    "duration": 3,
 	    "stones": [ "wind3" ],
-	    "target": "all_players"
+	    "target": "all_players",
+	    "description": "A mana-dampening fog covers every wizard, preventing normal spell casting and creature summoning for three turns."
 	},
 	{
 	    "id": "random_discard",
 	    "name": "Random Discard",
 	    "cost": 30,
+	    "duration": 1,
 	    "stones": [ "wind2" ],
 	    "sound": "spell1036",
-	    "target": "other_player"
+	    "target": "other_player",
+	    "description": "Forces the targeted wizard to discard a random rune on their next turn."
 	},
 	{
 	    "id": "scry_runes",
@@ -282,7 +286,8 @@
 	    "duration": 5,
 	    "stones": [ "wind1" ],
 	    "sound": "spell1036",
-	    "target": "other_player"
+	    "target": "other_player",
+	    "description": "Reveals the targeted opponent's concealed runes to the caster for five turns."
 	},
 	{
 	    "id": "silence",
@@ -291,7 +296,8 @@
 	    "duration": 3,
 	    "stones": [ "wind4" ],
 	    "sound": "spell1036",
-	    "target": "other_player"
+	    "target": "other_player",
+	    "description": "Prevents the targeted wizard from calling Chao, Pung, Kong or Game and from casting spells or summoning creatures for three turns. Telepaths are immune."
 	},
 	{
 	    "id": "draw_number",

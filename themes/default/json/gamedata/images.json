@@ -36,6 +36,8 @@
 	{ "id": "but_next2", "type": "file", "file": "buttons.png", "crop": [258, 45, 86, 46], "colorkey": "#ffd2d2" },
 	{ "id": "but_ok1", "type": "file", "file": "buttons.png", "crop": [172, 0, 86, 46], "colorkey": "#ffd2d2" },
 	{ "id": "but_ok2", "type": "file", "file": "buttons.png", "crop": [258, 0, 86, 46], "colorkey": "#ffd2d2" },
+	{ "id": "but_order1", "type": "file", "file": "order_buttons.png", "crop": [0, 0, 86, 46], "colorkey": "#ffd2d2" },
+	{ "id": "but_order2", "type": "file", "file": "order_buttons.png", "crop": [86, 0, 86, 46], "colorkey": "#ffd2d2" },
 	{ "id": "but_pass1", "type": "file", "file": "buttons.png", "crop": [450, 140, 52, 24] },
 	{ "id": "but_pass2", "type": "file", "file": "buttons.png", "crop": [506, 140, 52, 24] },
 	{ "id": "but_prev1", "type": "file", "file": "buttons.png", "crop": [0, 45, 86, 46], "colorkey": "#ffd2d2" },

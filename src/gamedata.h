@@ -28,6 +28,11 @@
 
 #include "actions.h"
 
+namespace AI
+{
+    enum class Difficulty;
+}
+
 namespace Menu
 {
     enum { GameExit, SelectPerson, ShowPlayers, MahjongPart, MahjongSummaryPart, AdventurePart, BattleSummaryPart, GameSummaryPart, MahjongInitPart, GameLoadPart };
@@ -135,8 +140,9 @@ struct SpellInfo
     bool         		persistent;
     int				cost;
     int				extval;
+    int				value;
 
-    SpellInfo() :  persistent(false), cost(0), extval(0) {}
+    SpellInfo() :  persistent(false), cost(0), extval(0), value(0) {}
 
     bool			isCurse(void) const { return persistent && (SpellTarget::Enemy & target()); }
     int				duration(void) const { return extval; }
@@ -161,12 +167,13 @@ struct AvatarInfo
     std::string 		description;
     std::string 		portrait;
     std::string 		image;
+    std::string                 aiProfile;
     Ability			ability;
     Clans			clans;
     Spells			spells;
     Creatures			creatures;
 
-    AvatarInfo() {}
+    AvatarInfo() : aiProfile("balanced") {}
     std::string			toStringClans(void) const;
 };
 
@@ -250,8 +257,13 @@ namespace GameData
     bool			initAdventure(void);
     bool			adventure2Client(const Avatar &, ActionList &);
     bool			client2Adventure(const Avatar &, const ClientMessage &, ActionList &);
+    bool                        canClaimLand(const RemotePlayer &, const Land &);
+    Lands                       claimableLands(const RemotePlayer &);
 
     const Person &		myPerson(void);
+
+    AI::Difficulty              aiDifficulty(void);
+    void                        setAIDifficulty(AI::Difficulty);
 
     bool			saveGame(const JsonObject &);
     bool			loadGame(void);

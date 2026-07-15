@@ -1805,6 +1805,15 @@ msgstr ""
 msgid "Movement Phase"
 msgstr ""
 
+msgid "Select destination"
+msgstr ""
+
+msgid "Order"
+msgstr ""
+
+msgid "Selected creatures cannot move to this territory."
+msgstr ""
+
 #: ../src/screen/battlesummarypart.cpp:92
 msgid "Combat Summary"
 msgstr ""
@@ -1859,4 +1868,32 @@ msgstr ""
 
 #: ../src/screen/mahjongsummarypart.cpp:275
 msgid "Total Score:"
+msgstr ""
+
+#: ../src/selectperson.cpp
+msgid "AI Level"
+msgstr ""
+
+#: ../src/selectperson.cpp
+msgid "Easy"
+msgstr ""
+
+#: ../src/selectperson.cpp
+msgid "Normal"
+msgstr ""
+
+#: ../src/selectperson.cpp
+msgid "Hard"
+msgstr ""
+
+#: ../src/adventurepart.cpp
+msgid "Battle Forecast"
+msgstr ""
+
+#: ../src/adventurepart.cpp
+msgid "Capture: %1%"
+msgstr ""
+
+#: ../src/adventurepart.cpp
+msgid "Attackers remain: %1%"
 msgstr ""

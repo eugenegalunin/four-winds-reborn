@@ -369,6 +369,11 @@ void MahjongPartScreen::renderWindow(void)
 
 bool MahjongPartScreen::checkCastInformer(void) const
 {
+    if(ld.myPlayer().isCasted() ||
+       ld.myPlayer().isAffectedSpell(Spell::Silence) ||
+       ld.myPlayer().isAffectedSpell(Spell::ManaFog))
+	return false;
+
     const AvatarInfo & avatarInfo = GameData::avatarInfo(ld.myPlayer().avatar);
     const Spells & spells = avatarInfo.spells;
     const Creatures & creatures = avatarInfo.creatures;
@@ -784,11 +789,8 @@ void MahjongPartScreen::actionButtonShowCast(void)
 		    int result = castDialog.exec();
 		    if(0 < result)
 		    {
-			int battleUnit = -1;
-
-			// ShowCastSpellDialog::userEvent: 1 land, 2 creature
-			if(2 == result)
-			    battleUnit = castDialog.unit();
+			// Result 1 targets a land; creature and teleport targets carry a unit id.
+			int battleUnit = 1 == result ? -1 : castDialog.unit();
 
 			GameData::client2Mahjong(myAvatar, ClientCastSpell(sp, castDialog.land(), battleUnit), actions);
 		    }
@@ -1856,4 +1858,3 @@ bool MahjongPartScreen::actionEventDebug2(void)
 
     return true;
 }
-

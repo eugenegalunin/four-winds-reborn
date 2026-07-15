@@ -1835,7 +1835,16 @@ msgstr ""
 
 #: ../src/screen/adventurepart.cpp:1012
 msgid "Movement Phase"
-msgstr ""
+msgstr "Фаза перемещения"
+
+msgid "Select destination"
+msgstr "Выберите территорию назначения"
+
+msgid "Order"
+msgstr "Приказ"
+
+msgid "Selected creatures cannot move to this territory."
+msgstr "Выбранные существа не могут переместиться на эту территорию."
 
 #: ../src/screen/battlesummarypart.cpp:92
 msgid "Combat Summary"
@@ -1892,3 +1901,31 @@ msgstr ""
 #: ../src/screen/mahjongsummarypart.cpp:275
 msgid "Total Score:"
 msgstr ""
+
+#: ../src/selectperson.cpp
+msgid "AI Level"
+msgstr "ИИ"
+
+#: ../src/selectperson.cpp
+msgid "Easy"
+msgstr "Легко"
+
+#: ../src/selectperson.cpp
+msgid "Normal"
+msgstr "Норма"
+
+#: ../src/selectperson.cpp
+msgid "Hard"
+msgstr "Сложно"
+
+#: ../src/adventurepart.cpp
+msgid "Battle Forecast"
+msgstr "Прогноз боя"
+
+#: ../src/adventurepart.cpp
+msgid "Capture: %1%"
+msgstr "Захват: %1%"
+
+#: ../src/adventurepart.cpp
+msgid "Attackers remain: %1%"
+msgstr "Выживет атакующих: %1%"

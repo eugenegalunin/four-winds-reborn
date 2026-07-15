@@ -117,6 +117,11 @@ protected:
     Land		selectedLand;
     BattleCreature	selectedCreature;
 
+    Land                forecastTarget;
+    int                 forecastSamples;
+    int                 forecastCaptureChance;
+    int                 forecastAttackerSurvival;
+
     Texture 		townTowerWindsTexture;
     Point 		townTowerWindsPos;
 
@@ -134,6 +139,10 @@ protected:
     Point		viewMapPos;
     Rect		selectedIconPos;
 
+    JsonTextInfo        forecastTitle;
+    JsonTextInfo        forecastCapture;
+    JsonTextInfo        forecastSurvival;
+
     virtual void	renderLabel(void) {}
     virtual bool	isAdventureMode(void) const { return false; }
 
@@ -141,9 +150,13 @@ protected:
 
     void		animationsDisabled(bool);
 
-    void		renderLandInfo(void);
+    void		renderLandInfo(const Land &);
+    void                renderBattleForecast(void);
     void		renderClanAvatarInfo(const RemotePlayer &);
     void		renderCreatureInfo(const BattleCreature &);
+
+    void                updateBattleForecast(const Land &, const Land &);
+    void                clearBattleForecast(void);
 
     void		actionButtonChat(void);
     void		actionButtonDismiss(void);
@@ -159,7 +172,8 @@ public:
     MapScreenBase(const LocalData &, Window* win = nullptr);
 
     void		renderWindow(void) override;
-    bool		isAllowMoveFlag(const LandInfo &) const;
+    virtual bool	isAllowMoveFlag(const LandInfo &) const;
+    bool                isAllowLandClaim(const LandInfo &) const;
     bool		isMyClan(const Clan &) const;
 };
 
@@ -187,6 +201,8 @@ public:
 class ShowCastSpellDialog : public MapScreenBase
 {
     Spell		spell;
+    int			targetUnit;
+    Land			targetSource;
     void		renderLabel(void) override;
 
 protected:
@@ -240,7 +256,9 @@ class AdventurePartScreen : public MapScreenBase
 			history;
 
     MoveFlagWindow	moveFlag;
+    Land                orderSource;
 
+    JsonButton*         buttonOrder;
     JsonButton*         buttonDone;
     JsonButton*         buttonUndo;
     JsonButton*         buttonDismiss;
@@ -259,10 +277,12 @@ class AdventurePartScreen : public MapScreenBase
 
     void		renderLabel(void) override;
     bool		isAdventureMode(void) const override { return true; }
-    void		updateButtonDismiss(void);
+    void		updateCommandButtons(void);
+    void                cancelOrderMode(bool redraw = true);
+    bool                moveSelectedParty(const Land &, const Land &);
 
     void		actionButtonDone(void);
-    void		actionButtonChat(void);
+    void		actionButtonOrder(void);
     void		actionButtonDismiss(void);
     void		actionButtonInfo(void);
     void		actionButtonUndo(void);
@@ -270,6 +290,7 @@ class AdventurePartScreen : public MapScreenBase
 
     bool		actionAdventureTurn(const ActionMessage &);
     bool		actionAdventureMoves(const ActionMessage &);
+    bool                actionAdventureClaim(const ActionMessage &);
     bool		actionAdventureCombat(const ActionMessage &);
     bool		actionAdventureEnd(const ActionMessage &);
 
@@ -280,6 +301,7 @@ protected:
 
 public:
     AdventurePartScreen(const Avatar &);
+    bool                isAllowMoveFlag(const LandInfo &) const override;
 
 #ifdef BUILD_DEBUG
     bool                actionDebugCommand(const std::string &);
