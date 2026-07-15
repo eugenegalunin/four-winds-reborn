@@ -162,6 +162,21 @@ namespace
         }
     }
 
+    int deterministicUniform(std::mt19937 & generator, int minimum, int maximum)
+    {
+        if(minimum > maximum) std::swap(minimum, maximum);
+
+        const std::uint64_t range = static_cast<std::uint64_t>(
+            static_cast<std::int64_t>(maximum) - minimum) + 1;
+        const std::uint64_t engineRange =
+            static_cast<std::uint64_t>(std::mt19937::max()) + 1;
+        const std::uint64_t limit = engineRange - engineRange % range;
+
+        std::uint64_t value = 0;
+        do value = generator(); while(value >= limit);
+        return minimum + static_cast<int>(value % range);
+    }
+
     std::uint32_t forecastSeed(const BattleParty & attackers, const BattleTown & town,
                                const BattleParty* defenders, AI::BehaviorProfile attackersProfile,
                                AI::BehaviorProfile defendersProfile, int samples)
@@ -323,8 +338,7 @@ AI::BattleForecast AI::forecastBattle(const BattleParty & attackers, const Battl
                                         defendersProfile, forecast.samples));
     const Battle::RandomRoll randomRoll = [&](int minimum, int maximum)
     {
-        if(minimum > maximum) std::swap(minimum, maximum);
-        return std::uniform_int_distribution<int>(minimum, maximum)(generator);
+        return deterministicUniform(generator, minimum, maximum);
     };
 
     for(int sample = 0; sample < forecast.samples; ++sample)

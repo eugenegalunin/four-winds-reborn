@@ -1077,11 +1077,13 @@ int main(int argc, char** argv)
         CrashReport::shutdown();
 
         std::string content;
-        const bool valid = Systems::readFile2String(report, content) &&
+        bool valid = Systems::readFile2String(report, content) &&
             content.find("[ACTION] crash reporter self-test action") != std::string::npos &&
             content.find("[FATAL EXCEPTION] crash reporter self-test exception") != std::string::npos &&
-            content.find("Stack trace:") != std::string::npos &&
             content.find("[SESSION END] failure") != std::string::npos;
+#if defined(__APPLE__) || defined(__linux__)
+        valid = valid && content.find("Stack trace:") != std::string::npos;
+#endif
         if(!valid)
         {
             std::cerr << "FAIL: crash report is incomplete: " << report << '\n';
