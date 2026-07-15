@@ -76,7 +76,7 @@ bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecS
     // cast or summon
     const AvatarInfo & avatarInfo = GameData::avatarInfo(avatar);
 
-    if(!player.isCasted() && !player.isAffectedSpell(Spell::Silence) &&
+    if(!player.isCasted() && !player.isSilenced() &&
        !player.isAffectedSpell(Spell::ManaFog))
     {
 	Creatures summons;

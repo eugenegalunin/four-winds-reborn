@@ -3011,6 +3011,12 @@ Stone CroupierSet::get(RemotePlayer & client)
     Stone res;
     auto it = bank.end();
 
+    if(bank.empty())
+    {
+	ERROR("cannot draw from an empty rune wall");
+	return res;
+    }
+
     if(client.isAffectedSpell(Spell::DrawNumber))
     {
 	DEBUG("affected spell over: " << "draw number");
@@ -3335,6 +3341,12 @@ bool RemotePlayer::isAffectedSpell(const Spell & spell, const Avatar & source) c
     return affected.isAffected(spell, source);
 }
 
+bool RemotePlayer::isSilenced(void) const
+{
+    return isAffectedSpell(Spell::Silence) &&
+           GameData::avatarInfo(avatar).ability() != Ability::Telepath;
+}
+
 void RemotePlayer::affectedSpellActivate(const Spell & spell)
 {
     affected.spellAffected(spell);
@@ -3447,7 +3459,7 @@ bool LocalPlayer::haveKong(void) const
 
 bool LocalPlayer::allowCastSpell(const Spell & spell) const
 {
-    if(isAffectedSpell(Spell::Silence) || isAffectedSpell(Spell::ManaFog))
+    if(isSilenced() || isAffectedSpell(Spell::ManaFog))
         return false;
 
     // check avatar info spells
@@ -3465,7 +3477,7 @@ bool LocalPlayer::allowCastSpell(const Spell & spell) const
 
 bool LocalPlayer::isMahjongChao(const Wind & currentWind, const Stone & dropStone) const
 {
-    if(isAffectedSpell(Spell::Silence))
+    if(isSilenced())
         return false;
 
     return dropStone.isValid() && ! dropStone.isSpecial() &&
@@ -3475,7 +3487,7 @@ bool LocalPlayer::isMahjongChao(const Wind & currentWind, const Stone & dropSton
 
 bool LocalPlayer::isMahjongPung(const Wind & currentWind, const Stone & dropStone) const
 {
-    if(isAffectedSpell(Spell::Silence))
+    if(isSilenced())
         return false;
 
     if(dropStone.isValid() && currentWind != wind)
@@ -3486,7 +3498,7 @@ bool LocalPlayer::isMahjongPung(const Wind & currentWind, const Stone & dropSton
 
 bool LocalPlayer::isMahjongKong1(const Wind & currentWind, const Stone & dropStone) const
 {
-    if(isAffectedSpell(Spell::Silence))
+    if(isSilenced())
         return false;
 
     if(dropStone.isValid() && currentWind != wind)
@@ -3497,7 +3509,7 @@ bool LocalPlayer::isMahjongKong1(const Wind & currentWind, const Stone & dropSto
 
 bool LocalPlayer::isMahjongKong2(const Wind & currentWind) const
 {
-    if(isAffectedSpell(Spell::Silence))
+    if(isSilenced())
         return false;
 
     if(newStone.isValid() && currentWind == wind)
@@ -3511,7 +3523,7 @@ bool LocalPlayer::isMahjongKong2(const Wind & currentWind) const
 
 bool LocalPlayer::isWinMahjong(const Wind & currentWind, const Wind & roundWind, const Stone & dropStone, WinResults* winResult) const
 {
-    if(isAffectedSpell(Spell::Silence))
+    if(isSilenced())
         return false;
 
     Stone winStone;

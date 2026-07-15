@@ -275,7 +275,7 @@ _("\tAn important supplementary spell, healing restores two loyalty to a friendl
 _("\tThe most destructive spell in the lands, hellblast surrounds a targeted enemy army with a searing hot firestorm causing some major damage."),
 // mahjong summary part
 _("Luck: choose a rune"),
-_("The other rune returns to the bottom of the wall."),
+_("The other rune returns to the wall."),
 _("Land Claims"),
 _("Spell Points"),
 _("Win Rune"),

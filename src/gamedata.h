@@ -206,7 +206,7 @@ struct LocalData
     Stone			dropStone;
     WinResults			winResult;
 
-    bool			newRound(void) const { return partWind() == Wind::East && stoneLastCount == 84; }
+    bool			newRound(void) const { return partWind() == Wind::East && stoneLastCount == GAME_STONE_MAX; }
     bool			yourTurn(void) const { return currentWind == compass.bottom(); }
 
     LocalPlayer &		myPlayer(void);

@@ -15,6 +15,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DBUILD_DEBUG")
 add_subdirectory(engine)
 
 set(FOUR_WINDS_SOURCE
+    src/crashreport.cpp
     src/strings.cpp
     src/gamedata.cpp
     src/runewars.cpp
@@ -42,8 +43,7 @@ add_executable(four_winds_reborn ${FOUR_WINDS_SOURCE})
 
 target_link_libraries(four_winds_reborn libswe)
 set_target_properties(four_winds_reborn PROPERTIES
-    OUTPUT_NAME four-winds-reborn
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    OUTPUT_NAME four-winds-reborn)
 
 option(BUILD_TESTING "Build gameplay regression tests" OFF)
 include(CTest)
@@ -58,4 +58,7 @@ if(BUILD_TESTING)
     target_link_libraries(gameplay_regression_tests libswe)
     add_test(NAME gameplay_regressions COMMAND gameplay_regression_tests)
     add_test(NAME avatar_balance_metrics COMMAND gameplay_regression_tests --balance-only)
+    add_test(NAME crash_reporting COMMAND gameplay_regression_tests --crash-report-self-test)
+    set_tests_properties(crash_reporting PROPERTIES
+        ENVIRONMENT "FOUR_WINDS_DIAGNOSTICS_DIR=${CMAKE_BINARY_DIR}/diagnostics-test")
 endif()

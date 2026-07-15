@@ -15,23 +15,37 @@ its original LGPL-3.0-or-later license and upstream attribution preserved.
 
 ## Build and Run
 
-Requirements:
-- CMake 3.14+
-- C++17 compiler (`clang++` or `g++`)
-
-macOS (Homebrew) dependencies:
+Clone with the engine submodule:
 ```bash
-brew install pkg-config sdl2 sdl2_image sdl2_mixer sdl2_ttf sdl2_net sdl2_gfx boost
-export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig:${PKG_CONFIG_PATH}"
+git clone --recurse-submodules https://github.com/eugenegalunin/four-winds-reborn.git
+cd four-winds-reborn
 ```
 
-Commands:
+macOS or Linux builds the Release binary and runs all tests with one command:
 ```bash
-git submodule update --init --recursive
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
+./scripts/build.sh
 ./four-winds-reborn
 ```
+
+On a fresh macOS or Debian/Ubuntu machine, let the script install dependencies:
+```bash
+./scripts/build.sh --install-deps
+```
+
+Windows uses MSYS2 UCRT64/MinGW because the SDL engine is not an MSVC project:
+```powershell
+.\scripts\build-windows.ps1 -InstallDeps
+.\dist\windows\four-winds-reborn.exe
+```
+
+Install [MSYS2](https://www.msys2.org/) in `C:\msys64` first, or pass
+`-MsysRoot D:\path\to\msys64`. Later builds only need
+`.\scripts\build-windows.ps1`. Unix scripts accept `--clean`, `--debug` and
+`--no-tests`; PowerShell accepts `-Clean`, `-DebugBuild` and `-NoTests`.
+
+Manual requirements are CMake 3.14+, a C++17 compiler, pkg-config, zlib, SDL2,
+SDL2_image, SDL2_mixer and SDL2_ttf. Boost stacktrace is optional because the
+game has a native crash-report fallback.
 
 Useful launch flags:
 ```bash
@@ -41,7 +55,7 @@ Useful launch flags:
 ./four-winds-reborn -s /path/game.sav
 ```
 
-Optional gameplay regression tests:
+Manual gameplay regression tests:
 ```bash
 cmake -S . -B build-tests -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
 cmake --build build-tests -j
@@ -53,8 +67,24 @@ Print the deterministic avatar and Hell Blast balance report:
 ./build-tests/gameplay_regression_tests --balance-only
 ```
 
-The baseline compares summon rosters and spell plans on common fixtures.
-Passive abilities are added to the report as their gameplay rules are implemented.
+The baseline compares summon rosters, spell plans and avatar passives on common fixtures.
+Catastrophic is represented by Hell Blast in the spell score; Bard, Monacle, Luck and
+Telepath are reported in a separate passive column.
+
+## Crash Diagnostics
+
+The game keeps a persistent engine log and a crash report with recent Mahjong
+actions. On macOS they are stored in:
+
+```text
+~/Library/Application Support/four-winds-reborn/four-winds-reborn.log
+~/Library/Application Support/four-winds-reborn/crash-report.log
+```
+
+Linux and Windows use the SDL per-user application data directory. All platforms
+record uncaught C++/SWE exceptions and recent actions; macOS/Linux also append a
+native stack for fatal signals. Reports rotate at 4 MiB; a hard crash deliberately
+has no `clean shutdown` marker.
 
 Implemented battle and map-phase rules are documented in
 [`docs/BattleAndAdventureRules.md`](docs/BattleAndAdventureRules.md). Spell

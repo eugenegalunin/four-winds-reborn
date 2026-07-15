@@ -29,6 +29,7 @@
 #include "dialogs.h"
 #include "adventurepart.h"
 #include "actions.h"
+#include "crashreport.h"
 #include "mahjongpart.h"
 
 StoneSprite::StoneSprite(const Stone & v, int size, const Point & pos) : Stone(v)
@@ -58,6 +59,25 @@ void StoneSprite::set(const Stone & v, int size)
 
 namespace
 {
+class ScopedTickPause
+{
+    Window & window;
+
+public:
+    explicit ScopedTickPause(Window & win) : window(win)
+    {
+	window.disableTickEvent(true);
+    }
+
+    ~ScopedTickPause()
+    {
+	window.disableTickEvent(false);
+    }
+
+    ScopedTickPause(const ScopedTickPause &) = delete;
+    ScopedTickPause & operator=(const ScopedTickPause &) = delete;
+};
+
 class LuckDrawDialog : public DialogWindow
 {
     StoneSprite		first;
@@ -143,7 +163,7 @@ public:
 	renderTexture(first);
 	renderTexture(second);
 
-	renderText(defaultFont, _("The other rune returns to the bottom of the wall."),
+	renderText(defaultFont, _("The other rune returns to the wall."),
 	           textColor, hintPos, AlignCenter);
     }
 };
@@ -463,7 +483,7 @@ void MahjongPartScreen::renderWindow(void)
 bool MahjongPartScreen::checkCastInformer(void) const
 {
     if(ld.myPlayer().isCasted() ||
-       ld.myPlayer().isAffectedSpell(Spell::Silence) ||
+       ld.myPlayer().isSilenced() ||
        ld.myPlayer().isAffectedSpell(Spell::ManaFog))
 	return false;
 
@@ -1423,6 +1443,8 @@ void MahjongPartScreen::tickEvent(u32 ms)
 	{
 	    auto action = actions.front();
 	    actions.pop_front();
+	    CrashReport::breadcrumb(std::string("Mahjong action type=")
+	        .append(String::number(action.type())).append(" payload=").append(action.toString()));
 
 	    switch(action.type())
 	    {
@@ -1529,7 +1551,11 @@ bool MahjongPartScreen::actionMahjongLuckChoice(const ActionMessage & v)
     }
 
     LuckDrawDialog dialog(choices, *this);
-    dialog.exec();
+    {
+	// A nested dialog loop still ticks its parent unless explicitly paused.
+	ScopedTickPause pause(*this);
+	dialog.exec();
+    }
 
     const int selected = dialog.resultCode();
     if(selected < 0 || 1 < selected)
@@ -1538,7 +1564,9 @@ bool MahjongPartScreen::actionMahjongLuckChoice(const ActionMessage & v)
 	return false;
     }
 
-    GameData::client2Mahjong(myAvatar, ClientLuckChoice(selected), actions);
+    CrashReport::breadcrumb(std::string("Luck selection=").append(String::number(selected)));
+    if(!GameData::client2Mahjong(myAvatar, ClientLuckChoice(selected), actions))
+	ERROR("Luck draw selection was rejected: " << selected);
     return false;
 }
 

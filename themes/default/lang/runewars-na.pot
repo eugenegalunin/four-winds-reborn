@@ -1904,5 +1904,5 @@ msgid "Luck: choose a rune"
 msgstr ""
 
 #: ../src/mahjongpart.cpp
-msgid "The other rune returns to the bottom of the wall."
+msgid "The other rune returns to the wall."
 msgstr ""

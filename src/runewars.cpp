@@ -23,6 +23,7 @@
 #include <random>
 #include <clocale>
 #include <algorithm>
+#include <exception>
 
 #include "gametheme.h"
 #include "settings.h"
@@ -33,6 +34,7 @@
 #include "adventurepart.h"
 #include "battlesummarypart.h"
 #include "gamesummarypart.h"
+#include "crashreport.h"
 
 #include "runewars.h"
 
@@ -343,18 +345,39 @@ int main(int argc, char **argv)
 {
     Systems::setLocale(LC_ALL, "");
     Systems::setLocale(LC_NUMERIC, "C");
+    CrashReport::install(Application::domain());
+
+    int result = EXIT_SUCCESS;
 
     try
     {
 	RuneWarsClient client(argc, argv);
 
 	if(! client.exec())
-	    return EXIT_FAILURE;
+	    result = EXIT_FAILURE;
     }
-    catch(Engine::exception &)
+    catch(const Engine::exception & exception)
     {
+	if(exception.message() != "SDL_QUIT")
+	{
+	    CrashReport::reportException(std::string("SWE exception in ")
+	        .append(exception.function()).append(": ").append(exception.message()));
+	    result = EXIT_FAILURE;
+	}
+    }
+    catch(const std::exception & exception)
+    {
+	CrashReport::reportException(std::string("C++ exception: ").append(exception.what()));
+	result = EXIT_FAILURE;
+    }
+    catch(...)
+    {
+	CrashReport::reportException("unknown C++ exception");
+	result = EXIT_FAILURE;
     }
 
-    return EXIT_SUCCESS;
+    CrashReport::shutdown();
+
+    return result;
 }
 #endif

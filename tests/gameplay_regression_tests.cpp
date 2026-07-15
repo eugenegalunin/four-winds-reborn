@@ -9,6 +9,7 @@
 #include "aiturn.h"
 #include "avatar_balance_tests.h"
 #include "battle.h"
+#include "crashreport.h"
 
 namespace GameData
 {
@@ -280,6 +281,20 @@ void testLuckAbility()
     expect(wall.bank.front() == Stone(Stone::Sword4) &&
            wall.bank.back() == Stone(Stone::Number3),
            "Luck must return the rejected rune to the bottom of the wall");
+    const VecStones resolvedBank = wall.bank;
+    expect(!wall.resolveLuckDraw(0).isValid() && wall.bank == resolvedBank,
+           "a repeated Luck response must not consume another rune");
+
+    expect(wall.beginLuckDraw(), "Luck reset fixture must start a pending choice");
+    wall.reset();
+    expect(!wall.hasLuckDraw() && wall.bank.size() == 136 && wall.trash.empty(),
+           "a new round must clear pending Luck state and rebuild the wall");
+
+    LocalData roundStart;
+    roundStart.partWind = Wind(Wind::East);
+    roundStart.stoneLastCount = GAME_STONE_MAX;
+    expect(roundStart.newRound(),
+           "the client must recognize the server rune count as a new round");
 
     CroupierSet saved;
     saved.bank.clear();
@@ -368,6 +383,132 @@ void testLuckAbility()
            serverChoice.choices() == choices &&
            clientChoice.type() == Action::ClientLuckChoice && clientChoice.index() == 1,
            "Luck client/server messages must preserve their choice payloads");
+}
+
+void testAvatarPassives()
+{
+    LocalPlayer logun;
+    logun.avatar = Avatar::Logun;
+    logun.clan = Clan::Red;
+    logun.wind = Wind::East;
+
+    BattleParty band(Clan::Red, Land::Corzen);
+    BattleCreature badlyWounded(Clan::Red, Creature::Durlock, 380);
+    BattleCreature lightlyWounded(Clan::Red, Creature::Durlock, 381);
+    badlyWounded.applyDamage(3);
+    lightlyWounded.applyDamage(1);
+    expect(band.join(badlyWounded) && band.join(lightlyWounded),
+           "Bard healing fixture must join");
+    logun.army.push_back(band);
+    logun.initAdventurePart();
+
+    const BattleCreature* healedThree = logun.army.findBattleUnitConst(380);
+    const BattleCreature* healedToFull = logun.army.findBattleUnitConst(381);
+    expect(healedThree && healedThree->loyalty() == 3,
+           "Bard must restore exactly two loyalty at map phase start");
+    expect(healedToFull && healedToFull->loyalty() == healedToFull->baseLoyalty(),
+           "Bard healing must not exceed base loyalty");
+
+    BattleCreature ordinary(Clan::Red, Creature::Durlock, 382);
+    ordinary.applyDamage(3);
+    ordinary.initAdventurePart(Ability::None);
+    expect(ordinary.loyalty() == 1,
+           "creatures without Bard or a healing speciality must not heal automatically");
+
+    const LocalPlayers savedPlayers = GameData::gamers;
+    GameData::gamers.clear();
+
+    LocalPlayer orachi;
+    orachi.avatar = Avatar::Orachi;
+    orachi.clan = Clan::Red;
+    orachi.wind = Wind::East;
+    GameData::gamers.push_back(orachi);
+
+    LocalPlayer ziag;
+    ziag.avatar = Avatar::Ziag;
+    ziag.clan = Clan::Aqua;
+    ziag.wind = Wind::South;
+    GameData::gamers.push_back(ziag);
+
+    LocalPlayer lakkho;
+    lakkho.avatar = Avatar::Lakkho;
+    lakkho.clan = Clan::Yellow;
+    lakkho.wind = Wind::West;
+    BattleParty hiddenParty(Clan::Yellow, Land::Zubrus);
+    expect(hiddenParty.join(BattleCreature(Clan::Yellow, Creature::Shadow, 390)),
+           "Monacle invisibility fixture must join");
+    lakkho.army.push_back(hiddenParty);
+    GameData::gamers.push_back(lakkho);
+
+    LocalPlayer dayla;
+    dayla.avatar = Avatar::Dayla;
+    dayla.clan = Clan::Purple;
+    dayla.wind = Wind::North;
+    GameData::gamers.push_back(dayla);
+
+    const LocalData ordinaryView = GameData::toLocalData(Avatar(Avatar::Orachi));
+    const LocalData monacleView = GameData::toLocalData(Avatar(Avatar::Ziag));
+    expect(!ordinaryView.playerOfAvatar(Avatar(Avatar::Lakkho)).army.findBattleUnitConst(390),
+           "an ordinary avatar must not receive hidden creatures in local map data");
+    expect(monacleView.playerOfAvatar(Avatar(Avatar::Lakkho)).army.findBattleUnitConst(390),
+           "Monacle must reveal invisible creatures anywhere on the map");
+    expect(GameData::gamers.playerOfAvatar(Avatar(Avatar::Lakkho))->army.findBattleUnitConst(390),
+           "visibility filtering must not mutate the authoritative army");
+    GameData::gamers = savedPlayers;
+
+    LocalPlayer javed;
+    javed.avatar = Avatar::Javed;
+    javed.clan = Clan::Red;
+    javed.wind = Wind::South;
+    javed.points = 500;
+    expect(!javed.mahjongApplySpell(Spell(Spell::Silence), Avatar(Avatar::Orachi)) &&
+           !javed.isAffectedSpell(Spell::Silence),
+           "Telepath must reject newly cast Silence");
+
+    javed.affected.insert(AffectedSpell(Spell(Spell::Silence), 3));
+    expect(!javed.isSilenced(),
+           "Telepath must ignore Silence restored from an older save");
+    expect(javed.allowCastSpell(Spell(Spell::Healing)),
+           "Telepath must retain spell casting while Silence is present");
+
+    LocalPlayer chao = javed;
+    chao.stones.add(GameStone(Stone::Sword1));
+    chao.stones.add(GameStone(Stone::Sword3));
+    expect(chao.isMahjongChao(Wind(Wind::East), Stone(Stone::Sword2)),
+           "Telepath must retain Chao while Silence is present");
+
+    LocalPlayer pung = javed;
+    pung.stones.add(GameStone(Stone::Sword4));
+    pung.stones.add(GameStone(Stone::Sword4));
+    expect(pung.isMahjongPung(Wind(Wind::East), Stone(Stone::Sword4)),
+           "Telepath must retain Pung while Silence is present");
+
+    LocalPlayer kong = javed;
+    kong.stones.add(GameStone(Stone::Sword5));
+    kong.stones.add(GameStone(Stone::Sword5));
+    kong.stones.add(GameStone(Stone::Sword5));
+    expect(kong.isMahjongKong1(Wind(Wind::East), Stone(Stone::Sword5)),
+           "Telepath must retain Kong while Silence is present");
+
+    LocalPlayer game = javed;
+    const Stone::stone_t winningStones[] = {
+        Stone::Skull1, Stone::Skull2, Stone::Skull3,
+        Stone::Sword1, Stone::Sword2, Stone::Sword3,
+        Stone::Number1, Stone::Number2, Stone::Number3,
+        Stone::Dragon1, Stone::Dragon1, Stone::Dragon1,
+        Stone::WindEast
+    };
+    for(const Stone::stone_t stone : winningStones) game.stones.add(GameStone(stone));
+    expect(game.isWinMahjong(Wind(Wind::East), Wind(Wind::East), Stone(Stone::WindEast)),
+           "Telepath must retain Game while Silence is present");
+
+    LocalPlayer ordinaryWizard;
+    ordinaryWizard.avatar = Avatar::Lakkho;
+    ordinaryWizard.points = 500;
+    expect(ordinaryWizard.mahjongApplySpell(Spell(Spell::Silence), Avatar(Avatar::Orachi)) &&
+           ordinaryWizard.isSilenced() &&
+           !ordinaryWizard.allowCastSpell(Spell(Spell::Healing)),
+           "Silence must still block a non-Telepath wizard");
 }
 
 void testSpellCastingAI()
@@ -927,6 +1068,35 @@ void testBattleAI()
 
 int main(int argc, char** argv)
 {
+    if(1 < argc && std::string(argv[1]) == "--crash-report-self-test")
+    {
+        CrashReport::install("four-winds-reborn-test");
+        CrashReport::breadcrumb("crash reporter self-test action");
+        CrashReport::reportException("crash reporter self-test exception");
+        const std::string report = CrashReport::filePath();
+        CrashReport::shutdown();
+
+        std::string content;
+        const bool valid = Systems::readFile2String(report, content) &&
+            content.find("[ACTION] crash reporter self-test action") != std::string::npos &&
+            content.find("[FATAL EXCEPTION] crash reporter self-test exception") != std::string::npos &&
+            content.find("Stack trace:") != std::string::npos &&
+            content.find("[SESSION END] failure") != std::string::npos;
+        if(!valid)
+        {
+            std::cerr << "FAIL: crash report is incomplete: " << report << '\n';
+            return 1;
+        }
+
+        std::cout << "crash reporting: ok\n";
+        return 0;
+    }
+
+    const Engine::exception diagnosticException("mahjongTick", "invalid state");
+    expect(diagnosticException.function() == "mahjongTick" &&
+           diagnosticException.message() == "invalid state",
+           "engine exceptions must retain diagnostic context");
+
     const std::string unicodeSample = "Four Winds: Привет, мир! 🌬️";
     expect(UnicodeString(unicodeSample).toString() == unicodeSample,
            "engine UTF-8/UTF-16 conversion must preserve Cyrillic and supplementary characters");
@@ -951,6 +1121,7 @@ int main(int argc, char** argv)
     testSelectedPartyMovement();
     testGateMovement();
     testLuckAbility();
+    testAvatarPassives();
     testSpellCastingAI();
     testAdventureProfiles();
     testAdventureCoordination();

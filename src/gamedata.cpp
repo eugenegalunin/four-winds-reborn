@@ -982,7 +982,7 @@ bool GameData::clientSayGame(const Avatar & avatar, const ClientMessage & act, A
 {
     LocalPlayer & client = playerOfAvatar(avatar);
 
-    if(client.isAffectedSpell(Spell::Silence))
+    if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
 	return false;
@@ -1008,7 +1008,7 @@ bool GameData::clientSayChao(const Avatar & avatar, const ClientMessage & act, A
 
     DEBUG(client.toString());
 
-    if(client.isAffectedSpell(Spell::Silence))
+    if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
 	return false;
@@ -1031,7 +1031,7 @@ bool GameData::clientSayPung(const Avatar & avatar, const ClientMessage & act, A
 
     DEBUG(client.toString());
 
-    if(client.isAffectedSpell(Spell::Silence))
+    if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
 	return false;
@@ -1055,7 +1055,7 @@ bool GameData::clientSayKong(const Avatar & avatar, const ClientMessage & act, A
 
     DEBUG(client.toString());
 
-    if(client.isAffectedSpell(Spell::Silence))
+    if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
 	return false;
@@ -1134,7 +1134,7 @@ bool GameData::clientButtonPung(const Avatar & avatar, const ClientMessage & act
 
     DEBUG(client.toString());
 
-    if(client.isAffectedSpell(Spell::Silence))
+    if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
 	return false;
@@ -1237,7 +1237,7 @@ bool GameData::clientSummonCreature(const Avatar & avatar, const ClientMessage &
 
     auto ca = static_cast<const ClientSummonCreature &>(act);
 
-    if(client.isAffectedSpell(Spell::Silence))
+    if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
 	return false;
@@ -1326,7 +1326,7 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 
     auto ca = static_cast<const ClientCastSpell &>(act);
 
-    if(client.isAffectedSpell(Spell::Silence))
+    if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
 	return false;

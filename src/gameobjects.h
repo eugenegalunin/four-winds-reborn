@@ -1112,6 +1112,7 @@ struct RemotePlayer : public Person
     void			initAdventurePart(void);
     bool			isAffectedSpell(const Spell &) const;
     bool			isAffectedSpell(const Spell &, const Avatar &) const;
+    bool                        isSilenced(void) const;
     void			affectedSpellActivate(const Spell &);
 
     void			setAdventurePartDone(void);

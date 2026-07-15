@@ -16,6 +16,11 @@ namespace
 {
     constexpr int SummonBudget = 700;
     constexpr int PartyLimit = 3;
+    constexpr int LoyaltyScore = 14;
+    constexpr int UtilityScore = 12;
+    constexpr int OptionScore = 8;
+    constexpr int ProjectedLuckDraws = 6;
+    constexpr int SilenceDenialScore = 70;
 
     int failures = 0;
 
@@ -32,6 +37,7 @@ namespace
         int summonScore = 0;
         int summonCost = 0;
         int spellScore = 0;
+        int passiveScore = 0;
         int optionsScore = 0;
         int baseline = 0;
         Spell bestSpell;
@@ -99,6 +105,29 @@ namespace
         Creatures selected;
         searchRoster(avatar, 0, SummonBudget, 0, selected, result);
         return result;
+    }
+
+    int avatarPassiveScore(const AvatarInfo & avatar, const RosterPlan & roster)
+    {
+        const int partySize = static_cast<int>(roster.creatures.size());
+        switch(avatar.ability())
+        {
+            case Ability::Bard:
+                return partySize * 2 * LoyaltyScore;
+
+            case Ability::Monacle:
+                return partySize * UtilityScore;
+
+            case Ability::Luck:
+                return ProjectedLuckDraws * OptionScore;
+
+            case Ability::Telepath:
+                return SilenceDenialScore;
+
+            // Catastrophic is already represented by Hell Blast in spellScore.
+            default:
+                return 0;
+        }
     }
 
     BattleCreature battleCreature(const Clan & clan, const Creature & creature, int uid)
@@ -235,8 +264,8 @@ namespace
             return left.baseline > right.baseline;
         });
 
-        std::cout << "\navatar balance baseline (passives excluded unless they grant a spell)\n";
-        std::cout << "avatar      total  summon/cost/size  spell  options  best spell       best party\n";
+        std::cout << "\navatar balance baseline (passives modeled; Catastrophic is in spell score)\n";
+        std::cout << "avatar      total  summon/cost/size  spell  passive  options  best spell       best party\n";
         for(const AvatarBalanceRow & row : rows)
         {
             const AvatarInfo & info = GameData::avatarInfo(row.avatar);
@@ -247,9 +276,12 @@ namespace
                       << std::setw(5) << row.summonScore << '/' << std::setw(3) << row.summonCost
                       << '/' << row.party.size() << "  "
                       << std::setw(5) << row.spellScore << "  "
+                      << std::setw(7) << row.passiveScore << "  "
                       << std::setw(7) << row.optionsScore << "  "
                       << std::left << std::setw(16) << spell << partyName(row.party) << '\n';
         }
+        std::cout << "passive model: Bard=2 loyalty x party x 14; Monacle=party x 12 utility; "
+                  << "Luck=6 draws x 8 option value; Telepath=70 Silence denial\n";
     }
 }
 
@@ -272,9 +304,10 @@ int runAvatarBalanceTests(void)
         row.summonScore = roster.score;
         row.summonCost = roster.cost;
         row.spellScore = spells.score;
-        row.optionsScore = std::min<int>(12, info.creatures.size()) * 8 +
-                           std::min<int>(12, info.spells.size()) * 8;
-        row.baseline = row.summonScore + row.spellScore + row.optionsScore;
+        row.passiveScore = avatarPassiveScore(info, roster);
+        row.optionsScore = std::min<int>(12, info.creatures.size()) * OptionScore +
+                           std::min<int>(12, info.spells.size()) * OptionScore;
+        row.baseline = row.summonScore + row.spellScore + row.passiveScore + row.optionsScore;
         row.bestSpell = spells.spell;
         row.party = roster.creatures;
         rows.push_back(row);
@@ -284,6 +317,12 @@ int runAvatarBalanceTests(void)
         expect(roster.score > 0 && 2 <= roster.creatures.size(),
                "every avatar must field at least two useful creatures under the common budget");
         expect(spells.isValid(), "every avatar must have a useful cast in the common spell scenario");
+        const bool modeledPassive = info.ability == Ability(Ability::Bard) ||
+                                    info.ability == Ability(Ability::Monacle) ||
+                                    info.ability == Ability(Ability::Luck) ||
+                                    info.ability == Ability(Ability::Telepath);
+        expect(modeledPassive == (row.passiveScore > 0),
+               "every non-spell avatar passive must contribute exactly once to the baseline");
     }
 
     std::vector<int> baselines;

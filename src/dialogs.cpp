@@ -369,7 +369,7 @@ void RuneCastContent::addRow(const Enum & id, const Stones & stones, const std::
     back().description = desc;
     back().cost = cost;
     back().allowCast = !player.isCasted() &&
-	!player.isAffectedSpell(Spell::Silence) &&
+	!player.isSilenced() &&
 	!player.isAffectedSpell(Spell::ManaFog) &&
 	cost <= player.points && player.stones.allowCast(stones, newStone);
     back().pos = pos;

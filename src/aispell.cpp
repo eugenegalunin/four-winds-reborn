@@ -683,7 +683,7 @@ AI::SpellCastPlan AI::chooseSpellCast(const LocalPlayer & player, const Spells &
 {
     SpellCastPlan best;
     best.profile = profile;
-    if(player.isCasted() || player.isAffectedSpell(Spell::Silence) || player.isAffectedSpell(Spell::ManaFog))
+    if(player.isCasted() || player.isSilenced() || player.isAffectedSpell(Spell::ManaFog))
         return best;
 
     const AI::BehaviorRules & rules = AI::behaviorRules(profile);
