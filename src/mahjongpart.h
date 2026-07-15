@@ -188,6 +188,7 @@ class MahjongPartScreen : public JsonWindow
     bool		actionMahjongBegin(const ActionMessage &);
     bool		actionMahjongEnd(const ActionMessage &);
     bool		actionMahjongTurn(const ActionMessage &);
+    bool		actionMahjongLuckChoice(const ActionMessage &);
     bool		actionMahjongGame(const ActionMessage &);
     bool		actionMahjongKong1(const ActionMessage &);
     bool		actionMahjongKong2(const ActionMessage &);

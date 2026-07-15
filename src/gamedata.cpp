@@ -123,6 +123,7 @@ namespace GameData
     LocalPlayer &	playerOfClan(const Clan &);
     LocalPlayer &	playerOfAvatar(const Avatar &);
     LocalPlayer &	playerOfWind(const Wind &);
+    bool		clientLuckChoice(const Avatar &, const ClientMessage &, ActionList &);
 }
 
 bool GameData::init(const JsonObject & jo)
@@ -847,6 +848,16 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 {
     LocalPlayer & current = playerOfWind(currentWind);
 
+    if(croupier.hasLuckDraw())
+    {
+	if(current.avatar == avatar)
+	{
+	    actions.push_back(MahjongLuckChoice(currentWind, croupier.luckChoices()));
+	    return true;
+	}
+	return false;
+    }
+
     if(current.newStone.isValid() || skipNewTurn)
     {
 	//DEBUG("wind: " << currentWind.toString() << ", " << "person: " << current.name() << ", " << 
@@ -881,10 +892,32 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
     bool showGame2 = false;
     bool showKong2 = false;
 
-    current.newTurnEvent(croupier, skipNewStone);
+    const bool luckDraw = current.newTurnEvent(croupier, skipNewStone);
 
     if(! skipNewStone)
     {
+	if(luckDraw)
+	{
+	    if(!current.isAI())
+	    {
+		actions.push_back(MahjongLuckChoice(currentWind, croupier.luckChoices()));
+		return true;
+	    }
+
+	    WinRules other;
+	    const WinRules & left = playerOfWind(prevWindCompass(currentWind)).rules;
+	    const WinRules & right = playerOfWind(nextWindCompass(currentWind)).rules;
+	    const WinRules & top = playerOfWind(oppositeWindCompass(currentWind)).rules;
+	    other.reserve(left.size() + right.size() + top.size());
+	    other.insert(other.end(), left.begin(), left.end());
+	    other.insert(other.end(), right.begin(), right.end());
+	    other.insert(other.end(), top.begin(), top.end());
+
+	    const int selected = AI::mahjongLuckChoice(current.stones, croupier.luckChoices(),
+	                                                  croupier.trash, other);
+	    current.newStone = GameStone(croupier.resolveLuckDraw(selected), false);
+	}
+
 	stoneLastCount--;
 
 	showGame2 = current.isWinMahjong(currentWind, roundWind, dropStone, & winResult);
@@ -909,6 +942,29 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 	actions.push_back(MahjongData(currentWind));
     }
 
+    return true;
+}
+
+bool GameData::clientLuckChoice(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
+{
+    LocalPlayer & client = playerOfAvatar(avatar);
+    if(client.wind != currentWind || client.isAI() || client.newStone.isValid() || !croupier.hasLuckDraw())
+    {
+	ERROR("invalid luck choice: " << client.toString());
+	return false;
+    }
+
+    const auto choice = static_cast<const ClientLuckChoice &>(act);
+    const Stone selected = croupier.resolveLuckDraw(choice.index());
+    if(!selected.isValid()) return false;
+
+    client.newStone = GameStone(selected, false);
+    if(0 < stoneLastCount) stoneLastCount--;
+
+    const bool showGame = client.isWinMahjong(currentWind, roundWind, dropStone, &winResult);
+    const bool showKong = client.isMahjongKong2(currentWind);
+    actions.push_back(MahjongTurn(currentWind, client.newStone, showKong, showGame));
+    actions.push_back(MahjongData(currentWind));
     return true;
 }
 
@@ -1481,6 +1537,7 @@ bool GameData::client2Mahjong(const Avatar & avatar, const ClientMessage & act, 
 	case Action::ClientButtonKong2:	return clientButtonKong2(avatar, act, actions);
 	case Action::ClientChaoVariant:	return clientChaoVariant(avatar, act, actions);
 	case Action::ClientDropIndex:	return clientDropIndex(avatar, act, actions);
+	case Action::ClientLuckChoice:	return clientLuckChoice(avatar, act, actions);
 	case Action::ClientSummonCreature: return clientSummonCreature(avatar, act, actions);
 	case Action::ClientCastSpell:	return clientCastSpell(avatar, act, actions);
 
@@ -1520,6 +1577,7 @@ void GameData::validateMahjongSummary(void)
     DEBUG("croupier trash: " << croupier.trash.toString());
     DEBUG("croupier bank: " << croupier.bank.toString());
     total += croupier.trash.size() + croupier.bank.size();
+    total += croupier.luckDraw.size();
 
     DEBUG("game total: " << total << ", " << "(" << (total != 136 ? "FALSE" : "TRUE") << ")");
 }

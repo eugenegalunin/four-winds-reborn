@@ -35,6 +35,7 @@ namespace AI
 			    const Stone & dropStone, WinResults &, ActionList &, bool sayOnly);
 
     int         mahjongSelect(const GameStones &, const VecStones &, const WinRules &);
+    int         mahjongLuckChoice(const GameStones &, const VecStones &, const VecStones &, const WinRules &);
     void        mahjongOtherPass(const Wind &, ActionList &, const Wind &);
     void        mahjongSummonCast(const Avatar &, const Creatures &, const Spells &, ActionList &);
 

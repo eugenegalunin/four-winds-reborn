@@ -45,7 +45,8 @@ namespace Action
 
             AdventureBegin, AdventureTurn, AdventureMoves, AdventureClaim, AdventureCombat, AdventureEnd,
 
-            MahjongDropSelected, MahjongOutOfTime, MahjongGameQuit, ButtonOrder,
+	    MahjongDropSelected, MahjongOutOfTime, MahjongGameQuit, ButtonOrder,
+	    ClientLuckChoice, MahjongLuckChoice,
             Last };
 }
 
@@ -124,6 +125,21 @@ struct MahjongTurn : MahjongMessage
     bool showGame(void) const
     {
 	return getBoolean("showGame");
+    }
+};
+
+struct MahjongLuckChoice : MahjongMessage
+{
+    MahjongLuckChoice(const Wind & curWind, const VecStones & choices)
+	: MahjongMessage(Action::MahjongLuckChoice, curWind)
+    {
+	addArray("choices", choices.toJsonArray());
+    }
+
+    VecStones choices(void) const
+    {
+	const JsonArray* values = getArray("choices");
+	return values ? VecStones::fromJsonArray(*values) : VecStones();
     }
 };
 
@@ -458,6 +474,16 @@ struct ClientDropIndex : ClientMessage
     }
 
     int dropIndex(void) const { return getInteger("dropIndex"); }
+};
+
+struct ClientLuckChoice : ClientMessage
+{
+    ClientLuckChoice(int index) : ClientMessage(Action::ClientLuckChoice)
+    {
+	addInteger("index", index);
+    }
+
+    int index(void) const { return getInteger("index", -1); }
 };
 
 struct ClientSummonCreature : ClientMessage

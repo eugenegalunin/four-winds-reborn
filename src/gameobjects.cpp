@@ -3002,6 +3002,7 @@ void CroupierSet::reset(void)
     std::shuffle(bank.begin(), bank.end(), mtg);
 
     trash.clear();
+    luckDraw.clear();
     last = 0;
 }
 
@@ -3046,6 +3047,31 @@ Stone CroupierSet::get(RemotePlayer & client)
     return res;
 }
 
+bool CroupierSet::beginLuckDraw(void)
+{
+    if(!luckDraw.empty() || bank.size() < 2) return false;
+
+    luckDraw.push_back(bank.back());
+    bank.pop_back();
+    luckDraw.push_back(bank.back());
+    bank.pop_back();
+    return true;
+}
+
+Stone CroupierSet::resolveLuckDraw(int selected)
+{
+    if(!hasLuckDraw() || selected < 0 || static_cast<int>(luckDraw.size()) <= selected)
+	return Stone();
+
+    const Stone chosen = luckDraw[selected];
+    const Stone returned = luckDraw[1 - selected];
+
+    // Put the rejected rune at the bottom so replays and saves remain deterministic.
+    bank.insert(bank.begin(), returned);
+    luckDraw.clear();
+    return chosen;
+}
+
 bool CroupierSet::valid(void) const
 {
     return bank.size();
@@ -3062,6 +3088,7 @@ JsonObject CroupierSet::toJsonObject(void) const
     jo.addInteger("last", last);
     jo.addArray("bank", bank.toJsonArray());
     jo.addArray("trash", trash.toJsonArray());
+    if(!luckDraw.empty()) jo.addArray("luckDraw", luckDraw.toJsonArray());
     return jo;
 }
 
@@ -3075,6 +3102,16 @@ CroupierSet CroupierSet::fromJsonObject(const JsonObject & jo)
 
     ja = jo.getArray("trash");
     if(ja) res.trash = VecStones::fromJsonArray(*ja);
+
+    ja = jo.getArray("luckDraw");
+    if(ja)
+    {
+	VecStones pending = VecStones::fromJsonArray(*ja);
+	if(pending.size() == 2)
+	    res.luckDraw = pending;
+	else
+	    res.bank.insert(res.bank.begin(), pending.begin(), pending.end());
+    }
 
     res.last = jo.getInteger("last", 0);
     return res;
@@ -3360,7 +3397,7 @@ LocalPlayer LocalPlayer::fromJsonObject(const JsonObject & jo)
     return res;
 }
 
-void LocalPlayer::newTurnEvent(CroupierSet & croupier, bool skipNewStone /* pung, kong, chao */)
+bool LocalPlayer::newTurnEvent(CroupierSet & croupier, bool skipNewStone /* pung, kong, chao */)
 {
     DEBUG(toString() << ", " << "stones: " <<  stones.toString() <<  ", " << "rules: " <<  rules.toString());
 
@@ -3373,10 +3410,21 @@ void LocalPlayer::newTurnEvent(CroupierSet & croupier, bool skipNewStone /* pung
     }
     else
     {
+	const AvatarInfo & info = GameData::avatarInfo(avatar);
+	const bool directedDraw = isAffectedSpell(Spell::DrawNumber) ||
+	    isAffectedSpell(Spell::DrawSword) || isAffectedSpell(Spell::DrawSkull);
+	if(info.ability() == Ability::Luck && !directedDraw && croupier.beginLuckDraw())
+	{
+	    newStone = GameStone(Stone::None, true);
+	    DEBUG("luck draw: " << croupier.luckChoices().toString());
+	    return true;
+	}
+
 	newStone = GameStone(croupier.get(*this), false);
 	DEBUG("new stone: " << newStone() << ", " << "(" << newStone.toString() << ")");
     }
 
+    return false;
 }
 
 void LocalPlayer::initMahjongPart(void)

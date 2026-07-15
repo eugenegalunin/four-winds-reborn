@@ -6,6 +6,7 @@
 #include "aiadventure.h"
 #include "aibattle.h"
 #include "aispell.h"
+#include "aiturn.h"
 #include "battle.h"
 
 namespace GameData
@@ -252,6 +253,120 @@ void testGateMovement()
     expect(gatePlan.isValid() && gatePlan.target == Land(Land::Sunspot) &&
            gatePlan.destination == Land(Land::PyramusReach) && !gatePlan.engagesEnemy,
            "Adventure AI must use Gate when a friendly summoning circle shortens its route");
+}
+
+void testLuckAbility()
+{
+    CroupierSet wall;
+    wall.bank.clear();
+    wall.trash.clear();
+    wall.luckDraw.clear();
+    wall.bank.push_back(Stone(Stone::Number3));
+    wall.bank.push_back(Stone(Stone::Skull1));
+    wall.bank.push_back(Stone(Stone::Sword4));
+
+    expect(wall.beginLuckDraw(), "Luck must reveal two runes when the wall has enough runes");
+    expect(wall.luckChoices().size() == 2 &&
+           wall.luckChoices()[0] == Stone(Stone::Sword4) &&
+           wall.luckChoices()[1] == Stone(Stone::Skull1),
+           "Luck must reveal runes in their original draw order");
+    expect(!wall.resolveLuckDraw(-1).isValid() && wall.hasLuckDraw(),
+           "an invalid Luck choice must not consume either rune");
+
+    const Stone chosen = wall.resolveLuckDraw(1);
+    expect(chosen == Stone(Stone::Skull1) && !wall.hasLuckDraw() && wall.bank.size() == 2,
+           "Luck must keep exactly the selected rune");
+    expect(wall.bank.front() == Stone(Stone::Sword4) &&
+           wall.bank.back() == Stone(Stone::Number3),
+           "Luck must return the rejected rune to the bottom of the wall");
+
+    CroupierSet saved;
+    saved.bank.clear();
+    saved.trash.clear();
+    saved.luckDraw.clear();
+    saved.bank.push_back(Stone(Stone::Dragon1));
+    saved.bank.push_back(Stone(Stone::Number7));
+    saved.bank.push_back(Stone(Stone::Sword8));
+    expect(saved.beginLuckDraw(), "Luck save fixture must start a pending choice");
+    const CroupierSet restored = CroupierSet::fromJsonObject(saved.toJsonObject());
+    expect(restored.bank == saved.bank && restored.luckChoices() == saved.luckChoices(),
+           "a pending Luck choice and wall order must survive save/load");
+
+    CroupierSet malformed;
+    malformed.bank.clear();
+    malformed.trash.clear();
+    malformed.luckDraw.clear();
+    malformed.bank.push_back(Stone(Stone::Wind1));
+    malformed.luckDraw.push_back(Stone(Stone::Dragon2));
+    const CroupierSet repaired = CroupierSet::fromJsonObject(malformed.toJsonObject());
+    expect(!repaired.hasLuckDraw() && repaired.bank.size() == 2 &&
+           repaired.bank.front() == Stone(Stone::Dragon2),
+           "a malformed pending Luck choice must restore its rune to the wall");
+
+    LocalPlayer nucrus;
+    nucrus.avatar = Avatar::Nucrus;
+    nucrus.clan = Clan::Red;
+    nucrus.wind = Wind::East;
+    CroupierSet nucrusWall;
+    nucrusWall.bank.clear();
+    nucrusWall.trash.clear();
+    nucrusWall.luckDraw.clear();
+    nucrusWall.bank.push_back(Stone(Stone::Wind2));
+    nucrusWall.bank.push_back(Stone(Stone::Number5));
+    nucrusWall.bank.push_back(Stone(Stone::Sword6));
+    expect(nucrus.newTurnEvent(nucrusWall, false) && nucrusWall.hasLuckDraw() &&
+           !nucrus.newStone.isValid(),
+           "Nucrus must choose between two runes on an unforced turn draw");
+
+    LocalPlayer directedNucrus;
+    directedNucrus.avatar = Avatar::Nucrus;
+    directedNucrus.clan = Clan::Red;
+    directedNucrus.wind = Wind::East;
+    expect(directedNucrus.mahjongApplySpell(Spell(Spell::DrawNumber)),
+           "directed draw fixture must apply Summon Number Rune");
+    CroupierSet directedWall;
+    directedWall.bank.clear();
+    directedWall.trash.clear();
+    directedWall.luckDraw.clear();
+    directedWall.bank.push_back(Stone(Stone::Number8));
+    directedWall.bank.push_back(Stone(Stone::Skull4));
+    expect(!directedNucrus.newTurnEvent(directedWall, false) &&
+           directedNucrus.newStone.isNumber() && !directedWall.hasLuckDraw(),
+           "directed draw spells must take precedence over Luck");
+
+    LocalPlayers openingDeal;
+    const Avatar::avatar_t avatars[] = {
+        Avatar::Nucrus, Avatar::Orachi, Avatar::Lakkho, Avatar::Dayla
+    };
+    for(int index = 0; index < 4; ++index)
+    {
+	LocalPlayer player;
+	player.avatar = avatars[index];
+	player.clan = Clan(static_cast<Clan::clan_t>(Clan::Red + index));
+	player.wind = Wind(static_cast<Wind::wind_t>(Wind::East + index));
+	openingDeal.push_back(player);
+    }
+    CroupierSet openingWall;
+    openingDeal.distributeStones(openingWall);
+    expect(openingDeal.front().stones.size() == GAME_SET_COUNT && !openingWall.hasLuckDraw(),
+           "Luck must not trigger during the initial thirteen-rune deal");
+
+    GameStones hand;
+    hand.add(GameStone(Stone(Stone::Sword2), false));
+    hand.add(GameStone(Stone(Stone::Sword3), false));
+    VecStones choices;
+    choices.push_back(Stone(Stone::Sword4));
+    choices.push_back(Stone(Stone::Dragon1));
+    expect(AI::mahjongLuckChoice(hand, choices, VecStones(), WinRules()) == 0,
+           "Luck AI must prefer a rune that completes a sequence");
+
+    const MahjongLuckChoice serverChoice(Wind(Wind::East), choices);
+    const ClientLuckChoice clientChoice(1);
+    expect(serverChoice.type() == Action::MahjongLuckChoice &&
+           serverChoice.currentWind() == Wind(Wind::East) &&
+           serverChoice.choices() == choices &&
+           clientChoice.type() == Action::ClientLuckChoice && clientChoice.index() == 1,
+           "Luck client/server messages must preserve their choice payloads");
 }
 
 void testSpellCastingAI()
@@ -826,6 +941,7 @@ int main()
     testDifficultyRules();
     testSelectedPartyMovement();
     testGateMovement();
+    testLuckAbility();
     testSpellCastingAI();
     testAdventureProfiles();
     testAdventureCoordination();

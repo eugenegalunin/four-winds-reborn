@@ -17,7 +17,7 @@
     {
 	"id": "luck",
 	"name": "Luck",
-	"description": "%1 posesses unmatched skill and seemingly endless luck in the Rune Game. For this reason he always seems to draw the runes he needs."
+	"description": "%1 possesses uncanny luck in the Rune Game. On each unforced turn draw, he sees two runes and keeps one; the other returns to the bottom of the wall. Directed draw spells take precedence."
     },
     {
 	"id": "telepath",

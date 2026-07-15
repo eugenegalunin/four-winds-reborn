@@ -1,0 +1,13 @@
+{
+    "font": "dejavus18",
+    "size": [ 420, 240 ],
+    "width:border": 5,
+    "color:background": "gainsboro",
+    "color:header": "darkred",
+    "color:text": "navy",
+    "color:border": "midnightblue",
+    "color:selected": "goldenrod",
+    "offset:left": [ 120, 78 ],
+    "offset:right": [ 244, 78 ],
+    "offset:hint": [ 210, 190 ]
+}

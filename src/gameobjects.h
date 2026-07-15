@@ -899,11 +899,16 @@ struct CroupierSet
 {
     VecStones                   bank;
     VecStones                   trash;
+    VecStones                   luckDraw;
     int                         last;
 
     CroupierSet();
 
     Stone                       get(RemotePlayer &);
+    bool                        beginLuckDraw(void);
+    bool                        hasLuckDraw(void) const { return luckDraw.size() == 2; }
+    const VecStones &           luckChoices(void) const { return luckDraw; }
+    Stone                       resolveLuckDraw(int);
     void                        reset(void);
     bool                        valid(void) const;
     void                        put(const Stone &);
@@ -1138,7 +1143,7 @@ struct LocalPlayer : public RemotePlayer
     bool			allowCastSpell(const Spell &) const;
 
     void			initMahjongPart(void);
-    void			newTurnEvent(CroupierSet &, bool skipnewStone);
+    bool			newTurnEvent(CroupierSet &, bool skipnewStone);
 
     bool			isMahjongChao(const Wind &, const Stone &) const;
     bool			isMahjongPung(const Wind &, const Stone &) const;

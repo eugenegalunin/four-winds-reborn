@@ -119,7 +119,7 @@ _("Javed"),
 _("%1's monacle allows him to see all invisible units on the map."),
 _("%1's catasrophic Hellblast can wipe out entire army lines and is unique to her."),
 _("Being a bard, %1 is loved by all people and creatures around him. His songs inspire bravery which cause his creatures to regain 2 loyalty each round."),
-_("%1 posesses unmatched skill and seemingly endless luck in the Rune Game. For this reason he always seems to draw the runes he needs."),
+_("%1 possesses uncanny luck in the Rune Game. On each unforced turn draw, he sees two runes and keeps one; the other returns to the bottom of the wall. Directed draw spells take precedence."),
 _("%1 is a telepath. This allows him to chose, pung, kong, game and cast spells even when silence has been cast."),
 // person dignity
 _("Lord of the Dead"),
@@ -274,6 +274,8 @@ _("\tThe caster of this spell summons the power of the skies to strike an enemy 
 _("\tAn important supplementary spell, healing restores two loyalty to a friendly unit. Loyalty will be added up to the target's maximum."),
 _("\tThe most destructive spell in the lands, hellblast surrounds a targeted enemy army with a searing hot firestorm causing some major damage."),
 // mahjong summary part
+_("Luck: choose a rune"),
+_("The other rune returns to the bottom of the wall."),
 _("Land Claims"),
 _("Spell Points"),
 _("Win Rune"),

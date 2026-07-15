@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include <set>
+#include <limits>
 #include <random>
 #include <algorithm>
 
@@ -252,6 +253,61 @@ struct StoneCost
     bool		operator< (const StoneCost & sc) const { return cost < sc.cost; }
 };
 
+int mahjongStoneValue(const GameStones & stones, const GameStone & stone,
+                      const VecStones & trash, const WinRules & other)
+{
+    int cost = 100;
+
+    const int count1 = std::count(stones.begin(), stones.end(), stone);
+    const int count2 = std::count(trash.begin(), trash.end(), stone) +
+                       std::count(other.begin(), other.end(), stone);
+
+    if(stone.isSpecial())
+    {
+	if(1 < count1)
+	    cost += 3 < count1 + count2 ? -20 * count2 : 20 * count1;
+	return cost;
+    }
+
+    if(1 < count1)
+	cost += 3 < count1 + count2 ? -10 * count2 : 10 * count1;
+
+    switch(stone.order())
+    {
+	case 1:
+	    cost += 10 * ((stones.findStone(stone.next()) ? 1 : 0) +
+			 (stones.findStone(stone.next().next()) ? 1 : 0));
+	    break;
+	case 2:
+	    cost += 10 * ((stones.findStone(stone.prev()) ? 1 : 0) +
+			 (stones.findStone(stone.next()) ? 1 : 0) +
+			 (stones.findStone(stone.next().next()) ? 1 : 0));
+	    break;
+	case 3:
+	case 4:
+	case 5:
+	case 6:
+	case 7:
+	    cost += 10 * ((stones.findStone(stone.prev().prev()) ? 1 : 0) +
+			 (stones.findStone(stone.prev()) ? 1 : 0) +
+			 (stones.findStone(stone.next()) ? 1 : 0) +
+			 (stones.findStone(stone.next().next()) ? 1 : 0));
+	    break;
+	case 8:
+	    cost += 10 * ((stones.findStone(stone.prev().prev()) ? 1 : 0) +
+			 (stones.findStone(stone.prev()) ? 1 : 0) +
+			 (stones.findStone(stone.next()) ? 1 : 0));
+	    break;
+	case 9:
+	    cost += 10 * ((stones.findStone(stone.prev().prev()) ? 1 : 0) +
+			 (stones.findStone(stone.prev()) ? 1 : 0));
+	    break;
+	default: break;
+    }
+
+    return cost;
+}
+
 int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const WinRules & other)
 {
     std::multiset<StoneCost> result;
@@ -259,71 +315,8 @@ int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const 
     for(auto it = stones.begin(); it != stones.end(); ++it)
     {
 	const GameStone & stone = *it;
-	int cost = 100;
-
-	int count1 = std::count(stones.begin(), stones.end(), stone);
-	int count2 = std::count(trash.begin(), trash.end(), stone) + std::count(other.begin(), other.end(), stone);
-
-	// winds and dragons
-	if(stone.isSpecial())
-	{
-	    // check: possible pung or kong
-	    if(1 < count1)
-	    {
-		if(3 < count1 + count2)
-		    cost -= 20 * count2;
-		else
-		    cost += 20 * count1;
-	    }
-	}
-	else
-	{
-	    // check: possible pung or kong
-	    if(1 < count1)
-	    {
-		if(3 < count1 + count2)
-		    cost -= 10 * count2;
-		else
-		    cost += 10 * count1;
-	    }
-
-	    // check: possible chao
-	    switch(stone.order())
-	    {
-    		case 1: // [1] 2 3
-		cost += 10 * ((stones.findStone(stone.next()) ? 1 : 0) +
-				    (stones.findStone(stone.next().next()) ? 1 : 0));
-		break;
-
-    		case 2: // 1 [2] 3, [2] 3 4
-		cost += 10 * ((stones.findStone(stone.prev()) ? 1 : 0) + (stones.findStone(stone.next()) ? 1 : 0) +
-				    (stones.findStone(stone.next().next()) ? 1 : 0));
-		break;
-
-    	    	case 3: // 1 2 [3], 2 [3] 4, [3] 4 5
-    		case 4: // 2 3 [4], 3 [4] 5, [4] 5 6
-    		case 5: // 3 4 [5], 4 [5] 6, [5] 6 7
-    		case 6: // 4 5 [6], 5 [6] 7, [6] 7 8
-    		case 7: // 5 6 [7], 6 [7] 8, [7] 8 9
-		cost += 10 * ((stones.findStone(stone.prev().prev()) ? 1 : 0) + (stones.findStone(stone.prev()) ? 1 : 0) +
-				    (stones.findStone(stone.next()) ? 1 : 0) + (stones.findStone(stone.next().next()) ? 1 : 0));
-		break;
-
-    		case 8: // 6 7 [8], 7 [8] 9
-		cost += 10 * ((stones.findStone(stone.prev().prev()) ? 1 : 0) + (stones.findStone(stone.prev()) ? 1 : 0) +
-				    (stones.findStone(stone.next()) ? 1 : 0));
-		break;
-
-    		case 9: // 7 8 [9]
-		cost += 10 * ((stones.findStone(stone.prev().prev()) ? 1 : 0) +
-				    (stones.findStone(stone.prev()) ? 1 : 0));
-		break;
-
-		default: break;
-	    }
-	}
-
-	result.emplace(stone, std::distance(stones.begin(), it), cost);
+	result.emplace(stone, std::distance(stones.begin(), it),
+	               mahjongStoneValue(stones, stone, trash, other));
     }
 
     if(result.size())
@@ -348,6 +341,28 @@ int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const 
 
     // impossible ;)
     return Tools::rand(0, stones.size());
+}
+
+int AI::mahjongLuckChoice(const GameStones & stones, const VecStones & choices,
+                          const VecStones & trash, const WinRules & other)
+{
+    int selected = 0;
+    int bestValue = std::numeric_limits<int>::min();
+
+    for(int index = 0; index < static_cast<int>(choices.size()); ++index)
+    {
+	GameStones hand = stones;
+	const GameStone candidate(choices[index], false);
+	hand.add(candidate);
+	const int value = mahjongStoneValue(hand, candidate, trash, other);
+	if(bestValue < value)
+	{
+	    bestValue = value;
+	    selected = index;
+	}
+    }
+
+    return selected;
 }
 
 void AI::adventureMove(const RemotePlayer & player, ActionList & actions)

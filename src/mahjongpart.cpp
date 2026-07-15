@@ -56,6 +56,99 @@ void StoneSprite::set(const Stone & v, int size)
     }
 }
 
+namespace
+{
+class LuckDrawDialog : public DialogWindow
+{
+    StoneSprite		first;
+    StoneSprite		second;
+    Color		selectedColor;
+    Point		hintPos;
+    int			selected;
+
+    void choose(int index)
+    {
+	setResultCode(index);
+	actionDialogClose();
+    }
+
+protected:
+    bool mouseClickEvent(const ButtonsEvent & coords) override
+    {
+	if(!coords.isButtonLeft()) return true;
+
+	if(coords.isClick(first.area()))
+	    choose(0);
+	else if(coords.isClick(second.area()))
+	    choose(1);
+
+	return true;
+    }
+
+    bool keyPressEvent(const KeySym & key) override
+    {
+	switch(key.keycode())
+	{
+	    case Key::LEFT:
+		selected = 0;
+		renderWindow();
+		return true;
+	    case Key::RIGHT:
+		selected = 1;
+		renderWindow();
+		return true;
+	    case Key::RETURN:
+	    case Key::SPACE:
+		choose(selected);
+		return true;
+	    case Key::ESCAPE:
+		// Luck is a mandatory draw decision; closing would strand the turn.
+		return true;
+	    default: break;
+	}
+
+	return false;
+    }
+
+public:
+    LuckDrawDialog(const VecStones & choices, Window & win)
+	: DialogWindow("dialog_luckdraw.json", win),
+	  first(choices[0], StoneSprite::Large, GameTheme::jsonPoint(jobject, "offset:left")),
+	  second(choices[1], StoneSprite::Large, GameTheme::jsonPoint(jobject, "offset:right")),
+	  selectedColor(GameTheme::jsonColor(jobject, "color:selected")),
+	  hintPos(GameTheme::jsonPoint(jobject, "offset:hint")), selected(0)
+    {
+	setResultCode(-1);
+	setVisible(true);
+    }
+
+    void renderWindow(void) override
+    {
+	renderColor(backgroundColor, rect());
+	renderColor(borderColor, Rect(Point(0, 0), Size(width(), borderWidth)));
+	renderColor(borderColor, Rect(Point(0, height() - borderWidth), Size(width(), borderWidth)));
+	renderColor(borderColor, Rect(Point(0, 0), Size(borderWidth, height())));
+	renderColor(borderColor, Rect(Point(width() - borderWidth, 0), Size(borderWidth, height())));
+
+	const FontRender & defaultFont = GameTheme::fontRender(font);
+	renderText(defaultFont, _("Luck: choose a rune"), headerColor,
+	           Point(width() / 2, 18), AlignCenter);
+
+	Rect highlight = selected == 0 ? first.area() : second.area();
+	highlight.x -= 6;
+	highlight.y -= 6;
+	highlight.w += 12;
+	highlight.h += 12;
+	renderColor(selectedColor, highlight);
+	renderTexture(first);
+	renderTexture(second);
+
+	renderText(defaultFont, _("The other rune returns to the bottom of the wall."),
+	           textColor, hintPos, AlignCenter);
+    }
+};
+}
+
 WindMarker::WindMarker(const Sprites & sp)
 {
     if(1 < sp.size())
@@ -1345,6 +1438,10 @@ void MahjongPartScreen::tickEvent(u32 ms)
 		    redraw = actionMahjongTurn(action);
 		    break;
 
+	        case Action::MahjongLuckChoice:
+		    redraw = actionMahjongLuckChoice(action);
+		    break;
+
 	        case Action::MahjongPass:
 		    redraw = actionMahjongPass(action);
 		    break;
@@ -1417,6 +1514,32 @@ bool MahjongPartScreen::actionMahjongLoadData(void)
     iconAffectedScry.setVisible(player.isAffectedSpell(Spell::ScryRunes));
 
     return true;
+}
+
+bool MahjongPartScreen::actionMahjongLuckChoice(const ActionMessage & v)
+{
+    const auto action = static_cast<const MahjongLuckChoice &>(v);
+    const VecStones choices = action.choices();
+    ld.currentWind = action.currentWind();
+
+    if(!ld.yourTurn() || choices.size() != 2)
+    {
+	ERROR("invalid Luck draw action");
+	return false;
+    }
+
+    LuckDrawDialog dialog(choices, *this);
+    dialog.exec();
+
+    const int selected = dialog.resultCode();
+    if(selected < 0 || 1 < selected)
+    {
+	ERROR("invalid Luck draw selection: " << selected);
+	return false;
+    }
+
+    GameData::client2Mahjong(myAvatar, ClientLuckChoice(selected), actions);
+    return false;
 }
 
 bool MahjongPartScreen::actionMahjongEnd(const ActionMessage & v)

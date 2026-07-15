@@ -459,9 +459,13 @@ msgstr ""
 
 #: ../src/game/strings.cpp:122
 msgid ""
-"%1 posesses unmatched skill and seemingly endless luck in the Rune Game. For "
-"this reason he always seems to draw the runes he needs."
+"%1 possesses uncanny luck in the Rune Game. On each unforced turn draw, he "
+"sees two runes and keeps one; the other returns to the bottom of the wall. "
+"Directed draw spells take precedence."
 msgstr ""
+"%1 обладает невероятной удачей в Игре Рун. При каждом обычном доборе в свой "
+"ход он смотрит две руны и оставляет одну; другая возвращается под стену. "
+"Заклинания направленного добора имеют приоритет."
 
 #: ../src/game/strings.cpp:123
 msgid ""
@@ -1929,3 +1933,11 @@ msgstr "Захват: %1%"
 #: ../src/adventurepart.cpp
 msgid "Attackers remain: %1%"
 msgstr "Выживет атакующих: %1%"
+
+#: ../src/mahjongpart.cpp
+msgid "Luck: choose a rune"
+msgstr "Удача: выберите руну"
+
+#: ../src/mahjongpart.cpp
+msgid "The other rune returns to the bottom of the wall."
+msgstr "Другая руна вернётся под стену."
