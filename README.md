@@ -48,6 +48,14 @@ cmake --build build-tests -j
 ctest --test-dir build-tests --output-on-failure
 ```
 
+Print the deterministic avatar and Hell Blast balance report:
+```bash
+./build-tests/gameplay_regression_tests --balance-only
+```
+
+The baseline compares summon rosters and spell plans on common fixtures.
+Passive abilities are added to the report as their gameplay rules are implemented.
+
 Implemented battle and map-phase rules are documented in
 [`docs/BattleAndAdventureRules.md`](docs/BattleAndAdventureRules.md). Spell
 effect lifetime rules are documented in

@@ -50,10 +50,12 @@ include(CTest)
 if(BUILD_TESTING)
     add_executable(gameplay_regression_tests
         tests/gameplay_regression_tests.cpp
+        tests/avatar_balance_tests.cpp
         ${FOUR_WINDS_SOURCE})
     target_compile_definitions(gameplay_regression_tests PRIVATE
         RUNEWARS_NO_MAIN
         FOUR_WINDS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
     target_link_libraries(gameplay_regression_tests libswe)
     add_test(NAME gameplay_regressions COMMAND gameplay_regression_tests)
+    add_test(NAME avatar_balance_metrics COMMAND gameplay_regression_tests --balance-only)
 endif()

@@ -7,6 +7,7 @@
 #include "aibattle.h"
 #include "aispell.h"
 #include "aiturn.h"
+#include "avatar_balance_tests.h"
 #include "battle.h"
 
 namespace GameData
@@ -924,7 +925,7 @@ void testBattleAI()
 }
 }
 
-int main()
+int main(int argc, char** argv)
 {
     const std::string unicodeSample = "Four Winds: Привет, мир! 🌬️";
     expect(UnicodeString(unicodeSample).toString() == unicodeSample,
@@ -937,6 +938,14 @@ int main()
     GameData::spellsInfo = loadIndexed<SpellInfo>("spells.json");
     GameData::landsInfo = loadIndexed<LandInfo>("lands.json");
     GameData::avatarsInfo = loadIndexed<AvatarInfo>("avatars.json");
+
+    if(1 < argc && std::string(argv[1]) == "--balance-only")
+    {
+        const int balanceFailures = runAvatarBalanceTests();
+        if(balanceFailures) return 1;
+        std::cout << "avatar balance metrics: ok\n";
+        return 0;
+    }
 
     testDifficultyRules();
     testSelectedPartyMovement();
