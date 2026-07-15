@@ -149,8 +149,8 @@ CreatureInfoDialog::CreatureInfoDialog(const Creature & creature, Window & win)
 
 	for(auto & spec : creatureInfo.specials.toList())
 	{
-    	    const SpecialityInfo & info = GameData::specialityInfo(spec);
-    
+	    const SpecialityInfo & info = GameData::specialityInfo(spec);
+
 	    text.append("[color:green]").append(_("Speciality")).append(":[color:red] ").append(info.name).append("[color:default]");
 
 	    if(info.description.size())
@@ -165,7 +165,7 @@ CreatureInfoDialog::CreatureInfoDialog(const Creature & creature, Window & win)
 	    }
 	    else
 		text.append("\n");
-    	}
+	}
 	text.append("\n").append(creatureInfo.description);
     }
 
@@ -324,7 +324,7 @@ void AvatarInfoDialog::renderWindow(void)
     int posy = 10;
     // dignity
     Rect rt = renderText(defaultFont, avatarInfo.dignity, headerColor, Point(width() / 2, posy), AlignCenter);
-    
+
     posy += rt.h + 10;
     // icon
     const Texture & icon = GameTheme::texture(avatarInfo.portrait);
@@ -599,7 +599,7 @@ bool RuneCastDialog::mouseClickEvent(const ButtonsEvent & coords)
 		auto & sel = content[selected];
 		//if(content[selected].id & SET_CREATURE) iscreature = true;
 		if(sel.val) setResultCode(sel.val->id());
-    		actionDialogClose();
+		actionDialogClose();
 	    }
 	    else
 	    {
@@ -746,7 +746,7 @@ bool MessageBox::userEvent(int act, void* data)
 	    actionDialogClose();
             setVisible(false);
             return true;
-    
+
         default:
             break;
     }
@@ -1026,20 +1026,20 @@ void CombatScreenDialog::tickEvent(u32 ms)
 {
     if(animationFireShield.isEnabled())
     {
-    	if(animationFireShield.next(ms))
-    	    renderWindow();
+	if(animationFireShield.next(ms))
+	    renderWindow();
     }
     else
     if(animationStrikeMelee.isEnabled())
     {
-    	if(animationStrikeMelee.next(ms))
-    	    renderWindow();
+	if(animationStrikeMelee.next(ms))
+	    renderWindow();
     }
     else
     if(animationStrikeRanger.isEnabled())
     {
-    	if(animationStrikeRanger.next(ms))
-    	    renderWindow();
+	if(animationStrikeRanger.next(ms))
+	    renderWindow();
     }
     else
     if(tt.check(ms, 200))
@@ -1062,16 +1062,16 @@ void CombatScreenDialog::tickEvent(u32 ms)
 		SpritesAnimation* animation = nullptr;
 
 		if(strikes.front().type == BattleStrike::FireShield)
-    		    animation = & animationFireShield;
+		    animation = & animationFireShield;
 		else
 		if(strikes.front().type == BattleStrike::Ranger)
-    		    animation = & animationStrikeRanger;
+		    animation = & animationStrikeRanger;
 		else
-    		    animation = & animationStrikeMelee;
+		    animation = & animationStrikeMelee;
 
 		Rect strikeArea = applyStrikeDamage(strikes.front());
 
-    		animation->setEnabled(true);
+		animation->setEnabled(true);
 		animation->setPosition(strikeArea.toPoint() + (animation->spriteSize() - strikeArea.toSize()) / 2);
 		animation->next();
 
@@ -1169,14 +1169,14 @@ TargetPlayerButton::TargetPlayerButton(const RemotePlayer & target, Window & win
 
     Texture txBorder = Display::renderRect(Color::Yellow, Color::Transparent, icon.size(), 2);
     Texture txSelected = Display::renderRect(Color::Red, Color::Transparent, icon.size(), 2);
- 
+
     setSize(icon.size());
     setAction(target.avatar.id());
     setVisible(true);
 
     sprite1 = Display::createTexture(icon);
     sprite3 = Display::createTexture(icon);
-    
+
     Display::renderTexture(txBorder, txBorder.rect(), sprite1, sprite1.rect());
     Display::renderTexture(txSelected, txSelected.rect(), sprite3, sprite3.rect());
 }

@@ -24,10 +24,10 @@
 		"delay": 300,
 		"loop": true,
 		"sprites": [
-    			    { "id": "town_power1", "type": "file", "file": "map.png", "crop": [430, 1054, 41, 41], "colorkey": "#ffd2d2" },
-    			    { "id": "town_power2", "type": "file", "file": "map.png", "crop": [471, 1054, 41, 41], "colorkey": "#ffd2d2" },
-    			    { "id": "town_power3", "type": "file", "file": "map.png", "crop": [512, 1054, 41, 41], "colorkey": "#ffd2d2" },
-    			    { "id": "town_power4", "type": "file", "file": "map.png", "crop": [553, 1054, 41, 41], "colorkey": "#ffd2d2" }
+			    { "id": "town_power1", "type": "file", "file": "map.png", "crop": [430, 1054, 41, 41], "colorkey": "#ffd2d2" },
+			    { "id": "town_power2", "type": "file", "file": "map.png", "crop": [471, 1054, 41, 41], "colorkey": "#ffd2d2" },
+			    { "id": "town_power3", "type": "file", "file": "map.png", "crop": [512, 1054, 41, 41], "colorkey": "#ffd2d2" },
+			    { "id": "town_power4", "type": "file", "file": "map.png", "crop": [553, 1054, 41, 41], "colorkey": "#ffd2d2" }
 		    ]
 		},
 
@@ -35,10 +35,10 @@
 		"delay": 300,
 		"loop": true,
 		"sprites": [
-    			    { "id": "place_creature1", "type": "file", "file": "map.png", "crop": [704, 1050, 80, 80], "colorkey": "#ffd2d2" },
-    			    { "id": "place_creature2", "type": "file", "file": "map.png", "crop": [784, 1050, 80, 80], "colorkey": "#ffd2d2" },
-    			    { "id": "place_creature3", "type": "file", "file": "map.png", "crop": [864, 1050, 80, 80], "colorkey": "#ffd2d2" },
-    			    { "id": "place_creature4", "type": "file", "file": "map.png", "crop": [944, 1050, 80, 80], "colorkey": "#ffd2d2" }
+			    { "id": "place_creature1", "type": "file", "file": "map.png", "crop": [704, 1050, 80, 80], "colorkey": "#ffd2d2" },
+			    { "id": "place_creature2", "type": "file", "file": "map.png", "crop": [784, 1050, 80, 80], "colorkey": "#ffd2d2" },
+			    { "id": "place_creature3", "type": "file", "file": "map.png", "crop": [864, 1050, 80, 80], "colorkey": "#ffd2d2" },
+			    { "id": "place_creature4", "type": "file", "file": "map.png", "crop": [944, 1050, 80, 80], "colorkey": "#ffd2d2" }
 		    ]
 		},
 
@@ -47,8 +47,8 @@
 		"loop": true,
 		"offset": [428, 328],
 		"sprites": [
-    			{ "id": "lava11", "type": "file", "file": "map.png", "crop": [318, 1018, 32, 38] },
-    			{ "id": "lava12", "type": "file", "file": "map.png", "crop": [350, 1018, 32, 38] },
+			{ "id": "lava11", "type": "file", "file": "map.png", "crop": [318, 1018, 32, 38] },
+			{ "id": "lava12", "type": "file", "file": "map.png", "crop": [350, 1018, 32, 38] },
 			{ "id": "lava13", "type": "file", "file": "map.png", "crop": [382, 1018, 32, 38] }
 		    ]
 		},
@@ -58,8 +58,8 @@
 		"loop": true,
 		"offset": [402, 244],
 		"sprites": [
-    			{ "id": "lava21", "type": "file", "file": "map.png", "crop": [318, 1056, 35, 35] },
-    			{ "id": "lava22", "type": "file", "file": "map.png", "crop": [353, 1056, 35, 35] },
+			{ "id": "lava21", "type": "file", "file": "map.png", "crop": [318, 1056, 35, 35] },
+			{ "id": "lava22", "type": "file", "file": "map.png", "crop": [353, 1056, 35, 35] },
 			{ "id": "lava23", "type": "file", "file": "map.png", "crop": [388, 1056, 35, 35] }
 		    ]
 		},
@@ -69,8 +69,8 @@
 		"loop": true,
 		"offset": [406, 206],
 		"sprites": [
-    			{ "id": "lava31", "type": "file", "file": "map.png", "crop": [414, 1018, 23, 20] },
-    			{ "id": "lava32", "type": "file", "file": "map.png", "crop": [437, 1018, 23, 20] },
+			{ "id": "lava31", "type": "file", "file": "map.png", "crop": [414, 1018, 23, 20] },
+			{ "id": "lava32", "type": "file", "file": "map.png", "crop": [437, 1018, 23, 20] },
 			{ "id": "lava33", "type": "file", "file": "map.png", "crop": [460, 1018, 23, 20] }
 		    ]
 		},
@@ -80,8 +80,8 @@
 		"loop": true,
 		"offset": [372, 338],
 		"sprites": [
-    			{ "id": "lava41", "type": "file", "file": "map.png", "crop": [414, 1038, 18, 16] },
-    			{ "id": "lava42", "type": "file", "file": "map.png", "crop": [432, 1038, 18, 16] },
+			{ "id": "lava41", "type": "file", "file": "map.png", "crop": [414, 1038, 18, 16] },
+			{ "id": "lava42", "type": "file", "file": "map.png", "crop": [432, 1038, 18, 16] },
 			{ "id": "lava43", "type": "file", "file": "map.png", "crop": [450, 1038, 18, 16] }
 		    ]
 		},
@@ -91,9 +91,9 @@
 		"loop": true,
 		"offset": [564, 240],
 		"sprites": [
-    			{ "id": "land11", "type": "file", "file": "map.png", "crop": [0, 1018, 106, 77] },
-    			{ "id": "land12", "type": "file", "file": "map.png", "crop": [106, 1018, 106, 77] },
-    			{ "id": "land13", "type": "file", "file": "map.png", "crop": [212, 1018, 106, 77] }
+			{ "id": "land11", "type": "file", "file": "map.png", "crop": [0, 1018, 106, 77] },
+			{ "id": "land12", "type": "file", "file": "map.png", "crop": [106, 1018, 106, 77] },
+			{ "id": "land13", "type": "file", "file": "map.png", "crop": [212, 1018, 106, 77] }
 		    ]
 		},
 

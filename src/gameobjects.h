@@ -209,7 +209,7 @@ struct Spell : Enum
 {
     enum spell_t { None, Smoke, DemonicCompulsion, MassPanic, Paralyze, Reduction, BattleFury, Guidance, ForceShield, DustCloud, Heroism,
 	    MysticalFountain, MysticalFountainAttack, MysticalFountainRange, MysticalFountainLoyalty,
-	    BlindAmbition, BrilliantLights, MagicalAura, Teleport, DispelMagic, LightningBolt, Healing, HellBlast, DrawSkull, DrawSword, DrawNumber, 
+	    BlindAmbition, BrilliantLights, MagicalAura, Teleport, DispelMagic, LightningBolt, Healing, HellBlast, DrawSkull, DrawSword, DrawNumber,
 	    RandomDiscard, ScryRunes, Silence, ManaFog, MassDispel };
 
     Spell(spell_t v = None) : Enum(v) {}

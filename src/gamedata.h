@@ -155,7 +155,7 @@ struct AbilityInfo
     Ability			id;
     std::string 		name;
     std::string 		description;
-    
+
     AbilityInfo() {}
 };
 

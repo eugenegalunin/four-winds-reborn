@@ -134,13 +134,13 @@ void ExtIconToolTip::renderWindow(void)
 }
 
 ClanIcon::ClanIcon(const ClanInfo & cl, const Texture & tx1, const Texture & tx2, const Point & pos, Window & win)
-    : ExtIconToolTip(GameTheme::texture(cl.image), tx1, tx2, StringFormat(_("Clan: %1")).arg(cl.name), win), clan(cl.id) 
+    : ExtIconToolTip(GameTheme::texture(cl.image), tx1, tx2, StringFormat(_("Clan: %1")).arg(cl.name), win), clan(cl.id)
 {
     setPosition(pos);
 }
 
 AvatarIcon::AvatarIcon(const AvatarInfo & av, const Texture & tx1, const Texture & tx2, const Point & pos, Window & win)
-    : ExtIconToolTip(GameTheme::texture(av.portrait), tx1, tx2, StringFormat(_("Avatar: %1")).arg(av.name), win), avatar(av.id) 
+    : ExtIconToolTip(GameTheme::texture(av.portrait), tx1, tx2, StringFormat(_("Avatar: %1")).arg(av.name), win), avatar(av.id)
 {
     setPosition(pos);
 }
@@ -148,7 +148,7 @@ AvatarIcon::AvatarIcon(const AvatarInfo & av, const Texture & tx1, const Texture
 SpritesAnimation::SpritesAnimation(const JsonObject & jobject, const std::string & ids) : index(-1), loop(false), delay(250)
 {
     const JsonObject* jo = jobject.getObject(ids);
-    
+
     if(jo)
     {
 	loop = jo->getBoolean("loop", false);
@@ -210,7 +210,7 @@ void SpritesAnimation::next(void)
 #ifndef SWE_DISABLE_AUDIO
 	if(0 == index && Settings::sound() && sound.size())
 	{
-    	    Sound::play(GameTheme::sound(sound));
+	    Sound::play(GameTheme::sound(sound));
 	}
 #endif
 
@@ -402,17 +402,17 @@ JsonWindow::JsonWindow(const std::string & res, Window* win) : Window(win), defa
 	jv = jobject.getValue("background");
 	if(jv)
 	{
-    	    if(jv->isObject())
+	    if(jv->isObject())
 		spBack = GameTheme::jsonSprite(*jv);
 	    else
-    	    if(jv->isString())
+	    if(jv->isString())
 	    {
 		std::string val = jv->getString();
 
 		if(val.substr(0, 4) == "res:")
 		    spBack = GameTheme::jsonSprite(*jv);
 		else
-        	    backColor = jv->getString();
+		    backColor = jv->getString();
 	    }
 	}
 
@@ -431,7 +431,7 @@ JsonWindow::JsonWindow(const std::string & res, Window* win) : Window(win), defa
 	jv = jobject.getValue("buttons");
 	if(jv)
 	{
-    	    const JsonArray* ja = static_cast<const JsonArray*>(jv);
+	    const JsonArray* ja = static_cast<const JsonArray*>(jv);
 	    for(int it = 0; it < ja->size(); ++it)
 	    {
 		const JsonObject* jobut = ja->getObject(it);
@@ -440,7 +440,7 @@ JsonWindow::JsonWindow(const std::string & res, Window* win) : Window(win), defa
 	    }
 
 	    if(jobject.getBoolean("buttons_visible", true))
-	    	buttons.setVisible(true);
+		buttons.setVisible(true);
 	}
 
 	if(jobject.hasKey("cursor"))
@@ -454,7 +454,7 @@ JsonWindow::JsonWindow(const std::string & res, Window* win) : Window(win), defa
 
 	    if(mus != tracks.end())
 	    {
-    		if(! Music::isPlaying()) playMusic(*mus);
+		if(! Music::isPlaying()) playMusic(*mus);
 		Music::setHookFinished(playRandomMusic);
 	    }
 #endif
@@ -511,7 +511,7 @@ void JsonWindow::playSound(const std::string & name)
         Sound::play(GameTheme::sound(name));
     }
 #endif
-}   
+}
 
 void JsonWindow::playSoundWait(void)
 {

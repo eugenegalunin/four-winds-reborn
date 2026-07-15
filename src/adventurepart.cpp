@@ -67,7 +67,7 @@ LandPolygon::LandPolygon(const LandInfo & info, const JsonObject & jo, Window & 
 	animationFlag.loop = true;
 	animationFlag.delay = 400;
 	userEvent(LandPolygonFlagAnimationReInit, const_cast<LandInfo*>(& landInfo));
-	
+
     }
 }
 
@@ -78,7 +78,7 @@ bool LandPolygon::isAreaPoint(const Point & pos) const
 
 void LandPolygon::animationsDisabled(bool f)
 {
-    animationPower.setEnabled(f); 
+    animationPower.setEnabled(f);
     animationFlag.setEnabled(f);
 }
 
@@ -123,13 +123,13 @@ bool LandPolygon::userEvent(int act, void* data)
 	if(! win) return false;
 
 	const ClanInfo & clanInfo = GameData::clanInfo(landInfo.clan);
-    	const RemotePlayer & clanOwner = win->ld.playerOfClan(landInfo.clan);
+	const RemotePlayer & clanOwner = win->ld.playerOfClan(landInfo.clan);
 
 	const Sprite & sprite1 = GameTheme::texture(clanInfo.townflag1);
 	const Sprite & sprite2 = GameTheme::texture(clanInfo.townflag2);
 
 	animationFlag.sprites.clear();
-    	const BattleParty* party = clanOwner.army.findPartyConst(landInfo.id);
+	const BattleParty* party = clanOwner.army.findPartyConst(landInfo.id);
 
 	if(party && !party->isEmpty())
 	{
@@ -192,7 +192,7 @@ void LandPolygon::renderWindow(void)
 	    const Size offy(0, 15);
 
 	    // render animation power
-    	    if(animationPower.isEnabled()) animationPower.render(*this);
+	    if(animationPower.isEnabled()) animationPower.render(*this);
 	    // render town sprite
 	    renderTexture(textureTown, landInfo.center - position() - Size(textureTown.width() / 2, textureTown.height()) + offy);
 	    // render combat status
@@ -244,7 +244,7 @@ void LandPolygon::renderWindow(void)
     if(isFocused())
     {
 	for(auto it = poly.begin(); it != poly.end(); ++it)
-    	    renderPoint(Color::Red, *it - position());
+	    renderPoint(Color::Red, *it - position());
     }
 }
 
@@ -740,7 +740,7 @@ bool MapScreenBase::userEvent(int event, void* data)
 		bar1.setParty(clan1, GameData::getBattleArmy(clan1).findParty(selectedLand));
 		bar2.setParty(clan2, GameData::getBattleArmy(clan2).findParty(selectedLand));
 
-    		renderWindow();
+		renderWindow();
 		return true;
 	    }
 	    else
@@ -753,7 +753,7 @@ bool MapScreenBase::userEvent(int event, void* data)
 		selectedCreature.reset();
 		affectedSpells.setVisible(false);
 
-    		renderWindow();
+		renderWindow();
 		return true;
 	    }
 	    break;
@@ -812,7 +812,7 @@ ShowMapDialog::ShowMapDialog(const LocalData & data, Window & win) : MapScreenBa
     JsonButton* button = buttons.findIds("but_close");
 
     if(button)
-    {	
+    {
 	button->setAction(MapScreenClose);
 	button->setHotKey(Key::ESCAPE);
 	button->setVisible(true);
@@ -882,7 +882,7 @@ bool ShowSummonCreatureDialog::userEvent(int event, void* data)
 	{
 	    auto landInfo = static_cast<LandInfo*>(data);
 
-    	    if(landInfo && landAllowJoin(*landInfo, ld.myPlayer()))
+	    if(landInfo && landAllowJoin(*landInfo, ld.myPlayer()))
 	    {
 		setResultCode(selectedLand());
 		// close dialog
@@ -1447,7 +1447,7 @@ void AdventurePartScreen::tickEvent(u32 ms)
                     break;
             }
         }
-        
+
         if(redraw) renderWindow();
     }
 }

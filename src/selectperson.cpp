@@ -135,7 +135,7 @@ SelectPersonScreen::SelectPersonScreen() : JsonWindow("screen_selectperson.json"
 	for(int ii = 0; ii < ja->size(); ++ii)
 	{
 	    const JsonObject* jo = ja->getObject(ii);
-    	    if(jo)
+	    if(jo)
 	    {
 		const ClanInfo & ci = GameData::clanInfo(jo->getString("id"));
 		const Rect & area = JsonUnpack::rect(*jo, "area");
@@ -150,7 +150,7 @@ SelectPersonScreen::SelectPersonScreen() : JsonWindow("screen_selectperson.json"
 	for(int ii = 0; ii < ja->size(); ++ii)
 	{
 	    const JsonObject* jo = ja->getObject(ii);
-    	    if(jo)
+	    if(jo)
 	    {
 		const AvatarInfo & av = GameData::avatarInfo(jo->getString("id"));
 		const Rect & area = JsonUnpack::rect(*jo, "area");
@@ -207,12 +207,12 @@ void SelectPersonScreen::renderWindow(void)
 
 	for(auto it = avatarInfo.creatures.begin(); it != avatarInfo.creatures.end(); ++it)
         {
-    	    const CreatureInfo & creatureInfo = GameData::creatureInfo(*it);
+	    const CreatureInfo & creatureInfo = GameData::creatureInfo(*it);
             Texture icon = GameTheme::texture(creatureInfo.image2);
 
 	    if(creaturesUpdate)
 	    {
-            	creaturesIcon.emplace_back(creatureInfo, Rect(drawPos, icon.size()), *this);
+		creaturesIcon.emplace_back(creatureInfo, Rect(drawPos, icon.size()), *this);
 	    }
 
             drawPos.x += icon.width();
@@ -226,8 +226,8 @@ void SelectPersonScreen::renderWindow(void)
             if(11 == std::distance(avatarInfo.creatures.begin(), it) && avatarInfo.creatures.size() > 12)
             {
                 drawPos.x = creaturesPos.x;
-            	drawPos.y = creaturesPos.y + 2 * icon_h;
-    	    }
+		drawPos.y = creaturesPos.y + 2 * icon_h;
+	    }
 	}
 
 	// spells
@@ -271,10 +271,10 @@ void SelectPersonScreen::renderWindow(void)
 	    drawPos.y = drawPos.y + 30;
 
 	    const FontRender & fontRender = GameTheme::fontRender(personClans.font);
-    	    for(auto & ustr : fontRender.splitStringWidth(String::replace(ability.description, "%1", avatarInfo.name), 410))
-    	    {
-        	renderText(fontRender, ustr, personClans.color, drawPos);
-        	drawPos.y += fontRender.lineSkipHeight();
+	    for(auto & ustr : fontRender.splitStringWidth(String::replace(ability.description, "%1", avatarInfo.name), 410))
+	    {
+		renderText(fontRender, ustr, personClans.color, drawPos);
+		drawPos.y += fontRender.lineSkipHeight();
 	    }
 	}
     }
@@ -347,7 +347,7 @@ bool SelectPersonScreen::actionButtonOk(void)
     playSound("button");
 
     if(selectedAvatar() == Avatar::Random)
-    	selectedAvatar = Avatar();
+	selectedAvatar = Avatar();
 
     setResultCode(Menu::ShowPlayers);
     setVisible(false);
@@ -412,7 +412,7 @@ bool SelectPersonScreen::actionClickPersons(const ButtonsEvent & coords)
 
 	for(auto & icon : clansIcon)
 	{
-    	    if(std::any_of(disabledClans.begin(), disabledClans.end(), [&](const Clan & clan){ return clan == icon.toClan(); }))
+	    if(std::any_of(disabledClans.begin(), disabledClans.end(), [&](const Clan & clan){ return clan == icon.toClan(); }))
 		icon.setDisabled(true);
 	}
 

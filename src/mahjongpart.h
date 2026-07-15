@@ -28,10 +28,10 @@
 struct MahjongAction;
 
 class StoneSprite : public Stone, public Sprite
-{   
+{
 public:
     enum { Small = 1, Medium = 2, Large = 3 };
-    
+
     StoneSprite(){}
     StoneSprite(const Stone &, int);
     StoneSprite(const Stone &, int, const Point &);

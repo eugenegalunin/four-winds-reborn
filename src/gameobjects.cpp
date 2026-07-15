@@ -112,7 +112,7 @@ Wind Wind::prev(void) const
     }
     return None;
 }
-    
+
 Wind Wind::next(void) const
 {
     switch(id())
@@ -213,7 +213,7 @@ int Speciality::index(void) const
 	case CastDrawSword:	return 15;
 	case CastDrawSkull:	return 16;
 	case CastRandomDiscard:	return 17;
-    	case CastSilence:	return 18;
+	case CastSilence:	return 18;
 	case CastScryRunes:	return 19;
 	case CastManaFog:	return 20;
 	case RangerAttack:	return 21;
@@ -243,7 +243,7 @@ Speciality Speciality::fromIndex(int val)
 	case 15:	return CastDrawSword;
 	case 16:	return CastDrawSkull;
 	case 17:	return CastRandomDiscard;
-    	case 18:	return CastSilence;
+	case 18:	return CastSilence;
 	case 19:	return CastScryRunes;
 	case 20:	return CastManaFog;
 	case 21:	return RangerAttack;
@@ -607,20 +607,20 @@ struct LandCostCompare
     {
 	if(lc1.open)
 	{
-    	    if(! lc2.open)
-        	return true;
+	    if(! lc2.open)
+		return true;
 
-    	    if(lc1.cost == lc2.cost)
-        	return lc1.owner < lc2.owner;
+	    if(lc1.cost == lc2.cost)
+		return lc1.owner < lc2.owner;
 
-    	    return lc1.cost < lc2.cost;
+	    return lc1.cost < lc2.cost;
 	}
 
 	if(lc2.open)
-    	    return false;
+	    return false;
 
 	if(lc1.cost == lc2.cost)
-    	    return lc1.owner < lc2.owner;
+	    return lc1.owner < lc2.owner;
 
 	return lc1.cost < lc2.cost;
     }
@@ -921,7 +921,7 @@ std::string VecStones::toString(void) const
 
     for(auto it = begin(); it != end(); ++it)
     {
-        os << (*it).id(); 
+        os << (*it).id();
         if(std::next(it) != end()) os << ", ";
     }
 
@@ -1411,7 +1411,7 @@ void CreatureSkill::initAdventurePart(const Ability & ability, const Specials & 
     if(ability == abilityBart && stat4.current() < stat4.base())
     {
 	VERBOSE("Ability: " << abilityBart.toString());
-    	stat4 += 2;
+	stat4 += 2;
     }
 
     // Regeneration restores the creature completely at the start of the map phase.
@@ -1752,7 +1752,7 @@ std::string BattleStrikes::toString(void) const
     for(auto it = begin(); it != end(); ++it)
         os << "[" <<
 	    ((*it).is_creature1 ? "bcr" : "town") << "(" << String::hex((*it).unit1, 8) << "), " <<
-    	    ((*it).is_creature2 ? "bcr" : "town") << "(" << String::hex((*it).unit2, 8) << "), " <<
+	    ((*it).is_creature2 ? "bcr" : "town") << "(" << String::hex((*it).unit2, 8) << "), " <<
 	    (*it).damage << ", " <<
 	    ((*it).type == BattleStrike::Melee ? "melee" : "ranger") << "], ";
 
@@ -1816,7 +1816,7 @@ bool BattleCreature::applySpell(const Spell & spell)
 {
     if(haveSpeciality(Speciality::MagicResistence))
     {
-    	int chance = SpecialityMagicResistence().chance(Creature::id());
+	int chance = SpecialityMagicResistence().chance(Creature::id());
 
 	if(chance > Tools::rand(1, 100))
 	{
@@ -2122,7 +2122,7 @@ BattleCreatures BattleParty::toBattleCreatures(const Specials & specials, bool f
     for(auto & bcr : *this)
 	if(bcr.isValid())
     {
-    	const CreatureInfo & info = GameData::creatureInfo(bcr);
+	const CreatureInfo & info = GameData::creatureInfo(bcr);
 	bool push = false;
 
 	if(filter)
@@ -2282,7 +2282,7 @@ BaseStat BattleParty::toBaseStatSummary(void) const
         res.loyalty += (*it).loyalty();
     }
 
-    return res; 
+    return res;
 }
 
 /*BattleArmy */
@@ -2316,7 +2316,7 @@ void BattleArmy::partySetAllSelected(const Land & land)
     if(party)
     {
 	for(auto & bcr : party->toBattleCreatures())
-    	    bcr->setSelected(true);
+	    bcr->setSelected(true);
     }
 }
 
@@ -2483,16 +2483,16 @@ void BattleArmy::applyInvisibility(void)
 {
     auto findLandInvisible = [](const std::vector<Land> & lands, const Clan & clan) -> Land
     {
-    	for(auto & land : lands)
-    	{
-    	    const LandInfo & borderInfo = GameData::landInfo(land);
-    	    if(borderInfo.clan.isValid() && borderInfo.clan != clan)
-    	    {
-            	const BattleParty* party = GameData::getBattleArmy(borderInfo.clan).findPartyConst(land);
-            	if(party && party->toBattleCreatures(Specials() << Speciality::SeeInvisible, true).size())
+	for(auto & land : lands)
+	{
+	    const LandInfo & borderInfo = GameData::landInfo(land);
+	    if(borderInfo.clan.isValid() && borderInfo.clan != clan)
+	    {
+		const BattleParty* party = GameData::getBattleArmy(borderInfo.clan).findPartyConst(land);
+		if(party && party->toBattleCreatures(Specials() << Speciality::SeeInvisible, true).size())
 		    return land;
-    	    }
-    	}
+	    }
+	}
 	return Land();
     };
 
@@ -2521,10 +2521,10 @@ void BattleArmy::applyInvisibility(void)
         if(remove)
         {
 	    for(auto & bcr : bcrs)
-    	    {
-        	DEBUG("remove Speciality::Invisibility" << ", " << "land: " << party.land().toString() << ", " << "creature: " << bcr->toString());
-        	party.remove(*bcr);
-    	    }
+	    {
+		DEBUG("remove Speciality::Invisibility" << ", " << "land: " << party.land().toString() << ", " << "creature: " << bcr->toString());
+		party.remove(*bcr);
+	    }
 	}
     }
 
@@ -2816,13 +2816,13 @@ bool WinRule::operator== (const Stone & st) const
 int string2rule(const std::string & str)
 {
     if(str == "game")
-    	return WinRule::Game;
+	return WinRule::Game;
     if(str == "kong")
-    	return WinRule::Kong;
+	return WinRule::Kong;
     if(str == "pung")
-    	return WinRule::Pung;
+	return WinRule::Pung;
     if(str == "chao")
-    	return WinRule::Chao;
+	return WinRule::Chao;
 
     return WinRule::None;
 }
@@ -2831,10 +2831,10 @@ const char* rule2string(int rule)
 {
     switch(rule)
     {
-    	case WinRule::Game: return "game";
-    	case WinRule::Kong: return "kong";
-    	case WinRule::Pung: return "pung";
-    	case WinRule::Chao: return "chao";
+	case WinRule::Game: return "game";
+	case WinRule::Kong: return "kong";
+	case WinRule::Pung: return "pung";
+	case WinRule::Chao: return "chao";
 	default: break;
     }
 
@@ -2967,7 +2967,7 @@ WinRules WinRules::fromJsonArray(const JsonArray & ja)
     }
     return res;
 }
-    
+
 /* CroupierSet */
 CroupierSet::CroupierSet() : last(0)
 {
@@ -3560,7 +3560,7 @@ bool LocalPlayer::isWinMahjong(const Wind & currentWind, const Wind & roundWind,
 	    DEBUG("wind: " << currentWind.toString() << ", " << "win stone: " << winStone() <<
 		", " << "stones: " << stones.toString() << ", " << "rules: " << rules.toString() <<
 		", " << "rules: " << rules2.toString());
-    	    if(winResult) *winResult = WinResults(currentWind, wind, roundWind, rules, rules2, *it1, winStone);
+	    if(winResult) *winResult = WinResults(currentWind, wind, roundWind, rules, rules2, *it1, winStone);
             return true;
         }
     }
@@ -3735,13 +3735,13 @@ void LocalPlayer::setMahjongKong2(void)
 
 	if(it != rules.end())
 	{
-    	    (*it).upgradeKong();
-    	    newStone = GameStone(Stone::None, true);
-    	    points += GameData::bonusKong;
+	    (*it).upgradeKong();
+	    newStone = GameStone(Stone::None, true);
+	    points += GameData::bonusKong;
 	}
 	else
 	{
-    	    ERROR("stone not found: " << newStone.id());
+	    ERROR("stone not found: " << newStone.id());
 	}
     }
 }
@@ -4003,7 +4003,7 @@ RuneBonusList WinResults::bonusRunes(void) const
 		    value = 0;
 		break;
 
-    	    default:
+	    default:
 		break;
         }
 

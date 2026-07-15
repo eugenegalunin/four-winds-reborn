@@ -582,7 +582,7 @@ bool MahjongPartScreen::mouseClickEvent(const ButtonsEvent & coords)
 
 		return true;
 	    }
-    	}
+	}
     }
 
     if(0 <= variantSelected)
@@ -856,8 +856,8 @@ void MahjongPartScreen::actionButtonShowCast(void)
 	    {
 		const Spell sp = castDialog.resultSpell();
 		const SpellInfo & spellInfo = GameData::spellInfo(sp);
-	
-    		if((spellInfo.target() == SpellTarget::AllPlayers) ||
+
+		if((spellInfo.target() == SpellTarget::AllPlayers) ||
 		   (spellInfo.target() == SpellTarget::MyPlayer))
 		{
 		    GameData::client2Mahjong(myAvatar, ClientCastSpell(sp), actions);
@@ -1116,11 +1116,11 @@ int MahjongPartScreen::renderWinRuleHorizontal(const WinRule & rule, const Point
 		StoneSprite sprite1(rule.stone(), StoneSprite::Medium);
 		StoneSprite sprite2(rule.stone().next(), StoneSprite::Medium);
 		StoneSprite sprite3(rule.stone().next().next(), StoneSprite::Medium);
-    		renderTexture(sprite1, pos);
+		renderTexture(sprite1, pos);
 		res += sprite1.width();
-    		renderTexture(sprite2, pos + Point(res, 0));
+		renderTexture(sprite2, pos + Point(res, 0));
 		res += sprite2.width();
-    		renderTexture(sprite3, pos + Point(res, 0));
+		renderTexture(sprite3, pos + Point(res, 0));
 		res += sprite3.width();
 	    }
 	    break;
@@ -1128,7 +1128,7 @@ int MahjongPartScreen::renderWinRuleHorizontal(const WinRule & rule, const Point
 	    for(int ii = 1; ii <= 3; ++ii)
 	    {
 		StoneSprite sprite(rule.stone(), StoneSprite::Medium);
-    		renderTexture(sprite, pos + Point(res, 0));
+		renderTexture(sprite, pos + Point(res, 0));
 		res += sprite.width();
 	    }
 	    break;
@@ -1136,7 +1136,7 @@ int MahjongPartScreen::renderWinRuleHorizontal(const WinRule & rule, const Point
 	    for(int ii = 1; ii <= 4; ++ii)
 	    {
 		StoneSprite sprite(rule.stone(), StoneSprite::Medium);
-    		renderTexture(sprite, pos + Point(res, 0));
+		renderTexture(sprite, pos + Point(res, 0));
 		res += sprite.width();
 	    }
 	    break;
@@ -1156,11 +1156,11 @@ int MahjongPartScreen::renderWinRuleVertical(const WinRule & rule, const Point &
 		StoneSprite sprite1(rule.stone(), StoneSprite::Medium);
 		StoneSprite sprite2(rule.stone().next(), StoneSprite::Medium);
 		StoneSprite sprite3(rule.stone().next().next(), StoneSprite::Medium);
-    		renderTexture(sprite1, pos);
+		renderTexture(sprite1, pos);
 		res += sprite1.height();
-    		renderTexture(sprite2, pos + Point(0, res));
+		renderTexture(sprite2, pos + Point(0, res));
 		res += sprite2.height();
-    		renderTexture(sprite3, pos + Point(0, res));
+		renderTexture(sprite3, pos + Point(0, res));
 		res += sprite3.height();
 	    }
 	    break;
@@ -1168,7 +1168,7 @@ int MahjongPartScreen::renderWinRuleVertical(const WinRule & rule, const Point &
 	    for(int ii = 1; ii <= 3; ++ii)
 	    {
 		StoneSprite sprite(rule.stone(), StoneSprite::Medium);
-    		renderTexture(sprite, pos + Point(0, res));
+		renderTexture(sprite, pos + Point(0, res));
 		res += sprite.height();
 	    }
 	    break;
@@ -1176,7 +1176,7 @@ int MahjongPartScreen::renderWinRuleVertical(const WinRule & rule, const Point &
 	    for(int ii = 1; ii <= 4; ++ii)
 	    {
 		StoneSprite sprite(rule.stone(), StoneSprite::Medium);
-    		renderTexture(sprite, pos + Point(0, res));
+		renderTexture(sprite, pos + Point(0, res));
 		res += sprite.height();
 	    }
 	    break;
@@ -1254,7 +1254,7 @@ void MahjongPartScreen::renderWinRulesHorizontal(const WinRules & rules, const P
 	for(auto & rule : rules)
 	{
 	    int offx = renderWinRuleHorizontal(rule, pos);
-    	    pos.x += offx + 1;
+	    pos.x += offx + 1;
 	}
     }
 }
@@ -1272,7 +1272,7 @@ void MahjongPartScreen::renderWinRulesVertical(const WinRules & rules, const Poi
 	for(auto & rule : rules)
 	{
 	    int offy = renderWinRuleVertical(rule, pos);
-    	    pos.y += offy + 1;
+	    pos.y += offy + 1;
 	}
     }
 }
@@ -1313,12 +1313,12 @@ void MahjongPartScreen::renderLocalSet(const GameStones & stones)
 	    const StoneSprite sprite(*it, StoneSprite::Large);
 
 	    stonesPos.push_back(Rect(pos, sprite.size()));
-    	    renderTexture(sprite, stonesPos.back());
+	    renderTexture(sprite, stonesPos.back());
 
 	    if(! static_cast<const GameStone &>(*it).isCasted())
-        	renderTexture(stoneActiveSprite, stonesPos.back());
+		renderTexture(stoneActiveSprite, stonesPos.back());
 
-    	    pos.x += sprite.width();
+	    pos.x += sprite.width();
 	}
     }
 
@@ -1351,7 +1351,7 @@ void MahjongPartScreen::renderLocalSet(const GameStones & stones)
 	    renderTexture(StoneSprite(player.newStone, StoneSprite::Large), newStonePos());
 
 	    if(! player.newStone.isCasted())
-        	renderTexture(stoneActiveSprite, newStonePos());
+		renderTexture(stoneActiveSprite, newStonePos());
 
 	    if(stones.size() == stoneSelected)
 		renderTexture(stoneSelectedSprite, newStonePos().toPoint() - Point(4, 6));
@@ -1883,7 +1883,7 @@ bool MahjongPartScreen::actionMahjongCast(const ActionMessage & v)
 	fastLogText.text = StringFormat("%1 casts %2").
 			    arg(owner.name()).arg(spellInfo.name);
 	gameLogs << fastLogText.text;
-        
+
     }
     else
     if(spellInfo.target() == SpellTarget::OtherPlayer)

@@ -34,14 +34,14 @@ namespace Action
             ButtonLocalReady, ButtonLocalKong, ButtonLocalGame,
             ButtonChao, ButtonPung, ButtonKong, ButtonGame, ButtonPass,
             ButtonCast, ButtonChat, ButtonSystem, ButtonSummary, ButtonMap,
-    	    ButtonDone, ButtonDismiss, ButtonInfo, ButtonUndo, ButtonMenu,
+	    ButtonDone, ButtonDismiss, ButtonInfo, ButtonUndo, ButtonMenu,
 
 	    ClientReady, ClientButtonGame, ClientButtonPass, ClientChaoVariant, ClientButtonPung, ClientButtonKong1,
 	    ClientButtonKong2, ClientDropIndex, ClientSayGame, ClientSayChao, ClientSayPung, ClientSayKong,
 	    ClientSummonCreature, ClientCastSpell, ClientUnitMoved, ClientLandClaim, ClientAdventureUndo, ClientBattleReady,
 
 	    MahjongBegin, MahjongTurn, MahjongDrop, MahjongGame, MahjongPass, MahjongChao, MahjongPung,
-	    MahjongKong1, MahjongKong2, MahjongSummon, MahjongCast, MahjongData, MahjongInfo, MahjongEnd, 
+	    MahjongKong1, MahjongKong2, MahjongSummon, MahjongCast, MahjongData, MahjongInfo, MahjongEnd,
 
             AdventureBegin, AdventureTurn, AdventureMoves, AdventureClaim, AdventureCombat, AdventureEnd,
 

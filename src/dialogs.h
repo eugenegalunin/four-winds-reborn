@@ -32,7 +32,7 @@ void MessageTop(const std::string & hdr, const std::string & msg, Window &);
 class DialogWindow : public Window
 {
 protected:
-    JsonObject		jobject; 
+    JsonObject		jobject;
 
     int			borderWidth;
     std::string		font;
@@ -321,7 +321,7 @@ class TargetPlayerDialog : public DialogWindow
     TargetPlayerButton  buttonTargetLeft;
     TargetPlayerButton  buttonTargetRight;
     TargetPlayerButton  buttonTargetTop;
- 
+
 protected:
     void		signalReceive(int, const SignalMember*) override;
     bool		keyPressEvent(const KeySym &) override { return true; }

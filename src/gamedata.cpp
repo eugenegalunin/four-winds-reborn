@@ -860,7 +860,7 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 
     if(current.newStone.isValid() || skipNewTurn)
     {
-	//DEBUG("wind: " << currentWind.toString() << ", " << "person: " << current.name() << ", " << 
+	//DEBUG("wind: " << currentWind.toString() << ", " << "person: " << current.name() << ", " <<
 	//	"new stone: " << current.newStone() << ", " << "wait action");
 	return false;
     }
@@ -885,7 +885,7 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
     {
 	actions.push_back(MahjongEnd(currentWind));
 	validateMahjongSummary();
-    	gamePart = Menu::MahjongSummaryPart;
+	gamePart = Menu::MahjongSummaryPart;
 	return true;
     }
 
@@ -1073,7 +1073,7 @@ bool GameData::clientSayKong(const Avatar & avatar, const ClientMessage & act, A
 	actions.push_back(MahjongSayKong(client.wind));
 	return true;
     }
-    
+
     ERROR("isMahjongKong: false");
     return false;
 }
@@ -1204,7 +1204,7 @@ bool GameData::clientDropIndex(const Avatar & avatar, const ClientMessage & act,
     auto ca = static_cast<const ClientDropIndex &>(act);
 
     DEBUG(client.toString() << ", " << "index: " << ca.dropIndex() << ", " << "stones: " << client.stones.toString());
-    
+
     if(dropStone.isValid())
     {
 	ERROR("drop stone: " << dropStone() << ", " << "(" << dropStone.toString() << ")");
@@ -1555,7 +1555,7 @@ void GameData::validateMahjongSummary(void)
     {
 	const LocalPlayer & player = GameData::playerOfWind(id);
 
-        DEBUG(player.toString() << ", " << 
+        DEBUG(player.toString() << ", " <<
                 "stones: " <<  player.stones.toString() << ", " << "rules: " << player.rules.toString());
 
 	total += player.stones.size();

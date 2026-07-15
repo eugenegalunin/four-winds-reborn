@@ -68,11 +68,11 @@ namespace GameTheme
         JsonContent jc = GameTheme::jsonResource(json);
         if(jc.isArray())
         {
-    	    auto list = jc.toArray().toStdList<T>();
-    	    for(auto it = list.begin(); it != list.end(); ++it)
-    	    {
+	    auto list = jc.toArray().toStdList<T>();
+	    for(auto it = list.begin(); it != list.end(); ++it)
+	    {
 		const T & info = *it;
-    		m[info.id] = info;
+		m[info.id] = info;
 	    }
 
             return true;
@@ -227,7 +227,7 @@ bool GameTheme::jsonFontsLoad(const std::string & json)
     JsonContent jc = jsonResource(json);
     if(jc.isArray())
     {
-    	for(auto & info : jc.toArray().toStdList<FontInfo>())
+	for(auto & info : jc.toArray().toStdList<FontInfo>())
 	    cacheFonts[info.id].load(readResource(info.file), info.size, info.blend, info.style, info.hinting);
 
         return true;
@@ -249,14 +249,14 @@ const BinaryBuf & GameTheme::readResource(const std::string & filename, std::str
 	{
 	    buf = Systems::readFile(path);
 
-    	    if(buf.empty())
-        	ERROR("error read file: " << filename);
+	    if(buf.empty())
+		ERROR("error read file: " << filename);
 
-    	    if(res) res->assign(path);
+	    if(res) res->assign(path);
 	}
 	else
 	{
-    	    ERROR("file not found: " << filename);
+	    ERROR("file not found: " << filename);
 	}
 
 	return buf;
@@ -444,7 +444,7 @@ Sprite GameTheme::sprite(const std::string & key)
     }
 
     if(info.colorkey.size())
-    	sf.setColorKey(Color(info.colorkey));
+	sf.setColorKey(Color(info.colorkey));
 
     res.setTexture(Display::createTexture(sf));
 
@@ -743,7 +743,7 @@ Sprites GameTheme::jsonSprites(const JsonValue & jv)
         const JsonArray* ja = static_cast<const JsonArray*>(& jv);
         return ja->toStdVector<Sprite>();
     }
- 
+
     ERROR("not array");
     return Sprites();
 }
@@ -780,7 +780,7 @@ JsonButton GameTheme::jsonButton(const JsonValue & jv)
             if(0 < cursors.size()) info.cursorFocusTheme = cursors.front();
             if(1 < cursors.size()) info.cursorPressTheme = cursors.back();
         }
-            
+
         const JsonValue* js = jo->getValue("sprites");
         if(js)
         {
@@ -804,7 +804,7 @@ JsonButton GameTheme::jsonButton(const JsonValue & jv)
             res.setHotKey(Key::toKey(jo->getString("hotkey")));
 
         if(jo->hasKey("visible"))
-    	    res.setVisible(jo->getBoolean("visible"));
+	    res.setVisible(jo->getBoolean("visible"));
 
         if(jo->hasKey("tooltip"))
 	    res.setToolTip(jo->getString("tooltip"));
@@ -839,7 +839,7 @@ JsonButtons GameTheme::jsonButtons(const JsonValue & jv)
         const JsonArray* ja = static_cast<const JsonArray*>(& jv);
         return ja->toStdList<JsonButton>();
     }
-    
+
     ERROR("not array");
     return JsonButtons();
 }
@@ -1086,9 +1086,9 @@ const JsonValue & operator>> (const JsonValue & jv, CreatureInfo & st)
 	st.specials = Specials(jo->getStdList<std::string>("specials"));
 
 	StringList stoneList = jo->getStdList<std::string>("stones");
-    	std::transform(stoneList.begin(), stoneList.end(), stoneList.begin(),
+	std::transform(stoneList.begin(), stoneList.end(), stoneList.begin(),
 					[](const std::string & str){ return String::trimmed(str); });
-    	st.stones.assign(stoneList.begin(), stoneList.end());
+	st.stones.assign(stoneList.begin(), stoneList.end());
 
 	jv >> st.stat;
 
@@ -1149,9 +1149,9 @@ const JsonValue & operator>> (const JsonValue & jv, SpellInfo & st)
 	st.description = _(jo->getString("description"));
 
 	StringList stoneList = jo->getStdList<std::string>("stones");
-    	std::transform(stoneList.begin(), stoneList.end(), stoneList.begin(), 
+	std::transform(stoneList.begin(), stoneList.end(), stoneList.begin(),
 				    [](const std::string & str){ return String::trimmed(str); });
-    	st.stones.assign(stoneList.begin(), stoneList.end());
+	st.stones.assign(stoneList.begin(), stoneList.end());
     }
 
     return jv;
@@ -1175,24 +1175,24 @@ const JsonValue & operator>> (const JsonValue & jv, AvatarInfo & st)
 
 	// clans
 	StringList clanList = jo->getStdList<std::string>("clans");
-    	std::transform(clanList.begin(), clanList.end(), clanList.begin(), 
+	std::transform(clanList.begin(), clanList.end(), clanList.begin(),
 				    [](const std::string & str){ return String::trimmed(str); });
-    	st.clans.assign(clanList.begin(), clanList.end());
+	st.clans.assign(clanList.begin(), clanList.end());
 
 	// spells
 	StringList spellList = jo->getStdList<std::string>("spells");
-    	std::transform(spellList.begin(), spellList.end(), spellList.begin(), 
+	std::transform(spellList.begin(), spellList.end(), spellList.begin(),
 				    [](const std::string & str){ return String::trimmed(str); });
-    	st.spells.assign(spellList.begin(), spellList.end());
+	st.spells.assign(spellList.begin(), spellList.end());
 
 	if(st.ability == Ability(Ability::Catasrophic))
 	st.spells.push_back(Spell("hell_blast"));
 
 	// creatures
 	StringList creatureList = jo->getStdList<std::string>("creatures");
-    	std::transform(creatureList.begin(), creatureList.end(), creatureList.begin(), 
+	std::transform(creatureList.begin(), creatureList.end(), creatureList.begin(),
 				    [](const std::string & str){ return String::trimmed(str); });
-    	st.creatures.assign(creatureList.begin(), creatureList.end());
+	st.creatures.assign(creatureList.begin(), creatureList.end());
     }
 
     return jv;
@@ -1217,8 +1217,8 @@ const JsonValue & operator>> (const JsonValue & jv, LandInfo & st)
 	st.borders.clear();
 	StringList landList = jo->getStdList<std::string>("borders");
 
-    	for(auto it = landList.begin(); it != landList.end(); ++it)
-        	st.borders.push_back(Land(String::trimmed(*it)));
+	for(auto it = landList.begin(); it != landList.end(); ++it)
+		st.borders.push_back(Land(String::trimmed(*it)));
 
 	jv >> st.stat;
     }

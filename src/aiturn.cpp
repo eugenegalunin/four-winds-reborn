@@ -85,7 +85,7 @@ bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecS
 	// allow summon creatures
 	for(auto & cr : avatarInfo.creatures)
 	{
-    	    const CreatureInfo & creatureInfo = GameData::creatureInfo(cr);
+	    const CreatureInfo & creatureInfo = GameData::creatureInfo(cr);
 
 	    // allow summon
 	    if(creatureInfo.cost <= player.points &&

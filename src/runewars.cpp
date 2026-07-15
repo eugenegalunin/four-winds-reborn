@@ -97,7 +97,7 @@ RuneWarsClient::RuneWarsClient(int argc, char** argv) : Application(argv[0], fal
     theme = RUNEWARS_THEME;
 #endif
     if(Systems::environment("RUNEWARS_THEME"))
-    	theme = Systems::environment("RUNEWARS_THEME");
+	theme = Systems::environment("RUNEWARS_THEME");
 
     savefile = Settings::fileSaveGame();
     parseCommandOptions(argc, argv);
@@ -116,7 +116,7 @@ void RuneWarsClient::parseCommandOptions(int argc, char** argv)
 
         case 't':
 	    if(Systems::GetOptionsArgument())
-        	theme = Systems::GetOptionsArgument();
+		theme = Systems::GetOptionsArgument();
             break;
 #ifdef BUILD_DEBUG
         case 'p':
@@ -315,8 +315,8 @@ bool RuneWarsClient::exec(void)
 	    case Menu::GameLoadPart:
 		if(GameLoadScreen(savefile).exec())
 		{
-        	    selectedPerson = GameData::myPerson();
-        	    menu = GameData::loadedGamePart();
+		    selectedPerson = GameData::myPerson();
+		    menu = GameData::loadedGamePart();
 		}
 		else
 		{
