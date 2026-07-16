@@ -216,6 +216,7 @@ struct LocalData
     const RemotePlayer &	playerOfWind(const Wind &) const;
     const RemotePlayer &	playerOfClan(const Clan &) const;
     const RemotePlayer &	playerOfAvatar(const Avatar &) const;
+    const BattleCreature*	findBattleUnitConst(int) const;
 
     const LocalPlayer &		remoteLeft(void) const { return players[0]; }
     const LocalPlayer &		remoteRight(void) const { return players[1]; }
@@ -266,6 +267,9 @@ namespace GameData
     void                        setAIDifficulty(AI::Difficulty);
 
     bool			saveGame(const JsonObject &);
+    bool                        saveRecovery(const JsonObject &, const std::string & reason);
+    JsonObject                  authoritativeState(void);
+    bool                        restoreState(const JsonObject &);
     bool			loadGame(void);
     bool			loadGame(const std::string &);
     bool			isGameOver(void);
@@ -278,6 +282,7 @@ namespace GameData
 
     bool			findCreatureUnique(const Creature &);
     BattleParty*		getBattleParty(int unit);
+    BattleCreature*		findBattleCreature(int unit);
     BattleCreature*		getBattleCreature(int unit);
     RemotePlayer*		getBattleArmyOwner(const BattleArmy &);
     BattleArmy &		getBattleArmy(const Clan &);

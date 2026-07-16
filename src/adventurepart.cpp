@@ -30,6 +30,7 @@
 #include "aibattle.h"
 #include "aiprofile.h"
 #include "adventurepart.h"
+#include "crashreport.h"
 
 enum { LandPolygonClickLeft = 1111, LandPolygonClickRight, LandPolygonFocus, LandPolygonFlagAnimationReInit, LandPolygonCombatStatus, LandPolygonCombatStatusReset,
 	ClanIconClickLeft, ClanIconClickRight, CreatureIconClickLeft, CreatureIconClickRight, MapScreenClose,
@@ -1414,11 +1415,17 @@ void AdventurePartScreen::tickEvent(u32 ms)
     {
         GameData::adventure2Client(myAvatar, actions);
         bool redraw = false;
+        bool processedAction = false;
+        int lastActionType = Action::None;
 
         while(actions.size())
         {
             auto action = actions.front();
             actions.pop_front();
+            processedAction = true;
+            lastActionType = action.type();
+            CrashReport::breadcrumb(std::string("Adventure action type=")
+                .append(String::number(action.type())).append(" payload=").append(action.toString()));
 
             switch(action.type())
             {
@@ -1446,6 +1453,15 @@ void AdventurePartScreen::tickEvent(u32 ms)
                     ERROR("unknown action: " << action.type());
                     break;
             }
+        }
+
+        if(processedAction)
+        {
+            JsonObject gui;
+            gui.addString("type", "AdventureRecovery");
+            const std::string reason = std::string("adventure-action-") + String::number(lastActionType);
+            if(!GameData::saveRecovery(gui, reason))
+                ERROR("recovery checkpoint failed: " << reason);
         }
 
         if(redraw) renderWindow();

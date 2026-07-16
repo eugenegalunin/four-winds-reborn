@@ -62,6 +62,12 @@ cmake --build build-tests -j
 ctest --test-dir build-tests --output-on-failure
 ```
 
+GitHub Actions runs Debug and Release builds plus CTest on Linux, macOS and
+Windows UCRT64. The suite includes a fixed-seed replay hash canary so an
+authoritative simulation drift between platforms is visible immediately. Tags
+matching `v*` publish tested Linux, macOS and self-contained Windows archives,
+along with SHA-256 checksums, to GitHub Releases.
+
 Print the deterministic avatar and Hell Blast balance report:
 ```bash
 ./build-tests/gameplay_regression_tests --balance-only

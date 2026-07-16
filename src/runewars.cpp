@@ -20,11 +20,11 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <random>
 #include <clocale>
 #include <algorithm>
 #include <exception>
 
+#include "gameplayrng.h"
 #include "gametheme.h"
 #include "settings.h"
 #include "selectperson.h"
@@ -90,9 +90,32 @@ std::string Application::version(void)
     return version;
 }
 
+namespace
+{
+const char* menuName(int menu)
+{
+    switch(menu)
+    {
+        case Menu::GameExit: return "GameExit";
+        case Menu::SelectPerson: return "SelectPerson";
+        case Menu::ShowPlayers: return "ShowPlayers";
+        case Menu::MahjongPart: return "Mahjong";
+        case Menu::MahjongSummaryPart: return "MahjongSummary";
+        case Menu::AdventurePart: return "Adventure";
+        case Menu::BattleSummaryPart: return "BattleSummary";
+        case Menu::GameSummaryPart: return "GameSummary";
+        case Menu::MahjongInitPart: return "MahjongInit";
+        case Menu::GameLoadPart: return "GameLoad";
+        default: return "Unknown";
+    }
+}
+}
+
 RuneWarsClient::RuneWarsClient(int argc, char** argv) : Application(argv[0], false, Size(0, 0), "default"), part(0)
 {
+    CrashReport::breadcrumb("Startup stage=engine_log_init status=begin");
     LogWrapper::init(domain(), argv[0]);
+    CrashReport::breadcrumb("Startup stage=engine_log_init status=ok");
 
     // make params theme
 #ifdef RUNEWARS_THEME
@@ -182,23 +205,21 @@ Person fixedEmptyPerson(const Person & cur)
     {
         Avatar avatar = Avatar::random();
         const AvatarInfo & hi = GameData::avatarInfo(avatar);
-        auto clan = Tools::random_n(hi.clans.begin(), hi.clans.end());
+        auto clan = GameplayRng::choose(hi.clans.begin(), hi.clans.end());
         return Person(avatar, *clan, cur.wind);
     }
     else
     if(! cur.clan.isValid())
     {
         const AvatarInfo & hi = GameData::avatarInfo(cur.avatar);
-        auto clan = Tools::random_n(hi.clans.begin(), hi.clans.end());
+        auto clan = GameplayRng::choose(hi.clans.begin(), hi.clans.end());
         return Person(cur.avatar, *clan, cur.wind);
     }
     else
     if(! cur.avatar.isValid())
     {
         Avatars avatars = GameData::avatarsOfClan(cur.clan);
-        std::random_device rd;
-        std::mt19937 mtg(rd());
-        std::shuffle(avatars.begin(), avatars.end(), mtg);
+        GameplayRng::shuffle(avatars.begin(), avatars.end());
         return Person(avatars.front(), cur.clan, cur.wind);
     }
 
@@ -207,14 +228,21 @@ Person fixedEmptyPerson(const Person & cur)
 
 bool RuneWarsClient::exec(void)
 {
+    CrashReport::breadcrumb("Startup stage=engine_init status=begin");
     if(! Engine::init())
+    {
+        CrashReport::breadcrumb("Startup stage=engine_init status=failed");
         return false;
+    }
+    CrashReport::breadcrumb("Startup stage=engine_init status=ok");
 
     if(Systems::isEmbeded())
 	Display::hardwareCursorHide();
 
+    CrashReport::breadcrumb(std::string("Startup stage=theme_init status=begin theme=").append(theme));
     if(! GameTheme::init(*this))
     {
+	CrashReport::breadcrumb(std::string("Startup stage=theme_init status=failed theme=").append(theme));
 	Size wsz(640, 480);
 
         if(Display::init("Error", wsz, wsz, Settings::fullscreen(), Settings::accel(), false))
@@ -225,9 +253,16 @@ bool RuneWarsClient::exec(void)
         }
         return false;
     }
+    CrashReport::breadcrumb(std::string("Startup stage=theme_init status=ok theme=").append(theme));
 
+    CrashReport::breadcrumb("Startup stage=translation_init status=begin");
     if(! translationInit())
+	{
+	CrashReport::breadcrumb("Startup stage=translation_init status=failed");
 	ERROR("translation not loaded");
+	}
+    else
+	CrashReport::breadcrumb("Startup stage=translation_init status=ok");
 
     int menu = Systems::isFile(savefile) ? Menu::GameLoadPart : Menu::SelectPerson;
     Person selectedPerson;
@@ -270,12 +305,19 @@ bool RuneWarsClient::exec(void)
 
     while(menu != Menu::GameExit)
     {
+	const int activeMenu = menu;
+	CrashReport::breadcrumb(std::string("Screen stage=enter name=").append(menuName(activeMenu))
+	    .append(" id=").append(String::number(activeMenu)));
 	switch(menu)
 	{
 	    case Menu::SelectPerson:
 	    {
 		SelectPersonScreen scr;
 		menu = scr.exec();
+		GameplayRng::seedFromEntropy();
+		CrashReport::breadcrumb(std::string("Gameplay RNG stage=new_game algorithm=")
+		    .append(GameplayRng::Algorithm)
+		    .append(" state=").append(std::to_string(GameplayRng::state())));
 		selectedPerson = fixedEmptyPerson(scr.selectedPerson());
 		selectedDifficulty = scr.selectedDifficulty();
 	    }
@@ -331,11 +373,17 @@ bool RuneWarsClient::exec(void)
 	    break;
 	}
 
+	CrashReport::breadcrumb(std::string("Screen stage=exit name=").append(menuName(activeMenu))
+	    .append(" next=").append(menuName(menu))
+	    .append(" next_id=").append(String::number(menu)));
+
 	Tools::delay(100);
     }
 
+    CrashReport::breadcrumb("Startup stage=engine_quit status=begin");
     GameTheme::clear();
     Engine::quit();
+    CrashReport::breadcrumb("Startup stage=engine_quit status=ok");
 
     return true;
 }
@@ -346,6 +394,7 @@ int main(int argc, char **argv)
     Systems::setLocale(LC_ALL, "");
     Systems::setLocale(LC_NUMERIC, "C");
     CrashReport::install(Application::domain());
+    CrashReport::breadcrumb("Startup stage=process status=begin");
 
     int result = EXIT_SUCCESS;
 

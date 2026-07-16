@@ -1,0 +1,163 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-data:
+    name: Validate theme JSON
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out game and engine
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Validate JSON
+        run: python scripts/validate-json.py
+
+  unix:
+    name: ${{ matrix.label }} ${{ matrix.build_type }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux
+          - macos
+        build_type:
+          - Debug
+          - Release
+        include:
+          - platform: linux
+            runner: ubuntu-24.04
+            label: Linux
+            script: linux
+            artifact: linux-x64
+          - platform: macos
+            runner: macos-15-intel
+            label: macOS
+            script: macos
+            artifact: macos-x64
+    steps:
+      - name: Check out game and engine
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake pkg-config \
+            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+            zlib1g-dev
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install cmake pkg-config sdl2 sdl2_image sdl2_mixer sdl2_ttf zlib
+
+      - name: Build and test
+        shell: bash
+        run: |
+          args=(--clean)
+          if [[ "${{ matrix.build_type }}" == "Debug" ]]; then
+            args+=(--debug)
+          fi
+          ./scripts/build-${{ matrix.script }}.sh "${args[@]}"
+
+      - name: Retain CTest logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-logs-${{ matrix.artifact }}-${{ matrix.build_type }}
+          path: build-${{ matrix.script }}/Testing/Temporary/**
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Retain Release build
+        if: success() && matrix.build_type == 'Release'
+        uses: actions/upload-artifact@v7
+        with:
+          name: four-winds-reborn-${{ matrix.artifact }}-${{ github.sha }}
+          path: |
+            four-winds-reborn
+            themes/
+            README.md
+            LICENSE
+          retention-days: 7
+
+  windows:
+    name: Windows UCRT64 ${{ matrix.build_type }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - Debug
+          - Release
+    steps:
+      - name: Check out game and engine
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up MSYS2 UCRT64
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-SDL2
+            mingw-w64-ucrt-x86_64-SDL2_image
+            mingw-w64-ucrt-x86_64-SDL2_mixer
+            mingw-w64-ucrt-x86_64-SDL2_ttf
+            mingw-w64-ucrt-x86_64-zlib
+
+      - name: Build and test
+        shell: msys2 {0}
+        run: |
+          args=(--clean)
+          if [[ "${{ matrix.build_type }}" == "Debug" ]]; then
+            args+=(--debug)
+          fi
+          ./scripts/build-windows-msys2.sh "${args[@]}"
+
+      - name: Retain CTest logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-logs-windows-x64-${{ matrix.build_type }}
+          path: build-windows/Testing/Temporary/**
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Retain Windows Release package
+        if: success() && matrix.build_type == 'Release'
+        uses: actions/upload-artifact@v7
+        with:
+          name: four-winds-reborn-windows-x64-${{ github.sha }}
+          path: dist/windows/**
+          retention-days: 7

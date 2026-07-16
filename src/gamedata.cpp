@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include <cstring>
+#include <ctime>
 #include <sstream>
 #include <algorithm>
 
@@ -29,7 +30,21 @@
 #include "aiturn.h"
 #include "actions.h"
 #include "battle.h"
+#include "crashreport.h"
 #include "gamedata.h"
+#include "gameplayrng.h"
+#include "recovery.h"
+#include "replay.h"
+
+#ifndef FOUR_WINDS_VERSION
+#define FOUR_WINDS_VERSION "unknown"
+#endif
+#ifndef FOUR_WINDS_GAME_REVISION
+#define FOUR_WINDS_GAME_REVISION "unknown"
+#endif
+#ifndef FOUR_WINDS_ENGINE_REVISION
+#define FOUR_WINDS_ENGINE_REVISION "unknown"
+#endif
 
 std::string SpellInfo::effectDescription(void) const
 {
@@ -298,6 +313,20 @@ const RemotePlayer & LocalData::playerOfAvatar(const Avatar & avatar) const
     return *it;
 }
 
+const BattleCreature* LocalData::findBattleUnitConst(int unit) const
+{
+    if(0 < unit)
+    {
+	for(const auto & player : players)
+	{
+	    const BattleCreature* creature = player.army.findBattleUnitConst(unit);
+	    if(creature) return creature;
+	}
+    }
+
+    return nullptr;
+}
+
 Persons LocalData::toPersons(void) const
 {
     Persons res;
@@ -367,6 +396,19 @@ namespace GameData
     bool                                clientLandClaim(const Avatar &, const ClientMessage &, ActionList &);
     bool                                clientAdventureUndo(const Avatar &, const ClientMessage &, ActionList &);
     bool				clientBattleReady(const Avatar &, const ClientMessage &, ActionList &);
+
+    const char* recoveryPlatform(void)
+    {
+#if defined(_WIN32)
+        return "windows";
+#elif defined(__APPLE__)
+        return "macos";
+#elif defined(__linux__)
+        return "linux";
+#else
+        return "unknown";
+#endif
+    }
 
     JsonObject                  	toJsonObject(const JsonObject &);
     bool				fromJsonObject(const JsonObject &);
@@ -443,6 +485,7 @@ JsonObject GameData::toJsonObject(const JsonObject & gui)
     jo.addInteger("gamepart", gamePart);
     jo.addInteger("nextBattleUnitId", battleUnitId);
     jo.addString("ai:difficulty", AI::difficultyName(difficulty));
+    jo.addObject("gameplayRng", GameplayRng::toJsonObject());
 
     jo.addObject("myperson", person.toJsonObject());
     jo.addObject("croupier", croupier.toJsonObject());
@@ -462,9 +505,14 @@ JsonObject GameData::toJsonObject(const JsonObject & gui)
 	ja.addObject(legend.toJsonObject());
     jo.addArray("history", ja);
 
-    jo.addObject("gui", gui);
+    if(gui.isValid()) jo.addObject("gui", gui);
 
     return jo;
+}
+
+JsonObject GameData::authoritativeState(void)
+{
+    return toJsonObject(JsonObject());
 }
 
 bool GameData::fromJsonObject(const JsonObject & jo)
@@ -563,7 +611,27 @@ bool GameData::fromJsonObject(const JsonObject & jo)
     jo2 = jo.getObject("gui");
     if(jo2) stateGUI = *jo2;
 
+    const JsonObject* rng = jo.getObject("gameplayRng");
+    if(rng)
+    {
+        if(!GameplayRng::fromJsonObject(*rng))
+        {
+            ERROR("unsupported or invalid gameplay RNG state");
+            return false;
+        }
+    }
+    else
+    {
+        // Compatibility for saves created before deterministic gameplay RNG.
+        GameplayRng::seedFromEntropy();
+    }
+
     return true;
+}
+
+bool GameData::restoreState(const JsonObject & state)
+{
+    return fromJsonObject(state);
 }
 
 bool GameData::saveGame(const JsonObject & gui)
@@ -572,6 +640,49 @@ bool GameData::saveGame(const JsonObject & gui)
     if(!Systems::isDirectory(share)) Systems::makeDirectory(share);
     Display::renderScreenshot(Settings::fileSave("game.png"));
     return Systems::saveString2File(GameData::toJsonObject(gui).toString(), Settings::fileSaveGame());
+}
+
+bool GameData::saveRecovery(const JsonObject & gui, const std::string & reason)
+{
+    if(gamers.empty()) return false;
+
+    CrashReport::breadcrumb(std::string("Recovery stage=begin reason=").append(reason));
+    const JsonObject saveState = GameData::toJsonObject(gui);
+    const std::string saveData = saveState.toString();
+
+    JsonObject metadata;
+    metadata.addInteger("schema", 1);
+    metadata.addInteger("saveFormat", FORMAT_VERSION_CURRENT);
+    metadata.addString("savedAtEpoch", std::to_string(static_cast<long long>(std::time(nullptr))));
+    metadata.addString("reason", reason);
+    metadata.addString("platform", recoveryPlatform());
+    metadata.addString("gameVersion", FOUR_WINDS_VERSION);
+    metadata.addString("gameRevision", FOUR_WINDS_GAME_REVISION);
+    metadata.addString("engineRevision", FOUR_WINDS_ENGINE_REVISION);
+    metadata.addString("fileHashFNV1a64", Recovery::stateHash(saveData));
+    metadata.addString("stateHashFNV1a64", Recovery::stateHash(saveState));
+    metadata.addObject("gameplayRng", GameplayRng::toJsonObject());
+    metadata.addObject("replay", Replay::actionJournal(GameData::authoritativeState()));
+    metadata.addInteger("stateBytes", static_cast<int>(saveData.size()));
+    metadata.addInteger("gamePart", gamePart);
+    metadata.addString("roundWind", roundWind.toString());
+    metadata.addString("partWind", partWind.toString());
+    metadata.addString("currentWind", currentWind.toString());
+    metadata.addString("aiDifficulty", AI::difficultyName(difficulty));
+    metadata.addString("breadcrumbSequence", std::to_string(CrashReport::breadcrumbSequence()));
+    metadata.addString("crashReport", CrashReport::filePath());
+
+    JsonArray breadcrumbs;
+    for(const std::string & entry : CrashReport::recentBreadcrumbs())
+        breadcrumbs.addString(entry);
+    metadata.addArray("recentBreadcrumbs", breadcrumbs);
+
+    const std::string directory = Recovery::defaultDirectory();
+    const bool saved = Recovery::writeCheckpoint(directory, saveData, metadata);
+    CrashReport::breadcrumb(std::string("Recovery stage=end reason=").append(reason)
+        .append(" status=").append(saved ? "ok" : "failed")
+        .append(" directory=").append(directory));
+    return saved;
 }
 
 bool GameData::loadGame(void)
@@ -584,7 +695,11 @@ bool GameData::loadGame(const std::string & fn)
     std::string str;
 
     if(Systems::readFile2String(fn, str))
-	return fromJsonObject(JsonContentString(str).toObject());
+    {
+	const bool loaded = fromJsonObject(JsonContentString(str).toObject());
+	if(loaded) Replay::clearActionJournal();
+	return loaded;
+    }
 
     return false;
 }
@@ -682,7 +797,7 @@ BattleParty* GameData::getBattleParty(int unit)
     return nullptr;
 }
 
-BattleCreature* GameData::getBattleCreature(int unit)
+BattleCreature* GameData::findBattleCreature(int unit)
 {
     if(0 < unit)
     {
@@ -692,6 +807,14 @@ BattleCreature* GameData::getBattleCreature(int unit)
 	    if(bcr) return bcr;
 	}
     }
+
+    return nullptr;
+}
+
+BattleCreature* GameData::getBattleCreature(int unit)
+{
+    BattleCreature* creature = findBattleCreature(unit);
+    if(creature) return creature;
 
     ERROR("battle unit not found" << ", " << "id: " << String::hex(unit));
     Engine::except(__FUNCTION__, "exit");
@@ -727,6 +850,7 @@ Wind GameData::prevWindCompass(const Wind & wind)
 
 void GameData::initPersons(const Person & cur)
 {
+    Replay::clearActionJournal();
     Persons persons(cur);
     gamers.setPersons(persons);
 
@@ -1495,7 +1619,7 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 		if(0 >= tgt->loyalty())
 		{
 		    const LocalPlayer & other = playerOfClan(tgt->clan());
-		    const std::string & info = StringFormat("%1's %2 was vanquished").arg(other.name()).arg(tgt->name());
+		    const std::string info = StringFormat("%1's %2 was vanquished").arg(other.name()).arg(tgt->name());
 		    actions.push_back(MahjongInfo(currentWind, info));
 		    checkArmy.insert(tgt->clan());
 		}
@@ -1523,28 +1647,45 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 
 bool GameData::client2Mahjong(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
 {
+    const std::size_t actionsBefore = actions.size();
+    const bool recordAction = Replay::actionRecordingEnabled();
+    const JsonObject beforeState = recordAction ? authoritativeState() : JsonObject();
+    CrashReport::breadcrumb(std::string("GameData phase=Mahjong stage=before avatar=")
+        .append(avatar.toString()).append(" type=").append(String::number(act.type()))
+        .append(" payload=").append(act.toString()));
+
+    bool accepted = false;
+    bool recognized = true;
     switch(act.type())
     {
-	case Action::ClientReady:	return clientReady(avatar, act, actions);
-	case Action::ClientSayGame:	return clientSayGame(avatar, act, actions);
-	case Action::ClientSayChao:	return clientSayChao(avatar, act, actions);
-	case Action::ClientSayPung:	return clientSayPung(avatar, act, actions);
-	case Action::ClientSayKong:	return clientSayKong(avatar, act, actions);
-	case Action::ClientButtonGame:	return clientButtonGame(avatar, act, actions);
-	case Action::ClientButtonPass:	return clientButtonPass(avatar, act, actions);
-	case Action::ClientButtonPung:	return clientButtonPung(avatar, act, actions);
-	case Action::ClientButtonKong1:	return clientButtonKong1(avatar, act, actions);
-	case Action::ClientButtonKong2:	return clientButtonKong2(avatar, act, actions);
-	case Action::ClientChaoVariant:	return clientChaoVariant(avatar, act, actions);
-	case Action::ClientDropIndex:	return clientDropIndex(avatar, act, actions);
-	case Action::ClientLuckChoice:	return clientLuckChoice(avatar, act, actions);
-	case Action::ClientSummonCreature: return clientSummonCreature(avatar, act, actions);
-	case Action::ClientCastSpell:	return clientCastSpell(avatar, act, actions);
+	case Action::ClientReady:	accepted = clientReady(avatar, act, actions); break;
+	case Action::ClientSayGame:	accepted = clientSayGame(avatar, act, actions); break;
+	case Action::ClientSayChao:	accepted = clientSayChao(avatar, act, actions); break;
+	case Action::ClientSayPung:	accepted = clientSayPung(avatar, act, actions); break;
+	case Action::ClientSayKong:	accepted = clientSayKong(avatar, act, actions); break;
+	case Action::ClientButtonGame:	accepted = clientButtonGame(avatar, act, actions); break;
+	case Action::ClientButtonPass:	accepted = clientButtonPass(avatar, act, actions); break;
+	case Action::ClientButtonPung:	accepted = clientButtonPung(avatar, act, actions); break;
+	case Action::ClientButtonKong1:	accepted = clientButtonKong1(avatar, act, actions); break;
+	case Action::ClientButtonKong2:	accepted = clientButtonKong2(avatar, act, actions); break;
+	case Action::ClientChaoVariant:	accepted = clientChaoVariant(avatar, act, actions); break;
+	case Action::ClientDropIndex:	accepted = clientDropIndex(avatar, act, actions); break;
+	case Action::ClientLuckChoice:	accepted = clientLuckChoice(avatar, act, actions); break;
+	case Action::ClientSummonCreature: accepted = clientSummonCreature(avatar, act, actions); break;
+	case Action::ClientCastSpell:	accepted = clientCastSpell(avatar, act, actions); break;
 
-	default: break;
+	default: recognized = false; break;
     }
 
-    return false;
+    if(recognized && accepted && recordAction)
+        Replay::recordAcceptedAction(beforeState, avatar, act, authoritativeState());
+
+    CrashReport::breadcrumb(std::string("GameData phase=Mahjong stage=after avatar=")
+        .append(avatar.toString()).append(" type=").append(String::number(act.type()))
+        .append(" recognized=").append(recognized ? "true" : "false")
+        .append(" accepted=").append(accepted ? "true" : "false")
+        .append(" emitted=").append(String::number(static_cast<int>(actions.size() - actionsBefore))));
+    return accepted;
 }
 
 void GameData::validateMahjongSummary(void)
@@ -1649,16 +1790,33 @@ bool GameData::adventure2Client(const Avatar & avatar, ActionList & actions)
 
 bool GameData::client2Adventure(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
 {
+    const std::size_t actionsBefore = actions.size();
+    const bool recordAction = Replay::actionRecordingEnabled();
+    const JsonObject beforeState = recordAction ? authoritativeState() : JsonObject();
+    CrashReport::breadcrumb(std::string("GameData phase=Adventure stage=before avatar=")
+        .append(avatar.toString()).append(" type=").append(String::number(act.type()))
+        .append(" payload=").append(act.toString()));
+
+    bool accepted = false;
+    bool recognized = true;
     switch(act.type())
     {
-	case Action::ClientUnitMoved:	return clientUnitMoved(avatar, act, actions);
-	case Action::ClientLandClaim:	return clientLandClaim(avatar, act, actions);
-	case Action::ClientAdventureUndo: return clientAdventureUndo(avatar, act, actions);
-	case Action::ClientBattleReady:	return clientBattleReady(avatar, act, actions);
-	default: break;
+	case Action::ClientUnitMoved:	accepted = clientUnitMoved(avatar, act, actions); break;
+	case Action::ClientLandClaim:	accepted = clientLandClaim(avatar, act, actions); break;
+	case Action::ClientAdventureUndo: accepted = clientAdventureUndo(avatar, act, actions); break;
+	case Action::ClientBattleReady:	accepted = clientBattleReady(avatar, act, actions); break;
+	default: recognized = false; break;
     }
 
-    return true;
+    if(recognized && accepted && recordAction)
+        Replay::recordAcceptedAction(beforeState, avatar, act, authoritativeState());
+
+    CrashReport::breadcrumb(std::string("GameData phase=Adventure stage=after avatar=")
+        .append(avatar.toString()).append(" type=").append(String::number(act.type()))
+        .append(" recognized=").append(recognized ? "true" : "false")
+        .append(" accepted=").append(accepted ? "true" : "false")
+        .append(" emitted=").append(String::number(static_cast<int>(actions.size() - actionsBefore))));
+    return accepted;
 }
 
 bool GameData::clientUnitMoved(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
@@ -1838,6 +1996,16 @@ bool GameData::adventureBattleAction(const Avatar & avatar, ActionList & actions
 	{
 	    BattleParty* defenders = other.army.findParty(land);
 	    BattleTown town = BattleTown(land);
+	    CrashReport::breadcrumb(std::string("Adventure combat stage=begin attacker=")
+	        .append(player.avatar.toString()).append(" defender=").append(other.avatar.toString())
+	        .append(" land=").append(land.toString())
+	        .append(" attackers=").append(String::number((*it).count()))
+	        .append(" defenders=").append(String::number(defenders ? defenders->count() : 0))
+	        .append(" town_alive=").append(town.isAlive() ? "true" : "false"));
+	    JsonObject recoveryGui;
+	    recoveryGui.addString("type", "AdventureRecovery");
+	    if(!saveRecovery(recoveryGui, std::string("before-battle-").append(land.toString())))
+	        ERROR("pre-battle recovery checkpoint failed: " << land.toString());
 
 	    DEBUG("attacker " << (*it).toString());
 	    DEBUG("defender tower: " << town.toString());
@@ -1852,6 +2020,11 @@ bool GameData::adventureBattleAction(const Avatar & avatar, ActionList & actions
                 AI::behaviorProfile(other) : AI::BehaviorProfile::Balanced;
             const BattleStrikes strikes = Battle::doAttackParty(*it, town, defenders,
                                                                  attackersProfile, defendersProfile);
+	    CrashReport::breadcrumb(std::string("Adventure combat stage=resolved land=")
+	        .append(land.toString()).append(" attackers=").append(String::number((*it).count()))
+	        .append(" defenders=").append(String::number(defenders ? defenders->count() : 0))
+	        .append(" town_alive=").append(town.isAlive() ? "true" : "false")
+	        .append(" strikes=").append(String::number(static_cast<int>(strikes.size()))));
 
 	    // wins?
 	    if(! town.isAlive())
@@ -1874,6 +2047,9 @@ bool GameData::adventureBattleAction(const Avatar & avatar, ActionList & actions
 	    DEBUG("legend: " << legend.toString());
 	    actions.push_back(AdventureCombat(currentWind, legend, strikes));
 	    battleHistory.push_back(legend);
+	    CrashReport::breadcrumb(std::string("Adventure combat stage=end land=")
+	        .append(land.toString()).append(" outcome=")
+	        .append(legend.wins ? "attacker_win" : "defender_win"));
 	}
     }
 

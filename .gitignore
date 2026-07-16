@@ -3,3 +3,7 @@
 /dist/
 /four-winds-reborn
 /tech-build
+/diagnostics/
+/*.log
+/pslog.txt
+/WINDOWS_HANDOFF_CONTEXT.txt

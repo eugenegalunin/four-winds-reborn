@@ -285,6 +285,7 @@ struct MahjongCast : MahjongMessage
     Avatar target(void) const { return Avatar(getString("target")); }
     Spell spell(void) const { return Spell(getString("spell")); }
     Land land(void) const { return Land(getString("land")); }
+    std::vector<int> targetUnits(void) const { return getStdVector<int>("targets"); }
 
     BattleTargets targets(void) const
     {

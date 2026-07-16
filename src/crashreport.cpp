@@ -1,12 +1,34 @@
 #include "crashreport.h"
 
 #include <csignal>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <deque>
 #include <exception>
 #include <fstream>
+#include <iostream>
 #include <string>
+
+#include "swe/swe_systems.h"
+
+#if defined(_WIN32)
+#ifdef ERROR
+#undef ERROR
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <dbghelp.h>
+#ifdef ERROR
+#undef ERROR
+#endif
+#endif
 
 #if defined(__APPLE__) || defined(__linux__)
 #include <execinfo.h>
@@ -14,15 +36,22 @@
 #include <unistd.h>
 #endif
 
-#include "swe/swe_systems.h"
-
 namespace
 {
 constexpr std::streamoff MaxReportSize = 4 * 1024 * 1024;
+constexpr std::size_t MaxRecentBreadcrumbs = 64;
 
 std::string reportPath;
 std::ofstream reportStream;
 bool failureReported = false;
+std::uint64_t gBreadcrumbSequence = 0;
+std::deque<std::string> gRecentBreadcrumbs;
+
+#if defined(_WIN32)
+std::string dumpPrefix;
+LPTOP_LEVEL_EXCEPTION_FILTER previousExceptionFilter = nullptr;
+volatile LONG handlingWindowsException = 0;
+#endif
 
 #if defined(__APPLE__) || defined(__linux__)
 int reportDescriptor = -1;
@@ -50,6 +79,75 @@ void appendLine(const std::string & message)
     if(reportStream.is_open())
         reportStream << timestamp() << " " << message << '\n';
 }
+
+#if defined(_WIN32)
+void appendWindowsCrashText(const char* data, DWORD size)
+{
+    HANDLE file = CreateFileA(reportPath.c_str(), FILE_APPEND_DATA,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+        OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if(file == INVALID_HANDLE_VALUE) return;
+
+    DWORD written = 0;
+    WriteFile(file, data, size, &written, nullptr);
+    FlushFileBuffers(file);
+    CloseHandle(file);
+}
+
+LONG WINAPI windowsUnhandledExceptionFilter(EXCEPTION_POINTERS* pointers)
+{
+    if(InterlockedCompareExchange(&handlingWindowsException, 1, 0) != 0)
+        return EXCEPTION_CONTINUE_SEARCH;
+
+    failureReported = true;
+
+    SYSTEMTIME local = {};
+    GetLocalTime(&local);
+
+    char dumpPath[MAX_PATH * 4] = {};
+    std::snprintf(dumpPath, sizeof(dumpPath),
+        "%s%04u%02u%02u-%02u%02u%02u-%lu.dmp", dumpPrefix.c_str(),
+        static_cast<unsigned>(local.wYear), static_cast<unsigned>(local.wMonth),
+        static_cast<unsigned>(local.wDay), static_cast<unsigned>(local.wHour),
+        static_cast<unsigned>(local.wMinute), static_cast<unsigned>(local.wSecond),
+        static_cast<unsigned long>(GetCurrentProcessId()));
+
+    bool dumpWritten = false;
+    DWORD dumpError = ERROR_SUCCESS;
+    HANDLE dump = CreateFileA(dumpPath, GENERIC_WRITE, FILE_SHARE_READ, nullptr,
+        CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if(dump != INVALID_HANDLE_VALUE)
+    {
+        MINIDUMP_EXCEPTION_INFORMATION exception = {};
+        exception.ThreadId = GetCurrentThreadId();
+        exception.ExceptionPointers = pointers;
+        exception.ClientPointers = FALSE;
+        dumpWritten = MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
+            dump, MiniDumpNormal, pointers ? &exception : nullptr, nullptr, nullptr) == TRUE;
+        if(!dumpWritten) dumpError = GetLastError();
+        FlushFileBuffers(dump);
+        CloseHandle(dump);
+    }
+    else
+        dumpError = GetLastError();
+
+    const DWORD code = pointers && pointers->ExceptionRecord ?
+        pointers->ExceptionRecord->ExceptionCode : 0;
+    void* address = pointers && pointers->ExceptionRecord ?
+        pointers->ExceptionRecord->ExceptionAddress : nullptr;
+
+    char line[MAX_PATH * 5] = {};
+    const int length = std::snprintf(line, sizeof(line),
+        "\n[FATAL WINDOWS EXCEPTION] code=0x%08lX address=%p dump=%s status=%s error=%lu\n",
+        static_cast<unsigned long>(code), address, dumpPath,
+        dumpWritten ? "written" : "failed", static_cast<unsigned long>(dumpError));
+    if(0 < length)
+        appendWindowsCrashText(line, static_cast<DWORD>(length < static_cast<int>(sizeof(line)) ?
+            length : static_cast<int>(sizeof(line) - 1)));
+
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
 
 #if defined(__APPLE__) || defined(__linux__)
 void writeAll(const char* data, std::size_t size)
@@ -121,6 +219,9 @@ void installSignalHandler(int signal)
 
 void CrashReport::install(const std::string & application)
 {
+    failureReported = false;
+    gBreadcrumbSequence = 0;
+    gRecentBreadcrumbs.clear();
     std::string directory;
     if(const char* overrideDirectory = SWE::Systems::environment("FOUR_WINDS_DIAGNOSTICS_DIR"))
         directory = overrideDirectory;
@@ -145,6 +246,16 @@ void CrashReport::install(const std::string & application)
     reportStream.open(reportPath, std::ios::out | std::ios::app);
     if(reportStream.is_open()) reportStream.setf(std::ios::unitbuf);
     appendLine("[SESSION START]");
+    appendLine("[DIAGNOSTICS] directory=" + (directory.empty() ? std::string(".") : directory));
+    std::clog << "Four Winds diagnostics: " <<
+        (directory.empty() ? std::string(".") : directory) << std::endl;
+
+#if defined(_WIN32)
+    dumpPrefix = directory.empty() ? std::string("crash-") :
+        SWE::Systems::concatePath(directory, "crash-");
+    handlingWindowsException = 0;
+    previousExceptionFilter = SetUnhandledExceptionFilter(windowsUnhandledExceptionFilter);
+#endif
 
 #if defined(__APPLE__) || defined(__linux__)
     reportDescriptor = ::open(reportPath.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
@@ -167,6 +278,12 @@ void CrashReport::shutdown(void)
     appendLine(failureReported ? "[SESSION END] failure" : "[SESSION END] clean shutdown");
     if(reportStream.is_open()) reportStream.close();
 
+#if defined(_WIN32)
+    SetUnhandledExceptionFilter(previousExceptionFilter);
+    previousExceptionFilter = nullptr;
+    handlingWindowsException = 0;
+#endif
+
 #if defined(__APPLE__) || defined(__linux__)
     if(0 <= reportDescriptor)
     {
@@ -178,7 +295,20 @@ void CrashReport::shutdown(void)
 
 void CrashReport::breadcrumb(const std::string & message)
 {
-    appendLine("[ACTION] " + message);
+    const std::string entry = "seq=" + std::to_string(++gBreadcrumbSequence) + " " + message;
+    appendLine("[ACTION] " + entry);
+    gRecentBreadcrumbs.push_back(entry);
+    if(MaxRecentBreadcrumbs < gRecentBreadcrumbs.size()) gRecentBreadcrumbs.pop_front();
+}
+
+std::uint64_t CrashReport::breadcrumbSequence(void)
+{
+    return gBreadcrumbSequence;
+}
+
+std::vector<std::string> CrashReport::recentBreadcrumbs(void)
+{
+    return std::vector<std::string>(gRecentBreadcrumbs.begin(), gRecentBreadcrumbs.end());
 }
 
 void CrashReport::reportException(const std::string & message)

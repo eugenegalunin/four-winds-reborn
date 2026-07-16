@@ -27,6 +27,7 @@
 #include "runewars.h"
 #include "settings.h"
 #include "gametheme.h"
+#include "crashreport.h"
 
 struct dirNotFound
 {
@@ -145,8 +146,14 @@ bool GameTheme::init(const Application & app)
 {
     themeName = app.theme;
 
+    CrashReport::breadcrumb(std::string("Theme stage=resources status=begin name=").append(app.theme));
     if(! loadResources(app))
+	{
+	CrashReport::breadcrumb(std::string("Theme stage=resources status=failed name=").append(app.theme));
 	return false;
+	}
+    CrashReport::breadcrumb(std::string("Theme stage=resources status=ok files=")
+        .append(String::number(resourceFiles.size())));
 
     JsonObject jo = jsonResource("index.json").toObject();
 
@@ -196,11 +203,14 @@ bool GameTheme::init(const Application & app)
 	themeTooltips.font = "tooltips";
     }
 
+    CrashReport::breadcrumb("Theme stage=gamedata status=begin");
     if(! GameData::init(jo))
     {
+	CrashReport::breadcrumb("Theme stage=gamedata status=failed");
 	ERROR("game data init: error");
         return false;
     }
+    CrashReport::breadcrumb("Theme stage=gamedata status=ok");
 
     VERBOSE("use theme: " << themeName << ", " << "author: " << themeAuthor << ", " << themeSize.toString());
 
@@ -208,11 +218,16 @@ bool GameTheme::init(const Application & app)
     bool displayFullScreen = app.fullscreen ? true : Settings::fullscreen();
 
     const std::string title = app.name().append(", version: ").append(app.version());
+    CrashReport::breadcrumb(std::string("Theme stage=display status=begin window=")
+        .append(displaySize.toString()).append(" render=").append(themeSize.toString())
+        .append(" fullscreen=").append(displayFullScreen ? "true" : "false"));
     if(! Display::init(title, displaySize, themeSize, displayFullScreen, Settings::accel(), false))
     {
+	CrashReport::breadcrumb("Theme stage=display status=failed");
 	ERROR("display init: " << displaySize.toString());
         return false;
     }
+    CrashReport::breadcrumb("Theme stage=display status=ok");
 
     return true;
 }

@@ -13,10 +13,32 @@
 
 #include "aibattle.h"
 #include "battle.h"
+#include "crashreport.h"
+#include "gameplayrng.h"
 
 namespace
 {
     using RangedPlan = std::vector<std::pair<const BattleUnit*, BattleCreature*>>;
+
+    std::string targetIds(const std::vector<int> & targets)
+    {
+        std::string result;
+        for(int target : targets)
+        {
+            if(!result.empty()) result += ',';
+            result += std::to_string(target);
+        }
+        return result.empty() ? std::string("none") : result;
+    }
+
+    void battleStateBreadcrumb(const std::string & event, const BattleParty & attackers,
+                               const BattleTown & town, const BattleParty* defenders)
+    {
+        CrashReport::breadcrumb(event + " attackers=" + std::to_string(attackers.count()) +
+            " defenders=" + std::to_string(defenders ? defenders->count() : 0) +
+            " town_alive=" + (town.isAlive() ? "true" : "false") +
+            " town_loyalty=" + std::to_string(town.loyalty()));
+    }
 
     BattleCreature* partyLeader(BattleParty & party, AI::BehaviorProfile profile, bool opening)
     {
@@ -85,11 +107,17 @@ namespace
         return BattleStrike(attacker, damage, target, BattleStrike::Ranger);
     }
 
-    BattleStrikes applyRangedPlan(const RangedPlan & plan, bool logEffects)
+    BattleStrikes applyRangedPlan(const RangedPlan & plan, bool logEffects, const char* side)
     {
         BattleStrikes strikes;
         for(const auto & attack : plan)
+        {
+            if(logEffects)
+                CrashReport::breadcrumb(std::string("Battle phase=creature_ranged side=")
+                    .append(side).append(" attacker=").append(std::to_string(attack.first->battleUnit()))
+                    .append(" target=").append(std::to_string(attack.second->battleUnit())));
             strikes << applyRangedAttack(*attack.first, *attack.second, logEffects);
+        }
         return strikes;
     }
 
@@ -112,12 +140,20 @@ namespace
 
     BattleStrikes strikeParty(BattleParty & allies, BattleParty & enemies,
                               AI::BehaviorProfile profile, const Battle::RandomRoll & randomRoll,
-                              bool logEffects)
+                              bool logEffects, const char* side, int round)
     {
         BattleStrikes strikes;
         const AI::BattleAttackPlan plan = AI::chooseMeleeBattlePlan(allies, enemies, profile);
         BattleCreature* attacker = plan.isValid() ? allies.findBattleUnit(plan.attacker) : nullptr;
         if(!attacker) return strikes;
+
+        if(logEffects)
+            CrashReport::breadcrumb(std::string("Battle phase=melee round=")
+                .append(std::to_string(round)).append(" side=").append(side)
+                .append(" attacker=").append(std::to_string(plan.attacker))
+                .append(" targets=").append(targetIds(plan.targets))
+                .append(" allies_before=").append(std::to_string(allies.count()))
+                .append(" enemies_before=").append(std::to_string(enemies.count())));
 
         for(int unit : plan.targets)
         {
@@ -132,20 +168,26 @@ namespace
 
     BattleStrikes strikeTown(BattleParty & attackers, BattleTown & town,
                              AI::BehaviorProfile profile, const Battle::RandomRoll & randomRoll,
-                             bool logEffects)
+                             bool logEffects, int round)
     {
         BattleStrikes strikes;
         const AI::BattleAttackPlan plan = AI::chooseTownBattlePlan(attackers, town, profile);
         BattleCreature* attacker = plan.isValid() ? attackers.findBattleUnit(plan.attacker) : nullptr;
         if(attacker)
+        {
+            if(logEffects)
+                CrashReport::breadcrumb(std::string("Battle phase=town_melee round=")
+                    .append(std::to_string(round)).append(" side=attacker attacker=")
+                    .append(std::to_string(plan.attacker)).append(" target=town"));
             strikes << applyMeleeAttack(*attacker, town, supportBonus(attackers),
                                         randomRoll, logEffects);
+        }
         return strikes;
     }
 
     BattleStrikes strikeFromTown(BattleTown & town, BattleParty & attackers,
                                  AI::BehaviorProfile profile, bool ranged,
-                                 const Battle::RandomRoll & randomRoll, bool logEffects)
+                                 const Battle::RandomRoll & randomRoll, bool logEffects, int round)
     {
         BattleStrikes strikes;
         const AI::BattleAttackMode mode = ranged ? AI::BattleAttackMode::Ranged :
@@ -153,6 +195,12 @@ namespace
         const int targetId = AI::chooseBattleTarget(town, attackers, mode, profile);
         BattleCreature* target = attackers.findBattleUnit(targetId);
         if(!target) return strikes;
+
+        if(logEffects)
+            CrashReport::breadcrumb(std::string("Battle phase=")
+                .append(ranged ? "town_ranged" : "town_melee")
+                .append(" round=").append(std::to_string(round))
+                .append(" side=defender attacker=town target=").append(std::to_string(targetId)));
 
         if(ranged)
             strikes << applyRangedAttack(town, *target, logEffects);
@@ -219,7 +267,7 @@ BattleStrikes Battle::doAttackParty(BattleParty & attackers, BattleTown & town, 
 {
     const RandomRoll randomRoll = [](int minimum, int maximum)
     {
-        return Tools::rand(minimum, maximum);
+        return GameplayRng::uniform(minimum, maximum);
     };
     return doAttackParty(attackers, town, defenders, attackersProfile, defendersProfile,
                          randomRoll, true);
@@ -231,16 +279,25 @@ BattleStrikes Battle::doAttackParty(BattleParty & attackers, BattleTown & town, 
                                     const RandomRoll & randomRoll, bool logEffects)
 {
     BattleStrikes strikes;
+    if(logEffects)
+        battleStateBreadcrumb("Battle stage=begin", attackers, town, defenders);
 
     // Hellblast is simultaneous at combat entry.
     if(defenders)
     {
         BattleCreature* attackerCaster = hellBlastCaster(attackers);
         BattleCreature* defenderCaster = hellBlastCaster(*defenders);
+        if(logEffects)
+            CrashReport::breadcrumb(std::string("Battle phase=hellblast attacker_caster=")
+                .append(attackerCaster ? std::to_string(attackerCaster->battleUnit()) : "none")
+                .append(" defender_caster=")
+                .append(defenderCaster ? std::to_string(defenderCaster->battleUnit()) : "none"));
         strikes << applyHellBlast(attackerCaster, *defenders);
         strikes << applyHellBlast(defenderCaster, attackers);
         attackers.removeUnloyalty();
         defenders->removeUnloyalty();
+        if(logEffects)
+            battleStateBreadcrumb("Battle phase=hellblast stage=after", attackers, town, defenders);
     }
 
     BattleCreature* initialLeader = partyLeader(attackers, attackersProfile, true);
@@ -250,8 +307,10 @@ BattleStrikes Battle::doAttackParty(BattleParty & attackers, BattleTown & town, 
     if(town.isRanger())
     {
         strikes << strikeFromTown(town, attackers, defendersProfile, true,
-                                  randomRoll, logEffects);
+                                  randomRoll, logEffects, 0);
         attackers.removeUnloyalty();
+        if(logEffects)
+            battleStateBreadcrumb("Battle phase=town_ranged stage=after", attackers, town, defenders);
     }
 
     // Creature missile attacks are planned before any damage is applied.
@@ -259,60 +318,79 @@ BattleStrikes Battle::doAttackParty(BattleParty & attackers, BattleTown & town, 
     {
         const RangedPlan attackerPlan = makeRangedPlan(attackers, *defenders, attackersProfile);
         const RangedPlan defenderPlan = makeRangedPlan(*defenders, attackers, defendersProfile);
-        strikes << applyRangedPlan(attackerPlan, logEffects);
-        strikes << applyRangedPlan(defenderPlan, logEffects);
+        strikes << applyRangedPlan(attackerPlan, logEffects, "attacker");
+        strikes << applyRangedPlan(defenderPlan, logEffects, "defender");
         attackers.removeUnloyalty();
         defenders->removeUnloyalty();
+        if(logEffects)
+            battleStateBreadcrumb("Battle phase=creature_ranged stage=after", attackers, town, defenders);
     }
 
+    int round = 0;
     while(attackers.count() && town.isAlive())
     {
+	++round;
+	if(logEffects)
+	    battleStateBreadcrumb(std::string("Battle phase=melee round=") +
+	        std::to_string(round) + " stage=before", attackers, town, defenders);
+
         if(defenders && defenders->count())
         {
             if(attackersFirst)
             {
                 strikes << strikeParty(attackers, *defenders, attackersProfile,
-                                       randomRoll, logEffects);
+                                       randomRoll, logEffects, "attacker", round);
                 attackers.removeUnloyalty();
                 defenders->removeUnloyalty();
                 if(attackers.count() && defenders->count())
                     strikes << strikeParty(*defenders, attackers, defendersProfile,
-                                           randomRoll, logEffects);
+                                           randomRoll, logEffects, "defender", round);
             }
             else
             {
                 strikes << strikeParty(*defenders, attackers, defendersProfile,
-                                       randomRoll, logEffects);
+                                       randomRoll, logEffects, "defender", round);
                 attackers.removeUnloyalty();
                 defenders->removeUnloyalty();
                 if(attackers.count() && defenders->count())
                     strikes << strikeParty(attackers, *defenders, attackersProfile,
-                                           randomRoll, logEffects);
+                                           randomRoll, logEffects, "attacker", round);
             }
 
             attackers.removeUnloyalty();
             defenders->removeUnloyalty();
+            if(logEffects)
+                battleStateBreadcrumb(std::string("Battle phase=melee round=") +
+                    std::to_string(round) + " stage=after", attackers, town, defenders);
             continue;
         }
 
         if(attackersFirst)
         {
-            strikes << strikeTown(attackers, town, attackersProfile, randomRoll, logEffects);
+            strikes << strikeTown(attackers, town, attackersProfile, randomRoll, logEffects, round);
             attackers.removeUnloyalty();
             if(attackers.count() && town.isAlive())
                 strikes << strikeFromTown(town, attackers, defendersProfile, false,
-                                          randomRoll, logEffects);
+                                          randomRoll, logEffects, round);
         }
         else
         {
             strikes << strikeFromTown(town, attackers, defendersProfile, false,
-                                      randomRoll, logEffects);
+                                      randomRoll, logEffects, round);
             attackers.removeUnloyalty();
             if(attackers.count() && town.isAlive())
-                strikes << strikeTown(attackers, town, attackersProfile, randomRoll, logEffects);
+                strikes << strikeTown(attackers, town, attackersProfile, randomRoll, logEffects, round);
         }
         attackers.removeUnloyalty();
+        if(logEffects)
+            battleStateBreadcrumb(std::string("Battle phase=melee round=") +
+                std::to_string(round) + " stage=after", attackers, town, defenders);
     }
+
+    if(logEffects)
+        battleStateBreadcrumb(std::string("Battle stage=end rounds=") +
+            std::to_string(round) + " strikes=" + std::to_string(strikes.size()),
+            attackers, town, defenders);
 
     return strikes;
 }

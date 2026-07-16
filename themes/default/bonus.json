@@ -37,11 +37,11 @@
     },
     {
 	"name": "Lucky Sets",
-	"bonus": ,
+	"bonus": 1,
 	"condition": {
 	    "rule": "pung",
 	    "pair": false,
 	    "count": 4
 	}
-    },
+    }
 ]

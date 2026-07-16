@@ -22,12 +22,12 @@
 
 #include <set>
 #include <limits>
-#include <random>
 #include <algorithm>
 
 #include "aiturn.h"
 #include "aiadventure.h"
 #include "aispell.h"
+#include "gameplayrng.h"
 
 namespace GameData
 {
@@ -327,9 +327,7 @@ int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const 
 	std::vector<StoneCost> rnd; rnd.reserve(8);
 	std::copy(itbeg, itend, std::back_inserter(rnd));
 
-        std::random_device rd;
-        std::mt19937 mtg(rd());
-	std::shuffle(rnd.begin(), rnd.end(), mtg);
+	GameplayRng::shuffle(rnd.begin(), rnd.end());
 
 	// first find casted
 	auto itres = std::find_if(rnd.begin(), rnd.end(), [](const StoneCost & sc) { return sc.stone.isCasted(); });
@@ -340,7 +338,7 @@ int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const 
     }
 
     // impossible ;)
-    return Tools::rand(0, stones.size());
+    return GameplayRng::uniform(0, stones.size());
 }
 
 int AI::mahjongLuckChoice(const GameStones & stones, const VecStones & choices,

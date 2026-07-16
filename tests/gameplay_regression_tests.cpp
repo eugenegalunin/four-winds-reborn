@@ -1,7 +1,9 @@
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <initializer_list>
 #include <map>
+#include <vector>
 
 #include "aiadventure.h"
 #include "aibattle.h"
@@ -10,6 +12,29 @@
 #include "avatar_balance_tests.h"
 #include "battle.h"
 #include "crashreport.h"
+#include "gameplayrng.h"
+#include "recovery.h"
+#include "replay.h"
+#include "settings.h"
+
+#if defined(_WIN32)
+#ifdef ERROR
+#undef ERROR
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#ifdef ERROR
+#undef ERROR
+#endif
+#ifdef DELETE
+#undef DELETE
+#endif
+#endif
 
 namespace GameData
 {
@@ -19,6 +44,7 @@ extern std::vector<SpellInfo> spellsInfo;
 extern std::vector<LandInfo> landsInfo;
 extern std::vector<AvatarInfo> avatarsInfo;
 extern LocalPlayers gamers;
+extern Wind currentWind;
 JsonObject toJsonObject(const JsonObject &);
 }
 
@@ -176,6 +202,206 @@ void testSelectedPartyMovement()
            "failed group movement must leave both parties unchanged");
     expect(!blocked.canMoveCreature(*blocked.findBattleUnitConst(252), Land::Corzen, Lands()),
            "empty movement paths must fail safely");
+}
+
+void testActionReplay()
+{
+    std::vector<std::unique_ptr<ClientMessage>> messages;
+    messages.emplace_back(std::make_unique<ClientReady>());
+    messages.emplace_back(std::make_unique<ClientButtonGame>());
+    messages.emplace_back(std::make_unique<ClientButtonPass>());
+    messages.emplace_back(std::make_unique<ClientChaoVariant>(2));
+    messages.emplace_back(std::make_unique<ClientButtonPung>());
+    messages.emplace_back(std::make_unique<ClientButtonKong1>());
+    messages.emplace_back(std::make_unique<ClientButtonKong2>());
+    messages.emplace_back(std::make_unique<ClientDropIndex>(4));
+    messages.emplace_back(std::make_unique<ClientSayGame>());
+    messages.emplace_back(std::make_unique<ClientSayChao>());
+    messages.emplace_back(std::make_unique<ClientSayPung>());
+    messages.emplace_back(std::make_unique<ClientSayKong>(1));
+    messages.emplace_back(std::make_unique<ClientSummonCreature>(Creature::Durlock, Land::Corzen, true));
+    messages.emplace_back(std::make_unique<ClientCastSpell>(Spell::Healing));
+    messages.emplace_back(std::make_unique<ClientCastSpell>(Spell::ScryRunes, Avatar::Logun));
+    messages.emplace_back(std::make_unique<ClientCastSpell>(Spell::Teleport, Land::Corzen, 601, true));
+    messages.emplace_back(std::make_unique<ClientUnitMoved>(601, Land::None));
+    messages.emplace_back(std::make_unique<ClientLandClaim>(Land::Corzen));
+    messages.emplace_back(std::make_unique<ClientAdventureUndo>());
+    messages.emplace_back(std::make_unique<ClientBattleReady>());
+    messages.emplace_back(std::make_unique<ClientLuckChoice>(1));
+
+    for(const auto & message : messages)
+    {
+        const std::unique_ptr<ClientMessage> rebuilt = Replay::clientMessageFromJson(*message);
+        expect(rebuilt && rebuilt->toString() == message->toString(),
+               "replay client-message factory must preserve every action payload");
+    }
+
+    JsonObject unknown;
+    unknown.addInteger("type", Action::Last + 100);
+    expect(!Replay::clientMessageFromJson(unknown),
+           "replay client-message factory must reject unknown action types");
+
+    GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
+    LocalPlayer* player = GameData::gamers.playerOfWind(Wind::East);
+    expect(player != nullptr, "replay fixture player must exist");
+    if(!player) return;
+    const Avatar actor = player->avatar;
+    BattleParty party(Clan::Red, Land::Corzen);
+    expect(party.join(combatCreature(Clan::Red, Creature::Durlock,
+                                     601, 2, 0, 2, 3, 1)),
+           "replay Adventure fixture must join");
+    player->army.push_back(party);
+    expect(GameData::initAdventure(), "replay Adventure fixture must initialize");
+
+    const JsonObject initialState = GameData::authoritativeState();
+    const ClientUnitMoved dismiss(601, Land::None);
+    ActionList emitted;
+    expect(GameData::client2Adventure(actor, dismiss, emitted),
+           "replay reference action must be accepted");
+    const std::string expectedHash = Replay::authoritativeStateHash();
+
+    const std::vector<Replay::Step> replaySteps = {
+        Replay::Step(actor, dismiss, expectedHash)
+    };
+    std::string replayError;
+    expect(Replay::run(initialState, replaySteps, &replayError) &&
+           GameData::findBattleCreature(601) == nullptr,
+           "replay must restore, apply a validated Adventure action and match its state hash");
+
+    const std::vector<Replay::Step> tamperedSteps = {
+        Replay::Step(actor, dismiss, "0000000000000000")
+    };
+    replayError.clear();
+    expect(!Replay::run(initialState, tamperedSteps, &replayError) &&
+           replayError.find("state hash mismatch at step 0") != std::string::npos,
+           "replay must stop at the first divergent authoritative state hash");
+
+    GameplayRng::seed(UINT64_C(0x123456789abcdef));
+    GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(), "RNG replay fixture must initialize Mahjong");
+    LocalPlayer* randomPlayer = GameData::gamers.playerOfWind(Wind::East);
+    expect(randomPlayer != nullptr, "RNG replay fixture East player must exist");
+    if(!randomPlayer) return;
+
+    randomPlayer->affected.insert(AffectedSpell(Spell(Spell::RandomDiscard), 1));
+    const Avatar randomActor = randomPlayer->avatar;
+    const JsonObject randomInitialState = GameData::authoritativeState();
+    ActionList rejectedActions;
+    const ClientMessage unknownAction(Action::Last + 1);
+    expect(!GameData::client2Mahjong(randomActor, unknownAction, rejectedActions) &&
+           Replay::actionJournalSize() == 0,
+           "replay journal must exclude rejected and unknown client actions");
+    const ClientDropIndex randomDiscard(0);
+    ActionList randomActions;
+    expect(GameData::client2Mahjong(randomActor, randomDiscard, randomActions),
+           "RNG replay reference Random Discard must be accepted");
+    const JsonObject randomFinalState = GameData::authoritativeState();
+    const std::string randomExpectedHash = Replay::authoritativeStateHash();
+    const JsonObject journal = Replay::actionJournal(randomFinalState);
+    expect(journal.getInteger("actionCount") == 1 &&
+           journal.getBoolean("contiguousToCheckpoint"),
+           "accepted RNG action must enter a contiguous persisted replay journal");
+
+    replayError.clear();
+    expect(Replay::run(journal, &replayError) &&
+           Replay::authoritativeStateHash() == randomExpectedHash,
+           "replay journal must restore RNG state and reproduce Random Discard");
+
+    JsonObject tamperedRandomState = randomInitialState;
+    JsonObject tamperedRng = *randomInitialState.getObject("gameplayRng");
+    tamperedRng.addString("state", "1234");
+    tamperedRandomState.addObject("gameplayRng", tamperedRng);
+    const std::vector<Replay::Step> randomSteps = {
+        Replay::Step(randomActor, randomDiscard, randomExpectedHash)
+    };
+    replayError.clear();
+    expect(!Replay::run(tamperedRandomState, randomSteps, &replayError) &&
+           replayError.find("state hash mismatch at step 0") != std::string::npos,
+           "replay must detect a divergent gameplay RNG state");
+}
+
+void testGameplayRngState()
+{
+    GameplayRng::seed(UINT64_C(0xfedcba987654321));
+    const int first = GameplayRng::uniform(-10, 10);
+    const JsonObject checkpoint = GameplayRng::toJsonObject();
+    const std::vector<int> expected = {
+        GameplayRng::uniform(0, 1000000),
+        GameplayRng::uniform(0, 1000000),
+        GameplayRng::uniform(0, 1000000)
+    };
+
+    expect(-10 <= first && first <= 10,
+           "gameplay RNG uniform result must stay inside inclusive bounds");
+    expect(GameplayRng::fromJsonObject(checkpoint),
+           "gameplay RNG checkpoint must restore");
+    const std::vector<int> actual = {
+        GameplayRng::uniform(0, 1000000),
+        GameplayRng::uniform(0, 1000000),
+        GameplayRng::uniform(0, 1000000)
+    };
+    expect(actual == expected && GameplayRng::draws() == 4,
+           "restored gameplay RNG must reproduce values and draw count");
+
+    std::vector<int> firstShuffle = { 1, 2, 3, 4, 5, 6, 7, 8 };
+    std::vector<int> secondShuffle = firstShuffle;
+    GameplayRng::seed(777);
+    GameplayRng::shuffle(firstShuffle.begin(), firstShuffle.end());
+    GameplayRng::seed(777);
+    GameplayRng::shuffle(secondShuffle.begin(), secondShuffle.end());
+    expect(firstShuffle == secondShuffle,
+           "gameplay RNG shuffle must be deterministic for a fixed seed");
+}
+
+int runFixedSeedReplaySelfTest()
+{
+    constexpr uint64_t seed = UINT64_C(0x123456789abcdef);
+    constexpr const char* expectedHash = "8020dff30d3f1571";
+
+    GameplayRng::seed(seed);
+    GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
+    if(!GameData::initMahjong())
+    {
+        std::cerr << "FAIL: fixed-seed replay could not initialize Mahjong\n";
+        return 1;
+    }
+
+    LocalPlayer* player = GameData::gamers.playerOfWind(Wind::East);
+    if(!player)
+    {
+        std::cerr << "FAIL: fixed-seed replay East player is missing\n";
+        return 1;
+    }
+
+    player->affected.insert(AffectedSpell(Spell(Spell::RandomDiscard), 1));
+    const Avatar actor = player->avatar;
+    const ClientDropIndex randomDiscard(0);
+    ActionList actions;
+    if(!GameData::client2Mahjong(actor, randomDiscard, actions))
+    {
+        std::cerr << "FAIL: fixed-seed Random Discard action was rejected\n";
+        return 1;
+    }
+
+    const JsonObject finalState = GameData::authoritativeState();
+    const std::string actualHash = Replay::authoritativeStateHash();
+    const JsonObject journal = Replay::actionJournal(finalState);
+    std::string replayError;
+    if(!Replay::run(journal, &replayError) || Replay::authoritativeStateHash() != actualHash)
+    {
+        std::cerr << "FAIL: fixed-seed journal replay diverged: " << replayError << '\n';
+        return 1;
+    }
+
+    std::cout << "fixed-seed replay hash: " << actualHash << '\n';
+    if(actualHash != expectedHash)
+    {
+        std::cerr << "FAIL: expected fixed-seed replay hash " << expectedHash
+                  << ", got " << actualHash << '\n';
+        return 1;
+    }
+
+    return 0;
 }
 
 void testGateMovement()
@@ -1064,23 +1290,360 @@ void testBattleAI()
            meleeTargets.findBattleUnitConst(372)->loyalty() == 8,
            "Battle AI melee planning must not mutate its targets");
 }
+
+int runRecoverySelfTest()
+{
+    const char* directoryValue = std::getenv("FOUR_WINDS_RECOVERY_DIR");
+    if(!directoryValue || !*directoryValue)
+    {
+        std::cerr << "FAIL: recovery test directory is missing\n";
+        return 1;
+    }
+
+    const std::filesystem::path directory(directoryValue);
+    std::error_code error;
+    std::filesystem::remove_all(directory, error);
+
+    for(int sequence = 1; sequence <= 4; ++sequence)
+    {
+        JsonObject metadata;
+        metadata.addInteger("sequence", sequence);
+        if(!Recovery::writeCheckpoint(directory.string(),
+                                      std::string("state-") + std::to_string(sequence), metadata))
+        {
+            std::cerr << "FAIL: recovery checkpoint write failed at sequence " << sequence << '\n';
+            return 1;
+        }
+    }
+
+    bool valid = true;
+    for(int slot = 0; slot < Recovery::SlotCount; ++slot)
+    {
+        std::string save;
+        std::string metadataText;
+        const int expected = 4 - slot;
+        valid = valid && Systems::readFile2String(Recovery::savePath(directory.string(), slot), save) &&
+            save == std::string("state-") + std::to_string(expected);
+        valid = valid && Systems::readFile2String(Recovery::metadataPath(directory.string(), slot), metadataText) &&
+            JsonContentString(metadataText).toObject().getInteger("sequence") == expected;
+    }
+
+    valid = valid && !Systems::isFile(Recovery::savePath(directory.string(), Recovery::SlotCount)) &&
+        !Systems::isFile(Recovery::metadataPath(directory.string(), Recovery::SlotCount)) &&
+        !Systems::isFile(Recovery::savePath(directory.string(), 0) + ".tmp") &&
+        !Systems::isFile(Recovery::metadataPath(directory.string(), 0) + ".tmp");
+
+    if(!valid)
+    {
+        std::cerr << "FAIL: recovery rotation or metadata pairing is invalid\n";
+        return 1;
+    }
+
+    JsonObject orderedState;
+    orderedState.addInteger("alpha", 1);
+    orderedState.addInteger("omega", 2);
+    JsonObject reversedState;
+    reversedState.addInteger("omega", 2);
+    reversedState.addInteger("alpha", 1);
+    if(Recovery::stateHash(orderedState) != Recovery::stateHash(reversedState))
+    {
+        std::cerr << "FAIL: canonical state hash depends on object insertion order\n";
+        return 1;
+    }
+
+    GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
+    LocalPlayer* recoveryPlayer = GameData::gamers.playerOfWind(Wind::East);
+    if(!recoveryPlayer)
+    {
+        std::cerr << "FAIL: production recovery player is missing\n";
+        return 1;
+    }
+    BattleParty recoveryParty(recoveryPlayer->clan, Land::Corzen);
+    if(!recoveryParty.join(combatCreature(recoveryPlayer->clan, Creature::Durlock,
+                                          701, 2, 0, 2, 3, 1)))
+    {
+        std::cerr << "FAIL: production recovery replay party could not be created\n";
+        return 1;
+    }
+    recoveryPlayer->army.push_back(recoveryParty);
+    GameData::setAIDifficulty(AI::Difficulty::Hard);
+    GameData::initAdventure();
+    ActionList recoveryActions;
+    if(!GameData::client2Adventure(recoveryPlayer->avatar,
+                                   ClientUnitMoved(701, Land::None), recoveryActions))
+    {
+        std::cerr << "FAIL: production recovery replay action was rejected\n";
+        return 1;
+    }
+    JsonObject gui;
+    gui.addString("type", "RecoverySelfTest");
+    if(!GameData::saveRecovery(gui, "production-self-test"))
+    {
+        std::cerr << "FAIL: production recovery checkpoint failed\n";
+        return 1;
+    }
+
+    std::string productionSave;
+    std::string productionMetadataText;
+    valid = Systems::readFile2String(Recovery::savePath(directory.string(), 0), productionSave) &&
+        Systems::readFile2String(Recovery::metadataPath(directory.string(), 0), productionMetadataText);
+    const JsonObject productionState = JsonContentString(productionSave).toObject();
+    const JsonObject productionMetadata = JsonContentString(productionMetadataText).toObject();
+    const JsonArray* breadcrumbs = productionMetadata.getArray("recentBreadcrumbs");
+    const JsonObject* metadataRng = productionMetadata.getObject("gameplayRng");
+    const JsonObject* savedRng = productionState.getObject("gameplayRng");
+    const JsonObject* replay = productionMetadata.getObject("replay");
+    std::string replayError;
+    valid = valid && productionState.isValid() &&
+        productionState.getInteger("version") == FORMAT_VERSION_CURRENT &&
+        productionMetadata.getInteger("schema") == 1 &&
+        productionMetadata.getString("reason") == "production-self-test" &&
+        productionMetadata.getString("gameRevision").size() > 6 &&
+        productionMetadata.getString("engineRevision").size() > 6 &&
+        productionMetadata.getString("fileHashFNV1a64") == Recovery::stateHash(productionSave) &&
+        productionMetadata.getString("stateHashFNV1a64") == Recovery::stateHash(productionState) &&
+        productionMetadata.getInteger("gamePart") == Menu::AdventurePart &&
+        productionMetadata.getString("aiDifficulty") == "hard" &&
+        metadataRng && savedRng && metadataRng->getString("algorithm") == GameplayRng::Algorithm &&
+        metadataRng->getString("state") == savedRng->getString("state") &&
+        replay && replay->getInteger("actionCount") == 1 &&
+        replay->getBoolean("contiguousToCheckpoint") && Replay::run(*replay, &replayError) &&
+        breadcrumbs && 0 < breadcrumbs->size();
+
+    if(!valid)
+    {
+        std::cerr << "FAIL: production recovery metadata or state is invalid\n";
+        return 1;
+    }
+
+    std::cout << "recovery checkpointing: ok\n";
+    return 0;
+}
+
+#if defined(_WIN32)
+int runWindowsCrashReportSelfTest(const char* executable)
+{
+    const char* directoryValue = std::getenv("FOUR_WINDS_DIAGNOSTICS_DIR");
+    if(!directoryValue || !*directoryValue)
+    {
+        std::cerr << "FAIL: Windows crash test diagnostics directory is missing\n";
+        return 1;
+    }
+
+    const std::filesystem::path directory(directoryValue);
+    std::error_code error;
+    std::filesystem::create_directories(directory, error);
+    for(const auto & entry : std::filesystem::directory_iterator(directory, error))
+    {
+        if(entry.path().extension() == ".dmp")
+            std::filesystem::remove(entry.path(), error);
+    }
+    std::filesystem::remove(directory / "crash-report.log", error);
+
+    const std::string childExecutable = std::filesystem::absolute(executable).string();
+    std::string command = "\"" + childExecutable + "\" --windows-crash-report-child";
+    std::vector<char> commandLine(command.begin(), command.end());
+    commandLine.push_back('\0');
+
+    STARTUPINFOA startup = {};
+    startup.cb = sizeof(startup);
+    PROCESS_INFORMATION process = {};
+    if(!CreateProcessA(nullptr, commandLine.data(), nullptr, nullptr, FALSE, 0,
+                       nullptr, nullptr, &startup, &process))
+    {
+        std::cerr << "FAIL: Windows crash test child could not start\n";
+        return 1;
+    }
+
+    const DWORD waitResult = WaitForSingleObject(process.hProcess, 30000);
+    DWORD exitCode = STILL_ACTIVE;
+    GetExitCodeProcess(process.hProcess, &exitCode);
+    CloseHandle(process.hThread);
+    CloseHandle(process.hProcess);
+
+    bool dumpFound = false;
+    for(const auto & entry : std::filesystem::directory_iterator(directory, error))
+    {
+        if(entry.path().extension() == ".dmp" && entry.file_size(error) > 0)
+            dumpFound = true;
+    }
+
+    std::string report;
+    const bool reportValid = Systems::readFile2String(
+        (directory / "crash-report.log").string(), report) &&
+        report.find("[FATAL WINDOWS EXCEPTION]") != std::string::npos &&
+        report.find("code=0xC0000005") != std::string::npos &&
+        report.find("status=written") != std::string::npos;
+
+    if(waitResult != WAIT_OBJECT_0 || exitCode == 0 || !dumpFound || !reportValid)
+    {
+        std::cerr << "FAIL: Windows native crash capture is incomplete"
+                  << ", wait=" << waitResult << ", exit=" << exitCode
+                  << ", dump=" << dumpFound << ", report=" << reportValid << '\n';
+        return 1;
+    }
+
+    std::cout << "windows native crash reporting: ok\n";
+    return 0;
+}
+#endif
+
+void testMahjongCastDeadTargetMessage()
+{
+    const LocalPlayers savedPlayers = GameData::gamers;
+    const Wind savedCurrentWind = GameData::currentWind;
+    GameData::gamers.clear();
+
+    LocalPlayer targetOwner;
+    targetOwner.avatar = Avatar::Lakkho;
+    targetOwner.clan = Clan::Yellow;
+    targetOwner.wind = Wind::South;
+    BattleParty targetParty(Clan::Yellow, Land::Zubrus);
+    expect(targetParty.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                           490, 1, 0, 1, 1)),
+           "lethal spell message fixture must join");
+    targetOwner.army.push_back(targetParty);
+    GameData::gamers.push_back(targetOwner);
+
+    LocalData observerSnapshot;
+    observerSnapshot.players[0] = targetOwner;
+
+    BattleTargets targets;
+    targets << GameData::findBattleCreature(490);
+    const MahjongCast message(Wind::East, Spell(Spell::LightningBolt),
+                              Land::Zubrus, targets, std::vector<int>());
+    expect(message.targetUnits().size() == 1 && message.targetUnits().front() == 490,
+           "Mahjong cast messages must preserve target ids independently of live state");
+
+    BattleCreature* liveTarget = GameData::findBattleCreature(490);
+    expect(liveTarget != nullptr, "lethal spell message target must begin in live state");
+    if(liveTarget) liveTarget->applyDamage(1);
+    GameData::gamers.front().army.removeUnloyalty();
+
+    expect(GameData::findBattleCreature(490) == nullptr,
+           "lethal spell fixture must remove the target before the client reads its message");
+    expect(message.targets().empty(),
+           "decoding a stale spell target must not throw or resolve a removed live unit");
+    expect(observerSnapshot.findBattleUnitConst(490) != nullptr,
+           "the observer snapshot must retain target details for spell presentation");
+
+    GameData::gamers.clear();
+    LocalPlayer caster;
+    caster.avatar = Avatar::Dayla;
+    caster.clan = Clan::Purple;
+    caster.wind = Wind::East;
+    caster.points = 1000;
+    GameData::gamers.push_back(caster);
+
+    targetOwner.avatar = Avatar::Logun;
+    targetOwner.clan = Clan::Yellow;
+    targetOwner.wind = Wind::South;
+    targetOwner.army.clear();
+    BattleParty lethalParty(Clan::Yellow, Land::TowerOf4Winds);
+    expect(lethalParty.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                           491, 1, 0, 1, 1)),
+           "lethal spell dispatch fixture must join");
+    targetOwner.army.push_back(lethalParty);
+    GameData::gamers.push_back(targetOwner);
+    GameData::currentWind = Wind(Wind::East);
+
+    ActionList emitted;
+    const ClientCastSpell lethalCast(Spell(Spell::LightningBolt),
+                                     Land(Land::TowerOf4Winds), 491, true);
+    expect(GameData::client2Mahjong(Avatar(Avatar::Dayla), lethalCast, emitted),
+           "lethal Lightning Bolt dispatch must complete without allocation failure");
+    auto info = std::find_if(emitted.begin(), emitted.end(), [](const ActionMessage & action)
+    {
+        return action.type() == Action::MahjongInfo;
+    });
+    expect(info != emitted.end() && info->getString("info").find("vanquished") != std::string::npos,
+           "lethal spell dispatch must own a valid vanquished-unit message");
+    expect(GameData::findBattleCreature(491) == nullptr,
+           "lethal Lightning Bolt dispatch must remove its defeated target");
+
+    GameData::gamers = savedPlayers;
+    GameData::currentWind = savedCurrentWind;
+}
+
+int runCapturedLightningRepro(const char* savePath)
+{
+    if(!savePath || !GameData::loadGame(savePath))
+    {
+        std::cerr << "FAIL: captured recovery save could not be loaded\n";
+        return 1;
+    }
+
+    ActionList actions;
+    if(!GameData::mahjong2Client(Avatar(Avatar::Logun), actions))
+    {
+        std::cerr << "FAIL: captured pre-crash Mahjong prompt was not restored\n";
+        return 1;
+    }
+
+    actions.clear();
+    if(!GameData::client2Mahjong(Avatar(Avatar::Logun), ClientButtonPass(), actions))
+    {
+        std::cerr << "FAIL: captured pre-crash pass action was rejected\n";
+        return 1;
+    }
+
+    actions.clear();
+    if(!GameData::mahjong2Client(Avatar(Avatar::Logun), actions))
+    {
+        std::cerr << "FAIL: captured post-Pung AI turn did not advance\n";
+        return 1;
+    }
+
+    const bool vanquishedMessage = std::any_of(actions.begin(), actions.end(),
+        [](const ActionMessage & action)
+        {
+            return action.type() == Action::MahjongInfo &&
+                action.getString("info").find("vanquished") != std::string::npos;
+        });
+    if(!vanquishedMessage || GameData::findBattleCreature(1))
+    {
+        std::cerr << "FAIL: captured continuation did not execute lethal Lightning Bolt\n";
+        for(const ActionMessage & action : actions)
+            std::cerr << "  action=" << action.toString() << '\n';
+        return 1;
+    }
+
+    std::cout << "captured Lightning Bolt replay: ok\n";
+    return 0;
+}
 }
 
 int main(int argc, char** argv)
 {
+#if defined(_WIN32)
+    if(1 < argc && std::string(argv[1]) == "--windows-crash-report-child")
+    {
+        CrashReport::install("four-winds-reborn-native-test");
+        RaiseException(EXCEPTION_ACCESS_VIOLATION, EXCEPTION_NONCONTINUABLE, 0, nullptr);
+        return 2;
+    }
+
+    if(1 < argc && std::string(argv[1]) == "--windows-crash-report-self-test")
+        return runWindowsCrashReportSelfTest(argv[0]);
+#endif
+
     if(1 < argc && std::string(argv[1]) == "--crash-report-self-test")
     {
         CrashReport::install("four-winds-reborn-test");
         CrashReport::breadcrumb("crash reporter self-test action");
+        CrashReport::breadcrumb("crash reporter self-test phase transition");
         CrashReport::reportException("crash reporter self-test exception");
         const std::string report = CrashReport::filePath();
         CrashReport::shutdown();
 
         std::string content;
         bool valid = Systems::readFile2String(report, content) &&
-            content.find("[ACTION] crash reporter self-test action") != std::string::npos &&
+            content.find("[ACTION] seq=1 crash reporter self-test action") != std::string::npos &&
+            content.find("[ACTION] seq=2 crash reporter self-test phase transition") != std::string::npos &&
             content.find("[FATAL EXCEPTION] crash reporter self-test exception") != std::string::npos &&
-            content.find("[SESSION END] failure") != std::string::npos;
+            content.find("[SESSION END] failure") != std::string::npos &&
+            CrashReport::breadcrumbSequence() == 2 &&
+            CrashReport::recentBreadcrumbs().size() == 2;
 #if defined(__APPLE__) || defined(__linux__)
         valid = valid && content.find("Stack trace:") != std::string::npos;
 #endif
@@ -1099,6 +1662,12 @@ int main(int argc, char** argv)
            diagnosticException.message() == "invalid state",
            "engine exceptions must retain diagnostic context");
 
+#if defined(_WIN32)
+    const std::string windowsHome = Systems::homeDirectory("four-winds-reborn");
+    expect(Systems::basename(windowsHome) == "four-winds-reborn",
+           "Windows application data path must retain its application subdirectory");
+#endif
+
     const std::string unicodeSample = "Four Winds: Привет, мир! 🌬️";
     expect(UnicodeString(unicodeSample).toString() == unicodeSample,
            "engine UTF-8/UTF-16 conversion must preserve Cyrillic and supplementary characters");
@@ -1110,6 +1679,15 @@ int main(int argc, char** argv)
     GameData::spellsInfo = loadIndexed<SpellInfo>("spells.json");
     GameData::landsInfo = loadIndexed<LandInfo>("lands.json");
     GameData::avatarsInfo = loadIndexed<AvatarInfo>("avatars.json");
+
+    if(2 < argc && std::string(argv[1]) == "--captured-lightning-repro")
+        return runCapturedLightningRepro(argv[2]);
+
+    if(1 < argc && std::string(argv[1]) == "--recovery-self-test")
+        return runRecoverySelfTest();
+
+    if(1 < argc && std::string(argv[1]) == "--fixed-seed-replay")
+        return runFixedSeedReplaySelfTest();
 
     if(1 < argc && std::string(argv[1]) == "--balance-only")
     {
@@ -1125,9 +1703,12 @@ int main(int argc, char** argv)
     testLuckAbility();
     testAvatarPassives();
     testSpellCastingAI();
+    testMahjongCastDeadTargetMessage();
     testAdventureProfiles();
     testAdventureCoordination();
     testBattleAI();
+    testGameplayRngState();
+    testActionReplay();
 
     expect(Speciality(Speciality::CastSilence).toSpell()() == Spell::Silence,
            "CastSilence must grant Silence");

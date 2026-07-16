@@ -25,10 +25,10 @@
 #include <numeric>
 #include <sstream>
 #include <forward_list>
-#include <random>
 #include <algorithm>
 #include <utility>
 
+#include "gameplayrng.h"
 #include "gamedata.h"
 
 std::initializer_list<Clan::clan_t> clans_all = { Clan::Red, Clan::Yellow, Clan::Aqua, Clan::Purple };
@@ -178,7 +178,7 @@ std::string Clan::toString(void) const
 
 Clan Clan::random(void)
 {
-    auto res = Tools::random_n(clans_all.begin(), clans_all.end());
+    auto res = GameplayRng::choose(clans_all.begin(), clans_all.end());
     return *res;
 }
 
@@ -393,7 +393,7 @@ std::string Avatar::toString(void) const
 
 Avatar Avatar::random(void)
 {
-    switch(Tools::rand(1, 9))
+    switch(GameplayRng::uniform(1, 9))
     {
 	case 1: return Orachi;
 	case 2:	return Lakkho;
@@ -1818,7 +1818,7 @@ bool BattleCreature::applySpell(const Spell & spell)
     {
 	int chance = SpecialityMagicResistence().chance(Creature::id());
 
-	if(chance > Tools::rand(1, 100))
+	if(chance > GameplayRng::uniform(1, 100))
 	{
 	    VERBOSE("Speciality: " << "Magic Resistence!");
 	    return false;
@@ -1848,7 +1848,7 @@ bool BattleCreature::applySpell(const Spell & spell)
 
 	case Spell::MysticalFountain:
 	{
-	    auto rnd = static_cast<Spell::spell_t>(Spell::MysticalFountain + Tools::rand(1, 3));
+	    auto rnd = static_cast<Spell::spell_t>(Spell::MysticalFountain + GameplayRng::uniform(1, 3));
 	    affected.insert(Spell(rnd));
 	}
 	    return true;
@@ -1995,7 +1995,8 @@ BattleTargets BattleTargets::fromJsonArray(const JsonArray & ja)
     for(int it = 0; it < ja.size(); ++it)
     {
 	int battleUnit = ja.getInteger(it);
-	res.push_back(GameData::getBattleCreature(battleUnit));
+	BattleCreature* creature = GameData::findBattleCreature(battleUnit);
+	if(creature) res.push_back(creature);
     }
     return res;
 }
@@ -2984,22 +2985,19 @@ void CroupierSet::reset(void)
 		    Stone::Wind1, Stone::Wind2, Stone::Wind3, Stone::Wind4,
 		    Stone::Dragon1, Stone::Dragon2, Stone::Dragon3 };
 
-    std::random_device rd;
-    std::mt19937 mtg(rd());
-
     bank.clear();
 
     bank.insert(bank.end(), stones.begin(), stones.end());
-    std::shuffle(bank.begin(), bank.end(), mtg);
+    GameplayRng::shuffle(bank.begin(), bank.end());
 
     bank.insert(bank.end(), stones.begin(), stones.end());
-    std::shuffle(bank.begin(), bank.end(), mtg);
+    GameplayRng::shuffle(bank.begin(), bank.end());
 
     bank.insert(bank.end(), stones.begin(), stones.end());
-    std::shuffle(bank.begin(), bank.end(), mtg);
+    GameplayRng::shuffle(bank.begin(), bank.end());
 
     bank.insert(bank.end(), stones.begin(), stones.end());
-    std::shuffle(bank.begin(), bank.end(), mtg);
+    GameplayRng::shuffle(bank.begin(), bank.end());
 
     trash.clear();
     luckDraw.clear();
@@ -3167,9 +3165,6 @@ Persons::Persons(const Person & person)
     std::vector<Clan::clan_t> clans(clans_all);
     clans.erase(std::find(clans.begin(), clans.end(), person.clan.id()));
 
-    std::random_device rd;
-    std::mt19937 mtg(rd());
-
     while(! clans.empty())
     {
 	Avatars avatars = GameData::avatarsOfClan(clans.back());
@@ -3179,7 +3174,7 @@ Persons::Persons(const Person & person)
 			[&](const Person & pers){ return pers.avatar == ava; });
 	});
 	avatars.erase(it, avatars.end());
-        std::shuffle(avatars.begin(), avatars.end(), mtg);
+        GameplayRng::shuffle(avatars.begin(), avatars.end());
 
 	push_back(Person(avatars.front(), clans.back(), Wind()));
 	clans.pop_back();
@@ -3191,7 +3186,7 @@ Persons::Persons(const Person & person)
 	for(auto & pers : *this)
 	    pers.setAI(true);
 
-	std::shuffle(begin(), end(), mtg);
+	GameplayRng::shuffle(begin(), end());
 
 	at(0).wind = Wind(Wind::East);
 	at(1).wind = Wind(Wind::South);
@@ -3586,7 +3581,7 @@ Stone LocalPlayer::setMahjongDrop(int indexDrop)
     if(stones.size() < indexDrop)
     {
 	ERROR("index out of range");
-	indexDrop = Tools::rand(0, stones.size() - 1);
+	indexDrop = GameplayRng::uniform(0, stones.size() - 1);
     }
 
     Stone dropStone;
@@ -3608,7 +3603,7 @@ Stone LocalPlayer::setMahjongDrop(int indexDrop)
     {
 	affectedSpellActivate(Spell::RandomDiscard);
 	stones.add(dropStone);
-	indexDrop = Tools::rand(0, stones.size() - 1);
+	indexDrop = GameplayRng::uniform(0, stones.size() - 1);
 	dropStone = stones[indexDrop];
 	stones.del(indexDrop);
 	DEBUG("random discard affected" << ", " << "drop stone: " << dropStone.id());
@@ -3650,7 +3645,7 @@ void LocalPlayer::setMahjongChao(const Stone & dropStone, int index)
     if(variants.size() < index)
     {
         if(1 < variants.size())
-            index = Tools::rand(0, variants.size() - 1);
+            index = GameplayRng::uniform(0, variants.size() - 1);
         else
         if(variants.size())
             index = 0;

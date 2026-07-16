@@ -1517,6 +1517,15 @@ void MahjongPartScreen::tickEvent(u32 ms)
 		    ERROR("unknown action: " << action.type());
 		    break;
 	    }
+
+	    if(action.type() == Action::MahjongBegin ||
+	       action.type() == Action::MahjongData ||
+	       action.type() == Action::MahjongEnd)
+	    {
+		const std::string reason = std::string("mahjong-action-") + String::number(action.type());
+		if(!GameData::saveRecovery(toJsonObject(), reason))
+		    ERROR("recovery checkpoint failed: " << reason);
+	    }
 	}
 
 	if(redraw) renderWindow();
@@ -1886,7 +1895,7 @@ bool MahjongPartScreen::actionMahjongCast(const ActionMessage & v)
     const RemotePlayer & owner = ld.playerOfWind(ownerWind);
 
     Spell spell = action.spell();
-    BattleTargets targets = action.targets();
+    const std::vector<int> targetUnits = action.targetUnits();
     std::vector<int> resists = action.resists();
 
     const SpellInfo & spellInfo = GameData::spellInfo(spell);
@@ -1924,9 +1933,9 @@ bool MahjongPartScreen::actionMahjongCast(const ActionMessage & v)
 	gameLogs << fastLogText.text;
     }
 
-    for(auto it = targets.begin(); it != targets.end(); ++it)
+    for(int unit : targetUnits)
     {
-	auto target = static_cast<const BattleCreature*>(*it);
+	const BattleCreature* target = ld.findBattleUnitConst(unit);
 
 	if(target)
 	{
@@ -1950,6 +1959,12 @@ bool MahjongPartScreen::actionMahjongCast(const ActionMessage & v)
 	    if(fastLogText.text.empty()) fastLogText.text = tmp;
 	    gameLogs << tmp;
 	}
+    }
+
+    if(fastLogText.text.empty() && !targetUnits.empty())
+    {
+	fastLogText.text = StringFormat("%1 casts %2").arg(owner.name()).arg(spellInfo.name);
+	gameLogs << fastLogText.text;
     }
 
     DEBUG(owner.toString() << ", " << "spell: " << spell.toString() << ", " << "target: " << spellInfo.target.toString());
