@@ -43,6 +43,29 @@ public:
     }
 };
 
+class BehaviorProfileScope
+{
+    bool previousEnabled;
+    AI::BehaviorProfile previousProfile;
+
+public:
+    explicit BehaviorProfileScope(const Simulation::MatchConfig & config) :
+        previousEnabled(AI::behaviorProfileOverrideEnabled()),
+        previousProfile(AI::behaviorProfileOverride())
+    {
+        if(config.forceBehaviorProfile)
+            AI::setBehaviorProfileOverride(config.behaviorProfile);
+        else
+            AI::clearBehaviorProfileOverride();
+    }
+
+    ~BehaviorProfileScope()
+    {
+        if(previousEnabled) AI::setBehaviorProfileOverride(previousProfile);
+        else AI::clearBehaviorProfileOverride();
+    }
+};
+
 struct ObservedUnit
 {
     Avatar avatar;
@@ -310,6 +333,7 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
     {
         RecoverySuppression suppressRecovery;
         ReplayCaptureScope captureReplay(config.captureFullReplay);
+        BehaviorProfileScope selectBehaviorProfile(config);
         result.fullReplayCaptured = config.captureFullReplay;
         GameplayRng::seed(config.seed);
         GameData::setAIDifficulty(config.difficulty);

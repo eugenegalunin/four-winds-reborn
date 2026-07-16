@@ -17,6 +17,8 @@ namespace Tournament
         std::vector<std::uint64_t> seeds;
         Avatars avatars;
         AI::Difficulty difficulty = AI::Difficulty::Normal;
+        bool forceBehaviorProfile = false;
+        AI::BehaviorProfile behaviorProfile = AI::BehaviorProfile::Balanced;
         std::size_t maximumTicks = 100000;
         std::size_t maximumUnchangedTicks = 4;
         std::size_t stateHashInterval = 64;

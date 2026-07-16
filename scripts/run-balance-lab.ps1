@@ -2,6 +2,10 @@ param(
     [ValidateRange(1, 8)]
     [int]$SeedCount = 1,
     [string]$OutputDirectory = "diagnostics\balance-lab",
+    [ValidateSet("Easy", "Normal", "Hard")]
+    [string]$Difficulty = "Normal",
+    [ValidateSet("Native", "Balanced", "Aggressive", "Economic", "Control")]
+    [string]$BehaviorProfile = "Native",
     [switch]$KeepEngineLog,
     [switch]$KeepMatchRecords
 )
@@ -35,6 +39,8 @@ $recordsDirectory = Join-Path $outputPath ".balance-records-$runId"
 New-Item -ItemType Directory -Path $recordsDirectory | Out-Null
 $engineLog = Join-Path $outputPath "balance-engine-$runId.log"
 $utf8 = New-Object System.Text.UTF8Encoding($false)
+$difficultyArgument = $Difficulty.ToLowerInvariant()
+$profileArgument = $BehaviorProfile.ToLowerInvariant()
 
 function Quote-NativeArgument([string]$Value) {
     return '"' + $Value.Replace('"', '\"') + '"'
@@ -80,8 +86,9 @@ try {
     $matchCount = $SeedCount * 4
     for ($index = 0; $index -lt $matchCount; ++$index) {
         $recordPath = Join-Path $recordsDirectory ("match-{0:D6}.json" -f $index)
-        $arguments = "--balance-match {0} {1} {2}" -f `
-            (Quote-NativeArgument $recordPath), $SeedCount, $index
+        $arguments = "--balance-match {0} {1} {2} {3} {4}" -f `
+            (Quote-NativeArgument $recordPath), $SeedCount, $index, `
+            $difficultyArgument, $profileArgument
         $result = Invoke-BalanceProcess $arguments
 
         if ($KeepEngineLog -or $result.ExitCode -ne 0) {
@@ -95,8 +102,9 @@ try {
         Write-Host ("Balance match {0}/{1}: isolated process complete" -f ($index + 1), $matchCount)
     }
 
-    $mergeArguments = "--balance-merge {0} {1} {2}" -f `
-        (Quote-NativeArgument $outputPath), (Quote-NativeArgument $recordsDirectory), $SeedCount
+    $mergeArguments = "--balance-merge {0} {1} {2} {3} {4}" -f `
+        (Quote-NativeArgument $outputPath), (Quote-NativeArgument $recordsDirectory), `
+        $SeedCount, $difficultyArgument, $profileArgument
     $merge = Invoke-BalanceProcess $mergeArguments
     if ($KeepEngineLog -or $merge.ExitCode -ne 0) {
         Save-EngineDiagnostics "report merge" $merge $diagnosticsWritten

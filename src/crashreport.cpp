@@ -74,26 +74,38 @@ std::string timestamp(void)
     return buffer;
 }
 
-void appendLine(const std::string & message)
-{
-    if(reportStream.is_open())
-        reportStream << timestamp() << " " << message << '\n';
-}
-
 #if defined(_WIN32)
-void appendWindowsCrashText(const char* data, DWORD size)
+void appendWindowsText(const char* data, DWORD size)
 {
     HANDLE file = CreateFileA(reportPath.c_str(), FILE_APPEND_DATA,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
         OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if(file == INVALID_HANDLE_VALUE) return;
 
-    DWORD written = 0;
-    WriteFile(file, data, size, &written, nullptr);
+    while(size)
+    {
+        DWORD written = 0;
+        if(!WriteFile(file, data, size, &written, nullptr) || !written) break;
+        data += written;
+        size -= written;
+    }
     FlushFileBuffers(file);
     CloseHandle(file);
 }
+#endif
 
+void appendLine(const std::string & message)
+{
+#if defined(_WIN32)
+    const std::string line = timestamp() + " " + message + '\n';
+    appendWindowsText(line.data(), static_cast<DWORD>(line.size()));
+#else
+    if(reportStream.is_open())
+        reportStream << timestamp() << " " << message << '\n';
+#endif
+}
+
+#if defined(_WIN32)
 LONG WINAPI windowsUnhandledExceptionFilter(EXCEPTION_POINTERS* pointers)
 {
     if(InterlockedCompareExchange(&handlingWindowsException, 1, 0) != 0)
@@ -142,7 +154,7 @@ LONG WINAPI windowsUnhandledExceptionFilter(EXCEPTION_POINTERS* pointers)
         static_cast<unsigned long>(code), address, dumpPath,
         dumpWritten ? "written" : "failed", static_cast<unsigned long>(dumpError));
     if(0 < length)
-        appendWindowsCrashText(line, static_cast<DWORD>(length < static_cast<int>(sizeof(line)) ?
+        appendWindowsText(line, static_cast<DWORD>(length < static_cast<int>(sizeof(line)) ?
             length : static_cast<int>(sizeof(line) - 1)));
 
     return EXCEPTION_EXECUTE_HANDLER;
@@ -242,9 +254,13 @@ void CrashReport::install(const std::string & application)
         std::remove(rotated.c_str());
         std::rename(reportPath.c_str(), rotated.c_str());
     }
+    else if(previous.is_open())
+        previous.close();
 
+#if !defined(_WIN32)
     reportStream.open(reportPath, std::ios::out | std::ios::app);
     if(reportStream.is_open()) reportStream.setf(std::ios::unitbuf);
+#endif
     appendLine("[SESSION START]");
     appendLine("[DIAGNOSTICS] directory=" + (directory.empty() ? std::string(".") : directory));
     std::clog << "Four Winds diagnostics: " <<

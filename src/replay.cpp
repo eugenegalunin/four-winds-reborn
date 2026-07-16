@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <exception>
 
+#include "aiprofile.h"
 #include "gamedata.h"
 #include "recovery.h"
 
@@ -29,6 +30,26 @@ struct RecordingPause
 
     RecordingPause() : previous(recordingEnabled) { recordingEnabled = false; }
     ~RecordingPause() { recordingEnabled = previous; }
+};
+
+struct BehaviorProfileReplayScope
+{
+    const bool previousEnabled;
+    const AI::BehaviorProfile previousProfile;
+
+    BehaviorProfileReplayScope(bool force, AI::BehaviorProfile profile) :
+        previousEnabled(AI::behaviorProfileOverrideEnabled()),
+        previousProfile(AI::behaviorProfileOverride())
+    {
+        if(force) AI::setBehaviorProfileOverride(profile);
+        else AI::clearBehaviorProfileOverride();
+    }
+
+    ~BehaviorProfileReplayScope()
+    {
+        if(previousEnabled) AI::setBehaviorProfileOverride(previousProfile);
+        else AI::clearBehaviorProfileOverride();
+    }
 };
 }
 
@@ -210,7 +231,10 @@ JsonObject Replay::actionJournal(const JsonObject & checkpointState)
     JsonObject result;
     const bool hasSystemOperations = std::any_of(journalSteps.begin(), journalSteps.end(),
         [](const Step & step){ return step.isSystem(); });
-    result.addInteger("schema", hasSystemOperations ? 2 : 1);
+    const bool forcedProfile = AI::behaviorProfileOverrideEnabled();
+    result.addInteger("schema", forcedProfile ? 3 : (hasSystemOperations ? 2 : 1));
+    result.addString("aiBehaviorProfile", forcedProfile ?
+        AI::behaviorProfileName(AI::behaviorProfileOverride()) : "native");
     result.addInteger("actionCount", static_cast<int>(journalSteps.size()));
 
     const std::string checkpointHash = Recovery::stateHash(checkpointState);
@@ -337,6 +361,16 @@ bool Replay::run(const JsonObject & journal, std::string* error)
         if(error) *error = "journal is missing initialState or steps";
         return false;
     }
+
+    const std::string selectedProfile = journal.getString("aiBehaviorProfile", "native");
+    AI::BehaviorProfile profile = AI::BehaviorProfile::Balanced;
+    const bool forceProfile = selectedProfile != "native";
+    if(forceProfile && !AI::behaviorProfileFromString(selectedProfile, profile))
+    {
+        if(error) *error = "journal has an invalid AI behavior profile: " + selectedProfile;
+        return false;
+    }
+    BehaviorProfileReplayScope profileScope(forceProfile, profile);
 
     std::vector<Step> steps;
     steps.reserve(encodedSteps->size());

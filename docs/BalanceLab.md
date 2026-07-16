@@ -12,6 +12,14 @@ schedule rotates the four avatars through East, South, West and North. Persons
 are stored in that same canonical wind order, so this also rotates any engine
 iteration-order seat effect.
 
+Difficulty and doctrine are independent axes. `native` uses each avatar's
+theme-defined behavior profile. A forced `balanced`, `aggressive`, `economic`
+or `control` cell applies that one doctrine to all four AI players while
+retaining the same avatars, clans, winds and seed. The override exists only for
+the lifetime of that match and is restored before the child exits. Forced cells
+therefore measure how the same roster and fixtures respond to one doctrine;
+they are not mixed-profile head-to-head games.
+
 For more flexible rosters, every legal one-avatar-per-clan bijection is combined
 with the four seat rotations. Unsupported avatar/clan combinations are never
 invented. The schedule rejects duplicate avatars, duplicate seeds and rosters
@@ -62,7 +70,9 @@ records before producing aggregate reports. This confines a native crash or
 leaked process state to one match and preserves its child diagnostics. Full
 replays contain the initial authoritative state, every Mahjong/Adventure driver
 tick and every explicit phase transition, with the expected state hash and
-success/exception outcome checked after each step.
+success/exception outcome checked after each step. A forced doctrine is stored
+in replay schema 3 and restored only for replay execution, so an outlier remains
+reproducible outside its original matrix process.
 
 Replay retention is deterministic. All non-complete statuses are selected.
 With at least eight completed samples, match length and each avatar's total
@@ -101,9 +111,42 @@ Run all eight published seeds (32 matches) into a chosen directory:
 .\scripts\run-balance-lab.ps1 -SeedCount 8 -OutputDirectory diagnostics\balance-baseline
 ```
 
+Select a single explicit scenario when diagnosing one axis value:
+
+```powershell
+.\scripts\run-balance-lab.ps1 -SeedCount 2 -Difficulty Hard -BehaviorProfile Control
+```
+
+Run the complete factorial comparison. With the default one seed this is 15
+cells and 60 isolated matches; all eight published seeds produce 480 matches:
+
+```powershell
+.\scripts\run-balance-matrix.ps1
+.\scripts\run-balance-matrix.ps1 -SeedCount 8 -OutputDirectory diagnostics\balance-matrix-full
+```
+
+A focused matrix can select subsets without changing its report contract:
+
+```powershell
+.\scripts\run-balance-matrix.ps1 -Profiles Native,Balanced -Difficulties Normal
+```
+
+Every cell retains its normal `balance-report.json`, `balance-players.csv` and
+`balance-report.txt` under `scenarios/<difficulty>-<profile>/`. The matrix root
+adds:
+
+- `balance-matrix.json`: versioned axes, scenario links, avatar aggregates and
+  both comparison deltas;
+- `balance-matrix.csv`: flat scenario/avatar rows for external analysis;
+- `balance-matrix.txt`: concise human comparison table.
+
+Profile deltas subtract `native` at the same difficulty. Difficulty deltas
+subtract `normal` for the same profile. If a focused subset omits the applicable
+reference cell, that delta is null/blank instead of silently changing the
+baseline.
+
 The script deliberately uses the developer test executable under
 `build-windows`; balance tooling is not shipped inside the player Release
 package. One seed means four child processes; all eight published seeds mean 32.
 The fixed CTest canary remains small and in-process, while the manual runner is
-the supported path for the larger isolated matrix. Behavior-profile and
-difficulty comparison matrices remain subsequent 15.5 work.
+the supported path for the larger isolated matrix.

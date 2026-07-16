@@ -5,6 +5,18 @@
 
 namespace
 {
+    bool forcedBehaviorProfile = false;
+    AI::BehaviorProfile forcedBehaviorProfileValue = AI::BehaviorProfile::Balanced;
+
+    std::string lowercase(std::string value)
+    {
+        std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch)
+        {
+            return static_cast<char>(std::tolower(ch));
+        });
+        return value;
+    }
+
     AI::BehaviorRules balancedRules()
     {
         AI::BehaviorRules rules{};
@@ -90,15 +102,19 @@ const char* AI::difficultyName(Difficulty difficulty)
 
 AI::Difficulty AI::difficultyFromString(const std::string & value)
 {
-    std::string difficulty = value;
-    std::transform(difficulty.begin(), difficulty.end(), difficulty.begin(), [](unsigned char ch)
-    {
-        return static_cast<char>(std::tolower(ch));
-    });
+    Difficulty result = Difficulty::Normal;
+    difficultyFromString(value, result);
+    return result;
+}
 
-    if(difficulty == "easy") return Difficulty::Easy;
-    if(difficulty == "hard") return Difficulty::Hard;
-    return Difficulty::Normal;
+bool AI::difficultyFromString(const std::string & value, Difficulty & result)
+{
+    const std::string difficulty = lowercase(value);
+    if(difficulty == "easy") result = Difficulty::Easy;
+    else if(difficulty == "normal") result = Difficulty::Normal;
+    else if(difficulty == "hard") result = Difficulty::Hard;
+    else return false;
+    return true;
 }
 
 AI::Difficulty AI::nextDifficulty(Difficulty difficulty)
@@ -313,20 +329,46 @@ const char* AI::behaviorProfileName(BehaviorProfile profile)
 
 AI::BehaviorProfile AI::behaviorProfileFromString(const std::string & value)
 {
-    std::string profile = value;
-    std::transform(profile.begin(), profile.end(), profile.begin(), [](unsigned char ch)
-    {
-        return static_cast<char>(std::tolower(ch));
-    });
+    BehaviorProfile result = BehaviorProfile::Balanced;
+    behaviorProfileFromString(value, result);
+    return result;
+}
 
-    if(profile == "aggressive") return BehaviorProfile::Aggressive;
-    if(profile == "economic") return BehaviorProfile::Economic;
-    if(profile == "control") return BehaviorProfile::Control;
-    return BehaviorProfile::Balanced;
+bool AI::behaviorProfileFromString(const std::string & value, BehaviorProfile & result)
+{
+    const std::string profile = lowercase(value);
+    if(profile == "balanced") result = BehaviorProfile::Balanced;
+    else if(profile == "aggressive") result = BehaviorProfile::Aggressive;
+    else if(profile == "economic") result = BehaviorProfile::Economic;
+    else if(profile == "control") result = BehaviorProfile::Control;
+    else return false;
+    return true;
+}
+
+bool AI::behaviorProfileOverrideEnabled(void)
+{
+    return forcedBehaviorProfile;
+}
+
+AI::BehaviorProfile AI::behaviorProfileOverride(void)
+{
+    return forcedBehaviorProfileValue;
+}
+
+void AI::setBehaviorProfileOverride(BehaviorProfile profile)
+{
+    forcedBehaviorProfileValue = profile;
+    forcedBehaviorProfile = true;
+}
+
+void AI::clearBehaviorProfileOverride(void)
+{
+    forcedBehaviorProfile = false;
 }
 
 AI::BehaviorProfile AI::behaviorProfile(const RemotePlayer & player)
 {
+    if(forcedBehaviorProfile) return forcedBehaviorProfileValue;
     return behaviorProfileFromString(GameData::avatarInfo(player.avatar).aiProfile);
 }
 

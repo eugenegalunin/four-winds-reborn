@@ -91,6 +91,13 @@ four seat rotations by default):
 .\scripts\run-balance-lab.ps1
 ```
 
+Run the independent doctrine/difficulty comparison matrix (60 isolated matches
+for one seed, 480 for all eight):
+```powershell
+.\scripts\run-balance-matrix.ps1
+.\scripts\run-balance-matrix.ps1 -SeedCount 8
+```
+
 Each match runs in a fresh child process; it exports detailed event telemetry,
 versioned JSON, per-player CSV, a concise text report and full replays for
 failures/statistical outliers. The fixed seed list, legal clan/seat rotation

@@ -152,10 +152,27 @@ Spells spellSet(std::initializer_list<Spell::spell_t> values)
 
 void testDifficultyRules()
 {
+    AI::Difficulty parsedDifficulty = AI::Difficulty::Normal;
+    AI::BehaviorProfile parsedProfile = AI::BehaviorProfile::Balanced;
     expect(AI::difficultyFromString("EASY") == AI::Difficulty::Easy,
            "AI difficulty parsing must be case insensitive");
+    expect(AI::difficultyFromString("hard", parsedDifficulty) &&
+           parsedDifficulty == AI::Difficulty::Hard &&
+           !AI::difficultyFromString("impossible", parsedDifficulty),
+           "strict AI difficulty parsing must reject unknown matrix axes");
     expect(AI::difficultyFromString("") == AI::Difficulty::Normal,
            "missing AI difficulty must preserve Normal compatibility for old saves");
+    expect(AI::behaviorProfileFromString("CONTROL", parsedProfile) &&
+           parsedProfile == AI::BehaviorProfile::Control &&
+           !AI::behaviorProfileFromString("impossible", parsedProfile),
+           "strict behavior-profile parsing must reject unknown matrix axes");
+    AI::setBehaviorProfileOverride(AI::BehaviorProfile::Economic);
+    expect(AI::behaviorProfileOverrideEnabled() &&
+           AI::behaviorProfileOverride() == AI::BehaviorProfile::Economic,
+           "balance laboratory must be able to force doctrine independently of avatar");
+    AI::clearBehaviorProfileOverride();
+    expect(!AI::behaviorProfileOverrideEnabled(),
+           "behavior-profile override must return to native avatar doctrine");
     expect(AI::nextDifficulty(AI::Difficulty::Easy) == AI::Difficulty::Normal &&
            AI::nextDifficulty(AI::Difficulty::Normal) == AI::Difficulty::Hard &&
            AI::nextDifficulty(AI::Difficulty::Hard) == AI::Difficulty::Easy,
@@ -510,15 +527,27 @@ void testActionReplay()
            "RNG replay reference Random Discard must be accepted");
     const JsonObject randomFinalState = GameData::authoritativeState();
     const std::string randomExpectedHash = Replay::authoritativeStateHash();
+    AI::setBehaviorProfileOverride(AI::BehaviorProfile::Aggressive);
     const JsonObject journal = Replay::actionJournal(randomFinalState);
-    expect(journal.getInteger("actionCount") == 1 &&
+    AI::clearBehaviorProfileOverride();
+    expect(journal.getInteger("schema") == 3 &&
+           journal.getString("aiBehaviorProfile") == "aggressive" &&
+           journal.getInteger("actionCount") == 1 &&
            journal.getBoolean("contiguousToCheckpoint"),
-           "accepted RNG action must enter a contiguous persisted replay journal");
+           "forced AI doctrine must enter a contiguous versioned replay journal");
 
     replayError.clear();
     expect(Replay::run(journal, &replayError) &&
-           Replay::authoritativeStateHash() == randomExpectedHash,
-           "replay journal must restore RNG state and reproduce Random Discard");
+           Replay::authoritativeStateHash() == randomExpectedHash &&
+           !AI::behaviorProfileOverrideEnabled(),
+           "replay journal must restore RNG state, AI doctrine and its caller scope");
+
+    JsonObject invalidProfileJournal = journal;
+    invalidProfileJournal.addString("aiBehaviorProfile", "impossible");
+    replayError.clear();
+    expect(!Replay::run(invalidProfileJournal, &replayError) &&
+           replayError.find("invalid AI behavior profile") != std::string::npos,
+           "replay must reject an unknown AI doctrine instead of silently using Balanced");
 
     JsonObject tamperedRandomState = randomInitialState;
     JsonObject tamperedRng = *randomInitialState.getObject("gameplayRng");
@@ -2363,6 +2392,22 @@ void testTournamentContract()
     expect(schedule.matches.size() == 8,
            "two baseline seeds must produce four seat rotations each");
 
+    Tournament::Config forced = config;
+    forced.seeds.resize(1);
+    forced.difficulty = AI::Difficulty::Hard;
+    forced.forceBehaviorProfile = true;
+    forced.behaviorProfile = AI::BehaviorProfile::Economic;
+    const Tournament::Schedule forcedSchedule = Tournament::buildSchedule(forced);
+    expect(forcedSchedule.valid() &&
+           std::all_of(forcedSchedule.matches.begin(), forcedSchedule.matches.end(),
+               [](const Tournament::PlannedMatch & match)
+               {
+                   return match.match.difficulty == AI::Difficulty::Hard &&
+                          match.match.forceBehaviorProfile &&
+                          match.match.behaviorProfile == AI::BehaviorProfile::Economic;
+               }),
+           "every matrix cell must propagate difficulty and doctrine to every match");
+
     for(std::size_t seedIndex = 0; seedIndex < config.seeds.size(); ++seedIndex)
     {
         std::map<int, int> windMasks;
@@ -2408,6 +2453,8 @@ void testTournamentContract()
     Tournament::Result synthetic;
     synthetic.config = config;
     synthetic.config.seeds.resize(1);
+    synthetic.config.forceBehaviorProfile = true;
+    synthetic.config.behaviorProfile = AI::BehaviorProfile::Control;
     synthetic.schedule = Tournament::buildSchedule(synthetic.config);
     Tournament::MatchRecord record;
     record.plan = synthetic.schedule.matches.front();
@@ -2457,9 +2504,11 @@ void testTournamentContract()
     const std::string csv = Tournament::toCsv(synthetic);
     const std::string text = Tournament::toText(synthetic);
     const JsonContentString parsed(json);
-    expect(parsed.isValid() && parsed.toObject().getInteger("schema_version") == 1,
+    expect(parsed.isValid() && parsed.toObject().getInteger("schema_version") == 2 &&
+           parsed.toObject().getString("behavior_profile") == "control",
            "balance JSON export must be valid and versioned");
     expect(csv.find("early_territory") != std::string::npos &&
+           csv.find("behavior_profile") != std::string::npos &&
            csv.find("spells_cast") != std::string::npos &&
            csv.find("synthetic") != std::string::npos,
            "balance CSV must contain score, event telemetry and match hashes");
@@ -2500,6 +2549,8 @@ int runHeadlessMatchSelfTest()
     Simulation::MatchConfig config;
     config.seed = UINT64_C(0x15a50001);
     config.difficulty = AI::Difficulty::Normal;
+    config.forceBehaviorProfile = true;
+    config.behaviorProfile = AI::BehaviorProfile::Aggressive;
     config.persons = players;
     config.maximumTicks = 20000;
     config.captureFullReplay = true;
@@ -2515,6 +2566,7 @@ int runHeadlessMatchSelfTest()
 
     std::string fullReplayError;
     if(!first.fullReplayCaptured ||
+       first.actionReplay.getString("aiBehaviorProfile") != "aggressive" ||
        first.actionReplay.getInteger("actionCount") <= 64 ||
        !first.actionReplay.getBoolean("contiguousToCheckpoint") ||
        !Replay::run(first.actionReplay, &fullReplayError) ||
@@ -2523,6 +2575,7 @@ int runHeadlessMatchSelfTest()
         std::cerr << "FAIL: full-match action replay did not reproduce the final state: "
                   << fullReplayError
                   << ", captured=" << first.fullReplayCaptured
+                  << ", profile=" << first.actionReplay.getString("aiBehaviorProfile")
                   << ", steps=" << first.actionReplay.getInteger("actionCount")
                   << ", contiguous="
                   << first.actionReplay.getBoolean("contiguousToCheckpoint") << '\n';
@@ -2537,9 +2590,9 @@ int runHeadlessMatchSelfTest()
                   << ", error=" << second.error << '\n';
         return 1;
     }
-    if(!Recovery::enabled())
+    if(!Recovery::enabled() || AI::behaviorProfileOverrideEnabled())
     {
-        std::cerr << "FAIL: headless match did not restore normal recovery behavior\n";
+        std::cerr << "FAIL: headless match did not restore recovery/profile scope\n";
         return 1;
     }
 
@@ -2668,6 +2721,26 @@ Tournament::Config baselineTournamentConfig(std::size_t seedCount)
     return config;
 }
 
+bool applyBalanceScenario(Tournament::Config & config, const char* difficulty,
+                          const char* behaviorProfile)
+{
+    if(difficulty && !AI::difficultyFromString(difficulty, config.difficulty))
+    {
+        std::cerr << "difficulty must be easy, normal or hard\n";
+        return false;
+    }
+
+    const std::string profile = behaviorProfile ? behaviorProfile : "native";
+    config.forceBehaviorProfile = profile != "native";
+    if(config.forceBehaviorProfile &&
+       !AI::behaviorProfileFromString(profile, config.behaviorProfile))
+    {
+        std::cerr << "behavior profile must be native, balanced, aggressive, economic or control\n";
+        return false;
+    }
+    return true;
+}
+
 std::string isolatedRecordName(std::size_t index)
 {
     std::ostringstream name;
@@ -2684,7 +2757,8 @@ int runBalanceMatch(int argc, char** argv)
 {
     if(argc < 5)
     {
-        std::cerr << "usage: --balance-match <record.json> <seed-count> <schedule-index>\n";
+        std::cerr << "usage: --balance-match <record.json> <seed-count> <schedule-index> "
+                     "[easy|normal|hard] [native|balanced|aggressive|economic|control]\n";
         return 2;
     }
     const std::size_t seedCount =
@@ -2694,7 +2768,9 @@ int runBalanceMatch(int argc, char** argv)
     if(!validSeedCount(seedCount)) return 2;
 
     configureSimulationBonuses();
-    const Tournament::Config config = baselineTournamentConfig(seedCount);
+    Tournament::Config config = baselineTournamentConfig(seedCount);
+    if(!applyBalanceScenario(config, 5 < argc ? argv[5] : nullptr,
+                             6 < argc ? argv[6] : nullptr)) return 2;
     const Tournament::Schedule schedule = Tournament::buildSchedule(config);
     if(!schedule.valid() || schedule.matches.size() <= scheduleIndex)
     {
@@ -2729,7 +2805,8 @@ int runBalanceMerge(int argc, char** argv)
 {
     if(argc < 5)
     {
-        std::cerr << "usage: --balance-merge <output-dir> <records-dir> <seed-count>\n";
+        std::cerr << "usage: --balance-merge <output-dir> <records-dir> <seed-count> "
+                     "[easy|normal|hard] [native|balanced|aggressive|economic|control]\n";
         return 2;
     }
     const std::size_t seedCount =
@@ -2737,7 +2814,9 @@ int runBalanceMerge(int argc, char** argv)
     if(!validSeedCount(seedCount)) return 2;
 
     configureSimulationBonuses();
-    const Tournament::Config config = baselineTournamentConfig(seedCount);
+    Tournament::Config config = baselineTournamentConfig(seedCount);
+    if(!applyBalanceScenario(config, 5 < argc ? argv[5] : nullptr,
+                             6 < argc ? argv[6] : nullptr)) return 2;
     const Tournament::Schedule schedule = Tournament::buildSchedule(config);
     std::vector<Tournament::MatchRecord> records;
     records.reserve(schedule.matches.size());
@@ -2788,7 +2867,9 @@ int runBalanceLab(int argc, char** argv)
     }
 
     configureSimulationBonuses();
-    const Tournament::Config config = baselineTournamentConfig(seedCount);
+    Tournament::Config config = baselineTournamentConfig(seedCount);
+    if(!applyBalanceScenario(config, 4 < argc ? argv[4] : nullptr,
+                             5 < argc ? argv[5] : nullptr)) return 2;
 
     const Tournament::Result result = Tournament::run(config,
         [](std::size_t complete, std::size_t total, const Tournament::MatchRecord & record)

@@ -38,6 +38,8 @@ namespace Simulation
     {
         std::uint64_t seed = UINT64_C(1);
         AI::Difficulty difficulty = AI::Difficulty::Normal;
+        bool forceBehaviorProfile = false;
+        AI::BehaviorProfile behaviorProfile = AI::BehaviorProfile::Balanced;
         Persons persons;
         std::size_t maximumTicks = 100000;
         std::size_t maximumUnchangedTicks = 4;

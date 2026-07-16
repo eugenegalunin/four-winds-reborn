@@ -15,6 +15,12 @@ const std::array<const char*, MatchScore::CategoryCount> categoryNames = {
     "territory", "summon_circles", "units", "spell_points", "land_claims"
 };
 
+const char* behaviorProfileName(const Simulation::MatchConfig & config)
+{
+    return config.forceBehaviorProfile ?
+        AI::behaviorProfileName(config.behaviorProfile) : "native";
+}
+
 int jsonInteger(std::size_t value)
 {
     return value <= static_cast<std::size_t>(std::numeric_limits<int>::max()) ?
@@ -146,6 +152,8 @@ JsonObject matchJson(const Tournament::MatchRecord & record, std::size_t run,
     match.addString("seed", std::to_string(record.result.seed));
     match.addInteger("clan_assignment", jsonInteger(record.plan.clanAssignment));
     match.addInteger("seat_rotation", jsonInteger(record.plan.seatRotation));
+    match.addString("difficulty", AI::difficultyName(record.plan.match.difficulty));
+    match.addString("behavior_profile", behaviorProfileName(record.plan.match));
     match.addString("status", Simulation::statusName(record.result.status));
     match.addInteger("ticks", jsonInteger(record.result.ticks));
     match.addInteger("unchanged_ticks", jsonInteger(record.result.unchangedTicks));
@@ -481,6 +489,8 @@ Tournament::Schedule Tournament::buildSchedule(const Config & config)
                 planned.seatRotation = rotation;
                 planned.match.seed = config.seeds[seedIndex];
                 planned.match.difficulty = config.difficulty;
+                planned.match.forceBehaviorProfile = config.forceBehaviorProfile;
+                planned.match.behaviorProfile = config.behaviorProfile;
                 planned.match.maximumTicks = config.maximumTicks;
                 planned.match.maximumUnchangedTicks = config.maximumUnchangedTicks;
                 planned.match.stateHashInterval = config.stateHashInterval;
@@ -556,7 +566,11 @@ Tournament::Result Tournament::assemble(const Config & config,
         if(actual.seedIndex != expected.seedIndex ||
            actual.clanAssignment != expected.clanAssignment ||
            actual.seatRotation != expected.seatRotation ||
-           actual.match.seed != expected.match.seed)
+           actual.match.seed != expected.match.seed ||
+           actual.match.difficulty != expected.match.difficulty ||
+           actual.match.forceBehaviorProfile != expected.match.forceBehaviorProfile ||
+           (actual.match.forceBehaviorProfile &&
+            actual.match.behaviorProfile != expected.match.behaviorProfile))
         {
             tournament.error = "isolated match record order does not match the schedule";
             tournament.matches.clear();
@@ -665,7 +679,7 @@ JsonObject Tournament::matchRecordJson(const MatchRecord & record,
                                        bool includeReplay)
 {
     JsonObject root;
-    root.addInteger("schema_version", 1);
+    root.addInteger("schema_version", 2);
     root.addInteger("schedule_index", jsonInteger(scheduleIndex));
     root.addObject("match", matchJson(record, scheduleIndex, includeReplay));
     return root;
@@ -695,7 +709,7 @@ bool Tournament::loadMatchRecord(const std::string & path, const PlannedMatch & 
     }
     const JsonObject root = file.toObject();
     const JsonObject* match = root.getObject("match");
-    if(root.getInteger("schema_version") != 1 ||
+    if(root.getInteger("schema_version") != 2 ||
        root.getInteger("schedule_index", -1) != jsonInteger(scheduleIndex) || !match)
     {
         if(error) *error = "isolated match record header mismatch: " + path;
@@ -708,6 +722,8 @@ bool Tournament::loadMatchRecord(const std::string & path, const PlannedMatch & 
        match->getInteger("seed_index", -1) != jsonInteger(expected.seedIndex) ||
        match->getInteger("clan_assignment", -1) != jsonInteger(expected.clanAssignment) ||
        match->getInteger("seat_rotation", -1) != jsonInteger(expected.seatRotation) ||
+       match->getString("difficulty") != AI::difficultyName(expected.match.difficulty) ||
+       match->getString("behavior_profile") != behaviorProfileName(expected.match) ||
        !parseUnsigned(match->getString("seed"), seed) || seed != expected.match.seed ||
        !parseStatus(match->getString("status"), status))
     {
@@ -858,8 +874,10 @@ bool Tournament::loadMatchRecord(const std::string & path, const PlannedMatch & 
 JsonObject Tournament::toJsonObject(const Result & tournament)
 {
     JsonObject root;
-    root.addInteger("schema_version", 1);
+    root.addInteger("schema_version", 2);
     root.addString("difficulty", AI::difficultyName(tournament.config.difficulty));
+    root.addString("behavior_profile", tournament.config.forceBehaviorProfile ?
+        AI::behaviorProfileName(tournament.config.behaviorProfile) : "native");
     root.addInteger("legal_clan_assignments",
                     jsonInteger(tournament.schedule.legalClanAssignments));
     root.addInteger("planned_matches", jsonInteger(tournament.schedule.matches.size()));
@@ -930,7 +948,8 @@ std::string Tournament::toCsv(const Result & tournament)
 {
     std::ostringstream stream;
     stream.imbue(std::locale::classic());
-    stream << "run,seed,seed_index,clan_assignment,seat_rotation,status,avatar,clan,wind,"
+    stream << "run,seed,seed_index,clan_assignment,seat_rotation,difficulty,behavior_profile,"
+              "status,avatar,clan,wind,"
               "final_rank,total_score,summons,spells_cast,casualties,dismissals,peak_units,final_units";
     for(const char* category : categoryNames) stream << ',' << category;
     for(std::size_t stage = 0; stage < Simulation::MatchStageCount; ++stage)
@@ -953,6 +972,8 @@ std::string Tournament::toCsv(const Result & tournament)
                 });
             stream << runIndex << ',' << record.result.seed << ',' << record.plan.seedIndex << ','
                    << record.plan.clanAssignment << ',' << record.plan.seatRotation << ','
+                   << AI::difficultyName(record.plan.match.difficulty) << ','
+                   << behaviorProfileName(record.plan.match) << ','
                    << Simulation::statusName(record.result.status) << ','
                    << person.avatar.toString() << ',' << person.clan.toString() << ','
                    << person.wind.toString() << ',';
@@ -999,6 +1020,8 @@ std::string Tournament::toText(const Result & tournament)
     stream.imbue(std::locale::classic());
     stream << "Four Winds Reborn balance laboratory\n"
            << "Difficulty: " << AI::difficultyName(tournament.config.difficulty) << '\n'
+           << "Behavior profile: " << (tournament.config.forceBehaviorProfile ?
+                AI::behaviorProfileName(tournament.config.behaviorProfile) : "native") << '\n'
            << "Seeds: ";
     for(std::size_t index = 0; index < tournament.config.seeds.size(); ++index)
     {
