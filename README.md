@@ -91,8 +91,10 @@ four seat rotations by default):
 .\scripts\run-balance-lab.ps1
 ```
 
-It exports versioned JSON, per-player CSV and a concise text report. The fixed
-seed list, legal clan/seat rotation contract and larger-run guidance are in
+Each match runs in a fresh child process; it exports detailed event telemetry,
+versioned JSON, per-player CSV, a concise text report and full replays for
+failures/statistical outliers. The fixed seed list, legal clan/seat rotation
+contract and larger-run guidance are in
 [`docs/BalanceLab.md`](docs/BalanceLab.md).
 
 ## Crash Diagnostics

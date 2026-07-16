@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <map>
 #include <set>
 
 #include "gameplayrng.h"
@@ -25,6 +26,187 @@ public:
         Recovery::setEnabled(previous);
     }
 };
+
+class ReplayCaptureScope
+{
+    std::size_t previousLimit;
+
+public:
+    explicit ReplayCaptureScope(bool full) : previousLimit(Replay::actionJournalLimit())
+    {
+        if(full) Replay::setActionJournalLimit(0);
+    }
+
+    ~ReplayCaptureScope()
+    {
+        Replay::setActionJournalLimit(previousLimit);
+    }
+};
+
+struct ObservedUnit
+{
+    Avatar avatar;
+    Creature creature;
+    Land land;
+};
+
+using ObservedUnits = std::map<int, ObservedUnit>;
+
+ObservedUnits observeUnits(void)
+{
+    ObservedUnits result;
+    for(const LocalPlayer & player : GameData::players())
+    {
+        for(const BattleParty & party : player.army)
+        {
+            for(const BattleCreature* creature : party.toBattleCreatures())
+            {
+                if(creature)
+                    result[creature->battleUnit()] =
+                        { player.avatar, *creature, party.land() };
+            }
+        }
+    }
+    return result;
+}
+
+Simulation::MatchResult::PlayerTelemetry* playerTelemetry(
+    Simulation::MatchResult & result, const Avatar & avatar)
+{
+    const auto found = std::find_if(result.players.begin(), result.players.end(),
+        [&avatar](const Simulation::MatchResult::PlayerTelemetry & player)
+        {
+            return player.avatar == avatar;
+        });
+    return found == result.players.end() ? nullptr : &*found;
+}
+
+Avatar avatarForWind(const Simulation::MatchConfig & config, const Wind & wind)
+{
+    const auto found = std::find_if(config.persons.begin(), config.persons.end(),
+        [&wind](const Person & person){ return person.wind == wind; });
+    return found == config.persons.end() ? Avatar() : found->avatar;
+}
+
+void captureActions(Simulation::MatchResult & result,
+                    const Simulation::MatchConfig & config,
+                    const ActionList & actions)
+{
+    for(const ActionMessage & action : actions)
+    {
+        std::string type;
+        std::string subject;
+        Land land;
+        if(action.type() == Action::MahjongSummon)
+        {
+            type = "summon";
+            subject = action.getString("creature");
+            land = Land(action.getString("land"));
+        }
+        else if(action.type() == Action::MahjongCast)
+        {
+            type = "spell";
+            subject = action.getString("spell");
+            land = Land(action.getString("land"));
+        }
+        else
+            continue;
+
+        const Avatar avatar = avatarForWind(config, Wind(action.getString("currentWind")));
+        auto telemetry = playerTelemetry(result, avatar);
+        if(!telemetry || subject.empty()) continue;
+
+        if(type == "summon")
+        {
+            ++telemetry->summons;
+            ++telemetry->summonedCreatures[subject];
+        }
+        else
+        {
+            ++telemetry->spellsCast;
+            ++telemetry->castSpells[subject];
+        }
+
+        Simulation::MatchResult::Event event;
+        event.type = type;
+        event.tick = result.ticks;
+        event.adventurePhase = result.adventurePhases;
+        event.avatar = avatar;
+        event.subject = subject;
+        event.land = land;
+        result.events.push_back(event);
+    }
+}
+
+void captureUnitChanges(Simulation::MatchResult & result,
+                        const ObservedUnits & before, const ObservedUnits & after,
+                        const ActionList & actions)
+{
+    std::set<int> dismissedUnits;
+    for(const ActionMessage & action : actions)
+    {
+        if(action.type() == Action::AdventureMoves &&
+           !Land(action.getString("land")).isValid())
+            dismissedUnits.insert(action.getInteger("unit"));
+    }
+
+    for(const auto & value : before)
+    {
+        if(after.find(value.first) != after.end()) continue;
+
+        auto telemetry = playerTelemetry(result, value.second.avatar);
+        const bool dismissed = dismissedUnits.find(value.first) != dismissedUnits.end();
+        if(telemetry)
+        {
+            if(dismissed) ++telemetry->dismissals;
+            else ++telemetry->casualties;
+        }
+
+        Simulation::MatchResult::Event event;
+        event.type = dismissed ? "dismissal" : "casualty";
+        event.tick = result.ticks;
+        event.adventurePhase = result.adventurePhases;
+        event.avatar = value.second.avatar;
+        event.subject = value.second.creature.toString();
+        event.land = value.second.land;
+        event.unit = value.first;
+        result.events.push_back(event);
+    }
+
+    std::map<int, std::size_t> counts;
+    for(const auto & value : after) ++counts[value.second.avatar()];
+    for(auto & player : result.players)
+        player.peakUnits = std::max(player.peakUnits, counts[player.avatar()]);
+}
+
+void captureFinalArmy(Simulation::MatchResult & result)
+{
+    for(const LocalPlayer & source : GameData::players())
+    {
+        auto player = playerTelemetry(result, source.avatar);
+        if(!player) continue;
+        player->finalArmy.clear();
+        player->finalUnits = 0;
+        for(const BattleParty & sourceParty : source.army)
+        {
+            Simulation::MatchResult::PartyComposition party;
+            party.land = sourceParty.land();
+            for(const BattleCreature* creature : sourceParty.toBattleCreatures())
+            {
+                if(!creature) continue;
+                party.creatures.push_back(creature->Creature::toString());
+                ++player->finalUnits;
+            }
+            if(!party.creatures.empty()) player->finalArmy.push_back(party);
+        }
+    }
+}
+
+template <typename Operation>
+bool recordedTransition(const std::string & operation, Operation apply)
+{
+    return Replay::recordSystemOperation(operation, apply);
+}
 
 bool validConfiguration(const Simulation::MatchConfig & config, std::string* error)
 {
@@ -77,7 +259,8 @@ void finishResult(Simulation::MatchResult & result)
 {
     result.rngDraws = GameplayRng::draws();
     result.finalStateHash = Replay::authoritativeStateHash();
-    result.replayTail = Replay::actionJournal(GameData::authoritativeState());
+    result.actionReplay = Replay::actionJournal(GameData::authoritativeState());
+    captureFinalArmy(result);
     result.score = MatchScore::current();
 }
 
@@ -126,6 +309,8 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
     try
     {
         RecoverySuppression suppressRecovery;
+        ReplayCaptureScope captureReplay(config.captureFullReplay);
+        result.fullReplayCaptured = config.captureFullReplay;
         GameplayRng::seed(config.seed);
         GameData::setAIDifficulty(config.difficulty);
         if(!GameData::initPersons(config.persons))
@@ -134,7 +319,13 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
             result.error = "GameData rejected the exact player configuration";
             return result;
         }
-        if(!GameData::initMahjong())
+        for(const Person & person : config.persons)
+        {
+            MatchResult::PlayerTelemetry telemetry;
+            telemetry.avatar = person.avatar;
+            result.players.push_back(telemetry);
+        }
+        if(!recordedTransition("init_mahjong", [](){ return GameData::initMahjong(); }))
         {
             result.status = MatchStatus::InitializationFailed;
             result.error = "the first Mahjong phase did not initialize";
@@ -148,20 +339,38 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
             ++result.ticks;
             ActionList actions;
             bool advanced = false;
+            const ObservedUnits unitsBefore = observeUnits();
 
             switch(GameData::loadedGamePart())
             {
                 case Menu::MahjongPart:
-                    advanced = GameData::mahjong2Client(GameData::currentPerson().avatar, actions);
+                    if(config.captureFullReplay)
+                        advanced = Replay::recordSystemOperation("mahjong_tick", [&actions]()
+                        {
+                            return GameData::mahjong2Client(
+                                GameData::currentPerson().avatar, actions);
+                        });
+                    else
+                        advanced = GameData::mahjong2Client(
+                            GameData::currentPerson().avatar, actions);
                     break;
 
                 case Menu::MahjongSummaryPart:
                     ++result.mahjongHands;
-                    advanced = GameData::initAdventure();
+                    advanced = recordedTransition("init_adventure",
+                        [](){ return GameData::initAdventure(); });
                     break;
 
                 case Menu::AdventurePart:
-                    advanced = GameData::adventure2Client(GameData::currentPerson().avatar, actions);
+                    if(config.captureFullReplay)
+                        advanced = Replay::recordSystemOperation("adventure_tick", [&actions]()
+                        {
+                            return GameData::adventure2Client(
+                                GameData::currentPerson().avatar, actions);
+                        });
+                    else
+                        advanced = GameData::adventure2Client(
+                            GameData::currentPerson().avatar, actions);
                     break;
 
                 case Menu::BattleSummaryPart:
@@ -174,12 +383,16 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
                     if(GameData::isGameOver())
                     {
                         captureStage(result, MatchStage::Late);
+                        const JsonObject beforeSummary = GameData::authoritativeState();
                         GameData::setGamePart(Menu::GameSummaryPart);
+                        Replay::recordSystemTransition(beforeSummary, "game_summary",
+                                                      GameData::authoritativeState());
                         result.status = MatchStatus::Complete;
                         finishResult(result);
                         return result;
                     }
-                    advanced = GameData::initMahjong();
+                    advanced = recordedTransition("init_mahjong",
+                        [](){ return GameData::initMahjong(); });
                     break;
 
                 default:
@@ -191,6 +404,8 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
             }
 
             result.emittedActions += actions.size();
+            captureActions(result, config, actions);
+            captureUnitChanges(result, unitsBefore, observeUnits(), actions);
             if(!advanced)
                 ++result.unchangedTicks;
             else

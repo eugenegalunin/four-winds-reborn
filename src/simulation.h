@@ -4,7 +4,9 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <string>
+#include <vector>
 
 #include "aiprofile.h"
 #include "gamedata.h"
@@ -40,10 +42,42 @@ namespace Simulation
         std::size_t maximumTicks = 100000;
         std::size_t maximumUnchangedTicks = 4;
         std::size_t stateHashInterval = 64;
+        bool captureFullReplay = false;
     };
 
     struct MatchResult
     {
+        struct Event
+        {
+            std::string type;
+            std::size_t tick = 0;
+            std::size_t adventurePhase = 0;
+            Avatar avatar;
+            std::string subject;
+            Land land;
+            int unit = 0;
+        };
+
+        struct PartyComposition
+        {
+            Land land;
+            std::vector<std::string> creatures;
+        };
+
+        struct PlayerTelemetry
+        {
+            Avatar avatar;
+            std::size_t summons = 0;
+            std::size_t spellsCast = 0;
+            std::size_t casualties = 0;
+            std::size_t dismissals = 0;
+            std::size_t peakUnits = 0;
+            std::size_t finalUnits = 0;
+            std::map<std::string, std::size_t> summonedCreatures;
+            std::map<std::string, std::size_t> castSpells;
+            std::vector<PartyComposition> finalArmy;
+        };
+
         struct StageSnapshot
         {
             std::size_t adventurePhase = 0;
@@ -62,9 +96,12 @@ namespace Simulation
         std::size_t emittedActions = 0;
         std::string finalStateHash;
         std::string error;
-        JsonObject replayTail;
+        bool fullReplayCaptured = false;
+        JsonObject actionReplay;
         MatchScore::Results score;
         std::array<StageSnapshot, MatchStageCount> stages{};
+        std::vector<PlayerTelemetry> players;
+        std::vector<Event> events;
 
         bool completed(void) const { return status == MatchStatus::Complete; }
     };

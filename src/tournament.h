@@ -44,6 +44,7 @@ namespace Tournament
     {
         PlannedMatch plan;
         Simulation::MatchResult result;
+        std::vector<std::string> replayRetentionReasons;
     };
 
     struct AvatarSummary
@@ -57,6 +58,12 @@ namespace Tournament
         double rankOneRateHigh95 = 0;
         double meanFinalRank = 0;
         double meanTotalScore = 0;
+        double meanSummons = 0;
+        double meanSpellsCast = 0;
+        double meanCasualties = 0;
+        double meanDismissals = 0;
+        double meanPeakUnits = 0;
+        double meanFinalUnits = 0;
         std::array<double, MatchScore::CategoryCount> meanCategoryScores{};
         std::array<std::size_t, Simulation::MatchStageCount> stageSamples{};
         std::array<std::array<double, MatchScore::CategoryCount>,
@@ -82,8 +89,16 @@ namespace Tournament
     Avatars baselineAvatars(void);
     Schedule buildSchedule(const Config &);
     Result run(const Config &, const ProgressCallback & progress = ProgressCallback());
+    Result assemble(const Config &, const std::vector<MatchRecord> &);
     void summarize(Result &);
 
+    JsonObject matchRecordJson(const MatchRecord &, std::size_t scheduleIndex,
+                               bool includeReplay);
+    bool saveMatchRecord(const MatchRecord &, std::size_t scheduleIndex,
+                         const std::string & path, std::string* error = nullptr);
+    bool loadMatchRecord(const std::string & path, const PlannedMatch & expected,
+                         std::size_t scheduleIndex, MatchRecord & record,
+                         std::string* error = nullptr);
     JsonObject toJsonObject(const Result &);
     std::string toCsv(const Result &);
     std::string toText(const Result &);

@@ -1,8 +1,11 @@
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <initializer_list>
 #include <map>
+#include <sstream>
 #include <vector>
 
 #include "aiadventure.h"
@@ -2430,6 +2433,18 @@ void testTournamentContract()
         inputs.push_back(input);
     }
     record.result.score = MatchScore::calculate(inputs);
+    for(const Person & person : record.plan.match.persons)
+    {
+        Simulation::MatchResult::PlayerTelemetry telemetry;
+        telemetry.avatar = person.avatar;
+        telemetry.summons = 2;
+        telemetry.spellsCast = 1;
+        telemetry.casualties = 1;
+        telemetry.dismissals = 1;
+        telemetry.peakUnits = 3;
+        telemetry.finalUnits = 2;
+        record.result.players.push_back(telemetry);
+    }
     for(std::size_t stage = 0; stage < Simulation::MatchStageCount; ++stage)
     {
         record.result.stages[stage].adventurePhase = stage == 0 ? 5 : (stage == 1 ? 10 : 16);
@@ -2445,12 +2460,30 @@ void testTournamentContract()
     expect(parsed.isValid() && parsed.toObject().getInteger("schema_version") == 1,
            "balance JSON export must be valid and versioned");
     expect(csv.find("early_territory") != std::string::npos &&
+           csv.find("spells_cast") != std::string::npos &&
            csv.find("synthetic") != std::string::npos,
-           "balance CSV must contain stage telemetry and match hashes");
+           "balance CSV must contain score, event telemetry and match hashes");
     expect(text.find("95% Wilson") != std::string::npos,
            "human balance report must label its uncertainty interval");
     expect(synthetic.summaries.size() == 4 && synthetic.summaries[0].completed == 1,
            "balance aggregation must retain every completed avatar result");
+
+    Tournament::Result outliers;
+    outliers.config = config;
+    outliers.schedule = schedule;
+    for(std::size_t index = 0; index < schedule.matches.size(); ++index)
+    {
+        Tournament::MatchRecord sample = record;
+        sample.plan = schedule.matches[index];
+        sample.result.seed = sample.plan.match.seed;
+        sample.result.ticks = index + 1 == schedule.matches.size() ? 1000 : 100;
+        outliers.matches.push_back(sample);
+    }
+    Tournament::summarize(outliers);
+    expect(outliers.matches.back().replayRetentionReasons.size() == 1 &&
+           outliers.matches.back().replayRetentionReasons.front() ==
+               "outlier:match_ticks_iqr",
+           "IQR watchdog outliers must be marked for full replay retention");
 }
 
 int runHeadlessMatchSelfTest()
@@ -2469,6 +2502,7 @@ int runHeadlessMatchSelfTest()
     config.difficulty = AI::Difficulty::Normal;
     config.persons = players;
     config.maximumTicks = 20000;
+    config.captureFullReplay = true;
 
     const Simulation::MatchResult first = Simulation::runMatch(config);
     if(!first.completed())
@@ -2476,6 +2510,22 @@ int runHeadlessMatchSelfTest()
         std::cerr << "FAIL: first headless match status=" << Simulation::statusName(first.status)
                   << ", ticks=" << first.ticks << ", hands=" << first.mahjongHands
                   << ", error=" << first.error << '\n';
+        return 1;
+    }
+
+    std::string fullReplayError;
+    if(!first.fullReplayCaptured ||
+       first.actionReplay.getInteger("actionCount") <= 64 ||
+       !first.actionReplay.getBoolean("contiguousToCheckpoint") ||
+       !Replay::run(first.actionReplay, &fullReplayError) ||
+       Replay::authoritativeStateHash() != first.finalStateHash)
+    {
+        std::cerr << "FAIL: full-match action replay did not reproduce the final state: "
+                  << fullReplayError
+                  << ", captured=" << first.fullReplayCaptured
+                  << ", steps=" << first.actionReplay.getInteger("actionCount")
+                  << ", contiguous="
+                  << first.actionReplay.getBoolean("contiguousToCheckpoint") << '\n';
         return 1;
     }
 
@@ -2496,7 +2546,9 @@ int runHeadlessMatchSelfTest()
     if(first.mahjongHands != 16 || first.adventurePhases != 16 ||
        first.finalStateHash != second.finalStateHash || first.ticks != second.ticks ||
        first.emittedActions != second.emittedActions || first.rngDraws != second.rngDraws ||
-       first.score.size() != second.score.size())
+       first.score.size() != second.score.size() ||
+       first.players.size() != second.players.size() ||
+       first.events.size() != second.events.size())
     {
         std::cerr << "FAIL: repeated headless match was not deterministic"
                   << ", first=" << first.finalStateHash << ", second=" << second.finalStateHash
@@ -2505,6 +2557,29 @@ int runHeadlessMatchSelfTest()
                   << ", adventure=" << first.adventurePhases << '/' << second.adventurePhases
                   << ", actions=" << first.emittedActions << '/' << second.emittedActions
                   << ", rng=" << first.rngDraws << '/' << second.rngDraws << '\n';
+        return 1;
+    }
+
+    std::size_t summons = 0;
+    for(std::size_t player = 0; player < first.players.size(); ++player)
+    {
+        const auto & lhs = first.players[player];
+        const auto & rhs = second.players[player];
+        summons += lhs.summons;
+        if(lhs.avatar != rhs.avatar || lhs.summons != rhs.summons ||
+           lhs.spellsCast != rhs.spellsCast || lhs.casualties != rhs.casualties ||
+           lhs.dismissals != rhs.dismissals ||
+           lhs.peakUnits != rhs.peakUnits || lhs.finalUnits != rhs.finalUnits ||
+           lhs.summonedCreatures != rhs.summonedCreatures ||
+           lhs.castSpells != rhs.castSpells)
+        {
+            std::cerr << "FAIL: repeated match produced different event telemetry\n";
+            return 1;
+        }
+    }
+    if(summons == 0 || first.events.empty())
+    {
+        std::cerr << "FAIL: headless match did not capture authoritative match events\n";
         return 1;
     }
 
@@ -2583,12 +2658,129 @@ int runHeadlessMatchSelfTest()
     return 0;
 }
 
+Tournament::Config baselineTournamentConfig(std::size_t seedCount)
+{
+    Tournament::Config config;
+    config.seeds.assign(Tournament::publishedSeeds().begin(),
+                        Tournament::publishedSeeds().begin() + seedCount);
+    config.avatars = Tournament::baselineAvatars();
+    config.maximumTicks = 20000;
+    return config;
+}
+
+std::string isolatedRecordName(std::size_t index)
+{
+    std::ostringstream name;
+    name << "match-" << std::setfill('0') << std::setw(6) << index << ".json";
+    return name.str();
+}
+
+bool validSeedCount(std::size_t seedCount)
+{
+    return 0 < seedCount && seedCount <= Tournament::publishedSeeds().size();
+}
+
+int runBalanceMatch(int argc, char** argv)
+{
+    if(argc < 5)
+    {
+        std::cerr << "usage: --balance-match <record.json> <seed-count> <schedule-index>\n";
+        return 2;
+    }
+    const std::size_t seedCount =
+        static_cast<std::size_t>(std::strtoul(argv[3], nullptr, 10));
+    const std::size_t scheduleIndex =
+        static_cast<std::size_t>(std::strtoul(argv[4], nullptr, 10));
+    if(!validSeedCount(seedCount)) return 2;
+
+    configureSimulationBonuses();
+    const Tournament::Config config = baselineTournamentConfig(seedCount);
+    const Tournament::Schedule schedule = Tournament::buildSchedule(config);
+    if(!schedule.valid() || schedule.matches.size() <= scheduleIndex)
+    {
+        std::cerr << "isolated schedule index is out of range\n";
+        return 2;
+    }
+
+    Tournament::MatchRecord record;
+    record.plan = schedule.matches[scheduleIndex];
+    record.plan.match.captureFullReplay = true;
+    record.result = Simulation::runMatch(record.plan.match);
+
+    std::string saveError;
+    if(!Tournament::saveMatchRecord(record, scheduleIndex, argv[2], &saveError))
+    {
+        std::cerr << "FAIL: " << saveError << '\n';
+        return 1;
+    }
+    std::cout << "isolated balance match " << scheduleIndex + 1 << '/'
+              << schedule.matches.size() << ": seed=" << record.result.seed
+              << ", rotation=" << record.plan.seatRotation
+              << ", status=" << Simulation::statusName(record.result.status)
+              << ", hash=" << record.result.finalStateHash
+              << ", replay_steps=" << record.result.actionReplay.getInteger("actionCount")
+              << ", events=" << record.result.events.size() << '\n';
+    // A simulated failure is a valid record. The merge process decides batch success
+    // and retains its replay; a non-zero child exit is reserved for process/I/O failure.
+    return 0;
+}
+
+int runBalanceMerge(int argc, char** argv)
+{
+    if(argc < 5)
+    {
+        std::cerr << "usage: --balance-merge <output-dir> <records-dir> <seed-count>\n";
+        return 2;
+    }
+    const std::size_t seedCount =
+        static_cast<std::size_t>(std::strtoul(argv[4], nullptr, 10));
+    if(!validSeedCount(seedCount)) return 2;
+
+    configureSimulationBonuses();
+    const Tournament::Config config = baselineTournamentConfig(seedCount);
+    const Tournament::Schedule schedule = Tournament::buildSchedule(config);
+    std::vector<Tournament::MatchRecord> records;
+    records.reserve(schedule.matches.size());
+    for(std::size_t index = 0; index < schedule.matches.size(); ++index)
+    {
+        Tournament::MatchRecord record;
+        const std::string path = Systems::concatePath(argv[3], isolatedRecordName(index));
+        std::string loadError;
+        if(!Tournament::loadMatchRecord(path, schedule.matches[index], index,
+                                        record, &loadError))
+        {
+            std::cerr << "FAIL: " << loadError << '\n';
+            return 1;
+        }
+        records.push_back(record);
+    }
+
+    const Tournament::Result result = Tournament::assemble(config, records);
+    std::string saveError;
+    if(!result.error.empty() ||
+       !Tournament::saveReports(result, argv[2], &saveError))
+    {
+        std::cerr << "FAIL: " << (!result.error.empty() ? result.error : saveError) << '\n';
+        return 1;
+    }
+
+    const std::size_t retained = static_cast<std::size_t>(std::count_if(
+        result.matches.begin(), result.matches.end(), [](const auto & record)
+        {
+            return !record.replayRetentionReasons.empty();
+        }));
+    std::cout << Tournament::toText(result)
+              << "Retained failure/outlier replays: " << retained << '\n'
+              << "Reports: " << argv[2] << '\n';
+    return result.completed() ? 0 : 1;
+}
+
 int runBalanceLab(int argc, char** argv)
 {
     const std::string outputDirectory = 2 < argc ? argv[2] : "balance-lab-output";
     const std::size_t seedCount = 3 < argc ?
         static_cast<std::size_t>(std::strtoul(argv[3], nullptr, 10)) : 1;
-    if(seedCount == 0 || Tournament::publishedSeeds().size() < seedCount)
+    if(!validSeedCount(seedCount))
     {
         std::cerr << "seed count must be between 1 and "
                   << Tournament::publishedSeeds().size() << '\n';
@@ -2596,11 +2788,7 @@ int runBalanceLab(int argc, char** argv)
     }
 
     configureSimulationBonuses();
-    Tournament::Config config;
-    config.seeds.assign(Tournament::publishedSeeds().begin(),
-                        Tournament::publishedSeeds().begin() + seedCount);
-    config.avatars = Tournament::baselineAvatars();
-    config.maximumTicks = 20000;
+    const Tournament::Config config = baselineTournamentConfig(seedCount);
 
     const Tournament::Result result = Tournament::run(config,
         [](std::size_t complete, std::size_t total, const Tournament::MatchRecord & record)
@@ -2724,6 +2912,12 @@ int main(int argc, char** argv)
 
     if(1 < argc && std::string(argv[1]) == "--headless-match-self-test")
         return runHeadlessMatchSelfTest();
+
+    if(1 < argc && std::string(argv[1]) == "--balance-match")
+        return runBalanceMatch(argc, argv);
+
+    if(1 < argc && std::string(argv[1]) == "--balance-merge")
+        return runBalanceMerge(argc, argv);
 
     if(1 < argc && std::string(argv[1]) == "--balance-lab")
         return runBalanceLab(argc, argv);
