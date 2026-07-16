@@ -2892,6 +2892,70 @@ int runBalanceLab(int argc, char** argv)
               << "Reports: " << outputDirectory << '\n';
     return result.completed() ? 0 : 1;
 }
+
+int runBalanceReplayVerification(int argc, char** argv)
+{
+    if(argc != 3)
+    {
+        std::cerr << "usage: --verify-balance-replay <retained-match.json>\n";
+        return 2;
+    }
+
+    // The standalone test harness does not load the UI configuration that owns
+    // these gameplay awards. Match generation applies the same explicit values.
+    configureSimulationBonuses();
+
+    const JsonContentFile replayFile(argv[2]);
+    if(!replayFile.isValid())
+    {
+        std::cerr << "FAIL: retained balance replay is not valid JSON: " << argv[2] << '\n';
+        return 1;
+    }
+
+    const JsonObject root = replayFile.toObject();
+    const JsonObject* match = root.getObject("match");
+    const JsonObject* replay = match ? match->getObject("action_replay") : nullptr;
+    const std::string matchProfile = match ?
+        match->getString("behavior_profile") : std::string();
+    const std::string replayProfile = replay ?
+        replay->getString("aiBehaviorProfile", "native") : std::string();
+    const int replaySchema = replay ? replay->getInteger("schema") : 0;
+    if(root.getInteger("schema_version") != 2 || !match || !replay ||
+       (replaySchema != 2 && replaySchema != 3) ||
+       matchProfile != replayProfile ||
+       (replaySchema == 3) != (replayProfile != "native") ||
+       !replay->getBoolean("contiguousToCheckpoint"))
+    {
+        std::cerr << "FAIL: retained balance replay has an invalid record contract: "
+                  << argv[2] << '\n';
+        return 1;
+    }
+
+    const std::string expectedHash = match->getString("final_state_hash");
+    std::string replayError;
+    if(expectedHash.empty() || !Replay::run(*replay, &replayError))
+    {
+        std::cerr << "FAIL: retained balance replay diverged: " << replayError << '\n';
+        return 1;
+    }
+
+    const std::string actualHash = Replay::authoritativeStateHash();
+    if(actualHash != expectedHash)
+    {
+        std::cerr << "FAIL: retained balance replay final hash mismatch: expected="
+                  << expectedHash << " actual=" << actualHash << '\n';
+        return 1;
+    }
+
+    std::cout << "balance replay verified: schedule_index="
+              << root.getInteger("schedule_index")
+              << ", seed=" << match->getString("seed")
+              << ", difficulty=" << match->getString("difficulty")
+              << ", profile=" << match->getString("behavior_profile")
+              << ", steps=" << replay->getInteger("actionCount")
+              << ", hash=" << actualHash << '\n';
+    return 0;
+}
 }
 
 int main(int argc, char** argv)
@@ -3002,6 +3066,9 @@ int main(int argc, char** argv)
 
     if(1 < argc && std::string(argv[1]) == "--balance-lab")
         return runBalanceLab(argc, argv);
+
+    if(1 < argc && std::string(argv[1]) == "--verify-balance-replay")
+        return runBalanceReplayVerification(argc, argv);
 
     if(1 < argc && std::string(argv[1]) == "--balance-only")
     {

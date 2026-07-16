@@ -10,14 +10,14 @@ original copyright notices and GPL-3.0 license are preserved. Project changes
 from 2026 onward are maintained as Four Winds Reborn.
 
 The bundled engine is maintained separately as
-[Four Winds Engine](https://github.com/eugenegalunin/four-winds-engine), with
+[Four Winds Engine](https://github.com/jaskes/four-winds-engine), with
 its original LGPL-3.0-or-later license and upstream attribution preserved.
 
 ## Build and Run
 
 Clone with the engine submodule:
 ```bash
-git clone --recurse-submodules https://github.com/eugenegalunin/four-winds-reborn.git
+git clone --recurse-submodules https://github.com/jaskes/four-winds-reborn.git
 cd four-winds-reborn
 ```
 

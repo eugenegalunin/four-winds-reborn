@@ -150,3 +150,55 @@ The script deliberately uses the developer test executable under
 package. One seed means four child processes; all eight published seeds mean 32.
 The fixed CTest canary remains small and in-process, while the manual runner is
 the supported path for the larger isolated matrix.
+
+Verify one retained replay, one scenario, or a complete matrix after the run:
+
+```powershell
+.\scripts\verify-balance-replays.ps1 diagnostics\balance-matrix-full
+```
+
+The verifier restores the replay's initial authoritative state, reapplies every
+recorded validated action and system transition, checks every intermediate state
+hash, and requires the final hash to match the retained match record. This is a
+development integrity check; a future player-facing replay viewer is a separate
+feature.
+
+## Published baseline 1
+
+The first complete matrix was run on Windows Release from game commit `67e440f`
+and engine commit `f7368e2` on 2026-07-16. It used all eight published seeds,
+five behavior-profile cells and three difficulty cells: 480 isolated matches in
+about 29 minutes. All 480 completed, producing 88,871 authoritative events and
+34 deterministically retained outlier replays. The retained replays were then
+verified independently through the command above.
+
+Native-profile results pool Easy, Normal and Hard, so each avatar has 96 fixed
+fixtures. A tied first place counts for every tied avatar.
+
+| Avatar | Rank-one finishes | Rank-one rate | Wilson 95% | Mean rank | Mean total |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Lakkho | 53/96 | 55.21% | 45.25-64.76% | 1.531 | 16.583 |
+| Nucrus | 40/96 | 41.67% | 32.31-51.66% | 1.708 | 15.573 |
+| Dayla | 7/96 | 7.29% | 3.58-14.29% | 2.938 | 12.104 |
+| Ziag | 0/96 | 0.00% | 0.00-3.85% | 3.573 | 9.781 |
+
+Forcing one common doctrine across the same fixtures confirms that the profile
+axis materially changes play. Economic averaged 8.17 summons and 31.81 casts per
+player; Control averaged 4.76 summons and 40.87 casts. Aggressive finished with
+only 0.24 surviving units per player on average, while Economic finished with
+2.33. Difficulty also acts as a computation budget: mean emitted actions rose
+from 3,699.81 on Easy to 3,824.90 on Normal and 3,948.96 on Hard, while mean total
+scores remained close (13.775, 13.866 and 13.756).
+
+Seat rotation is working as a control. Across the native fixtures the four wind
+rank-one rates ranged from 21.88% to 31.25%, much smaller than the observed
+avatar spread, and every avatar occupied every wind equally.
+
+This baseline is evidence of a real imbalance, not yet evidence for one numeric
+fix. The four baseline avatars are tied to four different clans. Ziag remains
+last under every forced doctrine (including 11/96 rank-one finishes under common
+Balanced behavior), so native-profile matchup alone does not explain the gap;
+avatar roster, passive and fixed clan/map position remain confounded. The next
+comparison must substitute clan-compatible avatars into controlled rosters and
+hold doctrine, difficulty, seeds and opponents fixed before changing creature,
+spell or scoring values.
