@@ -267,11 +267,98 @@ the tested Maitha candidates; the Kartha substitutions are close to Lakkho; and
 the Marz result depends on which outcome is emphasized. The clearest
 directional signal is Iz: replacing Ziag with Kierac improves rank-one rate,
 mean rank and mean total together. The Wilson intervals still overlap and this
-is not yet evidence for a specific numeric edit. Inspect paired fixture deltas
-and representative Ziag/Kierac replays before changing one passive, creature,
-spell or scoring family at a time.
+is not yet evidence for a specific numeric edit. The paired fixture and replay
+review required by this result is documented below; it confirms the direction
+without authorizing an automatic balance change.
 
 The resulting direct fixed-clan tiers and provisional clan-adjusted nine-avatar
 ranking are maintained in [`BalanceTiers.md`](BalanceTiers.md). The legacy
 `--balance-only` table remains a fast data/plan diagnostic, not the current tier
 list.
+
+## Paired Ziag/Kierac Iz review
+
+The controlled Iz cohort was repeated on Windows Release on 2026-07-16 from
+game commit `7c244ee` and engine commit `f7368e2`, after fixing action telemetry
+to follow the avatar currently occupying each wind. The repeat completed all
+128 isolated matches: the Ziag baseline plus Niana, Kierac and Logun in the same
+Iz slot, using eight seeds, four seat rotations, `Normal` difficulty and the
+common `Balanced` doctrine. All ten retained outlier replays reproduced every
+intermediate and final hash.
+
+The telemetry fix changed attribution only. Every final state hash and event
+count in all 128 fixtures matches the pre-fix run. The paired report can be
+reproduced from any two compatible schema-2 reports:
+
+```powershell
+.\scripts\compare-balance-pairs.ps1 `
+  -BaselineReport diagnostics\balance-cohorts-iz\scenarios\baseline\balance-report.json `
+  -CandidateReport diagnostics\balance-cohorts-iz\scenarios\iz-kierac\balance-report.json `
+  -BaselineAvatar Ziag -CandidateAvatar Kierac `
+  -OutputDirectory diagnostics\balance-cohorts-iz\paired-ziag-kierac
+```
+
+The script requires identical seeds, difficulty, profile and fixture keys. It
+also verifies that the target roster slot, target clan and all three opponents
+stay fixed, derives starting wind from the scheduled seat rotation, then exports
+per-pair CSV plus JSON/text summaries by wind, seed, stage, score category,
+telemetry and opponent impact.
+
+### Paired outcome
+
+| Outcome | Ziag | Kierac | Paired result |
+| --- | ---: | ---: | --- |
+| Rank-one finishes | 1/32 | 15/32 | +43.75 percentage points |
+| Mean final rank | 3.375 | 1.906 | -1.469; better/same/worse in 25/3/4 fixtures |
+| Mean total | 12.000 | 14.531 | +2.531; better/same/worse in 23/2/7 fixtures |
+
+Every starting wind favors Kierac on mean rank and total. Mean total deltas are
+`+2.500` East, `+2.375` North, `+2.625` South and `+2.625` West, so the result is
+not a single-seat artifact. The advantage is already visible early, peaks in
+the middle game and persists at the end:
+
+| Stage | Mean rank delta | Mean total delta | Rank better/same/worse |
+| --- | ---: | ---: | ---: |
+| Early | -0.938 | +2.125 | 21/5/6 |
+| Middle | -1.438 | +3.531 | 24/5/3 |
+| Late | -1.469 | +2.531 | 25/3/4 |
+
+Final category deltas identify units and territory as the main standing gains:
+
+| Category | Raw score delta | Standing-point delta | Category-rank delta |
+| --- | ---: | ---: | ---: |
+| Territory | +470.313 | +0.781 | -0.781 |
+| Summon circles | +0.188 | +0.125 | -0.125 |
+| Units | +309.375 | +1.125 | -1.125 |
+| Spell points | +15.938 | +0.125 | -0.125 |
+| Land claims | +89.688 | +0.375 | -0.375 |
+
+Corrected action telemetry makes the mechanism clearer. Kierac summons `11.406`
+creatures per fixture against Ziag's `3.438`, reaches `4.594` peak units against
+`1.188`, and finishes with `3.406` against `0.250`. Ziag casts far more spells
+(`56.000` against `26.938`), so Kierac's advantage is not spell volume. Kierac
+absorbs more casualties (`8.000` against `3.188`) while still retaining a large
+army. His most common summons are Skeleton Horde (99 total), Knight Templar
+(93), Sand Wraith (105) and Shadow (28); Ziag summons Sand Wraith 87 times but
+has no equivalent cheap Skull/Sword breadth in his four-creature roster.
+
+The candidate also suppresses every fixed opponent: their mean totals fall by
+`1.344` (Nucrus), `1.500` (Lakkho) and `1.781` (Dayla), with each mean rank
+worsening by `0.375`.
+
+Representative retained replays bound the interpretation:
+
+- schedule 8 is the common positive pattern: Kierac finishes rank 2 with four
+  surviving units after six summons and only two losses; Ziag finishes rank 4
+  with no units;
+- schedule 12 is a Ziag counterexample: Ziag wins with total 19 after 85 casts,
+  while Kierac still retains four units but finishes second on 16;
+- schedule 22 shows that Kierac is not intrinsically invulnerable: he leads the
+  early stage, then suffers eight casualties, loses territory and falls to
+  rank 4 with total 8.
+
+The review therefore localizes the current Iz gap to reliable summon access and
+post-casualty army persistence, not wind assignment or excessive Kierac spell
+casting. It does not by itself authorize a balance edit. Any rebalance experiment
+should change exactly one creature-roster or summoning-access family, rerun these
+same 32 pairs and retain the current reports as the comparison baseline.

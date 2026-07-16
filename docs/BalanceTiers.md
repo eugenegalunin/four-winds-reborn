@@ -16,6 +16,12 @@ isolated matches, eight fixed seeds, four seat rotations, `Normal` difficulty
 and one common `Balanced` doctrine. Every clan/avatar cell contains 32 fixtures.
 Sixteen retained outlier replays reproduce every authoritative hash.
 
+The Iz order is additionally confirmed by the current
+[`paired Ziag/Kierac review`](BalanceLab.md#paired-ziagkierac-iz-review): a fresh
+128-match Iz-only cohort on `7c244ee`, with ten retained replays verified. The
+overall additive table below remains fitted to the original all-clan cohort so
+that one repeated clan is not silently given extra weight.
+
 Three outcomes receive equal weight:
 
 - rank-one rate, higher is better;
@@ -38,7 +44,7 @@ or close enough that the current cohort does not justify separating the pair.
 | --- | --- | --- |
 | Maitha | **S Nucrus** > **A Orachi** > **B Logun** > **D Javed** | Nucrus leads all three outcomes; Javed trails all three. |
 | Kartha | **S Niana ~ Lakkho** > **A Logun** > **B Javed** | Niana leads wins/rank, Lakkho leads total; there is no runaway winner. |
-| Iz | **S Kierac** >> **B Logun ~ Niana** > **D Ziag** | Kierac leads all three outcomes; Ziag trails all three. |
+| Iz | **S Kierac** >> **B Niana ~ Logun** > **D Ziag** | The repeated Iz cohort confirms Kierac leads all three outcomes and Ziag trails all three. |
 | Marz | **S Orachi** > **A Logun** > **B Dayla ~ Kierac** | Logun wins more often, but Orachi has the best rank and total; Dayla/Kierac split the remaining metrics. |
 
 ## Provisional clan-adjusted overall tiers
@@ -77,6 +83,7 @@ Ziag remains the weakest adjusted avatar and the weakest direct Iz candidate,
 although his adjusted rank-one estimate is higher than the raw Iz result; that
 is evidence that both Ziag and the Iz slot contribute to the old collapse.
 
-Do not balance against the tier letters alone. The next decision should compare
-paired Ziag/Kierac fixtures and representative replays, then change one reviewed
-passive, creature, spell or scoring family at a time and rerun the same cohort.
+Do not balance against the tier letters alone. The paired Ziag/Kierac review is
+complete and points to summon access plus army persistence rather than spell
+volume or wind assignment. If a rebalance is attempted, change one reviewed
+creature-roster or summoning-access family at a time and rerun the same pairs.
