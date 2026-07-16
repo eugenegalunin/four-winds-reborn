@@ -2378,6 +2378,8 @@ void configureSimulationBonuses()
     GameData::bonusPass = 10;
 }
 
+bool applyBalanceRoster(Tournament::Config &, const char*);
+
 void testTournamentContract()
 {
     Tournament::Config config;
@@ -2444,6 +2446,13 @@ void testTournamentContract()
     expect(flexibleSchedule.legalClanAssignments == 4 &&
            flexibleSchedule.matches.size() == 16,
            "clan rotation must enumerate only the four legal bijections");
+
+    Tournament::Config parsedRoster = config;
+    expect(applyBalanceRoster(parsedRoster, "orachi,lakkho,ziag,dayla") &&
+           parsedRoster.avatars.size() == 4 &&
+           parsedRoster.avatars.front() == Avatar(Avatar::Orachi) &&
+           Tournament::buildSchedule(parsedRoster).legalClanAssignments == 1,
+           "CLI roster parsing must retain four unique legal avatar ids");
 
     Tournament::Config duplicate = config;
     duplicate.avatars[1] = duplicate.avatars[0];
@@ -2741,6 +2750,47 @@ bool applyBalanceScenario(Tournament::Config & config, const char* difficulty,
     return true;
 }
 
+bool applyBalanceRoster(Tournament::Config & config, const char* roster)
+{
+    const std::string selected = roster ? roster : "baseline";
+    if(selected.empty() || selected == "baseline")
+    {
+        config.avatars = Tournament::baselineAvatars();
+        return true;
+    }
+
+    std::vector<Avatar> avatars;
+    std::stringstream stream(selected);
+    std::string token;
+    while(std::getline(stream, token, ','))
+    {
+        const std::size_t first = token.find_first_not_of(" \t\r\n");
+        const std::size_t last = token.find_last_not_of(" \t\r\n");
+        if(first == std::string::npos)
+        {
+            std::cerr << "roster contains an empty avatar id\n";
+            return false;
+        }
+        token = token.substr(first, last - first + 1);
+        const Avatar avatar(token);
+        if(!avatar.isValid() || avatar == Avatar(Avatar::Random) ||
+           std::find(avatars.begin(), avatars.end(), avatar) != avatars.end())
+        {
+            std::cerr << "roster avatars must be concrete and unique: " << token << '\n';
+            return false;
+        }
+        avatars.push_back(avatar);
+    }
+
+    if(avatars.size() != 4)
+    {
+        std::cerr << "roster must contain exactly four comma-separated avatars\n";
+        return false;
+    }
+    config.avatars = Avatars(avatars);
+    return true;
+}
+
 std::string isolatedRecordName(std::size_t index)
 {
     std::ostringstream name;
@@ -2758,7 +2808,8 @@ int runBalanceMatch(int argc, char** argv)
     if(argc < 5)
     {
         std::cerr << "usage: --balance-match <record.json> <seed-count> <schedule-index> "
-                     "[easy|normal|hard] [native|balanced|aggressive|economic|control]\n";
+                     "[easy|normal|hard] [native|balanced|aggressive|economic|control] "
+                     "[avatar,avatar,avatar,avatar]\n";
         return 2;
     }
     const std::size_t seedCount =
@@ -2770,11 +2821,13 @@ int runBalanceMatch(int argc, char** argv)
     configureSimulationBonuses();
     Tournament::Config config = baselineTournamentConfig(seedCount);
     if(!applyBalanceScenario(config, 5 < argc ? argv[5] : nullptr,
-                             6 < argc ? argv[6] : nullptr)) return 2;
+                             6 < argc ? argv[6] : nullptr) ||
+       !applyBalanceRoster(config, 7 < argc ? argv[7] : nullptr)) return 2;
     const Tournament::Schedule schedule = Tournament::buildSchedule(config);
     if(!schedule.valid() || schedule.matches.size() <= scheduleIndex)
     {
-        std::cerr << "isolated schedule index is out of range\n";
+        std::cerr << (!schedule.valid() ? schedule.error :
+            "isolated schedule index is out of range") << '\n';
         return 2;
     }
 
@@ -2806,7 +2859,8 @@ int runBalanceMerge(int argc, char** argv)
     if(argc < 5)
     {
         std::cerr << "usage: --balance-merge <output-dir> <records-dir> <seed-count> "
-                     "[easy|normal|hard] [native|balanced|aggressive|economic|control]\n";
+                     "[easy|normal|hard] [native|balanced|aggressive|economic|control] "
+                     "[avatar,avatar,avatar,avatar]\n";
         return 2;
     }
     const std::size_t seedCount =
@@ -2816,8 +2870,14 @@ int runBalanceMerge(int argc, char** argv)
     configureSimulationBonuses();
     Tournament::Config config = baselineTournamentConfig(seedCount);
     if(!applyBalanceScenario(config, 5 < argc ? argv[5] : nullptr,
-                             6 < argc ? argv[6] : nullptr)) return 2;
+                             6 < argc ? argv[6] : nullptr) ||
+       !applyBalanceRoster(config, 7 < argc ? argv[7] : nullptr)) return 2;
     const Tournament::Schedule schedule = Tournament::buildSchedule(config);
+    if(!schedule.valid())
+    {
+        std::cerr << schedule.error << '\n';
+        return 2;
+    }
     std::vector<Tournament::MatchRecord> records;
     records.reserve(schedule.matches.size());
     for(std::size_t index = 0; index < schedule.matches.size(); ++index)
@@ -2854,6 +2914,34 @@ int runBalanceMerge(int argc, char** argv)
     return result.completed() ? 0 : 1;
 }
 
+int runBalanceScheduleSize(int argc, char** argv)
+{
+    if(argc < 3)
+    {
+        std::cerr << "usage: --balance-schedule-size <seed-count> [easy|normal|hard] "
+                     "[native|balanced|aggressive|economic|control] "
+                     "[avatar,avatar,avatar,avatar]\n";
+        return 2;
+    }
+    const std::size_t seedCount =
+        static_cast<std::size_t>(std::strtoul(argv[2], nullptr, 10));
+    if(!validSeedCount(seedCount)) return 2;
+
+    configureSimulationBonuses();
+    Tournament::Config config = baselineTournamentConfig(seedCount);
+    if(!applyBalanceScenario(config, 3 < argc ? argv[3] : nullptr,
+                             4 < argc ? argv[4] : nullptr) ||
+       !applyBalanceRoster(config, 5 < argc ? argv[5] : nullptr)) return 2;
+    const Tournament::Schedule schedule = Tournament::buildSchedule(config);
+    if(!schedule.valid())
+    {
+        std::cerr << schedule.error << '\n';
+        return 2;
+    }
+    std::cout << schedule.matches.size() << '\n';
+    return 0;
+}
+
 int runBalanceLab(int argc, char** argv)
 {
     const std::string outputDirectory = 2 < argc ? argv[2] : "balance-lab-output";
@@ -2869,7 +2957,8 @@ int runBalanceLab(int argc, char** argv)
     configureSimulationBonuses();
     Tournament::Config config = baselineTournamentConfig(seedCount);
     if(!applyBalanceScenario(config, 4 < argc ? argv[4] : nullptr,
-                             5 < argc ? argv[5] : nullptr)) return 2;
+                             5 < argc ? argv[5] : nullptr) ||
+       !applyBalanceRoster(config, 6 < argc ? argv[6] : nullptr)) return 2;
 
     const Tournament::Result result = Tournament::run(config,
         [](std::size_t complete, std::size_t total, const Tournament::MatchRecord & record)
@@ -3063,6 +3152,9 @@ int main(int argc, char** argv)
 
     if(1 < argc && std::string(argv[1]) == "--balance-merge")
         return runBalanceMerge(argc, argv);
+
+    if(1 < argc && std::string(argv[1]) == "--balance-schedule-size")
+        return runBalanceScheduleSize(argc, argv);
 
     if(1 < argc && std::string(argv[1]) == "--balance-lab")
         return runBalanceLab(argc, argv);

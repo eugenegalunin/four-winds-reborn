@@ -98,6 +98,13 @@ for one seed, 480 for all eight):
 .\scripts\run-balance-matrix.ps1 -SeedCount 8
 ```
 
+Run controlled avatar substitutions in fixed clan slots (52 isolated matches
+for one seed, 416 for all eight):
+```powershell
+.\scripts\run-balance-cohorts.ps1
+.\scripts\run-balance-cohorts.ps1 -SeedCount 8
+```
+
 Each match runs in a fresh child process; it exports detailed event telemetry,
 versioned JSON, per-player CSV, a concise text report and full replays for
 failures/statistical outliers. The fixed seed list, legal clan/seat rotation

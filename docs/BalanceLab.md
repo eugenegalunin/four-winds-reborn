@@ -151,6 +151,32 @@ package. One seed means four child processes; all eight published seeds mean 32.
 The fixed CTest canary remains small and in-process, while the manual runner is
 the supported path for the larger isolated matrix.
 
+Select an explicit legal four-avatar roster when isolating roster and clan
+effects. The supervisor asks the C++ scheduler for its real match count, so a
+flexible roster with several legal clan bijections is not truncated to four
+seat rotations:
+
+```powershell
+.\scripts\run-balance-lab.ps1 -Roster Orachi,Lakkho,Ziag,Dayla
+```
+
+Run controlled clan cohorts before attributing a fixed-roster result to an
+avatar. The baseline is run once; each selected clan slot then substitutes three
+other avatars that legally support that clan while the other three avatars,
+forced doctrine, difficulty, seeds and seat rotations remain fixed:
+
+```powershell
+.\scripts\run-balance-cohorts.ps1
+.\scripts\run-balance-cohorts.ps1 -SeedCount 8 -OutputDirectory diagnostics\balance-cohorts-full
+.\scripts\run-balance-cohorts.ps1 -Clans Aqua -SeedCount 2
+```
+
+The cohort root exports `balance-cohorts.json`, `balance-cohorts.csv` and
+`balance-cohorts.txt`. Deltas are candidate minus the baseline avatar in the
+same clan slot; a negative mean-rank delta is an improvement. `native` is
+deliberately unavailable here because it would change doctrine together with
+the avatar and defeat the control.
+
 Verify one retained replay, one scenario, or a complete matrix after the run:
 
 ```powershell
@@ -198,7 +224,47 @@ This baseline is evidence of a real imbalance, not yet evidence for one numeric
 fix. The four baseline avatars are tied to four different clans. Ziag remains
 last under every forced doctrine (including 11/96 rank-one finishes under common
 Balanced behavior), so native-profile matchup alone does not explain the gap;
-avatar roster, passive and fixed clan/map position remain confounded. The next
-comparison must substitute clan-compatible avatars into controlled rosters and
-hold doctrine, difficulty, seeds and opponents fixed before changing creature,
-spell or scoring values.
+avatar roster, passive and fixed clan/map position remain confounded.
+
+## Controlled avatar/clan cohort 1
+
+The first controlled cohort was run on Windows Release on 2026-07-16 from the
+cohort implementation based on game commit `767bbe1` and engine commit
+`f7368e2`. It used all eight published seeds, `Normal` difficulty and one common
+`Balanced` doctrine. The baseline ran once, then three legal candidates replaced
+one avatar at a time in each fixed clan slot: 13 scenarios, 416 isolated matches
+and 76,376 authoritative events in about 21 minutes. All 416 completed. All 16
+retained outlier replays then reproduced independently with every intermediate
+and final hash intact.
+
+Each row has 32 fixtures. Rank-one delta is in percentage points; rank and total
+deltas are candidate minus the named baseline in the same clan. A negative rank
+delta is better.
+
+| Clan | Baseline | Candidate | Rank one | Delta | Mean rank | Delta | Mean total | Delta |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Red | Nucrus | Nucrus | 43.75% | - | 1.813 | - | 15.688 | - |
+| Red | Nucrus | Orachi | 37.50% | -6.25 pp | 2.281 | +0.469 | 14.719 | -0.969 |
+| Red | Nucrus | Javed | 18.75% | -25.00 pp | 2.688 | +0.875 | 13.719 | -1.969 |
+| Red | Nucrus | Logun | 31.25% | -12.50 pp | 2.281 | +0.469 | 14.438 | -1.250 |
+| Yellow | Lakkho | Lakkho | 34.38% | - | 2.281 | - | 14.594 | - |
+| Yellow | Lakkho | Niana | 37.50% | +3.13 pp | 2.188 | -0.094 | 14.344 | -0.250 |
+| Yellow | Lakkho | Javed | 28.13% | -6.25 pp | 2.313 | +0.031 | 14.094 | -0.500 |
+| Yellow | Lakkho | Logun | 25.00% | -9.38 pp | 2.125 | -0.156 | 14.188 | -0.406 |
+| Aqua | Ziag | Ziag | 9.38% | - | 3.188 | - | 12.094 | - |
+| Aqua | Ziag | Niana | 12.50% | +3.13 pp | 2.906 | -0.281 | 13.031 | +0.938 |
+| Aqua | Ziag | Kierac | 28.13% | +18.75 pp | 2.313 | -0.875 | 14.000 | +1.906 |
+| Aqua | Ziag | Logun | 18.75% | +9.38 pp | 2.906 | -0.281 | 12.625 | +0.531 |
+| Purple | Dayla | Dayla | 21.88% | - | 2.313 | - | 14.688 | - |
+| Purple | Dayla | Orachi | 34.38% | +12.50 pp | 2.000 | -0.313 | 14.844 | +0.156 |
+| Purple | Dayla | Kierac | 31.25% | +9.38 pp | 2.313 | +0.000 | 14.156 | -0.531 |
+| Purple | Dayla | Logun | 40.63% | +18.75 pp | 2.219 | -0.094 | 14.438 | -0.250 |
+
+The controls materially narrow the diagnosis. Nucrus remains strongest among
+the tested Red candidates; the Yellow substitutions are close to Lakkho; and
+the Purple result depends on which outcome is emphasized. The clearest
+directional signal is Aqua: replacing Ziag with Kierac improves rank-one rate,
+mean rank and mean total together. The Wilson intervals still overlap and this
+is not yet evidence for a specific numeric edit. Inspect paired fixture deltas
+and representative Ziag/Kierac replays before changing one passive, creature,
+spell or scoring family at a time.

@@ -6,6 +6,8 @@ param(
     [string]$Difficulty = "Normal",
     [ValidateSet("Native", "Balanced", "Aggressive", "Economic", "Control")]
     [string]$BehaviorProfile = "Native",
+    [ValidateSet("Orachi", "Lakkho", "Dayla", "Ziag", "Niana", "Kierac", "Logun", "Nucrus", "Javed")]
+    [string[]]$Roster = @("Nucrus", "Lakkho", "Ziag", "Dayla"),
     [switch]$KeepEngineLog,
     [switch]$KeepMatchRecords
 )
@@ -41,6 +43,11 @@ $engineLog = Join-Path $outputPath "balance-engine-$runId.log"
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $difficultyArgument = $Difficulty.ToLowerInvariant()
 $profileArgument = $BehaviorProfile.ToLowerInvariant()
+$selectedRoster = @($Roster | ForEach-Object { $_.ToLowerInvariant() })
+if ($selectedRoster.Count -ne 4 -or @($selectedRoster | Select-Object -Unique).Count -ne 4) {
+    throw "Roster must contain exactly four unique concrete avatars."
+}
+$rosterArgument = $selectedRoster -join ","
 
 function Quote-NativeArgument([string]$Value) {
     return '"' + $Value.Replace('"', '\"') + '"'
@@ -83,12 +90,24 @@ function Save-EngineDiagnostics([string]$Label, $Result, [bool]$Append) {
 $batchSucceeded = $false
 $diagnosticsWritten = $false
 try {
-    $matchCount = $SeedCount * 4
+    $scheduleArguments = "--balance-schedule-size {0} {1} {2} {3}" -f `
+        $SeedCount, $difficultyArgument, $profileArgument, `
+        (Quote-NativeArgument $rosterArgument)
+    $schedule = Invoke-BalanceProcess $scheduleArguments
+    $matchCount = 0
+    if ($schedule.ExitCode -ne 0 -or
+        -not [int]::TryParse($schedule.StandardOutput.Trim(), [ref]$matchCount) -or
+        $matchCount -le 0) {
+        Save-EngineDiagnostics "schedule validation" $schedule $diagnosticsWritten
+        $diagnosticsWritten = $true
+        throw "Balance schedule is invalid. Diagnostics: $engineLog"
+    }
+    Write-Host "Balance roster: $rosterArgument; scheduled matches: $matchCount"
     for ($index = 0; $index -lt $matchCount; ++$index) {
         $recordPath = Join-Path $recordsDirectory ("match-{0:D6}.json" -f $index)
-        $arguments = "--balance-match {0} {1} {2} {3} {4}" -f `
+        $arguments = "--balance-match {0} {1} {2} {3} {4} {5}" -f `
             (Quote-NativeArgument $recordPath), $SeedCount, $index, `
-            $difficultyArgument, $profileArgument
+            $difficultyArgument, $profileArgument, (Quote-NativeArgument $rosterArgument)
         $result = Invoke-BalanceProcess $arguments
 
         if ($KeepEngineLog -or $result.ExitCode -ne 0) {
@@ -102,9 +121,10 @@ try {
         Write-Host ("Balance match {0}/{1}: isolated process complete" -f ($index + 1), $matchCount)
     }
 
-    $mergeArguments = "--balance-merge {0} {1} {2} {3} {4}" -f `
+    $mergeArguments = "--balance-merge {0} {1} {2} {3} {4} {5}" -f `
         (Quote-NativeArgument $outputPath), (Quote-NativeArgument $recordsDirectory), `
-        $SeedCount, $difficultyArgument, $profileArgument
+        $SeedCount, $difficultyArgument, $profileArgument, `
+        (Quote-NativeArgument $rosterArgument)
     $merge = Invoke-BalanceProcess $mergeArguments
     if ($KeepEngineLog -or $merge.ExitCode -ne 0) {
         Save-EngineDiagnostics "report merge" $merge $diagnosticsWritten
@@ -123,6 +143,9 @@ try {
     $replayDirectory = Join-Path $outputPath "replays"
     $currentReport = Get-Content -LiteralPath (Join-Path $outputPath "balance-report.json") `
         -Raw | ConvertFrom-Json
+    if ((@($currentReport.roster) -join ",") -ne $rosterArgument) {
+        throw "Merged balance report roster does not match the requested roster."
+    }
     $retainedReplayCount = @($currentReport.matches | Where-Object {
         $_.replay_retention_reasons.Count -gt 0
     }).Count
