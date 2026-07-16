@@ -74,6 +74,7 @@ struct ObservedUnit
 };
 
 using ObservedUnits = std::map<int, ObservedUnit>;
+using AvatarsByWind = std::map<int, Avatar>;
 
 ObservedUnits observeUnits(void)
 {
@@ -104,15 +105,22 @@ Simulation::MatchResult::PlayerTelemetry* playerTelemetry(
     return found == result.players.end() ? nullptr : &*found;
 }
 
-Avatar avatarForWind(const Simulation::MatchConfig & config, const Wind & wind)
+AvatarsByWind observeAvatarsByWind(void)
 {
-    const auto found = std::find_if(config.persons.begin(), config.persons.end(),
-        [&wind](const Person & person){ return person.wind == wind; });
-    return found == config.persons.end() ? Avatar() : found->avatar;
+    AvatarsByWind result;
+    for(const LocalPlayer & player : GameData::players())
+        result[player.wind()] = player.avatar;
+    return result;
+}
+
+Avatar avatarForWind(const AvatarsByWind & avatars, const Wind & wind)
+{
+    const auto found = avatars.find(wind());
+    return found == avatars.end() ? Avatar() : found->second;
 }
 
 void captureActions(Simulation::MatchResult & result,
-                    const Simulation::MatchConfig & config,
+                    const AvatarsByWind & avatarsByWind,
                     const ActionList & actions)
 {
     for(const ActionMessage & action : actions)
@@ -135,7 +143,8 @@ void captureActions(Simulation::MatchResult & result,
         else
             continue;
 
-        const Avatar avatar = avatarForWind(config, Wind(action.getString("currentWind")));
+        const Avatar avatar = avatarForWind(avatarsByWind,
+                                            Wind(action.getString("currentWind")));
         auto telemetry = playerTelemetry(result, avatar);
         if(!telemetry || subject.empty()) continue;
 
@@ -364,6 +373,7 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
             ActionList actions;
             bool advanced = false;
             const ObservedUnits unitsBefore = observeUnits();
+            const AvatarsByWind avatarsByWind = observeAvatarsByWind();
 
             switch(GameData::loadedGamePart())
             {
@@ -428,7 +438,7 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
             }
 
             result.emittedActions += actions.size();
-            captureActions(result, config, actions);
+            captureActions(result, avatarsByWind, actions);
             captureUnitChanges(result, unitsBefore, observeUnits(), actions);
             if(!advanced)
                 ++result.unchangedTicks;

@@ -2861,6 +2861,47 @@ int runHeadlessMatchSelfTest()
         return 1;
     }
 
+    for(const Simulation::MatchResult::Event & event : first.events)
+    {
+        if(event.type != "summon" && event.type != "spell")
+            continue;
+
+        const AvatarInfo & avatar = GameData::avatarInfo(event.avatar);
+        bool legal = false;
+        if(event.type == "summon")
+        {
+            const Creature creature(event.subject);
+            legal = std::find(avatar.creatures.begin(), avatar.creatures.end(), creature) !=
+                    avatar.creatures.end();
+        }
+        else if(event.type == "spell")
+        {
+            const Spell spell(event.subject);
+            legal = std::find(avatar.spells.begin(), avatar.spells.end(), spell) !=
+                    avatar.spells.end();
+            for(const Creature & creature : avatar.creatures)
+            {
+                if(legal) break;
+                for(const Speciality & speciality :
+                    GameData::creatureInfo(creature).specials.toList())
+                {
+                    if(speciality.toSpell() == spell)
+                    {
+                        legal = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if(!legal)
+        {
+            std::cerr << "FAIL: event telemetry attributed an illegal " << event.type
+                      << " to " << event.avatar.toString() << ": " << event.subject << '\n';
+            return 1;
+        }
+    }
+
     for(std::size_t player = 0; player < first.score.size(); ++player)
     {
         if(first.score[player].person.avatar != second.score[player].person.avatar ||
