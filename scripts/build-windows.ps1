@@ -19,6 +19,15 @@ if (-not (Test-Path $bash) -or -not (Test-Path $cygpath)) {
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$distExe = [IO.Path]::GetFullPath((Join-Path $repoRoot "dist\windows\four-winds-reborn.exe"))
+$runningDist = @(Get-Process -Name "four-winds-reborn" -ErrorAction SilentlyContinue | Where-Object {
+    $_.Path -and [IO.Path]::GetFullPath($_.Path) -ieq $distExe
+})
+if ($runningDist.Count -gt 0) {
+    $runningPids = ($runningDist.Id -join ", ")
+    throw "Close the packaged Four Winds build before rebuilding (PID: $runningPids). The live dist/windows directory was left untouched."
+}
+
 $unixRepo = (& $cygpath -u $repoRoot).Trim()
 $unixRepo = $unixRepo.Replace("'", "'\''")
 

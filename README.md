@@ -43,6 +43,11 @@ Install [MSYS2](https://www.msys2.org/) in `C:\msys64` first, or pass
 `.\scripts\build-windows.ps1`. Unix scripts accept `--clean`, `--debug` and
 `--no-tests`; PowerShell accepts `-Clean`, `-DebugBuild` and `-NoTests`.
 
+Close a packaged game launched from `dist/windows` before rebuilding it. The
+PowerShell wrapper detects a live packaged executable and stops before touching
+the distribution; packaging is assembled in `dist/windows-staging` first so a
+failed copy cannot leave a half-populated release directory.
+
 Manual requirements are CMake 3.14+, a C++17 compiler, pkg-config, zlib, SDL2,
 SDL2_image, SDL2_mixer and SDL2_ttf. Boost stacktrace is optional because the
 game has a native crash-report fallback.

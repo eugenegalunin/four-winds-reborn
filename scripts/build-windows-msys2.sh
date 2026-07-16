@@ -71,13 +71,19 @@ if (( run_tests )); then
 fi
 
 dist_dir="$repo_root/dist/windows"
-rm -rf "$dist_dir"
-mkdir -p "$dist_dir"
-cp "$build_dir/four-winds-reborn.exe" "$dist_dir/"
-cp -R "$repo_root/themes" "$dist_dir/"
+staging_dir="$repo_root/dist/windows-staging"
+rm -rf "$staging_dir"
+trap 'rm -rf "$staging_dir"' EXIT
+mkdir -p "$staging_dir"
+cp "$build_dir/four-winds-reborn.exe" "$staging_dir/"
+cp -R "$repo_root/themes" "$staging_dir/"
 
 while IFS= read -r dependency; do
-    [[ -n "$dependency" ]] && cp -f "$dependency" "$dist_dir/"
+    [[ -n "$dependency" ]] && cp -f "$dependency" "$staging_dir/"
 done < <(ldd "$build_dir/four-winds-reborn.exe" | awk '/=> \/ucrt64\/bin\// { print $3 }')
+
+rm -rf "$dist_dir"
+mv "$staging_dir" "$dist_dir"
+trap - EXIT
 
 echo "Built: $dist_dir/four-winds-reborn.exe"
