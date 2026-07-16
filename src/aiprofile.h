@@ -87,6 +87,8 @@ namespace AI
         int spellHorizonAdjustment;
         int maximumSpellHorizon;
         int partyCoordinationAdjustment;
+        int strategicGoalLimit;
+        int strategicDrawHorizon;
     };
 
     const char*             difficultyName(Difficulty);

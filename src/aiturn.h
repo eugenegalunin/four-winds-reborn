@@ -24,6 +24,7 @@
 #define _RWNA_AITURN_
 
 #include "gametheme.h"
+#include "aistrategy.h"
 
 namespace AI
 {
@@ -35,7 +36,11 @@ namespace AI
 			    const Stone & dropStone, WinResults &, ActionList &, bool sayOnly);
 
     int         mahjongSelect(const GameStones &, const VecStones &, const WinRules &);
+    int         mahjongSelect(const GameStones &, const VecStones &, const WinRules &,
+                              const StrategicIntent &);
     int         mahjongLuckChoice(const GameStones &, const VecStones &, const VecStones &, const WinRules &);
+    int         mahjongLuckChoice(const GameStones &, const VecStones &, const VecStones &, const WinRules &,
+                                  const StrategicIntent &);
     void        mahjongOtherPass(const Wind &, ActionList &, const Wind &);
     void        mahjongSummonCast(const Avatar &, const Creatures &, const Spells &, ActionList &);
 

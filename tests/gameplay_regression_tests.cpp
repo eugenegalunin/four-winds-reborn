@@ -8,6 +8,7 @@
 #include "aiadventure.h"
 #include "aibattle.h"
 #include "aispell.h"
+#include "aistrategy.h"
 #include "aiturn.h"
 #include "avatar_balance_tests.h"
 #include "battle.h"
@@ -156,11 +157,132 @@ void testDifficultyRules()
            AI::maximumPartiesPerTarget(AI::BehaviorProfile::Aggressive,
                                        AI::Difficulty::Hard) == 3,
            "hard AI must coordinate more attacking parties than easy AI");
+    expect(AI::difficultyRules(AI::Difficulty::Easy).strategicGoalLimit == 2 &&
+           AI::difficultyRules(AI::Difficulty::Normal).strategicGoalLimit == 4 &&
+           AI::difficultyRules(AI::Difficulty::Hard).strategicGoalLimit == 6,
+           "higher AI difficulty must retain a wider strategic goal beam");
 
     GameData::setAIDifficulty(AI::Difficulty::Hard);
     expect(GameData::toJsonObject(JsonObject()).getString("ai:difficulty") == "hard",
            "save data must persist the selected AI difficulty");
     GameData::setAIDifficulty(AI::Difficulty::Normal);
+}
+
+void testStrategicRunePlanning()
+{
+    GameData::gamers.clear();
+
+    const Avatar::avatar_t avatars[] = {
+        Avatar::Orachi, Avatar::Lakkho, Avatar::Dayla, Avatar::Ziag
+    };
+    for(int index = 0; index < 4; ++index)
+    {
+        LocalPlayer player;
+        player.avatar = avatars[index];
+        player.clan = Clan(static_cast<Clan::clan_t>(Clan::Red + index));
+        player.wind = Wind(static_cast<Wind::wind_t>(Wind::East + index));
+        player.points = 500;
+        GameData::gamers.push_back(player);
+    }
+    GameData::currentWind = Wind::East;
+
+    LocalPlayer & orachi = GameData::gamers.front();
+    orachi.stones.add(GameStone(Stone(Stone::Skull1), false));
+    orachi.stones.add(GameStone(Stone(Stone::Number2), false));
+
+    const AI::AIObservation baselineObservation = AI::observePlayer(orachi.avatar);
+    const AI::StrategicIntent baseline = AI::chooseStrategicIntent(
+        baselineObservation, AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+    expect(!baseline.runeGoals.empty() &&
+           baseline.runeValue(Stone(Stone::Skull1)) > baseline.runeValue(Stone(Stone::Number2)),
+           "strategic Rune AI must value a held summon rune above an unrelated rune");
+
+    const int drop = AI::mahjongSelect(orachi.stones, VecStones(), WinRules(), baseline);
+    expect(0 <= drop && drop < static_cast<int>(orachi.stones.size()) &&
+           orachi.stones[drop] == Stone(Stone::Number2),
+           "strategic Rune AI must keep the rune needed by its ranked summon goal");
+    expect(baseline.trace().find("goal=") != std::string::npos &&
+           baseline.trace().find("rune_gain=") != std::string::npos &&
+           baseline.trace().find("visible_remaining=") != std::string::npos,
+           "strategic AI must expose deterministic score components in its trace");
+
+    Creatures hiddenUniqueOptions;
+    hiddenUniqueOptions.push_back(Creature(Creature::KilorCelsbane));
+    hiddenUniqueOptions.push_back(Creature(Creature::SkeletonHorde));
+    const std::vector<AI::SummonCandidate> baselineSummons = AI::rankSummonCandidates(
+        baselineObservation, hiddenUniqueOptions, AI::BehaviorProfile::Aggressive);
+
+    BattleParty hiddenParty(Clan::Yellow, Land::Zubrus);
+    expect(hiddenParty.join(BattleCreature(Clan::Yellow, Creature::KilorCelsbane, 2450)),
+           "strategic hidden-information fixture must join Kilor");
+    GameData::gamers[1].army.push_back(hiddenParty);
+
+    const AI::AIObservation hiddenObservation = AI::observePlayer(orachi.avatar);
+    const AI::StrategicIntent withHiddenEnemy = AI::chooseStrategicIntent(
+        hiddenObservation, AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+    const std::vector<AI::SummonCandidate> hiddenSummons = AI::rankSummonCandidates(
+        hiddenObservation, hiddenUniqueOptions, AI::BehaviorProfile::Aggressive);
+    expect(!hiddenObservation.visibleCreature(Creature(Creature::KilorCelsbane)),
+           "AIObservation must remove an undetected invisible third-party creature");
+    expect(withHiddenEnemy.trace() == baseline.trace(),
+           "an invisible third-party army must not affect the strategic AI plan");
+    expect(hiddenSummons.size() == baselineSummons.size() &&
+           std::equal(hiddenSummons.begin(), hiddenSummons.end(), baselineSummons.begin(),
+                      [](const AI::SummonCandidate & left, const AI::SummonCandidate & right)
+                      {
+                          return left.trace() == right.trace();
+                      }),
+           "an invisible global unique creature must not alter observer-legal summon ranking");
+
+    GameData::gamers.clear();
+    LocalPlayer javed;
+    javed.avatar = Avatar::Javed;
+    javed.clan = Clan::Red;
+    javed.wind = Wind::East;
+    javed.points = 1000;
+
+    const Lands powerLands = Lands::thisClan(javed.clan).powerOnly();
+    expect(!powerLands.empty(), "strategic summon fixture must have a power land");
+    const auto tower = std::find(powerLands.begin(), powerLands.end(), Land(Land::TowerOf4Winds));
+    const Land mergeLand = tower != powerLands.end() ? *tower :
+                           (powerLands.empty() ? Land() : powerLands.front());
+    BattleParty mergeParty(javed.clan, mergeLand);
+    expect(mergeParty.join(BattleCreature(javed.clan, Creature::Griffon, 2451)),
+           "strategic summon fixture must join its first Griffon");
+    javed.army.push_back(mergeParty);
+    GameData::gamers.push_back(javed);
+
+    for(int index = 1; index < 4; ++index)
+    {
+        LocalPlayer opponent;
+        opponent.avatar = avatars[index];
+        opponent.clan = Clan(static_cast<Clan::clan_t>(Clan::Red + index));
+        opponent.wind = Wind(static_cast<Wind::wind_t>(Wind::East + index));
+        GameData::gamers.push_back(opponent);
+    }
+
+    Creatures summonOptions;
+    summonOptions.push_back(Creature(Creature::AirElemental));
+    summonOptions.push_back(Creature(Creature::Griffon));
+    expect(AI::creatureSummonScore(Creature(Creature::AirElemental),
+                                   AI::BehaviorProfile::Control) >
+           AI::creatureSummonScore(Creature(Creature::Griffon),
+                                   AI::BehaviorProfile::Control),
+           "strategic summon fixture must start with the higher static Air Elemental score");
+
+    const std::vector<AI::SummonCandidate> summonPlan = AI::rankSummonCandidates(
+        AI::observePlayer(Avatar(Avatar::Javed)), summonOptions, AI::BehaviorProfile::Control);
+    if(summonPlan.empty() || summonPlan.front().creature != Creature(Creature::Griffon) ||
+       summonPlan.front().destination != mergeLand)
+    {
+        for(const AI::SummonCandidate & candidate : summonPlan)
+            std::cerr << "  summon candidate: " << candidate.trace() << '\n';
+    }
+    expect(!summonPlan.empty() && summonPlan.front().creature == Creature(Creature::Griffon) &&
+           summonPlan.front().destination == mergeLand && 0 < summonPlan.front().partySynergy,
+           "Summon AI must choose the synergistic resulting Merge party over a higher static unit score");
+    expect(!summonPlan.empty() && summonPlan.front().trace().find("party_synergy=") != std::string::npos,
+           "Summon AI must explain resulting-party synergy in its trace");
 }
 
 void testSelectedPartyMovement()
@@ -2166,6 +2288,7 @@ int main(int argc, char** argv)
     }
 
     testDifficultyRules();
+    testStrategicRunePlanning();
     testSelectedPartyMovement();
     testGateMovement();
     testLuckAbility();

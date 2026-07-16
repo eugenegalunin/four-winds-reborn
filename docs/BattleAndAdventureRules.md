@@ -253,6 +253,23 @@ available. Equal choices use stable IDs, making decisions deterministic and
 regression-testable. This is a bounded heuristic rather than an exhaustive game
 tree: exact board simulation and opponent counter-play remain future work.
 
+## Strategic AI observation and rune goals
+
+Strategic Mahjong and summon planning begins from an immutable copy of the
+observer-filtered `LocalData` view. Hidden hands and undetected invisible armies
+therefore cannot change an AI score. The planner ranks a difficulty-bounded set
+of summon and spell rune goals, recording rune progress, visible remaining
+copies, a bounded draw-completion estimate, mana gap and component scores in a
+deterministic trace. Discard selection and Nucrus Luck both reuse these rune
+values instead of optimizing Mahjong combinations in isolation.
+
+Summon planning ranks `(creature, destination)` candidates as resulting parties,
+not as independent creature and land lists. Static profile value is combined
+with party role coverage, movement coherence, matching Merge defense, visible
+frontier pressure and land value. A globally unique creature hidden from the
+observer is never consulted by the planner; authoritative validation may reject
+that candidate, after which the AI tries the next observer-legal candidate.
+
 ## Regression checks
 
 `tests/gameplay_regression_tests.cpp` covers spell lifecycle, AI profiles and

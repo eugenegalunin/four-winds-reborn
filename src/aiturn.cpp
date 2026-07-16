@@ -27,6 +27,7 @@
 #include "aiturn.h"
 #include "aiadventure.h"
 #include "aispell.h"
+#include "aistrategy.h"
 #include "gameplayrng.h"
 
 namespace GameData
@@ -98,8 +99,14 @@ bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecS
 	    mahjongSummonCast(avatar, summons, casts, actions);
     }
 
+    // Keep rune decisions connected to the same observer-legal strategic goals
+    // that later summon/spell planning will consume.
+    const StrategicIntent intent = chooseStrategicIntent(
+        observePlayer(avatar), behaviorProfile(player), GameData::aiDifficulty());
+    DEBUG("AI strategy: " << intent.trace());
+
     // drop stone
-    int dropIndex = mahjongSelect(player.stones, trash, other);
+    int dropIndex = mahjongSelect(player.stones, trash, other, intent);
     return GameData::client2Mahjong(avatar, ClientDropIndex(dropIndex), actions);
 }
 
@@ -111,37 +118,19 @@ namespace
 
         const AI::BehaviorProfile profile = AI::behaviorProfile(player);
 
-        summons.erase(std::remove_if(summons.begin(), summons.end(), [&](const Creature & creature)
+        const std::vector<AI::SummonCandidate> candidates = AI::rankSummonCandidates(
+            AI::observePlayer(player.avatar), summons, profile);
+        for(const AI::SummonCandidate & candidate : candidates)
         {
-            const CreatureInfo & info = GameData::creatureInfo(creature);
-            return info.unique && GameData::findCreatureUnique(creature);
-        }), summons.end());
-        std::sort(summons.begin(), summons.end(), [&](const Creature & left, const Creature & right)
-        {
-            const int leftValue = AI::creatureSummonScore(left, profile);
-            const int rightValue = AI::creatureSummonScore(right, profile);
-            return leftValue == rightValue ? left() < right() : leftValue > rightValue;
-        });
-
-        Lands lands = Lands::thisClan(player.clan).powerOnly();
-        lands.erase(std::remove_if(lands.begin(), lands.end(), [&](const Land & land)
-        {
-            const BattleParty* party = player.army.findPartyConst(land);
-            return party && !party->canJoin();
-        }), lands.end());
-        std::sort(lands.begin(), lands.end(), [&](const Land & left, const Land & right)
-        {
-            const BattleParty* leftParty = player.army.findPartyConst(left);
-            const BattleParty* rightParty = player.army.findPartyConst(right);
-            const int leftValue = (leftParty ? 100 : 0) + GameData::landInfo(left).stat.point;
-            const int rightValue = (rightParty ? 100 : 0) + GameData::landInfo(right).stat.point;
-            return leftValue == rightValue ? left() < right() : leftValue > rightValue;
-        });
-
-        for(const Creature & creature : summons)
-            for(const Land & land : lands)
-                if(GameData::client2Mahjong(player.avatar, ClientSummonCreature(creature, land), actions))
-                    return true;
+            DEBUG("AI summon candidate: " << candidate.trace());
+            // A hidden globally unique creature may still make this observer-legal
+            // candidate fail authoritative validation. Continue without consulting
+            // hidden state and try the next ranked candidate.
+            if(GameData::client2Mahjong(player.avatar,
+                                        ClientSummonCreature(candidate.creature,
+                                                             candidate.destination), actions))
+                return true;
+        }
 
         return false;
     }
@@ -310,13 +299,20 @@ int mahjongStoneValue(const GameStones & stones, const GameStone & stone,
 
 int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const WinRules & other)
 {
+    return mahjongSelect(stones, trash, other, StrategicIntent());
+}
+
+int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const WinRules & other,
+                      const StrategicIntent & intent)
+{
     std::multiset<StoneCost> result;
 
     for(auto it = stones.begin(); it != stones.end(); ++it)
     {
 	const GameStone & stone = *it;
+	const int strategicValue = stone.isCasted() ? 0 : intent.runeValue(stone);
 	result.emplace(stone, std::distance(stones.begin(), it),
-	               mahjongStoneValue(stones, stone, trash, other));
+	               mahjongStoneValue(stones, stone, trash, other) + strategicValue);
     }
 
     if(result.size())
@@ -344,6 +340,13 @@ int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const 
 int AI::mahjongLuckChoice(const GameStones & stones, const VecStones & choices,
                           const VecStones & trash, const WinRules & other)
 {
+    return mahjongLuckChoice(stones, choices, trash, other, StrategicIntent());
+}
+
+int AI::mahjongLuckChoice(const GameStones & stones, const VecStones & choices,
+                          const VecStones & trash, const WinRules & other,
+                          const StrategicIntent & intent)
+{
     int selected = 0;
     int bestValue = std::numeric_limits<int>::min();
 
@@ -352,7 +355,7 @@ int AI::mahjongLuckChoice(const GameStones & stones, const VecStones & choices,
 	GameStones hand = stones;
 	const GameStone candidate(choices[index], false);
 	hand.add(candidate);
-	const int value = mahjongStoneValue(hand, candidate, trash, other);
+	const int value = mahjongStoneValue(hand, candidate, trash, other) + intent.runeValue(candidate);
 	if(bestValue < value)
 	{
 	    bestValue = value;

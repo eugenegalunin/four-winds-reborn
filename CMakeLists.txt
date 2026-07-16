@@ -74,6 +74,7 @@ set(FOUR_WINDS_SOURCE
     src/settings.cpp
     src/aiturn.cpp
     src/aiprofile.cpp
+    src/aistrategy.cpp
     src/aiadventure.cpp
     src/aibattle.cpp
     src/aispell.cpp

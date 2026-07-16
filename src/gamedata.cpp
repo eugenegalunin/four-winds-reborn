@@ -1103,8 +1103,10 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 	    other.insert(other.end(), right.begin(), right.end());
 	    other.insert(other.end(), top.begin(), top.end());
 
+	    const AI::StrategicIntent intent = AI::chooseStrategicIntent(
+	        AI::observePlayer(current.avatar), AI::behaviorProfile(current), aiDifficulty());
 	    const int selected = AI::mahjongLuckChoice(current.stones, croupier.luckChoices(),
-	                                                  croupier.trash, other);
+	                                                  croupier.trash, other, intent);
 	    current.newStone = GameStone(croupier.resolveLuckDraw(selected), false);
 	}
 
