@@ -253,6 +253,43 @@ available. Equal choices use stable IDs, making decisions deterministic and
 regression-testable. This is a bounded heuristic rather than an exhaustive game
 tree: exact board simulation and opponent counter-play remain future work.
 
+## Strategic AI observation and rune goals
+
+Strategic Mahjong and summon planning begins from an immutable copy of the
+observer-filtered `LocalData` view. Hidden hands and undetected invisible armies
+therefore cannot change an AI score. The planner ranks a difficulty-bounded set
+of summon and spell rune goals, recording rune progress, visible remaining
+copies, a bounded draw-completion estimate, mana gap and component scores in a
+deterministic trace. Discard selection and Nucrus Luck both reuse these rune
+values instead of optimizing Mahjong combinations in isolation.
+
+Optional Chao, Pung and Kong calls use the same strategic intent. The AI scores
+the completed exposed set, its point reward and progress toward a Mahjong hand
+against the value of uncast runes that would be removed from future summon and
+spell goals. `Game` is always accepted; other calls may prefer `Pass`. When
+several Chao variants are legal, the selected variant preserves the strongest
+strategic runes. The authoritative Chao mutation moves exactly one copy of each
+sequence rune out of the concealed hand.
+
+Summon planning ranks `(creature, destination)` candidates as resulting parties,
+not as independent creature and land lists. Static profile value is combined
+with party role coverage, movement coherence, matching Merge defense, visible
+frontier pressure and land value. A globally unique creature hidden from the
+observer is never consulted by the planner; authoritative validation may reject
+that candidate, after which the AI tries the next observer-legal candidate.
+
+The same observation now feeds a bounded `TurnPlan`. It keeps one best
+destination per summonable creature and one observer-safe plan per currently
+castable spell, combines the immediate action score with the ranked rune intent,
+and adds a small Adventure follow-up score. That follow-up is a strategic target
+hint rather than an executable move order: it uses public land ownership and
+paths, the AI's own parties and only defenders present in filtered `LocalData`.
+Difficulty limits the retained action beam to 3, 6 or 10 branches for Easy,
+Normal and Hard. A rejected hidden global unique therefore falls through to the
+next retained branch without revealing why it failed. The deterministic trace
+records every retained branch, its immediate, intent and follow-up components,
+and the visible defense used for its Adventure target.
+
 ## Regression checks
 
 `tests/gameplay_regression_tests.cpp` covers spell lifecycle, AI profiles and
@@ -271,4 +308,10 @@ battle-resolver speciality: creature Hellblast, First Strike, Ignore Missiles,
 Merge, Mighty Blow, Fire Shield and Swarm. Non-combat specialities (movement,
 visibility, spell resistance, Devotion, Regeneration and creature-cast Mahjong
 effects) remain covered in their owning phase rather than being simulated by
-BattleSession.
+BattleSession. Focused contracts additionally lock the exact persistent stat
+effects of Smoke, Demonic Compulsion, Mass Panic, Reduction, Battle Fury, Dust
+Cloud, Heroism, Brilliant Lights and Magical Aura; Dispel cleanup; all three
+directed rune draws; the inclusive 25%/90% Magic Resistance chances; Devotion;
+and every creature-to-spell speciality mapping. Mahjong call tests cover
+strategic Pass, Kong/Pung selection, Chao variant choice and duplicate-safe
+concealed-hand removal.

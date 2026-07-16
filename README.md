@@ -9,15 +9,20 @@ This repository is a modified continuation of
 original copyright notices and GPL-3.0 license are preserved. Project changes
 from 2026 onward are maintained as Four Winds Reborn.
 
+The canonical clans are Maitha (`maitha`), Kartha (`kartha`), Iz (`iz`) and
+Marz (`marz`). Historical color strings are load-only compatibility aliases;
+the identity contract is recorded in
+[`docs/RulesDecisions.md`](docs/RulesDecisions.md#rd-006-canonical-clan-identities).
+
 The bundled engine is maintained separately as
-[Four Winds Engine](https://github.com/eugenegalunin/four-winds-engine), with
+[Four Winds Engine](https://github.com/jaskes/four-winds-engine), with
 its original LGPL-3.0-or-later license and upstream attribution preserved.
 
 ## Build and Run
 
 Clone with the engine submodule:
 ```bash
-git clone --recurse-submodules https://github.com/eugenegalunin/four-winds-reborn.git
+git clone --recurse-submodules https://github.com/jaskes/four-winds-reborn.git
 cd four-winds-reborn
 ```
 
@@ -42,6 +47,11 @@ Install [MSYS2](https://www.msys2.org/) in `C:\msys64` first, or pass
 `-MsysRoot D:\path\to\msys64`. Later builds only need
 `.\scripts\build-windows.ps1`. Unix scripts accept `--clean`, `--debug` and
 `--no-tests`; PowerShell accepts `-Clean`, `-DebugBuild` and `-NoTests`.
+
+Close a packaged game launched from `dist/windows` before rebuilding it. The
+PowerShell wrapper detects a live packaged executable and stops before touching
+the distribution; packaging is assembled in `dist/windows-staging` first so a
+failed copy cannot leave a half-populated release directory.
 
 Manual requirements are CMake 3.14+, a C++17 compiler, pkg-config, zlib, SDL2,
 SDL2_image, SDL2_mixer and SDL2_ttf. Boost stacktrace is optional because the
@@ -79,6 +89,34 @@ Print the deterministic avatar and Hell Blast balance report:
 The baseline compares summon rosters, spell plans and avatar passives on common fixtures.
 Catastrophic is represented by Hell Blast in the spell score; Bard, Monacle, Luck and
 Telepath are reported in a separate passive column.
+
+Run the real-rules full-match balance laboratory on Windows (one published seed,
+four seat rotations by default):
+```powershell
+.\scripts\run-balance-lab.ps1
+```
+
+Run the independent doctrine/difficulty comparison matrix (60 isolated matches
+for one seed, 480 for all eight):
+```powershell
+.\scripts\run-balance-matrix.ps1
+.\scripts\run-balance-matrix.ps1 -SeedCount 8
+```
+
+Run controlled avatar substitutions in fixed clan slots (52 isolated matches
+for one seed, 416 for all eight):
+```powershell
+.\scripts\run-balance-cohorts.ps1
+.\scripts\run-balance-cohorts.ps1 -SeedCount 8
+```
+
+Each match runs in a fresh child process; it exports detailed event telemetry,
+versioned JSON, per-player CSV, a concise text report and full replays for
+failures/statistical outliers. The fixed seed list, legal clan/seat rotation
+contract and larger-run guidance are in
+[`docs/BalanceLab.md`](docs/BalanceLab.md). The current controlled strength view,
+including direct fixed-clan and provisional clan-adjusted tiers, is in
+[`docs/BalanceTiers.md`](docs/BalanceTiers.md).
 
 ## Crash Diagnostics
 

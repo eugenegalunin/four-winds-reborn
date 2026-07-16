@@ -278,6 +278,7 @@ class AdventurePartScreen : public MapScreenBase
     void		renderLabel(void) override;
     bool		isAdventureMode(void) const override { return true; }
     void		updateCommandButtons(void);
+    bool                commitPendingOrders(void);
     void                cancelOrderMode(bool redraw = true);
     bool                moveSelectedParty(const Land &, const Land &);
 

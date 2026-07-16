@@ -1,6 +1,6 @@
 [
         {
-	    "id": "red",
+	    "id": "maitha",
 	    "name": "Maitha",
 	    "button": "button1",
 	    "flag1": "flag1",
@@ -11,7 +11,7 @@
 	    "townflag2": "townflag12"
 	},
         {
-	    "id": "yellow",
+	    "id": "kartha",
 	    "name": "Kartha",
 	    "button": "button2",
 	    "flag1": "flag2",
@@ -22,7 +22,7 @@
 	    "townflag2": "townflag22"
 	},
         {
-	    "id": "aqua",
+	    "id": "iz",
 	    "name": "Iz",
 	    "button": "button3",
 	    "flag1": "flag3",
@@ -33,7 +33,7 @@
 	    "townflag2": "townflag32"
 	},
         {
-	    "id": "purple",
+	    "id": "marz",
 	    "name": "Marz",
 	    "button": "button4",
 	    "flag1": "flag4",

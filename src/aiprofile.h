@@ -87,16 +87,25 @@ namespace AI
         int spellHorizonAdjustment;
         int maximumSpellHorizon;
         int partyCoordinationAdjustment;
+        int strategicGoalLimit;
+        int strategicDrawHorizon;
+        int strategicBranchLimit;
     };
 
     const char*             difficultyName(Difficulty);
+    bool                    difficultyFromString(const std::string &, Difficulty &);
     Difficulty              difficultyFromString(const std::string &);
     Difficulty              nextDifficulty(Difficulty);
     const DifficultyRules & difficultyRules(Difficulty);
     int                     spellPlanningHorizon(BehaviorProfile, Difficulty);
     int                     maximumPartiesPerTarget(BehaviorProfile, Difficulty);
     const char*             behaviorProfileName(BehaviorProfile);
+    bool                    behaviorProfileFromString(const std::string &, BehaviorProfile &);
     BehaviorProfile         behaviorProfileFromString(const std::string &);
+    bool                    behaviorProfileOverrideEnabled(void);
+    BehaviorProfile         behaviorProfileOverride(void);
+    void                    setBehaviorProfileOverride(BehaviorProfile);
+    void                    clearBehaviorProfileOverride(void);
     BehaviorProfile         behaviorProfile(const RemotePlayer &);
     const BehaviorRules &   behaviorRules(BehaviorProfile);
     int                     creatureSummonScore(const Creature &, BehaviorProfile);

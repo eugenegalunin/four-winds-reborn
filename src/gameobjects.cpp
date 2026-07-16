@@ -31,7 +31,7 @@
 #include "gameplayrng.h"
 #include "gamedata.h"
 
-std::initializer_list<Clan::clan_t> clans_all = { Clan::Red, Clan::Yellow, Clan::Aqua, Clan::Purple };
+std::initializer_list<Clan::clan_t> clans_all = { Clan::Maitha, Clan::Kartha, Clan::Iz, Clan::Marz };
 std::initializer_list<Wind::wind_t> winds_all = { Wind::East, Wind::South, Wind::West, Wind::North };
 std::initializer_list<Land::land_t> lands_all = { Land::TowerOf4Winds, Land::Maithaius, Land::Baliphon, Land::Vermille, Land::Sulanthia,
 		Land::Trojensek, Land::Talon, Land::Siramak, Land::Ronzinol, Land::Corzen, Land::Greenbaw, Land::Zubrus, Land::Corimar,
@@ -57,6 +57,19 @@ namespace
     const StringList & spellsId = idsList[5];
     const StringList & creaturesId = idsList[6];
     const StringList & landsId = idsList[7];
+
+    const char* legacyClanId(const Clan & clan)
+    {
+        switch(clan())
+        {
+            case Clan::Maitha: return "red";
+            case Clan::Kartha: return "yellow";
+            case Clan::Iz:     return "aqua";
+            case Clan::Marz:   return "purple";
+            default: break;
+        }
+        return "none";
+    }
 }
 
 namespace GameData
@@ -135,7 +148,11 @@ std::string Wind::toString(void) const
 
 Clan::Clan(const std::string & str) : Enum(None)
 {
-    if(str != "none")
+    if(str == "Maitha" || str == "maitha" || str == "red") val = Maitha;
+    else if(str == "Kartha" || str == "kartha" || str == "yellow") val = Kartha;
+    else if(str == "Iz" || str == "iz" || str == "aqua") val = Iz;
+    else if(str == "Marz" || str == "marz" || str == "purple") val = Marz;
+    else if(str != "none")
     {
 	auto it = std::find(clansId.begin(), clansId.end(), str);
 	if(it != clansId.end()) val = std::distance(clansId.begin(), it);
@@ -147,10 +164,10 @@ Clan Clan::prev(void) const
 {
     switch(id())
     {
-	case Red:	return Purple;
-	case Yellow:	return Red;
-	case Aqua:	return Yellow;
-	case Purple:	return Aqua;
+	case Maitha:	return Marz;
+	case Kartha:	return Maitha;
+	case Iz:	return Kartha;
+	case Marz:	return Iz;
 	default: break;
     }
     return None;
@@ -160,10 +177,10 @@ Clan Clan::next(void) const
 {
     switch(id())
     {
-	case Red:	return Yellow;
-	case Yellow:	return Aqua;
-	case Aqua:	return Purple;
-	case Purple:	return Red;
+	case Maitha:	return Kartha;
+	case Kartha:	return Iz;
+	case Iz:	return Marz;
+	case Marz:	return Maitha;
 	default: break;
     }
     return None;
@@ -174,6 +191,19 @@ std::string Clan::toString(void) const
     auto it = clansId.begin();
     std::advance(it, index());
     return it != clansId.end() ? *it : "none";
+}
+
+std::string Clan::canonicalName(void) const
+{
+    switch(id())
+    {
+        case Maitha:    return "Maitha";
+        case Kartha:    return "Kartha";
+        case Iz:        return "Iz";
+        case Marz:      return "Marz";
+        default: break;
+    }
+    return "None";
 }
 
 Clan Clan::random(void)
@@ -1266,11 +1296,10 @@ void GameStones::remove(const WinRule & rule)
 	case WinRule::Chao:
 	    if(! rule.stone().isSpecial())
 	    {
-		auto itend = std::remove_if(begin(), end(),
-				    [&](const Stone & st){ return st == rule.stone().next() || st == rule.stone().next().next(); });
-		if(itend != end())
-		    erase(itend, end());
-		else
+		const bool removedFirst = removeStone(rule.stone());
+		const bool removedSecond = removeStone(rule.stone().next());
+		const bool removedThird = removeStone(rule.stone().next().next());
+		if(!removedFirst || !removedSecond || !removedThird)
 		    ERROR("chao not found: " << rule.stone().id());
 	    }
 	    break;
@@ -1818,7 +1847,7 @@ bool BattleCreature::applySpell(const Spell & spell)
     {
 	int chance = SpecialityMagicResistence().chance(Creature::id());
 
-	if(chance > GameplayRng::uniform(1, 100))
+	if(chance >= GameplayRng::uniform(1, 100))
 	{
 	    VERBOSE("Speciality: " << "Magic Resistence!");
 	    return false;
@@ -3240,7 +3269,10 @@ LandClaims LandClaims::fromJsonObject(const JsonObject & jo)
     for(auto clanId : clans_all)
     {
         const Clan clan(clanId);
-        res.values[clan()] = std::max(0, jo.getInteger(clan.toString(), 0));
+        int points = jo.getInteger(clan.toString(), -1);
+        if(points < 0)
+            points = jo.getInteger(legacyClanId(clan), 0);
+        res.values[clan()] = std::max(0, points);
     }
     return res;
 }

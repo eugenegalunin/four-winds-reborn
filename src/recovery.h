@@ -9,6 +9,8 @@ namespace Recovery
 {
     constexpr int SlotCount = 3;
 
+    bool enabled(void);
+    void setEnabled(bool);
     std::string defaultDirectory(void);
     std::string stateHash(const std::string & saveData);
     std::string stateHash(const SWE::JsonValue & state);

@@ -27,11 +27,16 @@
 #include "aiturn.h"
 #include "aiadventure.h"
 #include "aispell.h"
+#include "aistrategy.h"
 #include "gameplayrng.h"
 
 namespace GameData
 {
     extern LocalPlayers gamers;
+    extern int bonusKong;
+    extern int bonusPung;
+    extern int bonusChao;
+    extern int bonusPass;
 
     LocalPlayer &	playerOfAvatar(const Avatar &);
     LocalPlayer &	playerOfClan(const Clan &);
@@ -98,65 +103,40 @@ bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecS
 	    mahjongSummonCast(avatar, summons, casts, actions);
     }
 
+    // Keep rune decisions connected to the same observer-legal strategic goals
+    // that later summon/spell planning will consume.
+    const StrategicIntent intent = chooseStrategicIntent(
+        observePlayer(avatar), behaviorProfile(player), GameData::aiDifficulty());
+    DEBUG("AI strategy: " << intent.trace());
+
     // drop stone
-    int dropIndex = mahjongSelect(player.stones, trash, other);
+    int dropIndex = mahjongSelect(player.stones, trash, other, intent);
     return GameData::client2Mahjong(avatar, ClientDropIndex(dropIndex), actions);
-}
-
-namespace
-{
-    bool trySummon(const LocalPlayer & player, Creatures summons, ActionList & actions)
-    {
-        if(summons.empty() || player.army.isMaximumSummoning()) return false;
-
-        const AI::BehaviorProfile profile = AI::behaviorProfile(player);
-
-        summons.erase(std::remove_if(summons.begin(), summons.end(), [&](const Creature & creature)
-        {
-            const CreatureInfo & info = GameData::creatureInfo(creature);
-            return info.unique && GameData::findCreatureUnique(creature);
-        }), summons.end());
-        std::sort(summons.begin(), summons.end(), [&](const Creature & left, const Creature & right)
-        {
-            const int leftValue = AI::creatureSummonScore(left, profile);
-            const int rightValue = AI::creatureSummonScore(right, profile);
-            return leftValue == rightValue ? left() < right() : leftValue > rightValue;
-        });
-
-        Lands lands = Lands::thisClan(player.clan).powerOnly();
-        lands.erase(std::remove_if(lands.begin(), lands.end(), [&](const Land & land)
-        {
-            const BattleParty* party = player.army.findPartyConst(land);
-            return party && !party->canJoin();
-        }), lands.end());
-        std::sort(lands.begin(), lands.end(), [&](const Land & left, const Land & right)
-        {
-            const BattleParty* leftParty = player.army.findPartyConst(left);
-            const BattleParty* rightParty = player.army.findPartyConst(right);
-            const int leftValue = (leftParty ? 100 : 0) + GameData::landInfo(left).stat.point;
-            const int rightValue = (rightParty ? 100 : 0) + GameData::landInfo(right).stat.point;
-            return leftValue == rightValue ? left() < right() : leftValue > rightValue;
-        });
-
-        for(const Creature & creature : summons)
-            for(const Land & land : lands)
-                if(GameData::client2Mahjong(player.avatar, ClientSummonCreature(creature, land), actions))
-                    return true;
-
-        return false;
-    }
 }
 
 void AI::mahjongSummonCast(const Avatar & avatar, const Creatures & summons, const Spells & casts, ActionList & actions)
 {
     const LocalPlayer & player = GameData::playerOfAvatar(avatar);
-    const SpellCastPlan spellPlan = chooseSpellCast(player, casts);
+    const TurnPlan plan = chooseStrategicTurnPlan(
+        observePlayer(avatar), summons, casts, behaviorProfile(player), GameData::aiDifficulty());
+    DEBUG("AI turn plan: " << plan.trace());
 
-    // Each profile decides when a tactical plan is worth delaying a summon.
-    if(shouldCastBeforeSummon(spellPlan) && executeSpellCast(player, spellPlan, actions)) return;
-    if(trySummon(player, summons, actions)) return;
+    for(const TurnBranch & branch : plan.branches)
+    {
+        if(branch.action == StrategicAction::Spell)
+        {
+            if(executeSpellCast(player, branch.spell, actions)) return;
+            continue;
+        }
 
-    executeSpellCast(player, spellPlan, actions);
+        // A hidden globally unique creature may still make this observer-legal
+        // branch fail authoritative validation. Continue through the bounded plan
+        // without consulting hidden state.
+        if(GameData::client2Mahjong(player.avatar,
+                                    ClientSummonCreature(branch.summon.creature,
+                                                         branch.summon.destination), actions))
+            return;
+    }
 }
 
 void AI::mahjongOtherPass(const Wind & currentWind, ActionList & actions, const Wind & skip)
@@ -170,6 +150,122 @@ void AI::mahjongOtherPass(const Wind & currentWind, ActionList & actions, const 
 
 	actions.push_back(MahjongPass(id));
     }
+}
+
+namespace
+{
+    Stones mahjongCallRunes(AI::MahjongCallType type, const Stone & dropStone,
+                            const Stone & chaoStart = Stone())
+    {
+        Stones consumed;
+        if(type == AI::MahjongCallType::Pung || type == AI::MahjongCallType::Kong)
+        {
+            const int count = type == AI::MahjongCallType::Kong ? 3 : 2;
+            for(int index = 0; index < count; ++index) consumed.push_back(dropStone);
+            return consumed;
+        }
+
+        if(type == AI::MahjongCallType::Chao)
+        {
+            const Stone sequence[] = { chaoStart, chaoStart.next(), chaoStart.next().next() };
+            bool usedDrop = false;
+            for(const Stone & stone : sequence)
+            {
+                if(!usedDrop && stone == dropStone)
+                {
+                    usedDrop = true;
+                    continue;
+                }
+                consumed.push_back(stone);
+            }
+        }
+        return consumed;
+    }
+
+    int mahjongRunePreservationCost(const GameStones & hand, const Stones & consumed,
+                                    const AI::StrategicIntent & intent)
+    {
+        std::vector<bool> used(hand.size(), false);
+        int result = 0;
+        for(const Stone & rune : consumed)
+        {
+            for(std::size_t index = 0; index < hand.size(); ++index)
+            {
+                if(used[index] || hand[index] != rune) continue;
+                used[index] = true;
+                if(!GameStone::isCasted(hand[index])) result += intent.runeValue(rune);
+                break;
+            }
+        }
+        return result;
+    }
+
+    int mahjongCallScore(const LocalPlayer & player, AI::MahjongCallType type,
+                         const Stones & consumed, const AI::StrategicIntent & intent)
+    {
+        int result = 45 + 12 * (static_cast<int>(player.rules.size()) + 1);
+        switch(type)
+        {
+            case AI::MahjongCallType::Kong:
+                result += 35 + GameData::bonusKong - GameData::bonusPass;
+                break;
+            case AI::MahjongCallType::Pung:
+                result += 20 + GameData::bonusPung - GameData::bonusPass;
+                break;
+            case AI::MahjongCallType::Chao:
+                result += 5 + GameData::bonusChao - GameData::bonusPass;
+                break;
+            case AI::MahjongCallType::Pass:
+                return 0;
+        }
+        return result - mahjongRunePreservationCost(player.stones, consumed, intent);
+    }
+
+    int mahjongCallPriority(AI::MahjongCallType type)
+    {
+        switch(type)
+        {
+            case AI::MahjongCallType::Kong: return 3;
+            case AI::MahjongCallType::Pung: return 2;
+            case AI::MahjongCallType::Chao: return 1;
+            case AI::MahjongCallType::Pass: break;
+        }
+        return 0;
+    }
+}
+
+AI::MahjongCallPlan AI::chooseMahjongCall(const LocalPlayer & player, const Wind & currentWind,
+                                          const Stone & dropStone, const StrategicIntent & intent)
+{
+    MahjongCallPlan best;
+    auto consider = [&](MahjongCallType type, const Stones & consumed, int variant)
+    {
+        const int score = mahjongCallScore(player, type, consumed, intent);
+        if(score > best.score ||
+           (score == best.score && mahjongCallPriority(type) > mahjongCallPriority(best.type)))
+        {
+            best.type = type;
+            best.variant = variant;
+            best.score = score;
+        }
+    };
+
+    if(player.isMahjongKong1(currentWind, dropStone))
+        consider(MahjongCallType::Kong,
+                 mahjongCallRunes(MahjongCallType::Kong, dropStone), -1);
+    if(player.isMahjongPung(currentWind, dropStone))
+        consider(MahjongCallType::Pung,
+                 mahjongCallRunes(MahjongCallType::Pung, dropStone), -1);
+    if(player.isMahjongChao(currentWind, dropStone))
+    {
+        const Stones variants = player.stones.findChaoVariants(dropStone);
+        for(std::size_t index = 0; index < variants.size(); ++index)
+            consider(MahjongCallType::Chao,
+                     mahjongCallRunes(MahjongCallType::Chao, dropStone, variants[index]),
+                     static_cast<int>(index));
+    }
+
+    return best;
 }
 
 bool AI::mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWind, const Stone & dropStone, WinResults & winResult, ActionList & actions, bool sayOnly)
@@ -192,51 +288,43 @@ bool AI::mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWin
 	}
     }
 
-    // set kong, pung
-    for(auto & id : winds_all)
-    {
-	if(id == currentWind())
+	std::vector<std::pair<Avatar, MahjongCallPlan>> callPlans;
+	callPlans.reserve(3);
+	for(auto & id : winds_all)
+	{
+	    if(id == currentWind())
 		continue;
 
-	LocalPlayer & playerAI = GameData::playerOfWind(id);
+	    LocalPlayer & playerAI = GameData::playerOfWind(id);
+	    if(!playerAI.isAI()) continue;
 
-	if(playerAI.isAI())
-	{
-	    if(playerAI.isMahjongKong1(currentWind, dropStone))
-	    {
-		if(sayOnly)
-		    return GameData::client2Mahjong(playerAI.avatar, ClientSayKong(2), actions);
-		else
-		    return GameData::client2Mahjong(playerAI.avatar, ClientButtonKong1(), actions);
-	    }
-	    else
-	    if(playerAI.isMahjongPung(currentWind, dropStone))
-	    {
-		if(sayOnly)
-		    return GameData::client2Mahjong(playerAI.avatar, ClientSayPung(), actions);
-		else
-		    return GameData::client2Mahjong(playerAI.avatar, ClientButtonPung(), actions);
-	    }
+	    const StrategicIntent intent = chooseStrategicIntent(
+		observePlayer(playerAI.avatar), behaviorProfile(playerAI), GameData::aiDifficulty());
+	    const MahjongCallPlan plan = chooseMahjongCall(playerAI, currentWind, dropStone, intent);
+	    DEBUG("AI Mahjong call: avatar=" << playerAI.avatar.toString() <<
+		  ", type=" << static_cast<int>(plan.type) << ", score=" << plan.score <<
+		  ", variant=" << plan.variant);
+	    if(plan.isCall()) callPlans.emplace_back(playerAI.avatar, plan);
 	}
-    }
 
-    // set chao
-    for(auto & id : winds_all)
-    {
-	if(id == currentWind())
-	    continue;
-
-	LocalPlayer & playerAI = GameData::playerOfWind(id);
-
-	if(playerAI.isAI() &&
-	    playerAI.isMahjongChao(currentWind, dropStone))
+	// Game is always accepted. Among optional calls, preserve the rules priority
+	// of Kong/Pung over Chao while allowing each AI to prefer Pass.
+	for(const auto & entry : callPlans)
 	{
-	    if(sayOnly)
-		return GameData::client2Mahjong(playerAI.avatar, ClientSayChao(), actions);
-	    else
-		return GameData::client2Mahjong(playerAI.avatar, ClientChaoVariant(255), actions);
+	    if(entry.second.type == MahjongCallType::Kong)
+		return sayOnly ? GameData::client2Mahjong(entry.first, ClientSayKong(2), actions) :
+		                 GameData::client2Mahjong(entry.first, ClientButtonKong1(), actions);
+	    if(entry.second.type == MahjongCallType::Pung)
+		return sayOnly ? GameData::client2Mahjong(entry.first, ClientSayPung(), actions) :
+		                 GameData::client2Mahjong(entry.first, ClientButtonPung(), actions);
 	}
-    }
+
+	for(const auto & entry : callPlans)
+	{
+	    if(entry.second.type != MahjongCallType::Chao) continue;
+	    return sayOnly ? GameData::client2Mahjong(entry.first, ClientSayChao(), actions) :
+	                     GameData::client2Mahjong(entry.first, ClientChaoVariant(entry.second.variant), actions);
+	}
 
     return false;
 }
@@ -310,13 +398,20 @@ int mahjongStoneValue(const GameStones & stones, const GameStone & stone,
 
 int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const WinRules & other)
 {
+    return mahjongSelect(stones, trash, other, StrategicIntent());
+}
+
+int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const WinRules & other,
+                      const StrategicIntent & intent)
+{
     std::multiset<StoneCost> result;
 
     for(auto it = stones.begin(); it != stones.end(); ++it)
     {
 	const GameStone & stone = *it;
+	const int strategicValue = stone.isCasted() ? 0 : intent.runeValue(stone);
 	result.emplace(stone, std::distance(stones.begin(), it),
-	               mahjongStoneValue(stones, stone, trash, other));
+	               mahjongStoneValue(stones, stone, trash, other) + strategicValue);
     }
 
     if(result.size())
@@ -344,6 +439,13 @@ int AI::mahjongSelect(const GameStones & stones, const VecStones & trash, const 
 int AI::mahjongLuckChoice(const GameStones & stones, const VecStones & choices,
                           const VecStones & trash, const WinRules & other)
 {
+    return mahjongLuckChoice(stones, choices, trash, other, StrategicIntent());
+}
+
+int AI::mahjongLuckChoice(const GameStones & stones, const VecStones & choices,
+                          const VecStones & trash, const WinRules & other,
+                          const StrategicIntent & intent)
+{
     int selected = 0;
     int bestValue = std::numeric_limits<int>::min();
 
@@ -352,7 +454,7 @@ int AI::mahjongLuckChoice(const GameStones & stones, const VecStones & choices,
 	GameStones hand = stones;
 	const GameStone candidate(choices[index], false);
 	hand.add(candidate);
-	const int value = mahjongStoneValue(hand, candidate, trash, other);
+	const int value = mahjongStoneValue(hand, candidate, trash, other) + intent.runeValue(candidate);
 	if(bestValue < value)
 	{
 	    bestValue = value;

@@ -418,7 +418,7 @@ MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("
         forecastSurvival = GameTheme::jsonTextInfo(*forecast, "textinfo:survival");
     }
 
-    // const Texture & tmp = GameTheme::texture(GameData::clanInfo(Clan::Red).button);
+    // const Texture & tmp = GameTheme::texture(GameData::clanInfo(Clan::Maitha).button);
 
     bar1.setPosition(topClanPos);
     bar2.setPosition(botClanPos);
@@ -1146,6 +1146,32 @@ bool AdventurePartScreen::isAllowMoveFlag(const LandInfo & info) const
     return !orderSource.isValid() && MapScreenBase::isAllowMoveFlag(info);
 }
 
+bool AdventurePartScreen::commitPendingOrders(void)
+{
+    if(history.empty()) return true;
+
+    bool accepted = true;
+    for(const CreatureMoved & creatureMoved : history)
+    {
+        if(!GameData::client2Adventure(myAvatar,
+                                      ClientUnitMoved(creatureMoved.first, creatureMoved.second),
+                                      actions))
+        {
+            accepted = false;
+            break;
+        }
+    }
+
+    history.clear();
+    MapScreenBase::ld = GameData::toLocalData(myAvatar);
+    selectedCreature.reset();
+    affectedSpells.setVisible(false);
+    bar1.reset();
+    bar2.reset();
+    updateCommandButtons();
+    return accepted;
+}
+
 void AdventurePartScreen::cancelOrderMode(bool redraw)
 {
     if(!orderSource.isValid()) return;
@@ -1332,7 +1358,30 @@ void AdventurePartScreen::actionButtonOrder(void)
 
 void AdventurePartScreen::actionButtonMenu(void)
 {
-    FIXME("menu not implemented... sorry");
+    if(!MessageBox(_("Menu"), _("Exit game?"), *this).exec())
+    {
+        renderWindow();
+        return;
+    }
+
+    if(!commitPendingOrders())
+    {
+        MessageBox(_("Order"), _("Unable to apply pending orders."), *this, false).exec();
+        renderWindow();
+        return;
+    }
+
+    JsonObject gui;
+    gui.addString("type", "AdventurePart");
+    if(!GameData::saveGame(gui))
+    {
+        MessageBox(_("Error"), _("Unable to save game."), *this, false).exec();
+        renderWindow();
+        return;
+    }
+
+    setResultCode(Menu::GameExit);
+    setVisible(false);
 }
 
 void AdventurePartScreen::actionButtonDismiss(void)
@@ -1403,8 +1452,13 @@ void AdventurePartScreen::actionButtonDone(void)
     cancelOrderMode(false);
     if(buttonDone) buttonDone->setDisabled(true);
 
-    for(auto & creatureMoved : history)
-	GameData::client2Adventure(myAvatar, ClientUnitMoved(creatureMoved.first, creatureMoved.second), actions);
+    if(!commitPendingOrders())
+    {
+        if(buttonDone) buttonDone->setDisabled(false);
+        MessageBox(_("Order"), _("Unable to apply pending orders."), *this, false).exec();
+        renderWindow();
+        return;
+    }
 
     GameData::client2Adventure(myAvatar, ClientBattleReady(), actions);
 }
@@ -1632,9 +1686,10 @@ bool AdventurePartScreen::actionAdventureEnd(const ActionMessage & v)
 
 bool AdventurePartScreen::keyPressEvent(const KeySym & ks)
 {
-    if(ks.keycode() == SWE::Key::ESCAPE && orderSource.isValid())
+    if(ks.keycode() == SWE::Key::ESCAPE)
     {
-	cancelOrderMode();
+	if(orderSource.isValid()) cancelOrderMode();
+	else actionButtonMenu();
 	return true;
     }
 

@@ -28,6 +28,7 @@
 class GameSummaryScreen : public JsonWindow
 {
     std::list<JsonTextInfo> labels;
+    std::list<JsonTextInfo> values;
     JsonButton*         buttonNext;
 
 protected:

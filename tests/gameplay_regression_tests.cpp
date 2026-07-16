@@ -1,13 +1,17 @@
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <initializer_list>
 #include <map>
+#include <sstream>
 #include <vector>
 
 #include "aiadventure.h"
 #include "aibattle.h"
 #include "aispell.h"
+#include "aistrategy.h"
 #include "aiturn.h"
 #include "avatar_balance_tests.h"
 #include "battle.h"
@@ -16,6 +20,8 @@
 #include "recovery.h"
 #include "replay.h"
 #include "settings.h"
+#include "simulation.h"
+#include "tournament.h"
 
 #if defined(_WIN32)
 #ifdef ERROR
@@ -43,6 +49,18 @@ extern std::vector<CreatureInfo> creaturesInfo;
 extern std::vector<SpellInfo> spellsInfo;
 extern std::vector<LandInfo> landsInfo;
 extern std::vector<AvatarInfo> avatarsInfo;
+extern std::vector<StoneInfo> stonesInfo;
+extern std::vector<WindInfo> windsInfo;
+extern std::vector<ClanInfo> clansInfo;
+extern std::vector<AbilityInfo> abilitiesInfo;
+extern std::vector<SpecialityInfo> specialsInfo;
+extern std::vector<Clan> initialLandOwners;
+extern int bonusStart;
+extern int bonusGame;
+extern int bonusKong;
+extern int bonusPung;
+extern int bonusChao;
+extern int bonusPass;
 extern LocalPlayers gamers;
 extern Wind currentWind;
 JsonObject toJsonObject(const JsonObject &);
@@ -68,7 +86,7 @@ BattleCreature creature(int uid, int move, int loyalty = 3, int ranger = 1)
     stat.defense = 1;
     stat.loyalty = loyalty;
     stat.move = move;
-    return BattleCreature(Clan::Red, Creature::SkeletonHorde, CreatureSkill(stat), uid);
+    return BattleCreature(Clan::Maitha, Creature::SkeletonHorde, CreatureSkill(stat), uid);
 }
 
 BattleCreature combatCreature(const Clan & clan, const Creature & id, int uid,
@@ -134,10 +152,27 @@ Spells spellSet(std::initializer_list<Spell::spell_t> values)
 
 void testDifficultyRules()
 {
+    AI::Difficulty parsedDifficulty = AI::Difficulty::Normal;
+    AI::BehaviorProfile parsedProfile = AI::BehaviorProfile::Balanced;
     expect(AI::difficultyFromString("EASY") == AI::Difficulty::Easy,
            "AI difficulty parsing must be case insensitive");
+    expect(AI::difficultyFromString("hard", parsedDifficulty) &&
+           parsedDifficulty == AI::Difficulty::Hard &&
+           !AI::difficultyFromString("impossible", parsedDifficulty),
+           "strict AI difficulty parsing must reject unknown matrix axes");
     expect(AI::difficultyFromString("") == AI::Difficulty::Normal,
            "missing AI difficulty must preserve Normal compatibility for old saves");
+    expect(AI::behaviorProfileFromString("CONTROL", parsedProfile) &&
+           parsedProfile == AI::BehaviorProfile::Control &&
+           !AI::behaviorProfileFromString("impossible", parsedProfile),
+           "strict behavior-profile parsing must reject unknown matrix axes");
+    AI::setBehaviorProfileOverride(AI::BehaviorProfile::Economic);
+    expect(AI::behaviorProfileOverrideEnabled() &&
+           AI::behaviorProfileOverride() == AI::BehaviorProfile::Economic,
+           "balance laboratory must be able to force doctrine independently of avatar");
+    AI::clearBehaviorProfileOverride();
+    expect(!AI::behaviorProfileOverrideEnabled(),
+           "behavior-profile override must return to native avatar doctrine");
     expect(AI::nextDifficulty(AI::Difficulty::Easy) == AI::Difficulty::Normal &&
            AI::nextDifficulty(AI::Difficulty::Normal) == AI::Difficulty::Hard &&
            AI::nextDifficulty(AI::Difficulty::Hard) == AI::Difficulty::Easy,
@@ -156,6 +191,14 @@ void testDifficultyRules()
            AI::maximumPartiesPerTarget(AI::BehaviorProfile::Aggressive,
                                        AI::Difficulty::Hard) == 3,
            "hard AI must coordinate more attacking parties than easy AI");
+    expect(AI::difficultyRules(AI::Difficulty::Easy).strategicGoalLimit == 2 &&
+           AI::difficultyRules(AI::Difficulty::Normal).strategicGoalLimit == 4 &&
+           AI::difficultyRules(AI::Difficulty::Hard).strategicGoalLimit == 6,
+           "higher AI difficulty must retain a wider strategic goal beam");
+    expect(AI::difficultyRules(AI::Difficulty::Easy).strategicBranchLimit == 3 &&
+           AI::difficultyRules(AI::Difficulty::Normal).strategicBranchLimit == 6 &&
+           AI::difficultyRules(AI::Difficulty::Hard).strategicBranchLimit == 10,
+           "higher AI difficulty must retain a wider strategic action beam");
 
     GameData::setAIDifficulty(AI::Difficulty::Hard);
     expect(GameData::toJsonObject(JsonObject()).getString("ai:difficulty") == "hard",
@@ -163,10 +206,196 @@ void testDifficultyRules()
     GameData::setAIDifficulty(AI::Difficulty::Normal);
 }
 
+void testStrategicRunePlanning()
+{
+    GameData::gamers.clear();
+
+    const Avatar::avatar_t avatars[] = {
+        Avatar::Orachi, Avatar::Lakkho, Avatar::Dayla, Avatar::Ziag
+    };
+    for(int index = 0; index < 4; ++index)
+    {
+        LocalPlayer player;
+        player.avatar = avatars[index];
+        player.clan = Clan(static_cast<Clan::clan_t>(Clan::Maitha + index));
+        player.wind = Wind(static_cast<Wind::wind_t>(Wind::East + index));
+        player.points = 500;
+        GameData::gamers.push_back(player);
+    }
+    GameData::currentWind = Wind::East;
+
+    LocalPlayer & orachi = GameData::gamers.front();
+    orachi.stones.add(GameStone(Stone(Stone::Skull1), false));
+    orachi.stones.add(GameStone(Stone(Stone::Number2), false));
+
+    const AI::AIObservation baselineObservation = AI::observePlayer(orachi.avatar);
+    const AI::StrategicIntent baseline = AI::chooseStrategicIntent(
+        baselineObservation, AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+    expect(!baseline.runeGoals.empty() &&
+           baseline.runeValue(Stone(Stone::Skull1)) > baseline.runeValue(Stone(Stone::Number2)),
+           "strategic Rune AI must value a held summon rune above an unrelated rune");
+
+    const int drop = AI::mahjongSelect(orachi.stones, VecStones(), WinRules(), baseline);
+    expect(0 <= drop && drop < static_cast<int>(orachi.stones.size()) &&
+           orachi.stones[drop] == Stone(Stone::Number2),
+           "strategic Rune AI must keep the rune needed by its ranked summon goal");
+    expect(baseline.trace().find("goal=") != std::string::npos &&
+           baseline.trace().find("rune_gain=") != std::string::npos &&
+           baseline.trace().find("visible_remaining=") != std::string::npos,
+           "strategic AI must expose deterministic score components in its trace");
+
+    Creatures hiddenUniqueOptions;
+    hiddenUniqueOptions.push_back(Creature(Creature::KilorCelsbane));
+    hiddenUniqueOptions.push_back(Creature(Creature::SkeletonHorde));
+    const std::vector<AI::SummonCandidate> baselineSummons = AI::rankSummonCandidates(
+        baselineObservation, hiddenUniqueOptions, AI::BehaviorProfile::Aggressive);
+    const Spells noStrategicCasts;
+    const AI::SpellCastPlan baselineHiddenSpell = AI::chooseSpellCast(
+        baselineObservation.state(), spellSet({ Spell::LightningBolt }),
+        AI::BehaviorProfile::Aggressive, noStrategicCasts);
+    const AI::TurnPlan baselineTurn = AI::chooseStrategicTurnPlan(
+        baselineObservation, hiddenUniqueOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+
+    BattleParty hiddenParty(Clan::Kartha, Land::Zubrus);
+    expect(hiddenParty.join(BattleCreature(Clan::Kartha, Creature::KilorCelsbane, 2450)),
+           "strategic hidden-information fixture must join Kilor");
+    GameData::gamers[1].army.push_back(hiddenParty);
+
+    const AI::AIObservation hiddenObservation = AI::observePlayer(orachi.avatar);
+    const AI::StrategicIntent withHiddenEnemy = AI::chooseStrategicIntent(
+        hiddenObservation, AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+    const std::vector<AI::SummonCandidate> hiddenSummons = AI::rankSummonCandidates(
+        hiddenObservation, hiddenUniqueOptions, AI::BehaviorProfile::Aggressive);
+    const AI::SpellCastPlan hiddenEnemySpell = AI::chooseSpellCast(
+        hiddenObservation.state(), spellSet({ Spell::LightningBolt }),
+        AI::BehaviorProfile::Aggressive, noStrategicCasts);
+    const AI::TurnPlan hiddenTurn = AI::chooseStrategicTurnPlan(
+        hiddenObservation, hiddenUniqueOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+    expect(!hiddenObservation.visibleCreature(Creature(Creature::KilorCelsbane)),
+           "AIObservation must remove an undetected invisible third-party creature");
+    expect(withHiddenEnemy.trace() == baseline.trace(),
+           "an invisible third-party army must not affect the strategic AI plan");
+    expect(hiddenSummons.size() == baselineSummons.size() &&
+           std::equal(hiddenSummons.begin(), hiddenSummons.end(), baselineSummons.begin(),
+                      [](const AI::SummonCandidate & left, const AI::SummonCandidate & right)
+                      {
+                          return left.trace() == right.trace();
+                      }),
+           "an invisible global unique creature must not alter observer-legal summon ranking");
+    expect(!baselineHiddenSpell.isValid() && !hiddenEnemySpell.isValid(),
+           "observer-safe spell planning must not target an undetected invisible creature");
+    expect(hiddenTurn.trace() == baselineTurn.trace(),
+           "an invisible third-party army must not alter the bounded strategic turn plan");
+    expect(!baselineTurn.branches.empty() &&
+           baselineTurn.trace().find("branch[0]") != std::string::npos &&
+           baselineTurn.trace().find("adventure=") != std::string::npos &&
+           baselineTurn.trace().find("visible_defense=") != std::string::npos,
+           "strategic TurnPlan must expose deterministic action and Adventure scores");
+
+    Creatures wideSummonOptions;
+    for(const CreatureInfo & info : GameData::creaturesInfo)
+    {
+        if(info.id.isValid()) wideSummonOptions.push_back(info.id);
+        if(12 <= wideSummonOptions.size()) break;
+    }
+    const AI::TurnPlan easyTurn = AI::chooseStrategicTurnPlan(
+        hiddenObservation, wideSummonOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Easy);
+    const AI::TurnPlan normalTurn = AI::chooseStrategicTurnPlan(
+        hiddenObservation, wideSummonOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+    const AI::TurnPlan hardTurn = AI::chooseStrategicTurnPlan(
+        hiddenObservation, wideSummonOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Hard);
+    expect(easyTurn.branches.size() == 3 && normalTurn.branches.size() == 6 &&
+           hardTurn.branches.size() == 10,
+           "strategic TurnPlan must obey Easy, Normal and Hard branch budgets");
+
+    LocalData fullArmyState = hiddenObservation.state();
+    const Lands fullArmyLands = Lands::thisClan(fullArmyState.myPlayer().clan).powerOnly();
+    expect(1 < fullArmyLands.size(), "full strategic army fixture needs two power lands");
+    if(1 < fullArmyLands.size())
+    {
+        for(int partyIndex = 0; partyIndex < 2; ++partyIndex)
+        {
+            BattleParty party(fullArmyState.myPlayer().clan, fullArmyLands[partyIndex]);
+            const int partySize = partyIndex == 0 ? 3 : 2;
+            for(int member = 0; member < partySize; ++member)
+                expect(party.join(BattleCreature(fullArmyState.myPlayer().clan,
+                                                 Creature::SkeletonHorde,
+                                                 2460 + partyIndex * 3 + member)),
+                       "full strategic army fixture must join five creatures");
+            fullArmyState.myPlayer().army.push_back(party);
+        }
+    }
+    const AI::TurnPlan fullArmyTurn = AI::chooseStrategicTurnPlan(
+        AI::AIObservation(fullArmyState), hiddenUniqueOptions,
+        spellSet({ Spell::DrawNumber }), AI::BehaviorProfile::Aggressive,
+        AI::Difficulty::Normal);
+    expect(std::none_of(fullArmyTurn.branches.begin(), fullArmyTurn.branches.end(),
+                        [](const AI::TurnBranch & branch)
+                        {
+                            return branch.action == AI::StrategicAction::Summon;
+                        }),
+           "a maximum-size army must not fill the bounded TurnPlan with rejected summons");
+
+    GameData::gamers.clear();
+    LocalPlayer javed;
+    javed.avatar = Avatar::Javed;
+    javed.clan = Clan::Maitha;
+    javed.wind = Wind::East;
+    javed.points = 1000;
+
+    const Lands powerLands = Lands::thisClan(javed.clan).powerOnly();
+    expect(!powerLands.empty(), "strategic summon fixture must have a power land");
+    const auto tower = std::find(powerLands.begin(), powerLands.end(), Land(Land::TowerOf4Winds));
+    const Land mergeLand = tower != powerLands.end() ? *tower :
+                           (powerLands.empty() ? Land() : powerLands.front());
+    BattleParty mergeParty(javed.clan, mergeLand);
+    expect(mergeParty.join(BattleCreature(javed.clan, Creature::Griffon, 2451)),
+           "strategic summon fixture must join its first Griffon");
+    javed.army.push_back(mergeParty);
+    GameData::gamers.push_back(javed);
+
+    for(int index = 1; index < 4; ++index)
+    {
+        LocalPlayer opponent;
+        opponent.avatar = avatars[index];
+        opponent.clan = Clan(static_cast<Clan::clan_t>(Clan::Maitha + index));
+        opponent.wind = Wind(static_cast<Wind::wind_t>(Wind::East + index));
+        GameData::gamers.push_back(opponent);
+    }
+
+    Creatures summonOptions;
+    summonOptions.push_back(Creature(Creature::AirElemental));
+    summonOptions.push_back(Creature(Creature::Griffon));
+    expect(AI::creatureSummonScore(Creature(Creature::AirElemental),
+                                   AI::BehaviorProfile::Control) >
+           AI::creatureSummonScore(Creature(Creature::Griffon),
+                                   AI::BehaviorProfile::Control),
+           "strategic summon fixture must start with the higher static Air Elemental score");
+
+    const std::vector<AI::SummonCandidate> summonPlan = AI::rankSummonCandidates(
+        AI::observePlayer(Avatar(Avatar::Javed)), summonOptions, AI::BehaviorProfile::Control);
+    if(summonPlan.empty() || summonPlan.front().creature != Creature(Creature::Griffon) ||
+       summonPlan.front().destination != mergeLand)
+    {
+        for(const AI::SummonCandidate & candidate : summonPlan)
+            std::cerr << "  summon candidate: " << candidate.trace() << '\n';
+    }
+    expect(!summonPlan.empty() && summonPlan.front().creature == Creature(Creature::Griffon) &&
+           summonPlan.front().destination == mergeLand && 0 < summonPlan.front().partySynergy,
+           "Summon AI must choose the synergistic resulting Merge party over a higher static unit score");
+    expect(!summonPlan.empty() && summonPlan.front().trace().find("party_synergy=") != std::string::npos,
+           "Summon AI must explain resulting-party synergy in its trace");
+}
+
 void testSelectedPartyMovement()
 {
     BattleArmy army;
-    BattleParty source(Clan::Red, Land::Corzen);
+    BattleParty source(Clan::Maitha, Land::Corzen);
     BattleCreature first = creature(250, 2);
     BattleCreature second = creature(251, 2);
     first.setSelected(true);
@@ -181,7 +410,7 @@ void testSelectedPartyMovement()
            "selected movement must move the whole group to a legal destination");
 
     BattleArmy blocked;
-    BattleParty blockedSource(Clan::Red, Land::Corzen);
+    BattleParty blockedSource(Clan::Maitha, Land::Corzen);
     BattleCreature blockedFirst = creature(252, 2);
     BattleCreature blockedSecond = creature(253, 2);
     blockedFirst.setSelected(true);
@@ -190,7 +419,7 @@ void testSelectedPartyMovement()
            "blocked movement source fixture must join");
     blocked.push_back(blockedSource);
 
-    BattleParty crowded(Clan::Red, Land::Zubrus);
+    BattleParty crowded(Clan::Maitha, Land::Zubrus);
     expect(crowded.join(creature(254, 2)) && crowded.join(creature(255, 2)),
            "blocked movement destination fixture must join");
     blocked.push_back(crowded);
@@ -242,13 +471,13 @@ void testActionReplay()
     expect(!Replay::clientMessageFromJson(unknown),
            "replay client-message factory must reject unknown action types");
 
-    GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
+    GameData::initPersons(Person(Avatar::Nucrus, Clan::Maitha, Wind::East));
     LocalPlayer* player = GameData::gamers.playerOfWind(Wind::East);
     expect(player != nullptr, "replay fixture player must exist");
     if(!player) return;
     const Avatar actor = player->avatar;
-    BattleParty party(Clan::Red, Land::Corzen);
-    expect(party.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty party(Clan::Maitha, Land::Corzen);
+    expect(party.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                      601, 2, 0, 2, 3, 1)),
            "replay Adventure fixture must join");
     player->army.push_back(party);
@@ -278,7 +507,7 @@ void testActionReplay()
            "replay must stop at the first divergent authoritative state hash");
 
     GameplayRng::seed(UINT64_C(0x123456789abcdef));
-    GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
+    GameData::initPersons(Person(Avatar::Nucrus, Clan::Maitha, Wind::East));
     expect(GameData::initMahjong(), "RNG replay fixture must initialize Mahjong");
     LocalPlayer* randomPlayer = GameData::gamers.playerOfWind(Wind::East);
     expect(randomPlayer != nullptr, "RNG replay fixture East player must exist");
@@ -298,15 +527,27 @@ void testActionReplay()
            "RNG replay reference Random Discard must be accepted");
     const JsonObject randomFinalState = GameData::authoritativeState();
     const std::string randomExpectedHash = Replay::authoritativeStateHash();
+    AI::setBehaviorProfileOverride(AI::BehaviorProfile::Aggressive);
     const JsonObject journal = Replay::actionJournal(randomFinalState);
-    expect(journal.getInteger("actionCount") == 1 &&
+    AI::clearBehaviorProfileOverride();
+    expect(journal.getInteger("schema") == 3 &&
+           journal.getString("aiBehaviorProfile") == "aggressive" &&
+           journal.getInteger("actionCount") == 1 &&
            journal.getBoolean("contiguousToCheckpoint"),
-           "accepted RNG action must enter a contiguous persisted replay journal");
+           "forced AI doctrine must enter a contiguous versioned replay journal");
 
     replayError.clear();
     expect(Replay::run(journal, &replayError) &&
-           Replay::authoritativeStateHash() == randomExpectedHash,
-           "replay journal must restore RNG state and reproduce Random Discard");
+           Replay::authoritativeStateHash() == randomExpectedHash &&
+           !AI::behaviorProfileOverrideEnabled(),
+           "replay journal must restore RNG state, AI doctrine and its caller scope");
+
+    JsonObject invalidProfileJournal = journal;
+    invalidProfileJournal.addString("aiBehaviorProfile", "impossible");
+    replayError.clear();
+    expect(!Replay::run(invalidProfileJournal, &replayError) &&
+           replayError.find("invalid AI behavior profile") != std::string::npos,
+           "replay must reject an unknown AI doctrine instead of silently using Balanced");
 
     JsonObject tamperedRandomState = randomInitialState;
     JsonObject tamperedRng = *randomInitialState.getObject("gameplayRng");
@@ -357,10 +598,10 @@ void testGameplayRngState()
 int runFixedSeedReplaySelfTest()
 {
     constexpr uint64_t seed = UINT64_C(0x123456789abcdef);
-    constexpr const char* expectedHash = "8020dff30d3f1571";
+    constexpr const char* expectedHash = "409f0e4f1c7ecb6c";
 
     GameplayRng::seed(seed);
-    GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
+    GameData::initPersons(Person(Avatar::Nucrus, Clan::Maitha, Wind::East));
     if(!GameData::initMahjong())
     {
         std::cerr << "FAIL: fixed-seed replay could not initialize Mahjong\n";
@@ -408,9 +649,9 @@ int runFixedSeedReplaySelfTest()
 void testGateMovement()
 {
     BattleArmy supportGate;
-    BattleParty supportSource(Clan::Red, Land::Corzen);
-    BattleCreature carol = combatCreature(Clan::Red, Creature::GreatCarol, 280, 3, 0, 4, 4, 1);
-    BattleCreature ally = combatCreature(Clan::Red, Creature::Durlock, 281, 2, 0, 2, 3, 2);
+    BattleParty supportSource(Clan::Maitha, Land::Corzen);
+    BattleCreature carol = combatCreature(Clan::Maitha, Creature::GreatCarol, 280, 3, 0, 4, 4, 1);
+    BattleCreature ally = combatCreature(Clan::Maitha, Creature::Durlock, 281, 2, 0, 2, 3, 2);
     carol.setSelected(false);
     ally.setSelected(true);
     expect(supportSource.join(carol) && supportSource.join(ally), "Gate support fixture must join");
@@ -430,9 +671,9 @@ void testGateMovement()
            "Gate must consume exactly one movement point from each moved creature");
 
     BattleArmy groupGate;
-    BattleParty groupSource(Clan::Red, Land::Corzen);
-    BattleCreature groupCarol = combatCreature(Clan::Red, Creature::GreatCarol, 282, 3, 0, 4, 4, 1);
-    BattleCreature groupAlly = combatCreature(Clan::Red, Creature::Durlock, 283, 2, 0, 2, 3, 1);
+    BattleParty groupSource(Clan::Maitha, Land::Corzen);
+    BattleCreature groupCarol = combatCreature(Clan::Maitha, Creature::GreatCarol, 282, 3, 0, 4, 4, 1);
+    BattleCreature groupAlly = combatCreature(Clan::Maitha, Creature::Durlock, 283, 2, 0, 2, 3, 1);
     groupCarol.setSelected(true);
     groupAlly.setSelected(true);
     expect(groupSource.join(groupCarol) && groupSource.join(groupAlly), "Gate group fixture must join");
@@ -450,8 +691,8 @@ void testGateMovement()
            "Gate must charge one movement point to Carol and every companion");
 
     BattleArmy invalidGate;
-    BattleParty invalidSource(Clan::Red, Land::Corzen);
-    BattleCreature invalidCarol = combatCreature(Clan::Red, Creature::GreatCarol, 284, 3, 0, 4, 4, 1);
+    BattleParty invalidSource(Clan::Maitha, Land::Corzen);
+    BattleCreature invalidCarol = combatCreature(Clan::Maitha, Creature::GreatCarol, 284, 3, 0, 4, 4, 1);
     invalidCarol.setSelected(true);
     expect(invalidSource.join(invalidCarol), "invalid Gate fixture must join");
     invalidGate.push_back(invalidSource);
@@ -467,11 +708,11 @@ void testGateMovement()
 
     LocalPlayer gateAI;
     gateAI.avatar = Avatar::Logun;
-    gateAI.clan = Clan::Red;
+    gateAI.clan = Clan::Maitha;
     gateAI.wind = Wind::East;
-    BattleParty aiSource(Clan::Red, Land::Corzen);
-    expect(aiSource.join(combatCreature(Clan::Red, Creature::GreatCarol, 285, 20, 0, 10, 10, 1)) &&
-           aiSource.join(combatCreature(Clan::Red, Creature::Durlock, 286, 20, 2, 10, 10, 1)),
+    BattleParty aiSource(Clan::Maitha, Land::Corzen);
+    expect(aiSource.join(combatCreature(Clan::Maitha, Creature::GreatCarol, 285, 20, 0, 10, 10, 1)) &&
+           aiSource.join(combatCreature(Clan::Maitha, Creature::Durlock, 286, 20, 2, 10, 10, 1)),
            "Gate AI fixture must join");
     gateAI.army.push_back(aiSource);
     Lands gateTargets;
@@ -548,7 +789,7 @@ void testLuckAbility()
 
     LocalPlayer nucrus;
     nucrus.avatar = Avatar::Nucrus;
-    nucrus.clan = Clan::Red;
+    nucrus.clan = Clan::Maitha;
     nucrus.wind = Wind::East;
     CroupierSet nucrusWall;
     nucrusWall.bank.clear();
@@ -563,7 +804,7 @@ void testLuckAbility()
 
     LocalPlayer directedNucrus;
     directedNucrus.avatar = Avatar::Nucrus;
-    directedNucrus.clan = Clan::Red;
+    directedNucrus.clan = Clan::Maitha;
     directedNucrus.wind = Wind::East;
     expect(directedNucrus.mahjongApplySpell(Spell(Spell::DrawNumber)),
            "directed draw fixture must apply Summon Number Rune");
@@ -585,7 +826,7 @@ void testLuckAbility()
     {
 	LocalPlayer player;
 	player.avatar = avatars[index];
-	player.clan = Clan(static_cast<Clan::clan_t>(Clan::Red + index));
+	player.clan = Clan(static_cast<Clan::clan_t>(Clan::Maitha + index));
 	player.wind = Wind(static_cast<Wind::wind_t>(Wind::East + index));
 	openingDeal.push_back(player);
     }
@@ -616,12 +857,12 @@ void testAvatarPassives()
 {
     LocalPlayer logun;
     logun.avatar = Avatar::Logun;
-    logun.clan = Clan::Red;
+    logun.clan = Clan::Maitha;
     logun.wind = Wind::East;
 
-    BattleParty band(Clan::Red, Land::Corzen);
-    BattleCreature badlyWounded(Clan::Red, Creature::Durlock, 380);
-    BattleCreature lightlyWounded(Clan::Red, Creature::Durlock, 381);
+    BattleParty band(Clan::Maitha, Land::Corzen);
+    BattleCreature badlyWounded(Clan::Maitha, Creature::Durlock, 380);
+    BattleCreature lightlyWounded(Clan::Maitha, Creature::Durlock, 381);
     badlyWounded.applyDamage(3);
     lightlyWounded.applyDamage(1);
     expect(band.join(badlyWounded) && band.join(lightlyWounded),
@@ -636,7 +877,7 @@ void testAvatarPassives()
     expect(healedToFull && healedToFull->loyalty() == healedToFull->baseLoyalty(),
            "Bard healing must not exceed base loyalty");
 
-    BattleCreature ordinary(Clan::Red, Creature::Durlock, 382);
+    BattleCreature ordinary(Clan::Maitha, Creature::Durlock, 382);
     ordinary.applyDamage(3);
     ordinary.initAdventurePart(Ability::None);
     expect(ordinary.loyalty() == 1,
@@ -647,40 +888,40 @@ void testAvatarPassives()
 
     LocalPlayer orachi;
     orachi.avatar = Avatar::Orachi;
-    orachi.clan = Clan::Red;
+    orachi.clan = Clan::Maitha;
     orachi.wind = Wind::East;
-    BattleParty ownHiddenParty(Clan::Red, Land::Maithaius);
-    expect(ownHiddenParty.join(BattleCreature(Clan::Red, Creature::Shadow, 389)),
+    BattleParty ownHiddenParty(Clan::Maitha, Land::Maithaius);
+    expect(ownHiddenParty.join(BattleCreature(Clan::Maitha, Creature::Shadow, 389)),
            "own invisibility fixture must join");
     orachi.army.push_back(ownHiddenParty);
     GameData::gamers.push_back(orachi);
 
     LocalPlayer ziag;
     ziag.avatar = Avatar::Ziag;
-    ziag.clan = Clan::Aqua;
+    ziag.clan = Clan::Iz;
     ziag.wind = Wind::South;
     GameData::gamers.push_back(ziag);
 
     LocalPlayer lakkho;
     lakkho.avatar = Avatar::Lakkho;
-    lakkho.clan = Clan::Yellow;
+    lakkho.clan = Clan::Kartha;
     lakkho.wind = Wind::West;
-    BattleParty hiddenParty(Clan::Yellow, Land::Zubrus);
-    expect(hiddenParty.join(BattleCreature(Clan::Yellow, Creature::Shadow, 390)),
+    BattleParty hiddenParty(Clan::Kartha, Land::Zubrus);
+    expect(hiddenParty.join(BattleCreature(Clan::Kartha, Creature::Shadow, 390)),
            "Monacle invisibility fixture must join");
     lakkho.army.push_back(hiddenParty);
-    BattleParty towerHiddenParty(Clan::Yellow, Land::TowerOf4Winds);
-    expect(towerHiddenParty.join(BattleCreature(Clan::Yellow, Creature::Shadow, 391)),
+    BattleParty towerHiddenParty(Clan::Kartha, Land::TowerOf4Winds);
+    expect(towerHiddenParty.join(BattleCreature(Clan::Kartha, Creature::Shadow, 391)),
            "Tower invisibility fixture must join");
     lakkho.army.push_back(towerHiddenParty);
     GameData::gamers.push_back(lakkho);
 
     LocalPlayer dayla;
     dayla.avatar = Avatar::Dayla;
-    dayla.clan = Clan::Purple;
+    dayla.clan = Clan::Marz;
     dayla.wind = Wind::North;
-    BattleParty thirdPartyDetector(Clan::Purple, Land::Corzen);
-    expect(thirdPartyDetector.join(BattleCreature(Clan::Purple, Creature::AdventureParty, 392)),
+    BattleParty thirdPartyDetector(Clan::Marz, Land::Corzen);
+    expect(thirdPartyDetector.join(BattleCreature(Clan::Marz, Creature::AdventureParty, 392)),
            "third-party See Invisible fixture must join");
     dayla.army.push_back(thirdPartyDetector);
     GameData::gamers.push_back(dayla);
@@ -709,8 +950,8 @@ void testAvatarPassives()
     {
         detectorOwner->army.clear();
         ordinaryPlayer->army.clear();
-        BattleParty unrelatedDetector(Clan::Red, Land::Corzen);
-        expect(unrelatedDetector.join(BattleCreature(Clan::Red, Creature::AdventureParty, 395)),
+        BattleParty unrelatedDetector(Clan::Maitha, Land::Corzen);
+        expect(unrelatedDetector.join(BattleCreature(Clan::Maitha, Creature::AdventureParty, 395)),
                "unrelated See Invisible fixture must join");
         ordinaryPlayer->army.push_back(unrelatedDetector);
         const LocalData unrelatedView = GameData::toLocalData(Avatar(Avatar::Dayla));
@@ -718,8 +959,8 @@ void testAvatarPassives()
                "a detector owned by another player must not leak visibility to the observer");
 
         ordinaryPlayer->army.clear();
-        BattleParty farDetector(Clan::Red, Land::Maithaius);
-        expect(farDetector.join(BattleCreature(Clan::Red, Creature::AdventureParty, 393)),
+        BattleParty farDetector(Clan::Maitha, Land::Maithaius);
+        expect(farDetector.join(BattleCreature(Clan::Maitha, Creature::AdventureParty, 393)),
                "non-adjacent See Invisible fixture must join");
         ordinaryPlayer->army.push_back(farDetector);
         const LocalData farView = GameData::toLocalData(Avatar(Avatar::Orachi));
@@ -727,8 +968,8 @@ void testAvatarPassives()
                "See Invisible must not reveal creatures outside adjacent territories");
 
         ordinaryPlayer->army.clear();
-        BattleParty invadingDetector(Clan::Red, Land::Inkartha);
-        expect(invadingDetector.join(BattleCreature(Clan::Red, Creature::AdventureParty, 394)),
+        BattleParty invadingDetector(Clan::Maitha, Land::Inkartha);
+        expect(invadingDetector.join(BattleCreature(Clan::Maitha, Creature::AdventureParty, 394)),
                "observer-specific See Invisible fixture must join");
         ordinaryPlayer->army.push_back(invadingDetector);
         const LocalData adjacentView = GameData::toLocalData(Avatar(Avatar::Orachi));
@@ -739,7 +980,7 @@ void testAvatarPassives()
 
     LocalPlayer javed;
     javed.avatar = Avatar::Javed;
-    javed.clan = Clan::Red;
+    javed.clan = Clan::Maitha;
     javed.wind = Wind::South;
     javed.points = 500;
     expect(!javed.mahjongApplySpell(Spell(Spell::Silence), Avatar(Avatar::Orachi)) &&
@@ -792,43 +1033,254 @@ void testAvatarPassives()
            "Silence must still block a non-Telepath wizard");
 }
 
+void testMahjongCallPlanning()
+{
+    LocalPlayer pung;
+    pung.avatar = Avatar::Orachi;
+    pung.clan = Clan::Maitha;
+    pung.wind = Wind::South;
+    pung.stones.add(GameStone(Stone::Dragon1));
+    pung.stones.add(GameStone(Stone::Dragon1));
+
+    const AI::MahjongCallPlan ordinaryPung = AI::chooseMahjongCall(
+        pung, Wind(Wind::East), Stone(Stone::Dragon1), AI::StrategicIntent());
+    expect(ordinaryPung.type == AI::MahjongCallType::Pung && 0 < ordinaryPung.score,
+           "Mahjong AI must accept a useful Pung when it does not sacrifice a strategic rune goal");
+
+    AI::StrategicIntent protectedIntent;
+    AI::RuneGoal protectedDragon;
+    protectedDragon.required << Stone(Stone::Dragon1);
+    protectedDragon.score = 300;
+    protectedIntent.runeGoals.push_back(protectedDragon);
+    const AI::MahjongCallPlan protectedPung = AI::chooseMahjongCall(
+        pung, Wind(Wind::East), Stone(Stone::Dragon1), protectedIntent);
+    expect(protectedPung.type == AI::MahjongCallType::Pass,
+           "Mahjong AI must pass when exposing a Pung would destroy a much stronger rune goal");
+
+    LocalPlayer kong = pung;
+    kong.stones.add(GameStone(Stone::Dragon1));
+    const AI::MahjongCallPlan ordinaryKong = AI::chooseMahjongCall(
+        kong, Wind(Wind::East), Stone(Stone::Dragon1), AI::StrategicIntent());
+    expect(ordinaryKong.type == AI::MahjongCallType::Kong,
+           "Mahjong AI must retain Kong as the strongest ordinary matching-rune call");
+
+    LocalPlayer chao;
+    chao.avatar = Avatar::Orachi;
+    chao.clan = Clan::Maitha;
+    chao.wind = Wind::South;
+    chao.stones.add(GameStone(Stone::Sword1));
+    chao.stones.add(GameStone(Stone::Sword2));
+    chao.stones.add(GameStone(Stone::Sword4));
+    chao.stones.add(GameStone(Stone::Sword5));
+
+    AI::StrategicIntent chaoIntent;
+    AI::RuneGoal protectedSequence;
+    protectedSequence.required << Stone(Stone::Sword1) << Stone(Stone::Sword2);
+    protectedSequence.score = 400;
+    chaoIntent.runeGoals.push_back(protectedSequence);
+    const AI::MahjongCallPlan selectedChao = AI::chooseMahjongCall(
+        chao, Wind(Wind::East), Stone(Stone::Sword3), chaoIntent);
+    expect(selectedChao.type == AI::MahjongCallType::Chao && selectedChao.variant == 2,
+           "Mahjong AI must choose the Chao variant that preserves its strategic runes");
+
+    LocalPlayer duplicateChao;
+    duplicateChao.stones.add(GameStone(Stone::Sword2));
+    duplicateChao.stones.add(GameStone(Stone::Sword2));
+    duplicateChao.stones.add(GameStone(Stone::Sword3));
+    duplicateChao.stones.add(GameStone(Stone::Sword3));
+    duplicateChao.stones.add(GameStone(Stone::Sword9));
+    duplicateChao.setMahjongChao(Stone(Stone::Sword1), 0);
+    expect(duplicateChao.rules.size() == 1 && duplicateChao.rules.front().isChao() &&
+           duplicateChao.stones.size() == 3 &&
+           duplicateChao.stones.countStone(Stone(Stone::Sword1)) == 0 &&
+           duplicateChao.stones.countStone(Stone(Stone::Sword2)) == 1 &&
+           duplicateChao.stones.countStone(Stone(Stone::Sword3)) == 1,
+           "Chao must move exactly one copy of all three sequence runes out of the concealed hand");
+}
+
+void testSpellAndSpecialityContracts()
+{
+    struct PersistentEffectCase
+    {
+        Spell::spell_t spell;
+        int attack;
+        int ranger;
+        int defense;
+        int loyalty;
+        const char* name;
+    };
+
+    const PersistentEffectCase effects[] = {
+        { Spell::Smoke, 0, -1, 0, 0, "Smoke" },
+        { Spell::DemonicCompulsion, 0, 0, 0, 1, "Demonic Compulsion" },
+        { Spell::MassPanic, 0, 0, 0, -1, "Mass Panic" },
+        { Spell::Reduction, -1, 0, -1, 0, "Reduction" },
+        { Spell::BattleFury, 1, 0, 0, 0, "Battle Fury" },
+        { Spell::DustCloud, -1, 0, 0, 0, "Dust Cloud" },
+        { Spell::Heroism, 1, 0, 0, 1, "Heroism" },
+        { Spell::BrilliantLights, 0, 0, -1, 0, "Brilliant Lights" },
+        { Spell::MagicalAura, 0, 0, 1, 0, "Magical Aura" }
+    };
+
+    int unit = 500;
+    for(const PersistentEffectCase & effect : effects)
+    {
+        BattleCreature target = combatCreature(Clan::Maitha, Creature::Durlock,
+                                                unit++, 5, 4, 3, 6);
+        const Spell spell(effect.spell);
+        expect(target.applySpell(spell),
+               (std::string(effect.name) + " must apply to a legal creature").c_str());
+        expect(target.isAffectedSpell(spell) &&
+               target.attack() == 5 + effect.attack &&
+               target.ranger() == 4 + effect.ranger &&
+               target.defense() == 3 + effect.defense &&
+               target.loyalty() == 6 + effect.loyalty,
+               (std::string(effect.name) + " must expose its exact persistent stat effect").c_str());
+        expect(target.applySpell(Spell(Spell::DispelMagic)) &&
+               target.attack() == 5 && target.ranger() == 4 &&
+               target.defense() == 3 && target.loyalty() == 6,
+               (std::string("Dispel Magic must remove ") + effect.name).c_str());
+    }
+
+    auto directedDraw = [](Spell::spell_t spellId, Stone::stone_t expectedRune,
+                           Stone::stone_t ordinaryTop, const char* name)
+    {
+        RemotePlayer player;
+        player.avatar = Avatar::Orachi;
+        expect(player.mahjongApplySpell(Spell(spellId)),
+               (std::string(name) + " must apply to its owning player").c_str());
+
+        CroupierSet wall;
+        wall.bank.clear();
+        wall.trash.clear();
+        wall.luckDraw.clear();
+        wall.bank.push_back(Stone(expectedRune));
+        wall.bank.push_back(Stone(ordinaryTop));
+        const Stone drawn = wall.get(player);
+        expect(drawn == Stone(expectedRune) && !player.isAffectedSpell(Spell(spellId)),
+               (std::string(name) +
+                " must find the requested rune family and expire after one draw").c_str());
+    };
+    directedDraw(Spell::DrawSkull, Stone::Skull4, Stone::Number9, "Summon Skull Rune");
+    directedDraw(Spell::DrawSword, Stone::Sword6, Stone::Skull9, "Summon Sword Rune");
+    directedDraw(Spell::DrawNumber, Stone::Number7, Stone::Sword9, "Summon Number Rune");
+
+    const JsonObject savedRng = GameplayRng::toJsonObject();
+    auto seedForRoll = [](int expected)
+    {
+        for(std::uint64_t seed = 1; seed < 100000; ++seed)
+        {
+            GameplayRng::seed(seed);
+            if(GameplayRng::uniform(1, 100) == expected) return seed;
+        }
+        return UINT64_C(0);
+    };
+    const std::uint64_t resistanceSeed = seedForRoll(90);
+    expect(resistanceSeed != 0, "Magic Resistance boundary fixture must find a deterministic 90 roll");
+    if(resistanceSeed)
+    {
+        GameplayRng::seed(resistanceSeed);
+        BattleCreature resistant = combatCreature(Clan::Kartha, Creature::KingDrago,
+                                                   unit++, 5, 1, 6, 6);
+        expect(!resistant.applySpell(Spell(Spell::BrilliantLights)) && resistant.defense() == 6,
+               "90% Magic Resistance must reject a spell on the inclusive 90 boundary");
+    }
+    expect(SpecialityMagicResistence().chance(Creature::MazRa) == 25 &&
+           SpecialityMagicResistence().chance(Creature::KingDrago) == 90,
+           "minor and major Magic Resistance chances must remain 25% and 90%");
+    expect(GameplayRng::fromJsonObject(savedRng),
+           "Magic Resistance tests must restore the gameplay RNG state");
+
+    BattleCreature devoted = combatCreature(Clan::Marz, Creature::Shanahan,
+                                             unit++, 5, 2, 4, 8);
+    devoted.applyDamage(3);
+    devoted.initAdventurePart(Ability::None);
+    expect(devoted.loyalty() == 7,
+           "Devotion must restore exactly two loyalty before movement without exceeding base loyalty");
+
+    struct CreatureCastCase
+    {
+        Creature::creature_t creature;
+        Speciality::speciality_t speciality;
+        Spell::spell_t spell;
+    };
+    const CreatureCastCase creatureCasts[] = {
+        { Creature::MazRa, Speciality::CastHellblast, Spell::HellBlast },
+        { Creature::WhiteDragon, Speciality::CastDrawNumber, Spell::DrawNumber },
+        { Creature::GreenDragon, Speciality::CastDrawSword, Spell::DrawSword },
+        { Creature::RedDragon, Speciality::CastDrawSkull, Spell::DrawSkull },
+        { Creature::FireElemental, Speciality::CastRandomDiscard, Spell::RandomDiscard },
+        { Creature::AirElemental, Speciality::CastSilence, Spell::Silence },
+        { Creature::EarthElemental, Speciality::CastScryRunes, Spell::ScryRunes },
+        { Creature::WaterElemental, Speciality::CastManaFog, Spell::ManaFog }
+    };
+
+    BattleArmy casterArmy;
+    for(const CreatureCastCase & cast : creatureCasts)
+    {
+        expect(Speciality(cast.speciality).toSpell() == Spell(cast.spell) &&
+               GameData::creatureInfo(cast.creature).specials.check(Speciality(cast.speciality)),
+               "creature-cast speciality must map its owning creature to the normal spell contract");
+        BattleParty party(Clan::Maitha, Land::Corzen);
+        expect(party.join(combatCreature(Clan::Maitha, Creature(cast.creature),
+                                         unit++, 3, 1, 3, 5)),
+               "creature-cast speciality fixture must join its caster");
+        casterArmy.push_back(party);
+    }
+
+    const Spells granted = casterArmy.allCastSpells();
+    for(const CreatureCastCase & cast : creatureCasts)
+        expect(std::find(granted.begin(), granted.end(), Spell(cast.spell)) != granted.end(),
+               "an in-play creature must grant its mapped spell during the Mahjong phase");
+
+    LocalPlayer dragonWizard;
+    dragonWizard.avatar = Avatar::Orachi;
+    dragonWizard.clan = Clan::Maitha;
+    dragonWizard.wind = Wind::East;
+    dragonWizard.army = casterArmy;
+    expect(dragonWizard.allowCastSpell(Spell(Spell::DrawSkull)) &&
+           dragonWizard.allowCastSpell(Spell(Spell::DrawSword)) &&
+           dragonWizard.allowCastSpell(Spell(Spell::DrawNumber)),
+           "in-play dragons must authorize all three rune-draw spells in their owning phase");
+}
+
 void testSpellCastingAI()
 {
     GameData::gamers.clear();
 
-    LocalPlayer red;
-    red.avatar = Avatar::Orachi;
-    red.clan = Clan::Red;
-    red.wind = Wind::East;
-    red.points = 1000;
+    LocalPlayer maitha;
+    maitha.avatar = Avatar::Orachi;
+    maitha.clan = Clan::Maitha;
+    maitha.wind = Wind::East;
+    maitha.points = 1000;
 
-    BattleParty allies(Clan::Red, Land::Corzen);
-    BattleCreature wounded = combatCreature(Clan::Red, Creature::Durlock, 270, 3, 2, 2, 4);
+    BattleParty allies(Clan::Maitha, Land::Corzen);
+    BattleCreature wounded = combatCreature(Clan::Maitha, Creature::Durlock, 270, 3, 2, 2, 4);
     wounded.applyDamage(2);
     expect(allies.join(wounded), "spell AI wounded ally fixture must join");
-    expect(allies.join(combatCreature(Clan::Red, Creature::SkeletonHorde, 271, 3, 0, 1, 3)),
+    expect(allies.join(combatCreature(Clan::Maitha, Creature::SkeletonHorde, 271, 3, 0, 1, 3)),
            "spell AI non-ranged ally fixture must join");
-    expect(allies.join(combatCreature(Clan::Red, Creature::EarthElemental, 272, 1, 0, 1, 3)),
+    expect(allies.join(combatCreature(Clan::Maitha, Creature::EarthElemental, 272, 1, 0, 1, 3)),
            "spell AI creature-caster fixture must join");
-    red.army.push_back(allies);
+    maitha.army.push_back(allies);
 
-    LocalPlayer yellow;
-    yellow.avatar = Avatar::Lakkho;
-    yellow.clan = Clan::Yellow;
-    yellow.wind = Wind::South;
-    yellow.points = 900;
+    LocalPlayer kartha;
+    kartha.avatar = Avatar::Lakkho;
+    kartha.clan = Clan::Kartha;
+    kartha.wind = Wind::South;
+    kartha.points = 900;
 
-    BattleParty enemies(Clan::Yellow, Land::Zubrus);
-    expect(enemies.join(combatCreature(Clan::Yellow, Creature::Durlock, 280, 5, 1, 2, 1)),
+    BattleParty enemies(Clan::Kartha, Land::Zubrus);
+    expect(enemies.join(combatCreature(Clan::Kartha, Creature::Durlock, 280, 5, 1, 2, 1)),
            "spell AI lethal enemy fixture must join");
-    BattleCreature buffedEnemy = combatCreature(Clan::Yellow, Creature::SkeletonHorde, 281, 2, 1, 2, 4);
+    BattleCreature buffedEnemy = combatCreature(Clan::Kartha, Creature::SkeletonHorde, 281, 2, 1, 2, 4);
     expect(buffedEnemy.applySpell(Spell(Spell::BattleFury)),
            "spell AI dispel fixture must accept a beneficial enchantment");
     expect(enemies.join(buffedEnemy), "spell AI enchanted enemy fixture must join");
-    yellow.army.push_back(enemies);
+    kartha.army.push_back(enemies);
 
-    GameData::gamers.push_back(red);
-    GameData::gamers.push_back(yellow);
+    GameData::gamers.push_back(maitha);
+    GameData::gamers.push_back(kartha);
     LocalPlayer & caster = GameData::gamers.front();
     caster.stones.add(GameStone(Stone("wind1"), false));
 
@@ -885,7 +1337,7 @@ void testSpellCastingAI()
     const AI::SpellCastPlan teleport = chooseOnly(caster, Spell::Teleport);
     expect(teleport.spell == Spell(Spell::Teleport) && teleport.unit == 270 &&
            teleport.land != Land(Land::Corzen) &&
-           (teleport.land.isTowerWinds() || GameData::landInfo(teleport.land).clan == Clan(Clan::Red)),
+           (teleport.land.isTowerWinds() || GameData::landInfo(teleport.land).clan == Clan(Clan::Maitha)),
            "spell AI must select a legal friendly Teleport destination");
 
     const AI::SpellCastPlan silence = chooseOnly(caster, Spell::Silence);
@@ -907,6 +1359,19 @@ void testSpellCastingAI()
            "control spell AI must prefer Silence over the same damage option");
     expect(AI::shouldCastBeforeSummon(aggressiveChoice) && AI::shouldCastBeforeSummon(controlChoice),
            "high-value aggressive and control plans must be allowed to override summoning");
+
+    Creatures strategicSummons;
+    strategicSummons.push_back(Creature(Creature::SkeletonHorde));
+    const AI::TurnPlan aggressiveTurn = AI::chooseStrategicTurnPlan(
+        AI::observePlayer(caster.avatar), strategicSummons, damageOrControl,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+    if(!aggressiveTurn.selected() ||
+       aggressiveTurn.selected()->action != AI::StrategicAction::Spell)
+        std::cerr << "  aggressive turn plan: " << aggressiveTurn.trace() << '\n';
+    expect(aggressiveTurn.selected() &&
+           aggressiveTurn.selected()->action == AI::StrategicAction::Spell &&
+           aggressiveTurn.selected()->spell.spell == Spell(Spell::LightningBolt),
+           "bounded TurnPlan must cast a high-value tactical spell before summoning");
 
     const AI::SpellCastPlan controlCombo = AI::chooseSpellCast(
         caster, spellSet({ Spell::DispelMagic }), AI::BehaviorProfile::Control,
@@ -946,8 +1411,8 @@ void testSpellCastingAI()
            "spell AI must recognize every stored Mystical Fountain variant");
 
     GameData::gamers.back().army.clear();
-    BattleParty durableEnemies(Clan::Yellow, Land::Zubrus);
-    expect(durableEnemies.join(combatCreature(Clan::Yellow, Creature::Durlock, 290, 1, 0, 1, 5)),
+    BattleParty durableEnemies(Clan::Kartha, Land::Zubrus);
+    expect(durableEnemies.join(combatCreature(Clan::Kartha, Creature::Durlock, 290, 1, 0, 1, 5)),
            "spell AI economic profile fixture must join");
     GameData::gamers.back().army.push_back(durableEnemies);
     const Spells damageOrRune = spellSet({ Spell::LightningBolt, Spell::DrawNumber });
@@ -961,6 +1426,22 @@ void testSpellCastingAI()
            "economic spell AI must prefer rune economy over non-lethal damage");
     expect(!AI::shouldCastBeforeSummon(economicChoice),
            "an ordinary economic spell must not delay a legal summon");
+    LocalData ordinaryEconomicState = GameData::toLocalData(caster.avatar);
+    ordinaryEconomicState.myPlayer().points = 220;
+    const AI::AIObservation ordinaryEconomicObservation(ordinaryEconomicState);
+    const AI::SpellCastPlan ordinaryEconomicSpell = AI::chooseSpellCast(
+        ordinaryEconomicState, spellSet({ Spell::DrawNumber }), AI::BehaviorProfile::Economic);
+    expect(ordinaryEconomicSpell.isValid() && !AI::shouldCastBeforeSummon(ordinaryEconomicSpell),
+           "ordinary economic TurnPlan fixture must stay below the summon override threshold");
+    const AI::TurnPlan economicTurn = AI::chooseStrategicTurnPlan(
+        ordinaryEconomicObservation, strategicSummons, spellSet({ Spell::DrawNumber }),
+        AI::BehaviorProfile::Economic, AI::Difficulty::Normal);
+    if(!economicTurn.selected() ||
+       economicTurn.selected()->action != AI::StrategicAction::Summon)
+        std::cerr << "  economic turn plan: " << economicTurn.trace() << '\n';
+    expect(economicTurn.selected() &&
+           economicTurn.selected()->action == AI::StrategicAction::Summon,
+           "bounded TurnPlan must keep summoning ahead of an ordinary economic spell");
 
     const int savedPoints = caster.points;
     caster.points = 100;
@@ -985,42 +1466,42 @@ void testAdventureProfiles()
 {
     GameData::gamers.clear();
 
-    LocalPlayer red;
-    red.avatar = Avatar::Orachi;
-    red.clan = Clan::Red;
-    red.wind = Wind::East;
-    red.addLandClaimPoints(Clan::Yellow, 3000);
-    red.addLandClaimPoints(Clan::Purple, 3000);
-    red.addLandClaimPoints(Clan::Aqua, 3000);
-    BattleParty attackers(Clan::Red, Land::Greenbaw);
-    expect(attackers.join(combatCreature(Clan::Red, Creature::Durlock, 300, 12, 2, 4, 8, 3)),
+    LocalPlayer maitha;
+    maitha.avatar = Avatar::Orachi;
+    maitha.clan = Clan::Maitha;
+    maitha.wind = Wind::East;
+    maitha.addLandClaimPoints(Clan::Kartha, 3000);
+    maitha.addLandClaimPoints(Clan::Marz, 3000);
+    maitha.addLandClaimPoints(Clan::Iz, 3000);
+    BattleParty attackers(Clan::Maitha, Land::Greenbaw);
+    expect(attackers.join(combatCreature(Clan::Maitha, Creature::Durlock, 300, 12, 2, 4, 8, 3)),
            "Adventure AI attacker fixture must join");
-    red.army.push_back(attackers);
+    maitha.army.push_back(attackers);
 
-    LocalPlayer yellow;
-    yellow.avatar = Avatar::Lakkho;
-    yellow.clan = Clan::Yellow;
-    yellow.wind = Wind::South;
-    BattleParty kernDefenders(Clan::Yellow, Land::Kern);
-    expect(kernDefenders.join(combatCreature(Clan::Yellow, Creature::KnightTemplar,
+    LocalPlayer kartha;
+    kartha.avatar = Avatar::Lakkho;
+    kartha.clan = Clan::Kartha;
+    kartha.wind = Wind::South;
+    BattleParty kernDefenders(Clan::Kartha, Land::Kern);
+    expect(kernDefenders.join(combatCreature(Clan::Kartha, Creature::KnightTemplar,
                                                301, 5, 0, 3, 5)),
            "Adventure AI defended target fixture must join");
-    yellow.army.push_back(kernDefenders);
+    kartha.army.push_back(kernDefenders);
 
-    LocalPlayer aqua;
-    aqua.avatar = Avatar::Ziag;
-    aqua.clan = Clan::Aqua;
-    aqua.wind = Wind::West;
+    LocalPlayer iz;
+    iz.avatar = Avatar::Ziag;
+    iz.clan = Clan::Iz;
+    iz.wind = Wind::West;
 
-    LocalPlayer purple;
-    purple.avatar = Avatar::Dayla;
-    purple.clan = Clan::Purple;
-    purple.wind = Wind::North;
+    LocalPlayer marz;
+    marz.avatar = Avatar::Dayla;
+    marz.clan = Clan::Marz;
+    marz.wind = Wind::North;
 
-    GameData::gamers.push_back(red);
-    GameData::gamers.push_back(yellow);
-    GameData::gamers.push_back(aqua);
-    GameData::gamers.push_back(purple);
+    GameData::gamers.push_back(maitha);
+    GameData::gamers.push_back(kartha);
+    GameData::gamers.push_back(iz);
+    GameData::gamers.push_back(marz);
 
     const LocalPlayer & player = GameData::gamers.front();
     const BattleParty & party = player.army.front();
@@ -1036,13 +1517,13 @@ void testAdventureProfiles()
            "economic Adventure AI must claim the cheapest safe expansion");
     expect(balancedClaim.land == Land(Land::Sunspot),
            "balanced Adventure AI must preserve the cheapest-claim baseline");
-    expect(GameData::landInfo(Land::Corimar).clan == Clan(Clan::Yellow) &&
-           GameData::landInfo(Land::Sunspot).clan == Clan(Clan::Purple),
+    expect(GameData::landInfo(Land::Corimar).clan == Clan(Clan::Kartha) &&
+           GameData::landInfo(Land::Sunspot).clan == Clan(Clan::Marz),
            "Adventure AI claim planning must not mutate territory ownership");
 
     LocalPlayer lowBudget = player;
     lowBudget.landClaims = LandClaims();
-    lowBudget.addLandClaimPoints(Clan::Purple, 300);
+    lowBudget.addLandClaimPoints(Clan::Marz, 300);
     expect(AI::chooseAdventureClaim(lowBudget, AI::BehaviorProfile::Aggressive).isValid(),
            "aggressive Adventure AI must spend its final claim points");
     expect(!AI::chooseAdventureClaim(lowBudget, AI::BehaviorProfile::Economic).isValid(),
@@ -1073,8 +1554,8 @@ void testAdventureProfiles()
                AI::behaviorRules(AI::BehaviorProfile::Economic).minimumBattleWinChance,
            "Battle forecast must allow an economic attack that the old strength ratio rejected");
 
-    BattleParty unsafeRaid(Clan::Red, Land::Greenbaw);
-    expect(unsafeRaid.join(combatCreature(Clan::Red, Creature::Durlock, 302, 1, 0, 0, 1)),
+    BattleParty unsafeRaid(Clan::Maitha, Land::Greenbaw);
+    expect(unsafeRaid.join(combatCreature(Clan::Maitha, Creature::Durlock, 302, 1, 0, 0, 1)),
            "Adventure AI unsafe forecast fixture must join");
     expect(!AI::chooseAdventureMove(player, unsafeRaid, AI::BehaviorProfile::Aggressive,
                                     defendedTarget).isValid(),
@@ -1094,42 +1575,42 @@ void testAdventureCoordination()
 {
     GameData::gamers.clear();
 
-    LocalPlayer red;
-    red.avatar = Avatar::Orachi;
-    red.clan = Clan::Red;
-    red.wind = Wind::East;
+    LocalPlayer maitha;
+    maitha.avatar = Avatar::Orachi;
+    maitha.clan = Clan::Maitha;
+    maitha.wind = Wind::East;
 
-    BattleParty borderGuard(Clan::Red, Land::Corzen);
-    expect(borderGuard.join(combatCreature(Clan::Red, Creature::Durlock, 310, 1, 0, 1, 1)),
+    BattleParty borderGuard(Clan::Maitha, Land::Corzen);
+    expect(borderGuard.join(combatCreature(Clan::Maitha, Creature::Durlock, 310, 1, 0, 1, 1)),
            "Adventure coordinator border guard fixture must join");
-    red.army.push_back(borderGuard);
+    maitha.army.push_back(borderGuard);
 
-    BattleParty mainForce(Clan::Red, Land::Greenbaw);
-    expect(mainForce.join(combatCreature(Clan::Red, Creature::Durlock, 311, 8, 1, 3, 5, 2)),
+    BattleParty mainForce(Clan::Maitha, Land::Greenbaw);
+    expect(mainForce.join(combatCreature(Clan::Maitha, Creature::Durlock, 311, 8, 1, 3, 5, 2)),
            "Adventure coordinator main force fixture must join");
-    expect(mainForce.join(combatCreature(Clan::Red, Creature::SkeletonHorde, 312, 5, 1, 2, 4, 2)),
+    expect(mainForce.join(combatCreature(Clan::Maitha, Creature::SkeletonHorde, 312, 5, 1, 2, 4, 2)),
            "Adventure coordinator main force second unit fixture must join");
-    expect(mainForce.join(combatCreature(Clan::Red, Creature::KnightTemplar, 313, 4, 0, 3, 5, 2)),
+    expect(mainForce.join(combatCreature(Clan::Maitha, Creature::KnightTemplar, 313, 4, 0, 3, 5, 2)),
            "Adventure coordinator main force third unit fixture must join");
-    red.army.push_back(mainForce);
+    maitha.army.push_back(mainForce);
 
-    BattleParty flank(Clan::Red, Land::Talon);
-    expect(flank.join(combatCreature(Clan::Red, Creature::Durlock, 314, 6, 1, 2, 4, 2)),
+    BattleParty flank(Clan::Maitha, Land::Talon);
+    expect(flank.join(combatCreature(Clan::Maitha, Creature::Durlock, 314, 6, 1, 2, 4, 2)),
            "Adventure coordinator flank fixture must join");
-    red.army.push_back(flank);
+    maitha.army.push_back(flank);
 
-    LocalPlayer yellow;
-    yellow.avatar = Avatar::Lakkho;
-    yellow.clan = Clan::Yellow;
-    yellow.wind = Wind::South;
-    BattleParty counterAttack(Clan::Yellow, Land::Zubrus);
-    expect(counterAttack.join(combatCreature(Clan::Yellow, Creature::KnightTemplar,
+    LocalPlayer kartha;
+    kartha.avatar = Avatar::Lakkho;
+    kartha.clan = Clan::Kartha;
+    kartha.wind = Wind::South;
+    BattleParty counterAttack(Clan::Kartha, Land::Zubrus);
+    expect(counterAttack.join(combatCreature(Clan::Kartha, Creature::KnightTemplar,
                                               320, 4, 1, 3, 5, 1)),
            "Adventure coordinator counter-attack fixture must join");
-    yellow.army.push_back(counterAttack);
+    kartha.army.push_back(counterAttack);
 
-    GameData::gamers.push_back(red);
-    GameData::gamers.push_back(yellow);
+    GameData::gamers.push_back(maitha);
+    GameData::gamers.push_back(kartha);
 
     const LocalPlayer & player = GameData::gamers.front();
     const std::vector<AI::AdventureThreat> economicThreats =
@@ -1214,11 +1695,11 @@ void testAdventureCoordination()
 
 void testBattleAI()
 {
-    BattleParty forecastAttackers(Clan::Red, Land::Baliphon);
-    expect(forecastAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty forecastAttackers(Clan::Maitha, Land::Baliphon);
+    expect(forecastAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                                   325, 12, 0, 3, 10)),
            "Battle forecast overwhelming attacker fixture must join");
-    BattleTown forecastTown(BattleUnit(BaseStat(0, 0, 0, 2)), Clan::Yellow, Land::Baliphon);
+    BattleTown forecastTown(BattleUnit(BaseStat(0, 0, 0, 2)), Clan::Kartha, Land::Baliphon);
     const AI::BattleForecast winningForecast = AI::forecastBattle(
         forecastAttackers, forecastTown, nullptr, AI::BehaviorProfile::Aggressive,
         AI::BehaviorProfile::Balanced, 32);
@@ -1233,11 +1714,11 @@ void testBattleAI()
            forecastTown.loyalty() == 2,
            "Battle forecast must run only on copied combat state");
 
-    BattleParty doomedAttackers(Clan::Red, Land::Baliphon);
-    expect(doomedAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty doomedAttackers(Clan::Maitha, Land::Baliphon);
+    expect(doomedAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                                 326, 1, 0, 0, 1)),
            "Battle forecast doomed attacker fixture must join");
-    BattleTown fortress(BattleUnit(BaseStat(10, 0, 10, 10)), Clan::Yellow, Land::Baliphon);
+    BattleTown fortress(BattleUnit(BaseStat(10, 0, 10, 10)), Clan::Kartha, Land::Baliphon);
     expect(AI::forecastBattle(doomedAttackers, fortress, nullptr,
                               AI::BehaviorProfile::Aggressive,
                               AI::BehaviorProfile::Balanced, 32).captureChance == 0,
@@ -1254,10 +1735,10 @@ void testBattleAI()
     expect(actualFirstRandom == expectedFirstRandom && actualSecondRandom == expectedSecondRandom,
            "Battle forecast must not consume the real game's global random stream");
 
-    BattleParty opening(Clan::Red, Land::Baliphon);
-    expect(opening.join(combatCreature(Clan::Red, Creature::Durlock, 330, 12, 0, 2, 4)),
+    BattleParty opening(Clan::Maitha, Land::Baliphon);
+    expect(opening.join(combatCreature(Clan::Maitha, Creature::Durlock, 330, 12, 0, 2, 4)),
            "Battle AI opening damage fixture must join");
-    expect(opening.join(combatCreature(Clan::Red, Creature::GreatCarol, 331, 1, 0, 1, 2)),
+    expect(opening.join(combatCreature(Clan::Maitha, Creature::GreatCarol, 331, 1, 0, 1, 2)),
            "Battle AI opening First Strike fixture must join");
     const std::vector<int> openingOrder = AI::chooseBattleInitiative(
         opening, AI::BattleAttackMode::Melee, AI::BehaviorProfile::Balanced, true);
@@ -1268,10 +1749,10 @@ void testBattleAI()
     expect(!normalOrder.empty() && normalOrder.front() == 330,
            "First Strike must not distort initiative after the opening");
 
-    BattleParty doctrine(Clan::Red, Land::Baliphon);
-    expect(doctrine.join(combatCreature(Clan::Red, Creature::Durlock, 340, 10, 0, 0, 2)),
+    BattleParty doctrine(Clan::Maitha, Land::Baliphon);
+    expect(doctrine.join(combatCreature(Clan::Maitha, Creature::Durlock, 340, 10, 0, 0, 2)),
            "Battle AI aggressive doctrine fixture must join");
-    expect(doctrine.join(combatCreature(Clan::Red, Creature::AdventureParty, 341, 3, 0, 8, 10)),
+    expect(doctrine.join(combatCreature(Clan::Maitha, Creature::AdventureParty, 341, 3, 0, 8, 10)),
            "Battle AI economic doctrine fixture must join");
     const std::vector<int> aggressiveOrder = AI::chooseBattleInitiative(
         doctrine, AI::BattleAttackMode::Melee, AI::BehaviorProfile::Aggressive);
@@ -1282,10 +1763,10 @@ void testBattleAI()
     expect(!economicOrder.empty() && economicOrder.front() == 341,
            "economic Battle AI must lead with the durable creature");
 
-    BattleParty controlDoctrine(Clan::Red, Land::Baliphon);
-    expect(controlDoctrine.join(combatCreature(Clan::Red, Creature::Durlock, 342, 7, 0, 3, 5)),
+    BattleParty controlDoctrine(Clan::Maitha, Land::Baliphon);
+    expect(controlDoctrine.join(combatCreature(Clan::Maitha, Creature::Durlock, 342, 7, 0, 3, 5)),
            "Battle AI control baseline fixture must join");
-    expect(controlDoctrine.join(combatCreature(Clan::Red, Creature::SkeletonHorde,
+    expect(controlDoctrine.join(combatCreature(Clan::Maitha, Creature::SkeletonHorde,
                                                 343, 4, 0, 1, 3)),
            "Battle AI control speciality fixture must join");
     const std::vector<int> controlOrder = AI::chooseBattleInitiative(
@@ -1293,15 +1774,15 @@ void testBattleAI()
     expect(!controlOrder.empty() && controlOrder.front() == 343,
            "control Battle AI must prioritize a tactical Swarm attacker");
 
-    BattleParty shooters(Clan::Red, Land::Baliphon);
-    expect(shooters.join(combatCreature(Clan::Red, Creature::Durlock, 350, 1, 2, 1, 3)),
+    BattleParty shooters(Clan::Maitha, Land::Baliphon);
+    expect(shooters.join(combatCreature(Clan::Maitha, Creature::Durlock, 350, 1, 2, 1, 3)),
            "Battle AI first ranged fixture must join");
-    expect(shooters.join(combatCreature(Clan::Red, Creature::Durlock, 351, 1, 2, 1, 3)),
+    expect(shooters.join(combatCreature(Clan::Maitha, Creature::Durlock, 351, 1, 2, 1, 3)),
            "Battle AI second ranged fixture must join");
-    BattleParty rangedTargets(Clan::Yellow, Land::Baliphon);
-    expect(rangedTargets.join(combatCreature(Clan::Yellow, Creature::Durlock, 360, 1, 0, 0, 2)),
+    BattleParty rangedTargets(Clan::Kartha, Land::Baliphon);
+    expect(rangedTargets.join(combatCreature(Clan::Kartha, Creature::Durlock, 360, 1, 0, 0, 2)),
            "Battle AI lethal ranged target fixture must join");
-    expect(rangedTargets.join(combatCreature(Clan::Yellow, Creature::Durlock, 361, 1, 0, 0, 6)),
+    expect(rangedTargets.join(combatCreature(Clan::Kartha, Creature::Durlock, 361, 1, 0, 0, 6)),
            "Battle AI durable ranged target fixture must join");
     const AI::BattleRoundPlan rangedPlan = AI::chooseRangedBattlePlan(
         shooters, rangedTargets, AI::BehaviorProfile::Balanced);
@@ -1312,10 +1793,10 @@ void testBattleAI()
            rangedTargets.findBattleUnitConst(361)->loyalty() == 6,
            "Battle AI ranged projection must not apply its predicted damage");
 
-    BattleParty missileTargets(Clan::Yellow, Land::Baliphon);
-    expect(missileTargets.join(combatCreature(Clan::Yellow, Creature::KiLin, 362, 1, 0, 0, 1)),
+    BattleParty missileTargets(Clan::Kartha, Land::Baliphon);
+    expect(missileTargets.join(combatCreature(Clan::Kartha, Creature::KiLin, 362, 1, 0, 0, 1)),
            "Battle AI Ignore Missiles fixture must join");
-    expect(missileTargets.join(combatCreature(Clan::Yellow, Creature::Durlock, 363, 1, 0, 0, 3)),
+    expect(missileTargets.join(combatCreature(Clan::Kartha, Creature::Durlock, 363, 1, 0, 0, 3)),
            "Battle AI legal missile fixture must join");
     const AI::BattleRoundPlan missilePlan = AI::chooseRangedBattlePlan(
         shooters, missileTargets, AI::BehaviorProfile::Balanced);
@@ -1325,13 +1806,13 @@ void testBattleAI()
         return !attack.targets.empty() && attack.targets.front() != 362;
     }), "Battle AI must never assign missiles to an immune creature");
 
-    BattleParty meleeActor(Clan::Red, Land::Baliphon);
-    expect(meleeActor.join(combatCreature(Clan::Red, Creature::Durlock, 370, 5, 0, 1, 5)),
+    BattleParty meleeActor(Clan::Maitha, Land::Baliphon);
+    expect(meleeActor.join(combatCreature(Clan::Maitha, Creature::Durlock, 370, 5, 0, 1, 5)),
            "Battle AI melee attacker fixture must join");
-    BattleParty meleeTargets(Clan::Yellow, Land::Baliphon);
-    expect(meleeTargets.join(combatCreature(Clan::Yellow, Creature::Durlock, 371, 0, 0, 0, 1)),
+    BattleParty meleeTargets(Clan::Kartha, Land::Baliphon);
+    expect(meleeTargets.join(combatCreature(Clan::Kartha, Creature::Durlock, 371, 0, 0, 0, 1)),
            "Battle AI easy melee target fixture must join");
-    expect(meleeTargets.join(combatCreature(Clan::Yellow, Creature::GreatCarol, 372, 8, 3, 1, 8)),
+    expect(meleeTargets.join(combatCreature(Clan::Kartha, Creature::GreatCarol, 372, 8, 3, 1, 8)),
            "Battle AI dangerous melee target fixture must join");
     const AI::BattleAttackPlan aggressiveAttack = AI::chooseMeleeBattlePlan(
         meleeActor, meleeTargets, AI::BehaviorProfile::Aggressive);
@@ -1350,21 +1831,21 @@ void testInteractiveBattleSession()
 {
     const Battle::RandomRoll highRoll = [](int, int maximum) { return maximum; };
 
-    BattleParty attackers(Clan::Red, Land::Baliphon);
-    expect(attackers.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty attackers(Clan::Maitha, Land::Baliphon);
+    expect(attackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                          380, 9, 0, 1, 8)),
            "interactive battle ordinary attacker fixture must join");
-    expect(attackers.join(combatCreature(Clan::Red, Creature::GreatCarol,
+    expect(attackers.join(combatCreature(Clan::Maitha, Creature::GreatCarol,
                                          381, 4, 0, 1, 8)),
            "interactive battle First Strike fixture must join");
-    BattleParty defenders(Clan::Yellow, Land::Baliphon);
-    expect(defenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+    BattleParty defenders(Clan::Kartha, Land::Baliphon);
+    expect(defenders.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                          390, 3, 0, 1, 6)),
            "interactive battle first defender fixture must join");
-    expect(defenders.join(combatCreature(Clan::Yellow, Creature::AdventureParty,
+    expect(defenders.join(combatCreature(Clan::Kartha, Creature::AdventureParty,
                                          391, 3, 0, 1, 6)),
            "interactive battle second defender fixture must join");
-    BattleTown town(BattleUnit(BaseStat(1, 0, 1, 8)), Clan::Yellow, Land::Baliphon);
+    BattleTown town(BattleUnit(BaseStat(1, 0, 1, 8)), Clan::Kartha, Land::Baliphon);
 
     Battle::Session session(attackers, town, &defenders,
                             AI::BehaviorProfile::Balanced,
@@ -1429,11 +1910,11 @@ void testInteractiveBattleSession()
            automaticSession.strikes().toString() == adapterStrikes.toString(),
            "legacy automatic battle entry point must use the same BattleSession primitives");
 
-    BattleParty townAttackers(Clan::Red, Land::Baliphon);
-    expect(townAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty townAttackers(Clan::Maitha, Land::Baliphon);
+    expect(townAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                              395, 9, 0, 1, 8)),
            "interactive town attacker fixture must join");
-    BattleTown targetTown(BattleUnit(BaseStat(0, 0, 0, 4)), Clan::Yellow, Land::Baliphon);
+    BattleTown targetTown(BattleUnit(BaseStat(0, 0, 0, 4)), Clan::Kartha, Land::Baliphon);
     Battle::Session townSession(townAttackers, targetTown, nullptr,
                                 AI::BehaviorProfile::Balanced,
                                 AI::BehaviorProfile::Balanced);
@@ -1444,20 +1925,20 @@ void testInteractiveBattleSession()
            townSession.legalTargets(395).front() == targetTown.battleUnit(),
            "an undefended territory must expose its stable town id as the manual target");
 
-    BattleParty rangedAttackers(Clan::Red, Land::Baliphon);
-    expect(rangedAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty rangedAttackers(Clan::Maitha, Land::Baliphon);
+    expect(rangedAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                                 430, 1, 2, 0, 5)) &&
-           rangedAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+           rangedAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                                 431, 1, 2, 0, 5)),
            "interactive ranged attacker fixtures must join");
-    BattleParty rangedDefenders(Clan::Yellow, Land::Baliphon);
-    expect(rangedDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+    BattleParty rangedDefenders(Clan::Kartha, Land::Baliphon);
+    expect(rangedDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                                 440, 0, 0, 0, 1)) &&
-           rangedDefenders.join(combatCreature(Clan::Yellow, Creature::KiLin,
+           rangedDefenders.join(combatCreature(Clan::Kartha, Creature::KiLin,
                                                 441, 0, 0, 0, 8)),
            "interactive ranged defender fixtures must join");
     BattleTown rangedTargetTown(BattleUnit(BaseStat(0, 0, 0, 3)),
-                                 Clan::Yellow, Land::Baliphon);
+                                 Clan::Kartha, Land::Baliphon);
     Battle::Session rangedSession(rangedAttackers, rangedTargetTown, &rangedDefenders,
                                   AI::BehaviorProfile::Balanced,
                                   AI::BehaviorProfile::Balanced);
@@ -1497,19 +1978,19 @@ void testBattleSessionSpecialities()
     const Battle::RandomRoll lowRoll = [](int minimum, int) { return minimum; };
 
     // Creature-cast Hellblast resolves simultaneously at session entry.
-    BattleParty hellAttackers(Clan::Red, Land::Baliphon);
-    BattleParty hellDefenders(Clan::Yellow, Land::Baliphon);
-    expect(hellAttackers.join(combatCreature(Clan::Red, Creature::MazRa,
+    BattleParty hellAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty hellDefenders(Clan::Kartha, Land::Baliphon);
+    expect(hellAttackers.join(combatCreature(Clan::Maitha, Creature::MazRa,
                                               500, 0, 0, 0, 10)) &&
-           hellAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+           hellAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                               501, 0, 0, 0, 10)) &&
-           hellDefenders.join(combatCreature(Clan::Yellow, Creature::MazRa,
+           hellDefenders.join(combatCreature(Clan::Kartha, Creature::MazRa,
                                               510, 0, 0, 0, 10)) &&
-           hellDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+           hellDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                               511, 0, 0, 0, 10)),
            "BattleSession Hellblast fixtures must join");
     BattleTown hellTown(BattleUnit(BaseStat(0, 0, 20, 20)),
-                        Clan::Yellow, Land::Baliphon);
+                        Clan::Kartha, Land::Baliphon);
     Battle::Session hellSession(hellAttackers, hellTown, &hellDefenders,
                                 AI::BehaviorProfile::Balanced,
                                 AI::BehaviorProfile::Balanced);
@@ -1521,13 +2002,13 @@ void testBattleSessionSpecialities()
            "BattleSession Hellblast strikes must retain their stable caster ids");
 
     // First Strike is a leader decision and suppresses both creature volleys.
-    BattleParty firstAttackers(Clan::Red, Land::Baliphon);
-    BattleParty firstDefenders(Clan::Yellow, Land::Baliphon);
-    expect(firstAttackers.join(combatCreature(Clan::Red, Creature::GreatCarol,
+    BattleParty firstAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty firstDefenders(Clan::Kartha, Land::Baliphon);
+    expect(firstAttackers.join(combatCreature(Clan::Maitha, Creature::GreatCarol,
                                                520, 5, 0, 5, 10)) &&
-           firstAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+           firstAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                                521, 1, 8, 5, 10)) &&
-           firstDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+           firstDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                                522, 1, 8, 0, 10)),
            "BattleSession First Strike fixtures must join");
     Battle::Session firstSession(firstAttackers, hellTown, &firstDefenders,
@@ -1542,13 +2023,13 @@ void testBattleSessionSpecialities()
            "selected First Strike leader must skip the simultaneous creature volley");
 
     // Matching Merge defenders alter the real manual hit calculation.
-    BattleParty mergeAttackers(Clan::Red, Land::Baliphon);
-    BattleParty mergeDefenders(Clan::Yellow, Land::Baliphon);
-    expect(mergeAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty mergeAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty mergeDefenders(Clan::Kartha, Land::Baliphon);
+    expect(mergeAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                                530, 2, 0, 20, 10)) &&
-           mergeDefenders.join(combatCreature(Clan::Yellow, Creature::Griffon,
+           mergeDefenders.join(combatCreature(Clan::Kartha, Creature::Griffon,
                                                531, 0, 0, 1, 5)) &&
-           mergeDefenders.join(combatCreature(Clan::Yellow, Creature::Griffon,
+           mergeDefenders.join(combatCreature(Clan::Kartha, Creature::Griffon,
                                                532, 0, 0, 1, 5)),
            "BattleSession Merge fixtures must join");
     Battle::Session mergeSession(mergeAttackers, hellTown, &mergeDefenders,
@@ -1570,11 +2051,11 @@ void testBattleSessionSpecialities()
            "damage preview must use the same Merge modifier as BattleSession");
 
     // Mighty Blow uses an injected deterministic roll and guarantees one damage.
-    BattleParty mightyAttackers(Clan::Red, Land::Baliphon);
-    BattleParty mightyDefenders(Clan::Yellow, Land::Baliphon);
-    expect(mightyAttackers.join(combatCreature(Clan::Red, Creature::KnightTemplar,
+    BattleParty mightyAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty mightyDefenders(Clan::Kartha, Land::Baliphon);
+    expect(mightyAttackers.join(combatCreature(Clan::Maitha, Creature::KnightTemplar,
                                                 540, 0, 0, 20, 10)) &&
-           mightyDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+           mightyDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                                 541, 0, 0, 10, 5)),
            "BattleSession Mighty Blow fixtures must join");
     Battle::Session mightySession(mightyAttackers, hellTown, &mightyDefenders,
@@ -1597,11 +2078,11 @@ void testBattleSessionSpecialities()
            "damage preview must expose the Mighty Blow branch without rolling it");
 
     // Fire Shield retaliates even when the selected melee strike is lethal.
-    BattleParty fireAttackers(Clan::Red, Land::Baliphon);
-    BattleParty fireDefenders(Clan::Yellow, Land::Baliphon);
-    expect(fireAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty fireAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty fireDefenders(Clan::Kartha, Land::Baliphon);
+    expect(fireAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                               550, 5, 0, 20, 10)) &&
-           fireDefenders.join(combatCreature(Clan::Yellow, Creature::FireElemental,
+           fireDefenders.join(combatCreature(Clan::Kartha, Creature::FireElemental,
                                               551, 0, 0, 0, 5)),
            "BattleSession Fire Shield fixtures must join");
     Battle::Session fireSession(fireAttackers, hellTown, &fireDefenders,
@@ -1620,15 +2101,15 @@ void testBattleSessionSpecialities()
            "Fire Shield must retaliate through the selected BattleSession action");
 
     // Swarm retains the selected first target and strikes the entire party.
-    BattleParty swarmAttackers(Clan::Red, Land::Baliphon);
-    BattleParty swarmDefenders(Clan::Yellow, Land::Baliphon);
-    expect(swarmAttackers.join(combatCreature(Clan::Red, Creature::SkeletonHorde,
+    BattleParty swarmAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty swarmDefenders(Clan::Kartha, Land::Baliphon);
+    expect(swarmAttackers.join(combatCreature(Clan::Maitha, Creature::SkeletonHorde,
                                                560, 10, 0, 20, 10)) &&
-           swarmDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+           swarmDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                                561, 0, 0, 0, 1)) &&
-           swarmDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+           swarmDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                                562, 0, 0, 0, 1)) &&
-           swarmDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+           swarmDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                                563, 0, 0, 0, 1)),
            "BattleSession Swarm fixtures must join");
     Battle::Session swarmSession(swarmAttackers, hellTown, &swarmDefenders,
@@ -1649,33 +2130,33 @@ void testBattleSessionSpecialities()
 
 void testAdventureBattleSessionFlow()
 {
-    GameData::initPersons(Person(Avatar::Lakkho, Clan::Yellow, Wind::East));
+    GameData::initPersons(Person(Avatar::Lakkho, Clan::Kartha, Wind::East));
     GameData::gamers.clear();
 
     LocalPlayer attacker;
     attacker.avatar = Avatar::Lakkho;
-    attacker.clan = Clan::Yellow;
+    attacker.clan = Clan::Kartha;
     attacker.wind = Wind::East;
-    BattleParty invadingParty(Clan::Yellow, Land::Baliphon);
-    expect(invadingParty.join(combatCreature(Clan::Yellow, Creature::GreatCarol,
+    BattleParty invadingParty(Clan::Kartha, Land::Baliphon);
+    expect(invadingParty.join(combatCreature(Clan::Kartha, Creature::GreatCarol,
                                               410, 8, 0, 2, 20)),
            "Adventure interactive attacker fixture must join");
     attacker.army.push_back(invadingParty);
 
     LocalPlayer defender;
     defender.avatar = Avatar::Nucrus;
-    defender.clan = Clan::Red;
+    defender.clan = Clan::Maitha;
     defender.wind = Wind::South;
     defender.setAI(true);
-    BattleParty defendingParty(Clan::Red, Land::Baliphon);
-    expect(defendingParty.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty defendingParty(Clan::Maitha, Land::Baliphon);
+    expect(defendingParty.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                                420, 2, 0, 2, 12)),
            "Adventure interactive defender fixture must join");
     defender.army.push_back(defendingParty);
 
     GameData::gamers.push_back(attacker);
     GameData::gamers.push_back(defender);
-    GameData::landsInfo[Land::Baliphon].clan = Clan::Red;
+    GameData::landsInfo[Land::Baliphon].clan = Clan::Maitha;
     expect(GameData::initAdventure(),
            "Adventure interactive battle fixture must initialize");
 
@@ -1800,7 +2281,7 @@ int runRecoverySelfTest()
         return 1;
     }
 
-    GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
+    GameData::initPersons(Person(Avatar::Nucrus, Clan::Maitha, Wind::East));
     LocalPlayer* recoveryPlayer = GameData::gamers.playerOfWind(Wind::East);
     if(!recoveryPlayer)
     {
@@ -1945,10 +2426,10 @@ void testMahjongCastDeadTargetMessage()
 
     LocalPlayer targetOwner;
     targetOwner.avatar = Avatar::Lakkho;
-    targetOwner.clan = Clan::Yellow;
+    targetOwner.clan = Clan::Kartha;
     targetOwner.wind = Wind::South;
-    BattleParty targetParty(Clan::Yellow, Land::Zubrus);
-    expect(targetParty.join(combatCreature(Clan::Yellow, Creature::Durlock,
+    BattleParty targetParty(Clan::Kartha, Land::Zubrus);
+    expect(targetParty.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                            490, 1, 0, 1, 1)),
            "lethal spell message fixture must join");
     targetOwner.army.push_back(targetParty);
@@ -1979,17 +2460,17 @@ void testMahjongCastDeadTargetMessage()
     GameData::gamers.clear();
     LocalPlayer caster;
     caster.avatar = Avatar::Dayla;
-    caster.clan = Clan::Purple;
+    caster.clan = Clan::Marz;
     caster.wind = Wind::East;
     caster.points = 1000;
     GameData::gamers.push_back(caster);
 
     targetOwner.avatar = Avatar::Logun;
-    targetOwner.clan = Clan::Yellow;
+    targetOwner.clan = Clan::Kartha;
     targetOwner.wind = Wind::South;
     targetOwner.army.clear();
-    BattleParty lethalParty(Clan::Yellow, Land::TowerOf4Winds);
-    expect(lethalParty.join(combatCreature(Clan::Yellow, Creature::Durlock,
+    BattleParty lethalParty(Clan::Kartha, Land::TowerOf4Winds);
+    expect(lethalParty.join(combatCreature(Clan::Kartha, Creature::Durlock,
                                            491, 1, 0, 1, 1)),
            "lethal spell dispatch fixture must join");
     targetOwner.army.push_back(lethalParty);
@@ -2066,6 +2547,761 @@ int runCapturedLightningRepro(const char* savePath)
     std::cout << "captured Lightning Bolt replay: ok\n";
     return 0;
 }
+
+void testMatchScoreContract()
+{
+    std::vector<MatchScore::PlayerInput> inputs(4);
+    inputs[0].person = Person(Avatar::Nucrus, Clan::Maitha, Wind::East);
+    inputs[1].person = Person(Avatar::Lakkho, Clan::Kartha, Wind::South);
+    inputs[2].person = Person(Avatar::Ziag, Clan::Iz, Wind::West);
+    inputs[3].person = Person(Avatar::Dayla, Clan::Marz, Wind::North);
+
+    inputs[0].scores = {{ 10, 3, 300, 100, 50 }};
+    inputs[1].scores = {{ 10, 2, 250, 200, 40 }};
+    inputs[2].scores = {{ 5, 2, 300, 50, 50 }};
+    inputs[3].scores = {{ 0, 1, 100, -10, 10 }};
+
+    const MatchScore::Results scores = MatchScore::calculate(inputs);
+    expect(scores.size() == 4, "match score must retain all players");
+    if(scores.size() != 4) return;
+
+    expect(scores[0].categories[MatchScore::index(MatchScore::Category::Territory)].rank == 1 &&
+           scores[1].categories[MatchScore::index(MatchScore::Category::Territory)].rank == 1 &&
+           scores[2].categories[MatchScore::index(MatchScore::Category::Territory)].rank == 3,
+           "category ties must use competition ranks");
+    expect(scores[0].totalScore == 19 && scores[1].totalScore == 15 &&
+           scores[2].totalScore == 15 && scores[3].totalScore == 5,
+           "total score must sum category standing points");
+    expect(scores[0].finalRank == 1 && scores[1].finalRank == 2 &&
+           scores[2].finalRank == 2 && scores[3].finalRank == 4,
+           "final ties must retain shared competition rank");
+    expect(scores[3].categories[MatchScore::index(MatchScore::Category::SpellPoints)].score == 0,
+           "negative resource values must not reduce canonical score");
+}
+
+void configureSimulationBonuses()
+{
+    GameData::bonusStart = 250;
+    GameData::bonusGame = 50;
+    GameData::bonusKong = 40;
+    GameData::bonusPung = 30;
+    GameData::bonusChao = 20;
+    GameData::bonusPass = 10;
+}
+
+bool applyBalanceRoster(Tournament::Config &, const char*);
+
+void testTournamentContract()
+{
+    Tournament::Config config;
+    config.seeds = { UINT64_C(0x15a50001), UINT64_C(0x15a50002) };
+    config.avatars = Tournament::baselineAvatars();
+    config.maximumTicks = 20000;
+
+    const Tournament::Schedule schedule = Tournament::buildSchedule(config);
+    expect(schedule.valid(), "baseline tournament schedule must be valid");
+    expect(schedule.legalClanAssignments == 1,
+           "fixed-clan baseline must have exactly one legal clan assignment");
+    expect(schedule.matches.size() == 8,
+           "two baseline seeds must produce four seat rotations each");
+
+    Tournament::Config forced = config;
+    forced.seeds.resize(1);
+    forced.difficulty = AI::Difficulty::Hard;
+    forced.forceBehaviorProfile = true;
+    forced.behaviorProfile = AI::BehaviorProfile::Economic;
+    const Tournament::Schedule forcedSchedule = Tournament::buildSchedule(forced);
+    expect(forcedSchedule.valid() &&
+           std::all_of(forcedSchedule.matches.begin(), forcedSchedule.matches.end(),
+               [](const Tournament::PlannedMatch & match)
+               {
+                   return match.match.difficulty == AI::Difficulty::Hard &&
+                          match.match.forceBehaviorProfile &&
+                          match.match.behaviorProfile == AI::BehaviorProfile::Economic;
+               }),
+           "every matrix cell must propagate difficulty and doctrine to every match");
+
+    for(std::size_t seedIndex = 0; seedIndex < config.seeds.size(); ++seedIndex)
+    {
+        std::map<int, int> windMasks;
+        for(const Avatar & avatar : config.avatars) windMasks[avatar()] = 0;
+
+        for(const Tournament::PlannedMatch & match : schedule.matches)
+        {
+            if(match.seedIndex != seedIndex) continue;
+            expect(match.match.persons.size() == 4,
+                   "every planned match must retain four seats");
+            for(std::size_t seat = 0; seat < match.match.persons.size(); ++seat)
+            {
+                const Person & person = match.match.persons[seat];
+                expect(person.wind() == static_cast<int>(seat + 1),
+                       "planned persons must be stored in canonical wind/seat order");
+                windMasks[person.avatar()] |= person.wind.mask();
+            }
+        }
+
+        const int allWindMask = Wind(Wind::East).mask() | Wind(Wind::South).mask() |
+            Wind(Wind::West).mask() | Wind(Wind::North).mask();
+        for(const auto & item : windMasks)
+            expect(item.second == allWindMask,
+                   "every avatar must occupy all four winds for every seed");
+    }
+
+    Tournament::Config flexible = config;
+    flexible.seeds.resize(1);
+    flexible.avatars = Avatars(std::vector<Avatar>{
+        Avatar(Avatar::Orachi), Avatar(Avatar::Niana),
+        Avatar(Avatar::Kierac), Avatar(Avatar::Logun)
+    });
+    const Tournament::Schedule flexibleSchedule = Tournament::buildSchedule(flexible);
+    expect(flexibleSchedule.legalClanAssignments == 4 &&
+           flexibleSchedule.matches.size() == 16,
+           "clan rotation must enumerate only the four legal bijections");
+
+    Tournament::Config parsedRoster = config;
+    expect(applyBalanceRoster(parsedRoster, "orachi,lakkho,ziag,dayla") &&
+           parsedRoster.avatars.size() == 4 &&
+           parsedRoster.avatars.front() == Avatar(Avatar::Orachi) &&
+           Tournament::buildSchedule(parsedRoster).legalClanAssignments == 1,
+           "CLI roster parsing must retain four unique legal avatar ids");
+
+    Tournament::Config duplicate = config;
+    duplicate.avatars[1] = duplicate.avatars[0];
+    expect(!Tournament::buildSchedule(duplicate).valid(),
+           "duplicate tournament avatars must be rejected");
+
+    Tournament::Result synthetic;
+    synthetic.config = config;
+    synthetic.config.seeds.resize(1);
+    synthetic.config.forceBehaviorProfile = true;
+    synthetic.config.behaviorProfile = AI::BehaviorProfile::Control;
+    synthetic.schedule = Tournament::buildSchedule(synthetic.config);
+    Tournament::MatchRecord record;
+    record.plan = synthetic.schedule.matches.front();
+    record.result.status = Simulation::MatchStatus::Complete;
+    record.result.seed = record.plan.match.seed;
+    record.result.ticks = 123;
+    record.result.mahjongHands = 16;
+    record.result.adventurePhases = 16;
+    record.result.emittedActions = 456;
+    record.result.rngDraws = 789;
+    record.result.finalStateHash = "synthetic";
+
+    std::vector<MatchScore::PlayerInput> inputs;
+    for(std::size_t player = 0; player < record.plan.match.persons.size(); ++player)
+    {
+        MatchScore::PlayerInput input;
+        input.person = record.plan.match.persons[player];
+        input.scores = {{ static_cast<int>(40 - player * 5),
+                          static_cast<int>(4 - player),
+                          static_cast<int>(400 - player * 50),
+                          static_cast<int>(100 - player * 10),
+                          static_cast<int>(80 - player * 10) }};
+        inputs.push_back(input);
+    }
+    record.result.score = MatchScore::calculate(inputs);
+    for(const Person & person : record.plan.match.persons)
+    {
+        Simulation::MatchResult::PlayerTelemetry telemetry;
+        telemetry.avatar = person.avatar;
+        telemetry.summons = 2;
+        telemetry.spellsCast = 1;
+        telemetry.casualties = 1;
+        telemetry.dismissals = 1;
+        telemetry.peakUnits = 3;
+        telemetry.finalUnits = 2;
+        record.result.players.push_back(telemetry);
+    }
+    for(std::size_t stage = 0; stage < Simulation::MatchStageCount; ++stage)
+    {
+        record.result.stages[stage].adventurePhase = stage == 0 ? 5 : (stage == 1 ? 10 : 16);
+        record.result.stages[stage].score = record.result.score;
+    }
+    synthetic.matches.push_back(record);
+    Tournament::summarize(synthetic);
+
+    const std::string json = Tournament::toJsonObject(synthetic).toString();
+    const std::string csv = Tournament::toCsv(synthetic);
+    const std::string text = Tournament::toText(synthetic);
+    const JsonContentString parsed(json);
+    expect(parsed.isValid() && parsed.toObject().getInteger("schema_version") == 2 &&
+           parsed.toObject().getString("behavior_profile") == "control",
+           "balance JSON export must be valid and versioned");
+    expect(csv.find("early_territory") != std::string::npos &&
+           csv.find("behavior_profile") != std::string::npos &&
+           csv.find("spells_cast") != std::string::npos &&
+           csv.find("avatar,clan,clan_id,wind") != std::string::npos &&
+           csv.find(",Maitha,maitha,") != std::string::npos &&
+           csv.find("synthetic") != std::string::npos,
+           "balance CSV must contain canonical clan names, ids, telemetry and hashes");
+    expect(json.find("\"clan\": \"maitha\"") != std::string::npos &&
+           json.find("\"clan_name\": \"Maitha\"") != std::string::npos,
+           "balance JSON must expose canonical clan ids and display names");
+    expect(text.find("95% Wilson") != std::string::npos,
+           "human balance report must label its uncertainty interval");
+    expect(synthetic.summaries.size() == 4 && synthetic.summaries[0].completed == 1,
+           "balance aggregation must retain every completed avatar result");
+
+    Tournament::Result outliers;
+    outliers.config = config;
+    outliers.schedule = schedule;
+    for(std::size_t index = 0; index < schedule.matches.size(); ++index)
+    {
+        Tournament::MatchRecord sample = record;
+        sample.plan = schedule.matches[index];
+        sample.result.seed = sample.plan.match.seed;
+        sample.result.ticks = index + 1 == schedule.matches.size() ? 1000 : 100;
+        outliers.matches.push_back(sample);
+    }
+    Tournament::summarize(outliers);
+    expect(outliers.matches.back().replayRetentionReasons.size() == 1 &&
+           outliers.matches.back().replayRetentionReasons.front() ==
+               "outlier:match_ticks_iqr",
+           "IQR watchdog outliers must be marked for full replay retention");
+}
+
+int runHeadlessMatchSelfTest()
+{
+    configureSimulationBonuses();
+
+    Persons players;
+    players.push_back(Person(Avatar::Nucrus, Clan::Maitha, Wind::East));
+    players.push_back(Person(Avatar::Lakkho, Clan::Kartha, Wind::South));
+    players.push_back(Person(Avatar::Ziag, Clan::Iz, Wind::West));
+    players.push_back(Person(Avatar::Dayla, Clan::Marz, Wind::North));
+    for(Person & player : players) player.setAI(true);
+
+    Simulation::MatchConfig config;
+    config.seed = UINT64_C(0x15a50001);
+    config.difficulty = AI::Difficulty::Normal;
+    config.forceBehaviorProfile = true;
+    config.behaviorProfile = AI::BehaviorProfile::Aggressive;
+    config.persons = players;
+    config.maximumTicks = 20000;
+    config.captureFullReplay = true;
+
+    const Simulation::MatchResult first = Simulation::runMatch(config);
+    if(!first.completed())
+    {
+        std::cerr << "FAIL: first headless match status=" << Simulation::statusName(first.status)
+                  << ", ticks=" << first.ticks << ", hands=" << first.mahjongHands
+                  << ", error=" << first.error << '\n';
+        return 1;
+    }
+
+    std::string fullReplayError;
+    if(!first.fullReplayCaptured ||
+       first.actionReplay.getString("aiBehaviorProfile") != "aggressive" ||
+       first.actionReplay.getInteger("actionCount") <= 64 ||
+       !first.actionReplay.getBoolean("contiguousToCheckpoint") ||
+       !Replay::run(first.actionReplay, &fullReplayError) ||
+       Replay::authoritativeStateHash() != first.finalStateHash)
+    {
+        std::cerr << "FAIL: full-match action replay did not reproduce the final state: "
+                  << fullReplayError
+                  << ", captured=" << first.fullReplayCaptured
+                  << ", profile=" << first.actionReplay.getString("aiBehaviorProfile")
+                  << ", steps=" << first.actionReplay.getInteger("actionCount")
+                  << ", contiguous="
+                  << first.actionReplay.getBoolean("contiguousToCheckpoint") << '\n';
+        return 1;
+    }
+
+    const Simulation::MatchResult second = Simulation::runMatch(config);
+    if(!second.completed())
+    {
+        std::cerr << "FAIL: repeated headless match status=" << Simulation::statusName(second.status)
+                  << ", ticks=" << second.ticks << ", hands=" << second.mahjongHands
+                  << ", error=" << second.error << '\n';
+        return 1;
+    }
+    if(!Recovery::enabled() || AI::behaviorProfileOverrideEnabled())
+    {
+        std::cerr << "FAIL: headless match did not restore recovery/profile scope\n";
+        return 1;
+    }
+
+    if(first.mahjongHands != 16 || first.adventurePhases != 16 ||
+       first.finalStateHash != second.finalStateHash || first.ticks != second.ticks ||
+       first.emittedActions != second.emittedActions || first.rngDraws != second.rngDraws ||
+       first.score.size() != second.score.size() ||
+       first.players.size() != second.players.size() ||
+       first.events.size() != second.events.size())
+    {
+        std::cerr << "FAIL: repeated headless match was not deterministic"
+                  << ", first=" << first.finalStateHash << ", second=" << second.finalStateHash
+                  << ", ticks=" << first.ticks << '/' << second.ticks
+                  << ", hands=" << first.mahjongHands << '/' << second.mahjongHands
+                  << ", adventure=" << first.adventurePhases << '/' << second.adventurePhases
+                  << ", actions=" << first.emittedActions << '/' << second.emittedActions
+                  << ", rng=" << first.rngDraws << '/' << second.rngDraws << '\n';
+        return 1;
+    }
+
+    std::size_t summons = 0;
+    for(std::size_t player = 0; player < first.players.size(); ++player)
+    {
+        const auto & lhs = first.players[player];
+        const auto & rhs = second.players[player];
+        summons += lhs.summons;
+        if(lhs.avatar != rhs.avatar || lhs.summons != rhs.summons ||
+           lhs.spellsCast != rhs.spellsCast || lhs.casualties != rhs.casualties ||
+           lhs.dismissals != rhs.dismissals ||
+           lhs.peakUnits != rhs.peakUnits || lhs.finalUnits != rhs.finalUnits ||
+           lhs.summonedCreatures != rhs.summonedCreatures ||
+           lhs.castSpells != rhs.castSpells)
+        {
+            std::cerr << "FAIL: repeated match produced different event telemetry\n";
+            return 1;
+        }
+    }
+    if(summons == 0 || first.events.empty())
+    {
+        std::cerr << "FAIL: headless match did not capture authoritative match events\n";
+        return 1;
+    }
+
+    for(const Simulation::MatchResult::Event & event : first.events)
+    {
+        if(event.type != "summon" && event.type != "spell")
+            continue;
+
+        const AvatarInfo & avatar = GameData::avatarInfo(event.avatar);
+        bool legal = false;
+        if(event.type == "summon")
+        {
+            const Creature creature(event.subject);
+            legal = std::find(avatar.creatures.begin(), avatar.creatures.end(), creature) !=
+                    avatar.creatures.end();
+        }
+        else if(event.type == "spell")
+        {
+            const Spell spell(event.subject);
+            legal = std::find(avatar.spells.begin(), avatar.spells.end(), spell) !=
+                    avatar.spells.end();
+            for(const Creature & creature : avatar.creatures)
+            {
+                if(legal) break;
+                for(const Speciality & speciality :
+                    GameData::creatureInfo(creature).specials.toList())
+                {
+                    if(speciality.toSpell() == spell)
+                    {
+                        legal = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if(!legal)
+        {
+            std::cerr << "FAIL: event telemetry attributed an illegal " << event.type
+                      << " to " << event.avatar.toString() << ": " << event.subject << '\n';
+            return 1;
+        }
+    }
+
+    for(std::size_t player = 0; player < first.score.size(); ++player)
+    {
+        if(first.score[player].person.avatar != second.score[player].person.avatar ||
+           first.score[player].totalScore != second.score[player].totalScore ||
+           first.score[player].finalRank != second.score[player].finalRank)
+        {
+            std::cerr << "FAIL: repeated headless match produced a different final score\n";
+            return 1;
+        }
+        for(std::size_t category = 0; category < MatchScore::CategoryCount; ++category)
+        {
+            const MatchScore::CategoryResult & lhs = first.score[player].categories[category];
+            const MatchScore::CategoryResult & rhs = second.score[player].categories[category];
+            if(lhs.score != rhs.score || lhs.rank != rhs.rank ||
+               lhs.standingPoints != rhs.standingPoints)
+            {
+                std::cerr << "FAIL: repeated headless match produced different category scores\n";
+                return 1;
+            }
+        }
+    }
+
+    const std::array<std::size_t, Simulation::MatchStageCount> expectedPhases = {{ 5, 10, 16 }};
+    for(std::size_t stage = 0; stage < Simulation::MatchStageCount; ++stage)
+    {
+        if(!first.stages[stage].captured() ||
+           first.stages[stage].adventurePhase != expectedPhases[stage] ||
+           first.stages[stage].score.size() != second.stages[stage].score.size())
+        {
+            std::cerr << "FAIL: headless match did not capture deterministic stage telemetry\n";
+            return 1;
+        }
+        for(std::size_t player = 0; player < first.stages[stage].score.size(); ++player)
+        {
+            for(std::size_t category = 0; category < MatchScore::CategoryCount; ++category)
+            {
+                if(first.stages[stage].score[player].categories[category].score !=
+                   second.stages[stage].score[player].categories[category].score)
+                {
+                    std::cerr << "FAIL: repeated match produced different stage telemetry\n";
+                    return 1;
+                }
+            }
+        }
+    }
+
+    Simulation::MatchConfig invalid = config;
+    invalid.persons[1].wind = Wind(Wind::East);
+    const Simulation::MatchResult rejected = Simulation::runMatch(invalid);
+    if(rejected.status != Simulation::MatchStatus::InvalidConfiguration)
+    {
+        std::cerr << "FAIL: duplicate wind configuration was not rejected\n";
+        return 1;
+    }
+
+    std::cout << "headless match simulation: ok"
+              << ", seed=" << first.seed
+              << ", hash=" << first.finalStateHash
+              << ", ticks=" << first.ticks
+              << ", actions=" << first.emittedActions
+              << ", rng_draws=" << first.rngDraws;
+    if(!first.score.empty())
+    {
+        const auto leader = std::min_element(first.score.begin(), first.score.end(),
+            [](const MatchScore::PlayerResult & lhs, const MatchScore::PlayerResult & rhs)
+            {
+                return lhs.finalRank < rhs.finalRank;
+            });
+        std::cout << ", leader=" << leader->person.name()
+                  << ", total=" << leader->totalScore;
+    }
+    std::cout << '\n';
+    return 0;
+}
+
+Tournament::Config baselineTournamentConfig(std::size_t seedCount)
+{
+    Tournament::Config config;
+    config.seeds.assign(Tournament::publishedSeeds().begin(),
+                        Tournament::publishedSeeds().begin() + seedCount);
+    config.avatars = Tournament::baselineAvatars();
+    config.maximumTicks = 20000;
+    return config;
+}
+
+bool applyBalanceScenario(Tournament::Config & config, const char* difficulty,
+                          const char* behaviorProfile)
+{
+    if(difficulty && !AI::difficultyFromString(difficulty, config.difficulty))
+    {
+        std::cerr << "difficulty must be easy, normal or hard\n";
+        return false;
+    }
+
+    const std::string profile = behaviorProfile ? behaviorProfile : "native";
+    config.forceBehaviorProfile = profile != "native";
+    if(config.forceBehaviorProfile &&
+       !AI::behaviorProfileFromString(profile, config.behaviorProfile))
+    {
+        std::cerr << "behavior profile must be native, balanced, aggressive, economic or control\n";
+        return false;
+    }
+    return true;
+}
+
+bool applyBalanceRoster(Tournament::Config & config, const char* roster)
+{
+    const std::string selected = roster ? roster : "baseline";
+    if(selected.empty() || selected == "baseline")
+    {
+        config.avatars = Tournament::baselineAvatars();
+        return true;
+    }
+
+    std::vector<Avatar> avatars;
+    std::stringstream stream(selected);
+    std::string token;
+    while(std::getline(stream, token, ','))
+    {
+        const std::size_t first = token.find_first_not_of(" \t\r\n");
+        const std::size_t last = token.find_last_not_of(" \t\r\n");
+        if(first == std::string::npos)
+        {
+            std::cerr << "roster contains an empty avatar id\n";
+            return false;
+        }
+        token = token.substr(first, last - first + 1);
+        const Avatar avatar(token);
+        if(!avatar.isValid() || avatar == Avatar(Avatar::Random) ||
+           std::find(avatars.begin(), avatars.end(), avatar) != avatars.end())
+        {
+            std::cerr << "roster avatars must be concrete and unique: " << token << '\n';
+            return false;
+        }
+        avatars.push_back(avatar);
+    }
+
+    if(avatars.size() != 4)
+    {
+        std::cerr << "roster must contain exactly four comma-separated avatars\n";
+        return false;
+    }
+    config.avatars = Avatars(avatars);
+    return true;
+}
+
+std::string isolatedRecordName(std::size_t index)
+{
+    std::ostringstream name;
+    name << "match-" << std::setfill('0') << std::setw(6) << index << ".json";
+    return name.str();
+}
+
+bool validSeedCount(std::size_t seedCount)
+{
+    return 0 < seedCount && seedCount <= Tournament::publishedSeeds().size();
+}
+
+int runBalanceMatch(int argc, char** argv)
+{
+    if(argc < 5)
+    {
+        std::cerr << "usage: --balance-match <record.json> <seed-count> <schedule-index> "
+                     "[easy|normal|hard] [native|balanced|aggressive|economic|control] "
+                     "[avatar,avatar,avatar,avatar]\n";
+        return 2;
+    }
+    const std::size_t seedCount =
+        static_cast<std::size_t>(std::strtoul(argv[3], nullptr, 10));
+    const std::size_t scheduleIndex =
+        static_cast<std::size_t>(std::strtoul(argv[4], nullptr, 10));
+    if(!validSeedCount(seedCount)) return 2;
+
+    configureSimulationBonuses();
+    Tournament::Config config = baselineTournamentConfig(seedCount);
+    if(!applyBalanceScenario(config, 5 < argc ? argv[5] : nullptr,
+                             6 < argc ? argv[6] : nullptr) ||
+       !applyBalanceRoster(config, 7 < argc ? argv[7] : nullptr)) return 2;
+    const Tournament::Schedule schedule = Tournament::buildSchedule(config);
+    if(!schedule.valid() || schedule.matches.size() <= scheduleIndex)
+    {
+        std::cerr << (!schedule.valid() ? schedule.error :
+            "isolated schedule index is out of range") << '\n';
+        return 2;
+    }
+
+    Tournament::MatchRecord record;
+    record.plan = schedule.matches[scheduleIndex];
+    record.plan.match.captureFullReplay = true;
+    record.result = Simulation::runMatch(record.plan.match);
+
+    std::string saveError;
+    if(!Tournament::saveMatchRecord(record, scheduleIndex, argv[2], &saveError))
+    {
+        std::cerr << "FAIL: " << saveError << '\n';
+        return 1;
+    }
+    std::cout << "isolated balance match " << scheduleIndex + 1 << '/'
+              << schedule.matches.size() << ": seed=" << record.result.seed
+              << ", rotation=" << record.plan.seatRotation
+              << ", status=" << Simulation::statusName(record.result.status)
+              << ", hash=" << record.result.finalStateHash
+              << ", replay_steps=" << record.result.actionReplay.getInteger("actionCount")
+              << ", events=" << record.result.events.size() << '\n';
+    // A simulated failure is a valid record. The merge process decides batch success
+    // and retains its replay; a non-zero child exit is reserved for process/I/O failure.
+    return 0;
+}
+
+int runBalanceMerge(int argc, char** argv)
+{
+    if(argc < 5)
+    {
+        std::cerr << "usage: --balance-merge <output-dir> <records-dir> <seed-count> "
+                     "[easy|normal|hard] [native|balanced|aggressive|economic|control] "
+                     "[avatar,avatar,avatar,avatar]\n";
+        return 2;
+    }
+    const std::size_t seedCount =
+        static_cast<std::size_t>(std::strtoul(argv[4], nullptr, 10));
+    if(!validSeedCount(seedCount)) return 2;
+
+    configureSimulationBonuses();
+    Tournament::Config config = baselineTournamentConfig(seedCount);
+    if(!applyBalanceScenario(config, 5 < argc ? argv[5] : nullptr,
+                             6 < argc ? argv[6] : nullptr) ||
+       !applyBalanceRoster(config, 7 < argc ? argv[7] : nullptr)) return 2;
+    const Tournament::Schedule schedule = Tournament::buildSchedule(config);
+    if(!schedule.valid())
+    {
+        std::cerr << schedule.error << '\n';
+        return 2;
+    }
+    std::vector<Tournament::MatchRecord> records;
+    records.reserve(schedule.matches.size());
+    for(std::size_t index = 0; index < schedule.matches.size(); ++index)
+    {
+        Tournament::MatchRecord record;
+        const std::string path = Systems::concatePath(argv[3], isolatedRecordName(index));
+        std::string loadError;
+        if(!Tournament::loadMatchRecord(path, schedule.matches[index], index,
+                                        record, &loadError))
+        {
+            std::cerr << "FAIL: " << loadError << '\n';
+            return 1;
+        }
+        records.push_back(record);
+    }
+
+    const Tournament::Result result = Tournament::assemble(config, records);
+    std::string saveError;
+    if(!result.error.empty() ||
+       !Tournament::saveReports(result, argv[2], &saveError))
+    {
+        std::cerr << "FAIL: " << (!result.error.empty() ? result.error : saveError) << '\n';
+        return 1;
+    }
+
+    const std::size_t retained = static_cast<std::size_t>(std::count_if(
+        result.matches.begin(), result.matches.end(), [](const auto & record)
+        {
+            return !record.replayRetentionReasons.empty();
+        }));
+    std::cout << Tournament::toText(result)
+              << "Retained failure/outlier replays: " << retained << '\n'
+              << "Reports: " << argv[2] << '\n';
+    return result.completed() ? 0 : 1;
+}
+
+int runBalanceScheduleSize(int argc, char** argv)
+{
+    if(argc < 3)
+    {
+        std::cerr << "usage: --balance-schedule-size <seed-count> [easy|normal|hard] "
+                     "[native|balanced|aggressive|economic|control] "
+                     "[avatar,avatar,avatar,avatar]\n";
+        return 2;
+    }
+    const std::size_t seedCount =
+        static_cast<std::size_t>(std::strtoul(argv[2], nullptr, 10));
+    if(!validSeedCount(seedCount)) return 2;
+
+    configureSimulationBonuses();
+    Tournament::Config config = baselineTournamentConfig(seedCount);
+    if(!applyBalanceScenario(config, 3 < argc ? argv[3] : nullptr,
+                             4 < argc ? argv[4] : nullptr) ||
+       !applyBalanceRoster(config, 5 < argc ? argv[5] : nullptr)) return 2;
+    const Tournament::Schedule schedule = Tournament::buildSchedule(config);
+    if(!schedule.valid())
+    {
+        std::cerr << schedule.error << '\n';
+        return 2;
+    }
+    std::cout << schedule.matches.size() << '\n';
+    return 0;
+}
+
+int runBalanceLab(int argc, char** argv)
+{
+    const std::string outputDirectory = 2 < argc ? argv[2] : "balance-lab-output";
+    const std::size_t seedCount = 3 < argc ?
+        static_cast<std::size_t>(std::strtoul(argv[3], nullptr, 10)) : 1;
+    if(!validSeedCount(seedCount))
+    {
+        std::cerr << "seed count must be between 1 and "
+                  << Tournament::publishedSeeds().size() << '\n';
+        return 2;
+    }
+
+    configureSimulationBonuses();
+    Tournament::Config config = baselineTournamentConfig(seedCount);
+    if(!applyBalanceScenario(config, 4 < argc ? argv[4] : nullptr,
+                             5 < argc ? argv[5] : nullptr) ||
+       !applyBalanceRoster(config, 6 < argc ? argv[6] : nullptr)) return 2;
+
+    const Tournament::Result result = Tournament::run(config,
+        [](std::size_t complete, std::size_t total, const Tournament::MatchRecord & record)
+        {
+            std::cout << "balance match " << complete << '/' << total
+                      << ": seed=" << record.result.seed
+                      << ", rotation=" << record.plan.seatRotation
+                      << ", status=" << Simulation::statusName(record.result.status)
+                      << ", hash=" << record.result.finalStateHash << '\n';
+        });
+
+    std::string saveError;
+    if(!Tournament::saveReports(result, outputDirectory, &saveError))
+    {
+        std::cerr << "FAIL: " << saveError << '\n';
+        return 1;
+    }
+
+    std::cout << Tournament::toText(result)
+              << "Reports: " << outputDirectory << '\n';
+    return result.completed() ? 0 : 1;
+}
+
+int runBalanceReplayVerification(int argc, char** argv)
+{
+    if(argc != 3)
+    {
+        std::cerr << "usage: --verify-balance-replay <retained-match.json>\n";
+        return 2;
+    }
+
+    // The standalone test harness does not load the UI configuration that owns
+    // these gameplay awards. Match generation applies the same explicit values.
+    configureSimulationBonuses();
+
+    const JsonContentFile replayFile(argv[2]);
+    if(!replayFile.isValid())
+    {
+        std::cerr << "FAIL: retained balance replay is not valid JSON: " << argv[2] << '\n';
+        return 1;
+    }
+
+    const JsonObject root = replayFile.toObject();
+    const JsonObject* match = root.getObject("match");
+    const JsonObject* replay = match ? match->getObject("action_replay") : nullptr;
+    const std::string matchProfile = match ?
+        match->getString("behavior_profile") : std::string();
+    const std::string replayProfile = replay ?
+        replay->getString("aiBehaviorProfile", "native") : std::string();
+    const int replaySchema = replay ? replay->getInteger("schema") : 0;
+    if(root.getInteger("schema_version") != 2 || !match || !replay ||
+       (replaySchema != 2 && replaySchema != 3) ||
+       matchProfile != replayProfile ||
+       (replaySchema == 3) != (replayProfile != "native") ||
+       !replay->getBoolean("contiguousToCheckpoint"))
+    {
+        std::cerr << "FAIL: retained balance replay has an invalid record contract: "
+                  << argv[2] << '\n';
+        return 1;
+    }
+
+    const std::string expectedHash = match->getString("final_state_hash");
+    std::string replayError;
+    if(expectedHash.empty() || !Replay::run(*replay, &replayError))
+    {
+        std::cerr << "FAIL: retained balance replay diverged: " << replayError << '\n';
+        return 1;
+    }
+
+    const std::string actualHash = Replay::authoritativeStateHash();
+    if(actualHash != expectedHash)
+    {
+        std::cerr << "FAIL: retained balance replay final hash mismatch: expected="
+                  << expectedHash << " actual=" << actualHash << '\n';
+        return 1;
+    }
+
+    std::cout << "balance replay verified: schedule_index="
+              << root.getInteger("schedule_index")
+              << ", seed=" << match->getString("seed")
+              << ", difficulty=" << match->getString("difficulty")
+              << ", profile=" << match->getString("behavior_profile")
+              << ", steps=" << replay->getInteger("actionCount")
+              << ", hash=" << actualHash << '\n';
+    return 0;
+}
 }
 
 int main(int argc, char** argv)
@@ -2134,6 +3370,39 @@ int main(int argc, char** argv)
     GameData::spellsInfo = loadIndexed<SpellInfo>("spells.json");
     GameData::landsInfo = loadIndexed<LandInfo>("lands.json");
     GameData::avatarsInfo = loadIndexed<AvatarInfo>("avatars.json");
+    GameData::stonesInfo = loadIndexed<StoneInfo>("stones.json");
+    GameData::windsInfo = loadIndexed<WindInfo>("winds.json");
+    GameData::clansInfo = loadIndexed<ClanInfo>("clans.json");
+    GameData::abilitiesInfo = loadIndexed<AbilityInfo>("abilities.json");
+    GameData::specialsInfo = loadIndexed<SpecialityInfo>("specials.json");
+    GameData::initialLandOwners.resize(GameData::landsInfo.size());
+    for(std::size_t index = 0; index < GameData::landsInfo.size(); ++index)
+        GameData::initialLandOwners[index] = GameData::landsInfo[index].clan;
+
+    expect(Clan("Maitha") == Clan(Clan::Maitha) &&
+           Clan("Kartha") == Clan(Clan::Kartha) &&
+           Clan("Iz") == Clan(Clan::Iz) &&
+           Clan("Marz") == Clan(Clan::Marz),
+           "canonical clan names must parse to their canonical ids");
+    expect(Clan("red") == Clan(Clan::Maitha) &&
+           Clan("yellow") == Clan(Clan::Kartha) &&
+           Clan("aqua") == Clan(Clan::Iz) &&
+           Clan("purple") == Clan(Clan::Marz),
+           "legacy color ids must remain accepted as load-only aliases");
+    expect(Clan(Clan::Maitha).canonicalName() == "Maitha" &&
+           Clan(Clan::Kartha).canonicalName() == "Kartha" &&
+           Clan(Clan::Iz).canonicalName() == "Iz" &&
+           Clan(Clan::Marz).canonicalName() == "Marz" &&
+           Clan(Clan::Maitha).toString() == "maitha" &&
+           Clan(Clan::Kartha).toString() == "kartha" &&
+           Clan(Clan::Iz).toString() == "iz" &&
+           Clan(Clan::Marz).toString() == "marz",
+           "canonical clan ids must be emitted by serialization");
+    expect(GameData::clanInfo(Clan::Maitha).name == "Maitha" &&
+           GameData::clanInfo(Clan::Kartha).name == "Kartha" &&
+           GameData::clanInfo(Clan::Iz).name == "Iz" &&
+           GameData::clanInfo(Clan::Marz).name == "Marz",
+           "default theme clan names must match the canonical identity contract");
 
     expect(GameData::creatureInfo(Creature::Tornado).cost == 240,
            "Tornado must use the canonical 240-point price");
@@ -2157,6 +3426,24 @@ int main(int argc, char** argv)
     if(1 < argc && std::string(argv[1]) == "--fixed-seed-replay")
         return runFixedSeedReplaySelfTest();
 
+    if(1 < argc && std::string(argv[1]) == "--headless-match-self-test")
+        return runHeadlessMatchSelfTest();
+
+    if(1 < argc && std::string(argv[1]) == "--balance-match")
+        return runBalanceMatch(argc, argv);
+
+    if(1 < argc && std::string(argv[1]) == "--balance-merge")
+        return runBalanceMerge(argc, argv);
+
+    if(1 < argc && std::string(argv[1]) == "--balance-schedule-size")
+        return runBalanceScheduleSize(argc, argv);
+
+    if(1 < argc && std::string(argv[1]) == "--balance-lab")
+        return runBalanceLab(argc, argv);
+
+    if(1 < argc && std::string(argv[1]) == "--verify-balance-replay")
+        return runBalanceReplayVerification(argc, argv);
+
     if(1 < argc && std::string(argv[1]) == "--balance-only")
     {
         const int balanceFailures = runAvatarBalanceTests();
@@ -2166,10 +3453,13 @@ int main(int argc, char** argv)
     }
 
     testDifficultyRules();
+    testStrategicRunePlanning();
     testSelectedPartyMovement();
     testGateMovement();
     testLuckAbility();
     testAvatarPassives();
+    testMahjongCallPlanning();
+    testSpellAndSpecialityContracts();
     testSpellCastingAI();
     testMahjongCastDeadTargetMessage();
     testAdventureProfiles();
@@ -2180,6 +3470,8 @@ int main(int argc, char** argv)
     testAdventureBattleSessionFlow();
     testGameplayRngState();
     testActionReplay();
+    testMatchScoreContract();
+    testTournamentContract();
 
     expect(Speciality(Speciality::CastSilence).toSpell()() == Spell::Silence,
            "CastSilence must grant Silence");
@@ -2242,13 +3534,18 @@ int main(int argc, char** argv)
     expect(Battle::meleeHitChance(1, 4) == 6, "three defense advantage must have 6% hit chance");
 
     LandClaims claims;
-    claims.add(Clan::Yellow, 500);
-    expect(claims.points(Clan::Yellow) == 500, "land claim points must be credited per opponent clan");
-    expect(!claims.spend(Clan::Yellow, 501), "land claim points must reject overdraft");
-    expect(claims.spend(Clan::Yellow, 200), "land claim points must pay a valid deed cost");
-    expect(claims.points(Clan::Yellow) == 300, "land claim payment must deduct its cost");
+    claims.add(Clan::Kartha, 500);
+    expect(claims.points(Clan::Kartha) == 500, "land claim points must be credited per opponent clan");
+    expect(!claims.spend(Clan::Kartha, 501), "land claim points must reject overdraft");
+    expect(claims.spend(Clan::Kartha, 200), "land claim points must pay a valid deed cost");
+    expect(claims.points(Clan::Kartha) == 300, "land claim payment must deduct its cost");
     const LandClaims restoredClaims = LandClaims::fromJsonObject(claims.toJsonObject());
-    expect(restoredClaims.points(Clan::Yellow) == 300, "land claim points must survive save/load");
+    expect(restoredClaims.points(Clan::Kartha) == 300, "land claim points must survive save/load");
+    JsonObject legacyClaims;
+    legacyClaims.addInteger("yellow", 275);
+    const LandClaims restoredLegacyClaims = LandClaims::fromJsonObject(legacyClaims);
+    expect(restoredLegacyClaims.points(Clan::Kartha) == 275,
+           "legacy color-keyed land claims must remain loadable");
 
     JsonContentFile spellFile(std::string(FOUR_WINDS_SOURCE_DIR) +
                               "/themes/default/json/gamedata/spells.json");
@@ -2336,19 +3633,19 @@ int main(int argc, char** argv)
     expect(WinResults::scoreMultiplier(4) == 16, "four doubles must use x16");
     expect(WinResults::scoreMultiplier(5) == 32, "five doubles must reach the limit tier");
 
-    BattleParty party(Clan::Red, Land::Maithaius);
+    BattleParty party(Clan::Maitha, Land::Maithaius);
     expect(party.join(creature(101, 4)), "first creature must join party");
     expect(party.movePoint() == 4, "empty party slots must not reduce movement");
     expect(party.join(creature(102, 2)), "second creature must join party");
     expect(party.movePoint() == 2, "party movement must use the slowest creature");
 
-    BattleParty deadParty(Clan::Red, Land::Maithaius);
+    BattleParty deadParty(Clan::Maitha, Land::Maithaius);
     expect(deadParty.join(creature(103, 3, 0)), "dead fixture must join party");
     deadParty.removeUnloyalty();
     expect(deadParty.isEmpty(), "zero-loyalty creatures must be removed");
 
     BattleArmy army;
-    BattleParty source(Clan::Red, Land::Maithaius);
+    BattleParty source(Clan::Maitha, Land::Maithaius);
     expect(source.join(creature(104, 5)), "teleport fixture must join source party");
     army.push_back(source);
 
@@ -2366,7 +3663,7 @@ int main(int argc, char** argv)
            "teleport must create the destination party");
 
     BattleArmy duplicateArmy;
-    BattleParty duplicateSource(Clan::Red, Land::Maithaius);
+    BattleParty duplicateSource(Clan::Maitha, Land::Maithaius);
     expect(duplicateSource.join(creature(105, 4)), "first duplicate fixture must join");
     expect(duplicateSource.join(creature(106, 3)), "second duplicate fixture must join");
     duplicateArmy.push_back(duplicateSource);
@@ -2381,21 +3678,21 @@ int main(int argc, char** argv)
     expect(remaining && remaining->findBattleUnitConst(106) == nullptr,
            "teleport must remove the selected battle unit from its source");
 
-    BattleParty merged(Clan::Red, Land::Maithaius);
-    expect(merged.join(combatCreature(Clan::Red, Creature::Shadow, 201, 5, 0, 2, 3)),
+    BattleParty merged(Clan::Maitha, Land::Maithaius);
+    expect(merged.join(combatCreature(Clan::Maitha, Creature::Shadow, 201, 5, 0, 2, 3)),
            "first merge creature must join");
-    expect(merged.join(combatCreature(Clan::Red, Creature::Shadow, 202, 5, 0, 2, 3)),
+    expect(merged.join(combatCreature(Clan::Maitha, Creature::Shadow, 202, 5, 0, 2, 3)),
            "second merge creature must join");
     expect(Battle::mergeDefenseBonus(merged, *merged.findBattleUnitConst(201)) == 1,
            "two matching Merge creatures must grant one defense");
 
-    BattleParty rangedAttackers(Clan::Red, Land::Baliphon);
-    BattleParty rangedDefenders(Clan::Yellow, Land::Baliphon);
-    expect(rangedAttackers.join(combatCreature(Clan::Red, Creature::Durlock, 210, 0, 2, 0, 1)),
+    BattleParty rangedAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty rangedDefenders(Clan::Kartha, Land::Baliphon);
+    expect(rangedAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock, 210, 0, 2, 0, 1)),
            "ranged attacker fixture must join");
-    expect(rangedDefenders.join(combatCreature(Clan::Yellow, Creature::AdventureParty, 211, 0, 2, 0, 1)),
+    expect(rangedDefenders.join(combatCreature(Clan::Kartha, Creature::AdventureParty, 211, 0, 2, 0, 1)),
            "ranged defender fixture must join");
-    BattleTown quietTown(BattleUnit(BaseStat(0, 0, 100, 100)), Clan::Yellow, Land::Baliphon);
+    BattleTown quietTown(BattleUnit(BaseStat(0, 0, 100, 100)), Clan::Kartha, Land::Baliphon);
     const BattleStrikes rangedStrikes = Battle::doAttackParty(rangedAttackers, quietTown, &rangedDefenders);
     expect(rangedAttackers.isEmpty() && rangedDefenders.isEmpty(),
            "simultaneous ranged combat must let both lethal shooters fire");
@@ -2403,15 +3700,15 @@ int main(int argc, char** argv)
            { return strike.type == BattleStrike::Ranger; }) == 2,
            "simultaneous ranged combat must record both shots");
 
-    BattleParty townRangedAttackers(Clan::Red, Land::Baliphon);
-    BattleParty townRangedDefenders(Clan::Yellow, Land::Baliphon);
-    expect(townRangedAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+    BattleParty townRangedAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty townRangedDefenders(Clan::Kartha, Land::Baliphon);
+    expect(townRangedAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock,
                                                     212, 0, 2, 0, 1)),
            "territory ranged attacker fixture must join");
-    expect(townRangedDefenders.join(combatCreature(Clan::Yellow, Creature::AdventureParty,
+    expect(townRangedDefenders.join(combatCreature(Clan::Kartha, Creature::AdventureParty,
                                                     213, 0, 2, 0, 1)),
            "territory ranged defender fixture must join");
-    BattleTown rangedTown(BattleUnit(BaseStat(0, 1, 100, 100)), Clan::Yellow, Land::Baliphon);
+    BattleTown rangedTown(BattleUnit(BaseStat(0, 1, 100, 100)), Clan::Kartha, Land::Baliphon);
     const BattleStrikes townRangedStrikes =
         Battle::doAttackParty(townRangedAttackers, rangedTown, &townRangedDefenders);
     expect(townRangedAttackers.isEmpty() && !townRangedDefenders.isEmpty(),
@@ -2421,15 +3718,15 @@ int main(int argc, char** argv)
                          { return strike.type == BattleStrike::Ranger; }) == 1,
            "territory fire must resolve before the simultaneous creature ranged round");
 
-    BattleParty firstStrikeAttackers(Clan::Red, Land::Baliphon);
-    BattleParty firstStrikeDefenders(Clan::Yellow, Land::Baliphon);
-    expect(firstStrikeAttackers.join(combatCreature(Clan::Red, Creature::Durlock, 221, 1, 20, 0, 2)),
+    BattleParty firstStrikeAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty firstStrikeDefenders(Clan::Kartha, Land::Baliphon);
+    expect(firstStrikeAttackers.join(combatCreature(Clan::Maitha, Creature::Durlock, 221, 1, 20, 0, 2)),
            "First Strike ranged support fixture must join");
-    expect(firstStrikeAttackers.join(combatCreature(Clan::Red, Creature::GreatCarol, 220, 10, 0, 0, 1)),
+    expect(firstStrikeAttackers.join(combatCreature(Clan::Maitha, Creature::GreatCarol, 220, 10, 0, 0, 1)),
            "First Strike leader fixture must join after its support");
-    expect(firstStrikeDefenders.join(combatCreature(Clan::Yellow, Creature::AdventureParty, 222, 10, 20, 0, 1)),
+    expect(firstStrikeDefenders.join(combatCreature(Clan::Kartha, Creature::AdventureParty, 222, 10, 20, 0, 1)),
            "First Strike defender fixture must join");
-    BattleTown weakTown(BattleUnit(BaseStat(0, 0, 0, 1)), Clan::Yellow, Land::Baliphon);
+    BattleTown weakTown(BattleUnit(BaseStat(0, 0, 0, 1)), Clan::Kartha, Land::Baliphon);
     const BattleStrikes firstStrikes = Battle::doAttackParty(firstStrikeAttackers, weakTown, &firstStrikeDefenders);
     expect(!weakTown.isAlive() && !firstStrikeAttackers.isEmpty(),
            "First Strike leader must let the attacking party strike first and capture the town");
@@ -2437,47 +3734,47 @@ int main(int argc, char** argv)
            { return strike.type == BattleStrike::Ranger; }),
            "First Strike must skip all creature ranged attacks");
 
-    BattleParty swarmAttackers(Clan::Red, Land::Baliphon);
-    BattleParty swarmDefenders(Clan::Yellow, Land::Baliphon);
-    expect(swarmAttackers.join(combatCreature(Clan::Red, Creature::SkeletonHorde, 230, 10, 0, 0, 10)),
+    BattleParty swarmAttackers(Clan::Maitha, Land::Baliphon);
+    BattleParty swarmDefenders(Clan::Kartha, Land::Baliphon);
+    expect(swarmAttackers.join(combatCreature(Clan::Maitha, Creature::SkeletonHorde, 230, 10, 0, 0, 10)),
            "Swarm attacker fixture must join");
-    expect(swarmDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock, 231, 0, 0, 0, 1)),
+    expect(swarmDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock, 231, 0, 0, 0, 1)),
            "first Swarm target fixture must join");
-    expect(swarmDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock, 232, 0, 0, 0, 1)),
+    expect(swarmDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock, 232, 0, 0, 0, 1)),
            "second Swarm target fixture must join");
-    expect(swarmDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock, 233, 0, 0, 0, 1)),
+    expect(swarmDefenders.join(combatCreature(Clan::Kartha, Creature::Durlock, 233, 0, 0, 0, 1)),
            "third Swarm target fixture must join");
-    BattleTown swarmTown(BattleUnit(BaseStat(0, 0, 0, 1)), Clan::Yellow, Land::Baliphon);
+    BattleTown swarmTown(BattleUnit(BaseStat(0, 0, 0, 1)), Clan::Kartha, Land::Baliphon);
     Battle::doAttackParty(swarmAttackers, swarmTown, &swarmDefenders);
     expect(swarmDefenders.isEmpty(), "Swarm must attack every creature in the defending party");
 
-    BattleCreature regenerating = combatCreature(Clan::Red, Creature::Wraith, 240, 7, 0, 4, 5);
+    BattleCreature regenerating = combatCreature(Clan::Maitha, Creature::Wraith, 240, 7, 0, 4, 5);
     regenerating.applyDamage(4);
     regenerating.initAdventurePart(Ability::None);
     expect(regenerating.loyalty() == regenerating.baseLoyalty(),
            "Regeneration must restore full loyalty at map phase start");
 
     GameData::gamers.clear();
-    LocalPlayer red;
-    red.avatar = Avatar::Orachi;
-    red.clan = Clan::Red;
-    red.wind = Wind::East;
-    red.addLandClaimPoints(Clan::Yellow, 500);
-    BattleParty undoParty(Clan::Red, Land::Corzen);
-    expect(undoParty.join(combatCreature(Clan::Red, Creature::SkeletonHorde, 260, 5, 0, 1, 3)),
+    LocalPlayer maitha;
+    maitha.avatar = Avatar::Orachi;
+    maitha.clan = Clan::Maitha;
+    maitha.wind = Wind::East;
+    maitha.addLandClaimPoints(Clan::Kartha, 500);
+    BattleParty undoParty(Clan::Maitha, Land::Corzen);
+    expect(undoParty.join(combatCreature(Clan::Maitha, Creature::SkeletonHorde, 260, 5, 0, 1, 3)),
            "Adventure undo fixture must join");
-    red.army.push_back(undoParty);
-    LocalPlayer yellow;
-    yellow.avatar = Avatar::Lakkho;
-    yellow.clan = Clan::Yellow;
-    yellow.wind = Wind::South;
-    GameData::gamers.push_back(red);
-    GameData::gamers.push_back(yellow);
+    maitha.army.push_back(undoParty);
+    LocalPlayer kartha;
+    kartha.avatar = Avatar::Lakkho;
+    kartha.clan = Clan::Kartha;
+    kartha.wind = Wind::South;
+    GameData::gamers.push_back(maitha);
+    GameData::gamers.push_back(kartha);
 
     expect(GameData::canClaimLand(GameData::gamers.front(), Land::Zubrus),
            "adjacent empty enemy territory with enough points must be claimable");
-    BattleParty hiddenGuard(Clan::Yellow, Land::Zubrus);
-    expect(hiddenGuard.join(combatCreature(Clan::Yellow, Creature::Shadow, 250, 5, 0, 2, 3)),
+    BattleParty hiddenGuard(Clan::Kartha, Land::Zubrus);
+    expect(hiddenGuard.join(combatCreature(Clan::Kartha, Creature::Shadow, 250, 5, 0, 2, 3)),
            "hidden claim guard fixture must join");
     GameData::gamers.back().army.push_back(hiddenGuard);
     expect(!GameData::canClaimLand(GameData::gamers.front(), Land::Zubrus),
@@ -2496,16 +3793,16 @@ int main(int argc, char** argv)
     expect(GameData::client2Adventure(GameData::gamers.front().avatar,
                                       ClientUnitMoved(260, Land::Zubrus), adventureActions),
            "movement after a Land Claim must be accepted");
-    expect(GameData::landInfo(Land::Zubrus).clan == Clan(Clan::Red),
+    expect(GameData::landInfo(Land::Zubrus).clan == Clan(Clan::Maitha),
            "Land Claim must change territory ownership");
     expect(GameData::gamers.front().army.findPartyConst(Land::Zubrus) != nullptr,
            "movement must change the creature position before undo");
     expect(GameData::client2Adventure(GameData::gamers.front().avatar,
                                       ClientAdventureUndo(), adventureActions),
            "Adventure Undo action must be accepted");
-    expect(GameData::landInfo(Land::Zubrus).clan == Clan(Clan::Yellow),
+    expect(GameData::landInfo(Land::Zubrus).clan == Clan(Clan::Kartha),
            "Adventure Undo must restore territory ownership");
-    expect(GameData::gamers.front().landClaimPoints(Clan::Yellow) == 500,
+    expect(GameData::gamers.front().landClaimPoints(Clan::Kartha) == 500,
            "Adventure Undo must refund Land Claim points");
     const BattleParty* restoredParty = GameData::gamers.front().army.findPartyConst(Land::Corzen);
     expect(restoredParty && restoredParty->findBattleUnitConst(260),

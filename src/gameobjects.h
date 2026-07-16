@@ -88,7 +88,7 @@ struct Clans;
 
 struct Clan : Enum
 {
-    enum clan_t { None = 0, Red, Yellow, Aqua, Purple };
+    enum clan_t { None = 0, Maitha, Kartha, Iz, Marz };
 
     Clan(clan_t v = None) : Enum(v) {}
     Clan(const std::string &);
@@ -97,6 +97,7 @@ struct Clan : Enum
     Clan 			next(void) const;
 
     std::string			toString(void) const override;
+    std::string			canonicalName(void) const;
     type_t			baseType(void) const override { return TypeClan; }
 
     static Clan			random(void);
@@ -1084,7 +1085,7 @@ struct Persons : public std::vector<Person>
 
 struct LandClaims
 {
-    std::array<int, Clan::Purple + 1> values{};
+    std::array<int, Clan::Marz + 1> values{};
 
     int                         points(const Clan &) const;
     void                        add(const Clan &, int);

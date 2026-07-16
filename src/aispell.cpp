@@ -22,6 +22,34 @@ namespace
     };
 
     using SpellCandidates = std::vector<AI::SpellCastStep>;
+    using PlayerView = std::vector<const LocalPlayer*>;
+
+    PlayerView authoritativePlayerView(void)
+    {
+        PlayerView result;
+        result.reserve(GameData::gamers.size());
+        for(const LocalPlayer & player : GameData::gamers) result.push_back(&player);
+        return result;
+    }
+
+    PlayerView observerPlayerView(const LocalData & local)
+    {
+        PlayerView result;
+        result.reserve(local.players.size());
+        for(const LocalPlayer & player : local.players) result.push_back(&player);
+        return result;
+    }
+
+    const BattleCreature* visibleBattleCreature(const PlayerView & players, int unit)
+    {
+        for(const LocalPlayer* player : players)
+        {
+            if(!player) continue;
+            const BattleCreature* creature = player->army.findBattleUnitConst(unit);
+            if(creature) return creature;
+        }
+        return nullptr;
+    }
 
     int statValue(const BaseStat & stat)
     {
@@ -203,7 +231,8 @@ namespace
         if(0 < candidate.score) candidates.push_back(candidate);
     }
 
-    void evaluatePlayerSpell(SpellCandidates & candidates, const LocalPlayer & player, const SpellInfo & info)
+    void evaluatePlayerSpell(SpellCandidates & candidates, const LocalPlayer & player,
+                             const SpellInfo & info, const PlayerView & players)
     {
         if(info.target() == SpellTarget::MyPlayer)
         {
@@ -219,10 +248,10 @@ namespace
         if(info.target() == SpellTarget::AllPlayers)
         {
             int enemyPressure = 0;
-            for(const auto & other : GameData::gamers)
+            for(const LocalPlayer* other : players)
             {
-                if(other.avatar == player.avatar || other.isAffectedSpell(info.id)) continue;
-                enemyPressure += 25 + other.points / 20 + (other.isCasted() ? 0 : 15);
+                if(!other || other->avatar == player.avatar || other->isAffectedSpell(info.id)) continue;
+                enemyPressure += 25 + other->points / 20 + (other->isCasted() ? 0 : 15);
             }
 
             AI::SpellCastStep candidate;
@@ -234,24 +263,24 @@ namespace
 
         if(info.target() != SpellTarget::OtherPlayer) return;
 
-        for(const auto & other : GameData::gamers)
+        for(const LocalPlayer* other : players)
         {
-            if(other.avatar == player.avatar || other.isAffectedSpell(info.id)) continue;
+            if(!other || other->avatar == player.avatar || other->isAffectedSpell(info.id)) continue;
 
             int score = 0;
             switch(info.id())
             {
                 case Spell::Silence:
-                    if(GameData::avatarInfo(other.avatar).ability() == Ability::Telepath) continue;
-                    score = 70 + other.points / 20 + (other.isCasted() ? 0 : 15);
+                    if(GameData::avatarInfo(other->avatar).ability() == Ability::Telepath) continue;
+                    score = 70 + other->points / 20 + (other->isCasted() ? 0 : 15);
                     break;
 
                 case Spell::RandomDiscard:
-                    score = 45 + static_cast<int>(other.stones.size()) * 3;
+                    score = 45 + static_cast<int>(other->stones.size()) * 3;
                     break;
 
                 case Spell::ScryRunes:
-                    score = 35 + static_cast<int>(other.stones.size()) * 2;
+                    score = 35 + static_cast<int>(other->stones.size()) * 2;
                     break;
 
                 default: break;
@@ -259,7 +288,7 @@ namespace
 
             AI::SpellCastStep candidate;
             candidate.spell = info.id;
-            candidate.target = other.avatar;
+            candidate.target = other->avatar;
             candidate.score = score;
             addCandidate(candidates, candidate);
         }
@@ -297,7 +326,8 @@ namespace
         }
     }
 
-    void evaluateLandDispel(SpellCandidates & candidates, const LocalPlayer & player, const SpellInfo & info)
+    void evaluateLandDispel(SpellCandidates & candidates, const LocalPlayer & player,
+                            const SpellInfo & info, const PlayerView & players)
     {
         for(auto landId : lands_all)
         {
@@ -305,14 +335,15 @@ namespace
             int score = 0;
             int targets = 0;
 
-            for(const auto & other : GameData::gamers)
+            for(const LocalPlayer* other : players)
             {
-                const BattleParty* party = other.army.findPartyConst(land);
+                if(!other) continue;
+                const BattleParty* party = other->army.findPartyConst(land);
                 if(!party) continue;
 
                 for(auto creature : party->toBattleCreatures())
                 {
-                    score += dispelValue(*creature, other.clan == player.clan);
+                    score += dispelValue(*creature, other->clan == player.clan);
                     targets++;
                 }
             }
@@ -327,7 +358,8 @@ namespace
         }
     }
 
-    void evaluateBoardSpell(SpellCandidates & candidates, const LocalPlayer & player, const SpellInfo & info)
+    void evaluateBoardSpell(SpellCandidates & candidates, const LocalPlayer & player,
+                            const SpellInfo & info, const PlayerView & players)
     {
         if(info.id() == Spell::Teleport)
         {
@@ -337,18 +369,19 @@ namespace
 
         if(info.target() == SpellTarget::Land)
         {
-            evaluateLandDispel(candidates, player, info);
+            evaluateLandDispel(candidates, player, info, players);
             return;
         }
 
-        for(const auto & other : GameData::gamers)
+        for(const LocalPlayer* other : players)
         {
-            const bool friendly = other.clan == player.clan;
+            if(!other) continue;
+            const bool friendly = other->clan == player.clan;
             const bool allowedOwner = ((info.target() & SpellTarget::Friendly) && friendly) ||
                                       ((info.target() & SpellTarget::Enemy) && !friendly);
             if(!allowedOwner) continue;
 
-            for(const auto & party : other.army)
+            for(const auto & party : other->army)
             {
                 const BattleCreatures creatures = party.toBattleCreatures();
                 if(creatures.empty()) continue;
@@ -378,7 +411,8 @@ namespace
         }
     }
 
-    SpellCandidates generateCandidates(const LocalPlayer & player, const Spells & spells)
+    SpellCandidates generateCandidates(const LocalPlayer & player, const Spells & spells,
+                                       const PlayerView & players)
     {
         SpellCandidates candidates;
         for(const Spell & spell : spells)
@@ -388,9 +422,9 @@ namespace
 
             if(info.target() == SpellTarget::MyPlayer || info.target() == SpellTarget::OtherPlayer ||
                info.target() == SpellTarget::AllPlayers)
-                evaluatePlayerSpell(candidates, player, info);
+                evaluatePlayerSpell(candidates, player, info, players);
             else
-                evaluateBoardSpell(candidates, player, info);
+                evaluateBoardSpell(candidates, player, info, players);
         }
         return candidates;
     }
@@ -458,24 +492,25 @@ namespace
         return score;
     }
 
-    bool isDirectKill(const AI::SpellCastStep & step)
+    bool isDirectKill(const AI::SpellCastStep & step, const PlayerView & players)
     {
         if(step.unit <= 0) return false;
         if(step.spell() != Spell::LightningBolt) return false;
 
-        const BattleCreature* creature = GameData::getBattleCreature(step.unit);
+        const BattleCreature* creature = visibleBattleCreature(players, step.unit);
         const SpellInfo & info = GameData::spellInfo(step.spell);
         return creature && creature->loyalty() <= std::abs(info.effect.loyalty);
     }
 
-    int comboSynergy(const AI::SpellCastStep & first, const AI::SpellCastStep & second)
+    int comboSynergy(const AI::SpellCastStep & first, const AI::SpellCastStep & second,
+                     const PlayerView & players)
     {
         if(sameStep(first, second) || first.spell() == Spell::ManaFog) return 0;
 
         const bool sameUnit = 0 < first.unit && first.unit == second.unit;
         const bool sameLand = first.land.isValid() && first.land == second.land;
         const bool samePlayer = first.target.isValid() && first.target == second.target;
-        if(sameUnit && isDirectKill(first)) return 0;
+        if(sameUnit && isDirectKill(first, players)) return 0;
 
         const SpellRole firstRole = spellRole(GameData::spellInfo(first.spell));
         const SpellRole secondRole = spellRole(GameData::spellInfo(second.spell));
@@ -567,7 +602,7 @@ namespace
     }
 
     void projectFollowUps(AI::SpellCastPlan & plan, const LocalPlayer & player,
-                          const SpellCandidates & futureCandidates)
+                          const SpellCandidates & futureCandidates, const PlayerView & players)
     {
         const AI::BehaviorRules & rules = AI::behaviorRules(plan.profile);
         const int planningHorizon = AI::spellPlanningHorizon(plan.profile,
@@ -591,8 +626,8 @@ namespace
                 const SpellInfo & info = GameData::spellInfo(candidate.spell);
                 if(info.cost > availablePoints || stepWasUsed(used, candidate)) continue;
 
-                int synergy = comboSynergy(previous, candidate);
-                if(1 < depth) synergy += comboSynergy(root, candidate) / 2;
+                int synergy = comboSynergy(previous, candidate, players);
+                if(1 < depth) synergy += comboSynergy(root, candidate, players) / 2;
                 if(synergy <= 0) continue;
 
                 AI::SpellCastStep scored = candidate;
@@ -634,6 +669,34 @@ namespace
             return left() < right();
         });
         spells.erase(std::unique(spells.begin(), spells.end()), spells.end());
+    }
+
+    AI::SpellCastPlan chooseSpellCastFromView(const LocalPlayer & player, const Spells & spells,
+                                              AI::BehaviorProfile profile,
+                                              const Spells & futureSpells,
+                                              const PlayerView & players)
+    {
+        AI::SpellCastPlan best;
+        best.profile = profile;
+        if(player.isCasted() || player.isSilenced() || player.isAffectedSpell(Spell::ManaFog))
+            return best;
+
+        const AI::BehaviorRules & rules = AI::behaviorRules(profile);
+        const SpellCandidates candidates = generateCandidates(player, spells, players);
+        const SpellCandidates futureCandidates = generateCandidates(player, futureSpells, players);
+
+        for(const AI::SpellCastStep & step : candidates)
+        {
+            AI::SpellCastPlan candidate(step);
+            candidate.profile = profile;
+            candidate.immediateScore = profileScore(step, profile, player.points);
+            projectFollowUps(candidate, player, futureCandidates, players);
+            candidate.score = candidate.immediateScore + candidate.futureScore;
+
+            if(candidate.score < rules.minimumSpellScore) continue;
+            if(!best.isValid() || betterPlan(candidate, best)) best = candidate;
+        }
+        return best;
     }
 }
 
@@ -681,27 +744,21 @@ AI::SpellCastPlan AI::chooseSpellCast(const LocalPlayer & player, const Spells &
 AI::SpellCastPlan AI::chooseSpellCast(const LocalPlayer & player, const Spells & spells,
                                       BehaviorProfile profile, const Spells & futureSpells)
 {
-    SpellCastPlan best;
-    best.profile = profile;
-    if(player.isCasted() || player.isSilenced() || player.isAffectedSpell(Spell::ManaFog))
-        return best;
+    return chooseSpellCastFromView(player, spells, profile, futureSpells,
+                                   authoritativePlayerView());
+}
 
-    const AI::BehaviorRules & rules = AI::behaviorRules(profile);
-    const SpellCandidates candidates = generateCandidates(player, spells);
-    const SpellCandidates futureCandidates = generateCandidates(player, futureSpells);
+AI::SpellCastPlan AI::chooseSpellCast(const LocalData & local, const Spells & spells,
+                                      BehaviorProfile profile)
+{
+    return chooseSpellCast(local, spells, profile, knownSpellCasts(local.myPlayer()));
+}
 
-    for(const SpellCastStep & step : candidates)
-    {
-        SpellCastPlan candidate(step);
-        candidate.profile = profile;
-        candidate.immediateScore = profileScore(step, profile, player.points);
-        projectFollowUps(candidate, player, futureCandidates);
-        candidate.score = candidate.immediateScore + candidate.futureScore;
-
-        if(candidate.score < rules.minimumSpellScore) continue;
-        if(!best.isValid() || betterPlan(candidate, best)) best = candidate;
-    }
-    return best;
+AI::SpellCastPlan AI::chooseSpellCast(const LocalData & local, const Spells & spells,
+                                      BehaviorProfile profile, const Spells & futureSpells)
+{
+    return chooseSpellCastFromView(local.myPlayer(), spells, profile, futureSpells,
+                                   observerPlayerView(local));
 }
 
 bool AI::shouldCastBeforeSummon(const SpellCastPlan & plan)
