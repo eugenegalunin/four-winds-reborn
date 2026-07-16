@@ -250,6 +250,7 @@ namespace GameData
     Avatars			avatarsOfClan(const Clan &);
 
     void			initPersons(const Person &);
+    bool                        initPersons(const Persons &);
 
     bool			initMahjong(void);
     bool			mahjong2Client(const Avatar &, ActionList &);
@@ -262,6 +263,8 @@ namespace GameData
     Lands                       claimableLands(const RemotePlayer &);
 
     const Person &		myPerson(void);
+    const Person &              currentPerson(void);
+    const LocalPlayers &        players(void);
 
     AI::Difficulty              aiDifficulty(void);
     void                        setAIDifficulty(AI::Difficulty);

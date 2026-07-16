@@ -17,6 +17,7 @@
 #include "recovery.h"
 #include "replay.h"
 #include "settings.h"
+#include "simulation.h"
 
 #if defined(_WIN32)
 #ifdef ERROR
@@ -44,6 +45,18 @@ extern std::vector<CreatureInfo> creaturesInfo;
 extern std::vector<SpellInfo> spellsInfo;
 extern std::vector<LandInfo> landsInfo;
 extern std::vector<AvatarInfo> avatarsInfo;
+extern std::vector<StoneInfo> stonesInfo;
+extern std::vector<WindInfo> windsInfo;
+extern std::vector<ClanInfo> clansInfo;
+extern std::vector<AbilityInfo> abilitiesInfo;
+extern std::vector<SpecialityInfo> specialsInfo;
+extern std::vector<Clan> initialLandOwners;
+extern int bonusStart;
+extern int bonusGame;
+extern int bonusKong;
+extern int bonusPung;
+extern int bonusChao;
+extern int bonusPass;
 extern LocalPlayers gamers;
 extern Wind currentWind;
 JsonObject toJsonObject(const JsonObject &);
@@ -2290,6 +2303,143 @@ int runCapturedLightningRepro(const char* savePath)
     std::cout << "captured Lightning Bolt replay: ok\n";
     return 0;
 }
+
+void testMatchScoreContract()
+{
+    std::vector<MatchScore::PlayerInput> inputs(4);
+    inputs[0].person = Person(Avatar::Nucrus, Clan::Red, Wind::East);
+    inputs[1].person = Person(Avatar::Lakkho, Clan::Yellow, Wind::South);
+    inputs[2].person = Person(Avatar::Ziag, Clan::Aqua, Wind::West);
+    inputs[3].person = Person(Avatar::Dayla, Clan::Purple, Wind::North);
+
+    inputs[0].scores = {{ 10, 3, 300, 100, 50 }};
+    inputs[1].scores = {{ 10, 2, 250, 200, 40 }};
+    inputs[2].scores = {{ 5, 2, 300, 50, 50 }};
+    inputs[3].scores = {{ 0, 1, 100, -10, 10 }};
+
+    const MatchScore::Results scores = MatchScore::calculate(inputs);
+    expect(scores.size() == 4, "match score must retain all players");
+    if(scores.size() != 4) return;
+
+    expect(scores[0].categories[MatchScore::index(MatchScore::Category::Territory)].rank == 1 &&
+           scores[1].categories[MatchScore::index(MatchScore::Category::Territory)].rank == 1 &&
+           scores[2].categories[MatchScore::index(MatchScore::Category::Territory)].rank == 3,
+           "category ties must use competition ranks");
+    expect(scores[0].totalScore == 19 && scores[1].totalScore == 15 &&
+           scores[2].totalScore == 15 && scores[3].totalScore == 5,
+           "total score must sum category standing points");
+    expect(scores[0].finalRank == 1 && scores[1].finalRank == 2 &&
+           scores[2].finalRank == 2 && scores[3].finalRank == 4,
+           "final ties must retain shared competition rank");
+    expect(scores[3].categories[MatchScore::index(MatchScore::Category::SpellPoints)].score == 0,
+           "negative resource values must not reduce canonical score");
+}
+
+int runHeadlessMatchSelfTest()
+{
+    GameData::bonusStart = 250;
+    GameData::bonusGame = 50;
+    GameData::bonusKong = 40;
+    GameData::bonusPung = 30;
+    GameData::bonusChao = 20;
+    GameData::bonusPass = 10;
+
+    Persons players;
+    players.push_back(Person(Avatar::Nucrus, Clan::Red, Wind::East));
+    players.push_back(Person(Avatar::Lakkho, Clan::Yellow, Wind::South));
+    players.push_back(Person(Avatar::Ziag, Clan::Aqua, Wind::West));
+    players.push_back(Person(Avatar::Dayla, Clan::Purple, Wind::North));
+    for(Person & player : players) player.setAI(true);
+
+    Simulation::MatchConfig config;
+    config.seed = UINT64_C(0x15a50001);
+    config.difficulty = AI::Difficulty::Normal;
+    config.persons = players;
+    config.maximumTicks = 20000;
+
+    const Simulation::MatchResult first = Simulation::runMatch(config);
+    if(!first.completed())
+    {
+        std::cerr << "FAIL: first headless match status=" << Simulation::statusName(first.status)
+                  << ", ticks=" << first.ticks << ", hands=" << first.mahjongHands
+                  << ", error=" << first.error << '\n';
+        return 1;
+    }
+
+    const Simulation::MatchResult second = Simulation::runMatch(config);
+    if(!second.completed())
+    {
+        std::cerr << "FAIL: repeated headless match status=" << Simulation::statusName(second.status)
+                  << ", ticks=" << second.ticks << ", hands=" << second.mahjongHands
+                  << ", error=" << second.error << '\n';
+        return 1;
+    }
+
+    if(first.mahjongHands != 16 || first.adventurePhases != 16 ||
+       first.finalStateHash != second.finalStateHash || first.ticks != second.ticks ||
+       first.emittedActions != second.emittedActions || first.rngDraws != second.rngDraws ||
+       first.score.size() != second.score.size())
+    {
+        std::cerr << "FAIL: repeated headless match was not deterministic"
+                  << ", first=" << first.finalStateHash << ", second=" << second.finalStateHash
+                  << ", ticks=" << first.ticks << '/' << second.ticks
+                  << ", hands=" << first.mahjongHands << '/' << second.mahjongHands
+                  << ", adventure=" << first.adventurePhases << '/' << second.adventurePhases
+                  << ", actions=" << first.emittedActions << '/' << second.emittedActions
+                  << ", rng=" << first.rngDraws << '/' << second.rngDraws << '\n';
+        return 1;
+    }
+
+    for(std::size_t player = 0; player < first.score.size(); ++player)
+    {
+        if(first.score[player].person.avatar != second.score[player].person.avatar ||
+           first.score[player].totalScore != second.score[player].totalScore ||
+           first.score[player].finalRank != second.score[player].finalRank)
+        {
+            std::cerr << "FAIL: repeated headless match produced a different final score\n";
+            return 1;
+        }
+        for(std::size_t category = 0; category < MatchScore::CategoryCount; ++category)
+        {
+            const MatchScore::CategoryResult & lhs = first.score[player].categories[category];
+            const MatchScore::CategoryResult & rhs = second.score[player].categories[category];
+            if(lhs.score != rhs.score || lhs.rank != rhs.rank ||
+               lhs.standingPoints != rhs.standingPoints)
+            {
+                std::cerr << "FAIL: repeated headless match produced different category scores\n";
+                return 1;
+            }
+        }
+    }
+
+    Simulation::MatchConfig invalid = config;
+    invalid.persons[1].wind = Wind(Wind::East);
+    const Simulation::MatchResult rejected = Simulation::runMatch(invalid);
+    if(rejected.status != Simulation::MatchStatus::InvalidConfiguration)
+    {
+        std::cerr << "FAIL: duplicate wind configuration was not rejected\n";
+        return 1;
+    }
+
+    std::cout << "headless match simulation: ok"
+              << ", seed=" << first.seed
+              << ", hash=" << first.finalStateHash
+              << ", ticks=" << first.ticks
+              << ", actions=" << first.emittedActions
+              << ", rng_draws=" << first.rngDraws;
+    if(!first.score.empty())
+    {
+        const auto leader = std::min_element(first.score.begin(), first.score.end(),
+            [](const MatchScore::PlayerResult & lhs, const MatchScore::PlayerResult & rhs)
+            {
+                return lhs.finalRank < rhs.finalRank;
+            });
+        std::cout << ", leader=" << leader->person.name()
+                  << ", total=" << leader->totalScore;
+    }
+    std::cout << '\n';
+    return 0;
+}
 }
 
 int main(int argc, char** argv)
@@ -2358,6 +2508,14 @@ int main(int argc, char** argv)
     GameData::spellsInfo = loadIndexed<SpellInfo>("spells.json");
     GameData::landsInfo = loadIndexed<LandInfo>("lands.json");
     GameData::avatarsInfo = loadIndexed<AvatarInfo>("avatars.json");
+    GameData::stonesInfo = loadIndexed<StoneInfo>("stones.json");
+    GameData::windsInfo = loadIndexed<WindInfo>("winds.json");
+    GameData::clansInfo = loadIndexed<ClanInfo>("clans.json");
+    GameData::abilitiesInfo = loadIndexed<AbilityInfo>("abilities.json");
+    GameData::specialsInfo = loadIndexed<SpecialityInfo>("specials.json");
+    GameData::initialLandOwners.resize(GameData::landsInfo.size());
+    for(std::size_t index = 0; index < GameData::landsInfo.size(); ++index)
+        GameData::initialLandOwners[index] = GameData::landsInfo[index].clan;
 
     expect(GameData::creatureInfo(Creature::Tornado).cost == 240,
            "Tornado must use the canonical 240-point price");
@@ -2380,6 +2538,9 @@ int main(int argc, char** argv)
 
     if(1 < argc && std::string(argv[1]) == "--fixed-seed-replay")
         return runFixedSeedReplaySelfTest();
+
+    if(1 < argc && std::string(argv[1]) == "--headless-match-self-test")
+        return runHeadlessMatchSelfTest();
 
     if(1 < argc && std::string(argv[1]) == "--balance-only")
     {
@@ -2405,6 +2566,7 @@ int main(int argc, char** argv)
     testAdventureBattleSessionFlow();
     testGameplayRngState();
     testActionReplay();
+    testMatchScoreContract();
 
     expect(Speciality(Speciality::CastSilence).toSpell()() == Spell::Silence,
            "CastSilence must grant Silence");

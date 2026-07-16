@@ -24,6 +24,7 @@
 #include <ctime>
 #include <sstream>
 #include <algorithm>
+#include <set>
 
 #include "settings.h"
 #include "aiprofile.h"
@@ -106,6 +107,7 @@ namespace GameData
     std::vector<AbilityInfo>		abilitiesInfo;
     std::vector<AvatarInfo>		avatarsInfo;
     std::vector<LandInfo>		landsInfo;
+    std::vector<Clan>			initialLandOwners;
 
     int					bonusStart;
     int					bonusGame;
@@ -180,6 +182,10 @@ bool GameData::init(const JsonObject & jo)
 
     if(! loadJson<LandInfo>("lands.json", landsInfo))
 	return false;
+
+    initialLandOwners.resize(landsInfo.size());
+    for(std::size_t index = 0; index < landsInfo.size(); ++index)
+        initialLandOwners[index] = landsInfo[index].clan;
 
     // check path valid
     for(auto & info1 : landsInfo)
@@ -507,6 +513,16 @@ int GameData::loadedGamePart(void)
 const Person & GameData::myPerson(void)
 {
     return person;
+}
+
+const Person & GameData::currentPerson(void)
+{
+    return playerOfWind(currentWind);
+}
+
+const LocalPlayers & GameData::players(void)
+{
+    return gamers;
 }
 
 AI::Difficulty GameData::aiDifficulty(void)
@@ -925,6 +941,63 @@ void GameData::initPersons(const Person & cur)
     pendingBattle = PendingBattle();
 }
 
+bool GameData::initPersons(const Persons & configured)
+{
+    if(configured.size() != winds_all.size()) return false;
+
+    std::set<int> avatars;
+    std::set<int> clans;
+    std::set<int> winds;
+    Persons persons;
+
+    for(const Person & configuredPerson : configured)
+    {
+        if(!configuredPerson.avatar.isValid() || configuredPerson.avatar == Avatar(Avatar::Random) ||
+           !configuredPerson.clan.isValid() || !configuredPerson.wind.isValid() ||
+           !avatars.insert(configuredPerson.avatar()).second ||
+           !clans.insert(configuredPerson.clan()).second ||
+           !winds.insert(configuredPerson.wind()).second)
+            return false;
+
+        const AvatarInfo & info = avatarInfo(configuredPerson.avatar);
+        if(std::find(info.clans.begin(), info.clans.end(), configuredPerson.clan) == info.clans.end())
+            return false;
+
+        Person clean(configuredPerson.avatar, configuredPerson.clan, configuredPerson.wind);
+        clean.setAI(configuredPerson.isAI());
+        persons.push_back(clean);
+    }
+
+    Replay::clearActionJournal();
+    gamers.setPersons(persons);
+    person = persons.front();
+    roundWind = Wind(Wind::None);
+    partWind = Wind(Wind::None);
+    currentWind = Wind(Wind::None);
+    stoneLastCount = 0;
+    dropStone = Stone(Stone::None);
+    winResult = WinResults();
+    battleHistory.clear();
+    skipRepeatSay = false;
+    skipNewStone = false;
+    skipNewTurn = false;
+    gamePart = 0;
+    battleUnitId = 1;
+    stateGUI.clear();
+    landClaimJournal.clear();
+    adventureSnapshotPlayer = Avatar();
+    adventureArmySnapshot.clear();
+    pendingBattle = PendingBattle();
+
+    if(initialLandOwners.size() == landsInfo.size())
+    {
+        for(std::size_t index = 0; index < landsInfo.size(); ++index)
+            landsInfo[index].clan = initialLandOwners[index];
+    }
+
+    return true;
+}
+
 bool GameData::initMahjong(void)
 {
     pendingBattle = PendingBattle();
@@ -1058,7 +1131,11 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
     if(dropStone.isValid())
     {
 	if(skipRepeatSay)
-	    return false;
+	{
+	    const bool allAI = std::all_of(gamers.begin(), gamers.end(),
+	        [](const LocalPlayer & player){ return player.isAI(); });
+	    return allAI ? client2Mahjong(current.avatar, ClientButtonPass(), actions) : false;
+	}
 
 	skipRepeatSay = true;
 
@@ -1308,11 +1385,13 @@ bool GameData::clientButtonPass(const Avatar & avatar, const ClientMessage & act
     if(AI::mahjongGameKongPungChao(currentWind, roundWind, dropStone, winResult, actions, false))
 	return true;
 
-    if(! client.isAI())
-    {
-	currentWind.shift();
-	croupier.put(dropStone);
-	dropStone = Stone(Stone::None);
+	const bool allAI = std::all_of(gamers.begin(), gamers.end(),
+	    [](const LocalPlayer & player){ return player.isAI(); });
+	if(!client.isAI() || allAI)
+	{
+	    currentWind.shift();
+	    croupier.put(dropStone);
+	    dropStone = Stone(Stone::None);
     }
 
     actions.push_back(MahjongData(currentWind));

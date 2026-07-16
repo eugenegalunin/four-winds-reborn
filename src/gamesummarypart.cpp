@@ -26,6 +26,7 @@
 #include "actions.h"
 #include "gametheme.h"
 #include "gamesummarypart.h"
+#include "matchscore.h"
 
 GameSummaryScreen::GameSummaryScreen() : JsonWindow("screen_game_summary.json", nullptr)
 {
@@ -74,6 +75,57 @@ GameSummaryScreen::GameSummaryScreen() : JsonWindow("screen_game_summary.json", 
     labels.push_back(GameTheme::jsonTextInfo(jobject, "textinfo:total"));
     labels.back().text = _("Total Score");
 
+    const std::array<const char*, 4> scoreKeys = {
+        "textinfo:score1", "textinfo:score2", "textinfo:score3", "textinfo:score4"
+    };
+    const std::array<const char*, 4> rankKeys = {
+        "textinfo:rank1", "textinfo:rank2", "textinfo:rank3", "textinfo:rank4"
+    };
+    const std::array<int, MatchScore::CategoryCount> rowY = { 286, 320, 374, 410, 446 };
+    const MatchScore::Results scores = MatchScore::current();
+
+    for(std::size_t playerIndex = 0;
+        playerIndex < scores.size() && playerIndex < scoreKeys.size(); ++playerIndex)
+    {
+        const MatchScore::PlayerResult & player = scores[playerIndex];
+        const JsonTextInfo scoreTemplate = GameTheme::jsonTextInfo(jobject, scoreKeys[playerIndex]);
+        const JsonTextInfo rankTemplate = GameTheme::jsonTextInfo(jobject, rankKeys[playerIndex]);
+
+        JsonTextInfo playerName = scoreTemplate;
+        playerName.position.x = (scoreTemplate.position.x + rankTemplate.position.x) / 2;
+        playerName.position.y = 215;
+        playerName.font = "dejavus22";
+        playerName.text = player.person.name();
+        values.push_back(playerName);
+
+        for(std::size_t category = 0; category < MatchScore::CategoryCount; ++category)
+        {
+            JsonTextInfo scoreValue = scoreTemplate;
+            scoreValue.position.y = rowY[category];
+            scoreValue.font = "dejavus22";
+            scoreValue.text = String::number(player.categories[category].score);
+            values.push_back(scoreValue);
+
+            JsonTextInfo rankValue = rankTemplate;
+            rankValue.position.y = rowY[category];
+            rankValue.font = "dejavus22";
+            rankValue.text = String::number(player.categories[category].rank);
+            values.push_back(rankValue);
+        }
+
+        JsonTextInfo totalValue = scoreTemplate;
+        totalValue.position.y = 638;
+        totalValue.font = "dejavus26";
+        totalValue.text = String::number(player.totalScore);
+        values.push_back(totalValue);
+
+        JsonTextInfo finalRank = rankTemplate;
+        finalRank.position.y = 638;
+        finalRank.font = "dejavus26";
+        finalRank.text = String::number(player.finalRank);
+        values.push_back(finalRank);
+    }
+
     buttonNext = buttons.findIds("but_done");
     if(buttonNext)
         buttonNext->setAction(Action::ButtonDone);
@@ -87,6 +139,9 @@ void GameSummaryScreen::renderWindow(void)
 
     for(auto & label : labels)
 	renderTextInfo(label);
+
+    for(auto & value : values)
+        renderTextInfo(value);
 }
 
 bool GameSummaryScreen::keyPressEvent(const KeySym & key)

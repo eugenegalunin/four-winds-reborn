@@ -64,8 +64,10 @@ set(FOUR_WINDS_BUILD_DEFINITIONS
 set(FOUR_WINDS_SOURCE
     src/crashreport.cpp
     src/gameplayrng.cpp
+    src/matchscore.cpp
     src/recovery.cpp
     src/replay.cpp
+    src/simulation.cpp
     src/strings.cpp
     src/gamedata.cpp
     src/runewars.cpp
@@ -128,6 +130,8 @@ if(BUILD_TESTING)
     set_tests_properties(recovery_checkpointing PROPERTIES
         ENVIRONMENT "FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test")
     add_test(NAME fixed_seed_replay COMMAND gameplay_regression_tests --fixed-seed-replay)
+    add_test(NAME headless_match_simulation
+        COMMAND gameplay_regression_tests --headless-match-self-test)
     if(WIN32)
         add_test(NAME windows_native_crash_reporting
             COMMAND gameplay_regression_tests --windows-crash-report-self-test)
