@@ -89,6 +89,7 @@ namespace AI
         int partyCoordinationAdjustment;
         int strategicGoalLimit;
         int strategicDrawHorizon;
+        int strategicBranchLimit;
     };
 
     const char*             difficultyName(Difficulty);

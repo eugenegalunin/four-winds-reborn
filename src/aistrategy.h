@@ -1,7 +1,7 @@
 #ifndef _RWNA_AISTRATEGY_
 #define _RWNA_AISTRATEGY_
 
-#include "aiprofile.h"
+#include "aispell.h"
 
 namespace AI
 {
@@ -75,10 +75,59 @@ namespace AI
         std::string trace(void) const;
     };
 
+    enum class StrategicAction
+    {
+        Summon,
+        Spell
+    };
+
+    struct AdventureFollowUp
+    {
+        Land origin;
+        Land target;
+        int distance;
+        int visibleDefense;
+        int attackStrength;
+        int score;
+
+        AdventureFollowUp();
+
+        bool isValid(void) const { return origin.isValid() && target.isValid(); }
+        std::string trace(void) const;
+    };
+
+    struct TurnBranch
+    {
+        StrategicAction action;
+        SummonCandidate summon;
+        SpellCastPlan spell;
+        AdventureFollowUp adventure;
+        int immediateScore;
+        int intentScore;
+        int followUpScore;
+        int score;
+
+        TurnBranch();
+
+        bool isValid(void) const;
+        std::string trace(void) const;
+    };
+
+    struct TurnPlan
+    {
+        StrategicIntent intent;
+        std::vector<TurnBranch> branches;
+
+        const TurnBranch* selected(void) const;
+        std::string trace(void) const;
+    };
+
     AIObservation observePlayer(const Avatar &);
     StrategicIntent chooseStrategicIntent(const AIObservation &, BehaviorProfile, Difficulty);
     std::vector<SummonCandidate> rankSummonCandidates(const AIObservation &, const Creatures &,
                                                       BehaviorProfile);
+    TurnPlan chooseStrategicTurnPlan(const AIObservation &, const Creatures &, const Spells &,
+                                     BehaviorProfile, Difficulty);
 }
 
 #endif

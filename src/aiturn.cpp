@@ -110,42 +110,29 @@ bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecS
     return GameData::client2Mahjong(avatar, ClientDropIndex(dropIndex), actions);
 }
 
-namespace
-{
-    bool trySummon(const LocalPlayer & player, Creatures summons, ActionList & actions)
-    {
-        if(summons.empty() || player.army.isMaximumSummoning()) return false;
-
-        const AI::BehaviorProfile profile = AI::behaviorProfile(player);
-
-        const std::vector<AI::SummonCandidate> candidates = AI::rankSummonCandidates(
-            AI::observePlayer(player.avatar), summons, profile);
-        for(const AI::SummonCandidate & candidate : candidates)
-        {
-            DEBUG("AI summon candidate: " << candidate.trace());
-            // A hidden globally unique creature may still make this observer-legal
-            // candidate fail authoritative validation. Continue without consulting
-            // hidden state and try the next ranked candidate.
-            if(GameData::client2Mahjong(player.avatar,
-                                        ClientSummonCreature(candidate.creature,
-                                                             candidate.destination), actions))
-                return true;
-        }
-
-        return false;
-    }
-}
-
 void AI::mahjongSummonCast(const Avatar & avatar, const Creatures & summons, const Spells & casts, ActionList & actions)
 {
     const LocalPlayer & player = GameData::playerOfAvatar(avatar);
-    const SpellCastPlan spellPlan = chooseSpellCast(player, casts);
+    const TurnPlan plan = chooseStrategicTurnPlan(
+        observePlayer(avatar), summons, casts, behaviorProfile(player), GameData::aiDifficulty());
+    DEBUG("AI turn plan: " << plan.trace());
 
-    // Each profile decides when a tactical plan is worth delaying a summon.
-    if(shouldCastBeforeSummon(spellPlan) && executeSpellCast(player, spellPlan, actions)) return;
-    if(trySummon(player, summons, actions)) return;
+    for(const TurnBranch & branch : plan.branches)
+    {
+        if(branch.action == StrategicAction::Spell)
+        {
+            if(executeSpellCast(player, branch.spell, actions)) return;
+            continue;
+        }
 
-    executeSpellCast(player, spellPlan, actions);
+        // A hidden globally unique creature may still make this observer-legal
+        // branch fail authoritative validation. Continue through the bounded plan
+        // without consulting hidden state.
+        if(GameData::client2Mahjong(player.avatar,
+                                    ClientSummonCreature(branch.summon.creature,
+                                                         branch.summon.destination), actions))
+            return;
+    }
 }
 
 void AI::mahjongOtherPass(const Wind & currentWind, ActionList & actions, const Wind & skip)

@@ -161,6 +161,10 @@ void testDifficultyRules()
            AI::difficultyRules(AI::Difficulty::Normal).strategicGoalLimit == 4 &&
            AI::difficultyRules(AI::Difficulty::Hard).strategicGoalLimit == 6,
            "higher AI difficulty must retain a wider strategic goal beam");
+    expect(AI::difficultyRules(AI::Difficulty::Easy).strategicBranchLimit == 3 &&
+           AI::difficultyRules(AI::Difficulty::Normal).strategicBranchLimit == 6 &&
+           AI::difficultyRules(AI::Difficulty::Hard).strategicBranchLimit == 10,
+           "higher AI difficulty must retain a wider strategic action beam");
 
     GameData::setAIDifficulty(AI::Difficulty::Hard);
     expect(GameData::toJsonObject(JsonObject()).getString("ai:difficulty") == "hard",
@@ -211,6 +215,13 @@ void testStrategicRunePlanning()
     hiddenUniqueOptions.push_back(Creature(Creature::SkeletonHorde));
     const std::vector<AI::SummonCandidate> baselineSummons = AI::rankSummonCandidates(
         baselineObservation, hiddenUniqueOptions, AI::BehaviorProfile::Aggressive);
+    const Spells noStrategicCasts;
+    const AI::SpellCastPlan baselineHiddenSpell = AI::chooseSpellCast(
+        baselineObservation.state(), spellSet({ Spell::LightningBolt }),
+        AI::BehaviorProfile::Aggressive, noStrategicCasts);
+    const AI::TurnPlan baselineTurn = AI::chooseStrategicTurnPlan(
+        baselineObservation, hiddenUniqueOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
 
     BattleParty hiddenParty(Clan::Yellow, Land::Zubrus);
     expect(hiddenParty.join(BattleCreature(Clan::Yellow, Creature::KilorCelsbane, 2450)),
@@ -222,6 +233,12 @@ void testStrategicRunePlanning()
         hiddenObservation, AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
     const std::vector<AI::SummonCandidate> hiddenSummons = AI::rankSummonCandidates(
         hiddenObservation, hiddenUniqueOptions, AI::BehaviorProfile::Aggressive);
+    const AI::SpellCastPlan hiddenEnemySpell = AI::chooseSpellCast(
+        hiddenObservation.state(), spellSet({ Spell::LightningBolt }),
+        AI::BehaviorProfile::Aggressive, noStrategicCasts);
+    const AI::TurnPlan hiddenTurn = AI::chooseStrategicTurnPlan(
+        hiddenObservation, hiddenUniqueOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
     expect(!hiddenObservation.visibleCreature(Creature(Creature::KilorCelsbane)),
            "AIObservation must remove an undetected invisible third-party creature");
     expect(withHiddenEnemy.trace() == baseline.trace(),
@@ -233,6 +250,62 @@ void testStrategicRunePlanning()
                           return left.trace() == right.trace();
                       }),
            "an invisible global unique creature must not alter observer-legal summon ranking");
+    expect(!baselineHiddenSpell.isValid() && !hiddenEnemySpell.isValid(),
+           "observer-safe spell planning must not target an undetected invisible creature");
+    expect(hiddenTurn.trace() == baselineTurn.trace(),
+           "an invisible third-party army must not alter the bounded strategic turn plan");
+    expect(!baselineTurn.branches.empty() &&
+           baselineTurn.trace().find("branch[0]") != std::string::npos &&
+           baselineTurn.trace().find("adventure=") != std::string::npos &&
+           baselineTurn.trace().find("visible_defense=") != std::string::npos,
+           "strategic TurnPlan must expose deterministic action and Adventure scores");
+
+    Creatures wideSummonOptions;
+    for(const CreatureInfo & info : GameData::creaturesInfo)
+    {
+        if(info.id.isValid()) wideSummonOptions.push_back(info.id);
+        if(12 <= wideSummonOptions.size()) break;
+    }
+    const AI::TurnPlan easyTurn = AI::chooseStrategicTurnPlan(
+        hiddenObservation, wideSummonOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Easy);
+    const AI::TurnPlan normalTurn = AI::chooseStrategicTurnPlan(
+        hiddenObservation, wideSummonOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+    const AI::TurnPlan hardTurn = AI::chooseStrategicTurnPlan(
+        hiddenObservation, wideSummonOptions, noStrategicCasts,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Hard);
+    expect(easyTurn.branches.size() == 3 && normalTurn.branches.size() == 6 &&
+           hardTurn.branches.size() == 10,
+           "strategic TurnPlan must obey Easy, Normal and Hard branch budgets");
+
+    LocalData fullArmyState = hiddenObservation.state();
+    const Lands fullArmyLands = Lands::thisClan(fullArmyState.myPlayer().clan).powerOnly();
+    expect(1 < fullArmyLands.size(), "full strategic army fixture needs two power lands");
+    if(1 < fullArmyLands.size())
+    {
+        for(int partyIndex = 0; partyIndex < 2; ++partyIndex)
+        {
+            BattleParty party(fullArmyState.myPlayer().clan, fullArmyLands[partyIndex]);
+            const int partySize = partyIndex == 0 ? 3 : 2;
+            for(int member = 0; member < partySize; ++member)
+                expect(party.join(BattleCreature(fullArmyState.myPlayer().clan,
+                                                 Creature::SkeletonHorde,
+                                                 2460 + partyIndex * 3 + member)),
+                       "full strategic army fixture must join five creatures");
+            fullArmyState.myPlayer().army.push_back(party);
+        }
+    }
+    const AI::TurnPlan fullArmyTurn = AI::chooseStrategicTurnPlan(
+        AI::AIObservation(fullArmyState), hiddenUniqueOptions,
+        spellSet({ Spell::DrawNumber }), AI::BehaviorProfile::Aggressive,
+        AI::Difficulty::Normal);
+    expect(std::none_of(fullArmyTurn.branches.begin(), fullArmyTurn.branches.end(),
+                        [](const AI::TurnBranch & branch)
+                        {
+                            return branch.action == AI::StrategicAction::Summon;
+                        }),
+           "a maximum-size army must not fill the bounded TurnPlan with rejected summons");
 
     GameData::gamers.clear();
     LocalPlayer javed;
@@ -1030,6 +1103,19 @@ void testSpellCastingAI()
     expect(AI::shouldCastBeforeSummon(aggressiveChoice) && AI::shouldCastBeforeSummon(controlChoice),
            "high-value aggressive and control plans must be allowed to override summoning");
 
+    Creatures strategicSummons;
+    strategicSummons.push_back(Creature(Creature::SkeletonHorde));
+    const AI::TurnPlan aggressiveTurn = AI::chooseStrategicTurnPlan(
+        AI::observePlayer(caster.avatar), strategicSummons, damageOrControl,
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Normal);
+    if(!aggressiveTurn.selected() ||
+       aggressiveTurn.selected()->action != AI::StrategicAction::Spell)
+        std::cerr << "  aggressive turn plan: " << aggressiveTurn.trace() << '\n';
+    expect(aggressiveTurn.selected() &&
+           aggressiveTurn.selected()->action == AI::StrategicAction::Spell &&
+           aggressiveTurn.selected()->spell.spell == Spell(Spell::LightningBolt),
+           "bounded TurnPlan must cast a high-value tactical spell before summoning");
+
     const AI::SpellCastPlan controlCombo = AI::chooseSpellCast(
         caster, spellSet({ Spell::DispelMagic }), AI::BehaviorProfile::Control,
         spellSet({ Spell::Paralyze, Spell::LightningBolt }));
@@ -1083,6 +1169,22 @@ void testSpellCastingAI()
            "economic spell AI must prefer rune economy over non-lethal damage");
     expect(!AI::shouldCastBeforeSummon(economicChoice),
            "an ordinary economic spell must not delay a legal summon");
+    LocalData ordinaryEconomicState = GameData::toLocalData(caster.avatar);
+    ordinaryEconomicState.myPlayer().points = 220;
+    const AI::AIObservation ordinaryEconomicObservation(ordinaryEconomicState);
+    const AI::SpellCastPlan ordinaryEconomicSpell = AI::chooseSpellCast(
+        ordinaryEconomicState, spellSet({ Spell::DrawNumber }), AI::BehaviorProfile::Economic);
+    expect(ordinaryEconomicSpell.isValid() && !AI::shouldCastBeforeSummon(ordinaryEconomicSpell),
+           "ordinary economic TurnPlan fixture must stay below the summon override threshold");
+    const AI::TurnPlan economicTurn = AI::chooseStrategicTurnPlan(
+        ordinaryEconomicObservation, strategicSummons, spellSet({ Spell::DrawNumber }),
+        AI::BehaviorProfile::Economic, AI::Difficulty::Normal);
+    if(!economicTurn.selected() ||
+       economicTurn.selected()->action != AI::StrategicAction::Summon)
+        std::cerr << "  economic turn plan: " << economicTurn.trace() << '\n';
+    expect(economicTurn.selected() &&
+           economicTurn.selected()->action == AI::StrategicAction::Summon,
+           "bounded TurnPlan must keep summoning ahead of an ordinary economic spell");
 
     const int savedPoints = caster.points;
     caster.points = 100;

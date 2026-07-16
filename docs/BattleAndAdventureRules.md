@@ -270,6 +270,18 @@ frontier pressure and land value. A globally unique creature hidden from the
 observer is never consulted by the planner; authoritative validation may reject
 that candidate, after which the AI tries the next observer-legal candidate.
 
+The same observation now feeds a bounded `TurnPlan`. It keeps one best
+destination per summonable creature and one observer-safe plan per currently
+castable spell, combines the immediate action score with the ranked rune intent,
+and adds a small Adventure follow-up score. That follow-up is a strategic target
+hint rather than an executable move order: it uses public land ownership and
+paths, the AI's own parties and only defenders present in filtered `LocalData`.
+Difficulty limits the retained action beam to 3, 6 or 10 branches for Easy,
+Normal and Hard. A rejected hidden global unique therefore falls through to the
+next retained branch without revealing why it failed. The deterministic trace
+records every retained branch, its immediate, intent and follow-up components,
+and the visible defense used for its Adventure target.
+
 ## Regression checks
 
 `tests/gameplay_regression_tests.cpp` covers spell lifecycle, AI profiles and

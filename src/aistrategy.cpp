@@ -81,6 +81,160 @@ namespace
         return synergy;
     }
 
+    int combatStrength(const BaseStat & stat)
+    {
+        return stat.attack + stat.ranger * 2 + stat.defense + stat.loyalty * 2;
+    }
+
+    int visibleDefendingStrength(const AI::AIObservation & observation, const Land & land,
+                                 bool* defended)
+    {
+        int strength = combatStrength(GameData::landInfo(land).stat);
+        bool hasParty = false;
+        const Clan owner = GameData::landInfo(land).clan;
+
+        for(const LocalPlayer & visible : observation.state().players)
+        {
+            if(visible.clan != owner) continue;
+            const BattleParty* party = visible.army.findPartyConst(land);
+            if(!party) continue;
+            strength += combatStrength(party->toBaseStatSummary());
+            hasParty = true;
+        }
+
+        if(defended) *defended = hasParty;
+        return strength;
+    }
+
+    int publicFriendlyBorders(const Land & land, const Clan & clan)
+    {
+        return static_cast<int>(std::count_if(
+            GameData::landInfo(land).borders.begin(), GameData::landInfo(land).borders.end(),
+            [&](const Land & border)
+            {
+                return !border.isTowerWinds() && GameData::landInfo(border).clan == clan;
+            }));
+    }
+
+    int publicFutureFrontiers(const Land & land, const Clan & clan)
+    {
+        return static_cast<int>(std::count_if(
+            GameData::landInfo(land).borders.begin(), GameData::landInfo(land).borders.end(),
+            [&](const Land & border)
+            {
+                if(border.isTowerWinds()) return false;
+                const Clan owner = GameData::landInfo(border).clan;
+                return owner.isValid() && owner != clan;
+            }));
+    }
+
+    AI::AdventureFollowUp chooseVisibleAdventureFollowUp(
+        const AI::AIObservation & observation, const Land & origin, int addedStrength,
+        const AI::BehaviorRules & rules)
+    {
+        AI::AdventureFollowUp best;
+        if(!origin.isValid()) return best;
+
+        const LocalPlayer & player = observation.player();
+        const BattleParty* party = player.army.findPartyConst(origin);
+        const int attackStrength = (party ? combatStrength(party->toBaseStatSummary()) : 0) +
+                                   addedStrength;
+        if(attackStrength <= 0) return best;
+
+        for(auto landId : lands_all)
+        {
+            const Land land(landId);
+            if(land.isTowerWinds()) continue;
+
+            const LandInfo & info = GameData::landInfo(land);
+            if(!info.clan.isValid() || info.clan == player.clan) continue;
+
+            const Lands path = Lands::pathfind(origin, land);
+            if(path.empty()) continue;
+
+            bool defended = false;
+            const int defense = visibleDefendingStrength(observation, land, &defended);
+            const int distance = static_cast<int>(path.size());
+            const bool winnable = defense <= attackStrength;
+            const int score = info.stat.point * rules.targetValueWeight / 100 -
+                              distance * rules.targetDistancePenalty -
+                              defense * rules.targetDefensePenalty +
+                              (defended ? rules.targetDefendedBonus : rules.targetEmptyBonus) +
+                              (winnable ? rules.targetWinnableBonus : 0) +
+                              (info.stat.power ? rules.targetPowerBonus : 0) +
+                              (0 < publicFriendlyBorders(land, player.clan) ?
+                                  rules.targetThreatBonus : 0) +
+                              publicFutureFrontiers(land, player.clan) *
+                                  rules.targetFrontierWeight;
+
+            AI::AdventureFollowUp candidate;
+            candidate.origin = origin;
+            candidate.target = land;
+            candidate.distance = distance;
+            candidate.visibleDefense = defense;
+            candidate.attackStrength = attackStrength;
+            candidate.score = score;
+
+            if(!best.isValid() || candidate.score > best.score ||
+               (candidate.score == best.score && candidate.target() < best.target()))
+                best = candidate;
+        }
+        return best;
+    }
+
+    AI::AdventureFollowUp chooseVisibleAdventureFollowUp(
+        const AI::AIObservation & observation, const AI::BehaviorRules & rules)
+    {
+        AI::AdventureFollowUp best;
+        for(const BattleParty & party : observation.player().army)
+        {
+            const AI::AdventureFollowUp candidate = chooseVisibleAdventureFollowUp(
+                observation, party.land(), 0, rules);
+            if(!best.isValid() || (candidate.isValid() &&
+               (candidate.score > best.score ||
+                (candidate.score == best.score && candidate.origin() < best.origin()))))
+                best = candidate;
+        }
+        return best;
+    }
+
+    int strategicGoalBonus(const AI::StrategicIntent & intent, AI::StrategicGoalType type,
+                           int id)
+    {
+        for(std::size_t index = 0; index < intent.runeGoals.size(); ++index)
+        {
+            const AI::RuneGoal & goal = intent.runeGoals[index];
+            if(goal.type != type || goalId(goal) != id) continue;
+            const int rank = static_cast<int>(intent.runeGoals.size() - index);
+            return std::clamp(std::max(0, goal.score) / 25 + rank, 0, 24);
+        }
+        return 0;
+    }
+
+    int boundedFollowUpScore(const AI::AdventureFollowUp & followUp)
+    {
+        return followUp.isValid() ? std::clamp(followUp.score / 25, -24, 24) : 0;
+    }
+
+    bool betterTurnBranch(const AI::TurnBranch & left, const AI::TurnBranch & right)
+    {
+        if(left.score != right.score) return left.score > right.score;
+        if(left.action != right.action) return left.action == AI::StrategicAction::Spell;
+        if(left.action == AI::StrategicAction::Spell)
+        {
+            if(left.spell.spell() != right.spell.spell())
+                return left.spell.spell() < right.spell.spell();
+            if(left.spell.unit != right.spell.unit) return left.spell.unit < right.spell.unit;
+            if(left.spell.land() != right.spell.land()) return left.spell.land() < right.spell.land();
+            return left.spell.target() < right.spell.target();
+        }
+        if(left.summon.score != right.summon.score)
+            return left.summon.score > right.summon.score;
+        if(left.summon.creature() != right.summon.creature())
+            return left.summon.creature() < right.summon.creature();
+        return left.summon.destination() < right.summon.destination();
+    }
+
     AI::RuneGoal buildRuneGoal(const AI::AIObservation & observation,
                                AI::StrategicGoalType type, const Creature & creature,
                                const Spell & spell, const std::string & name,
@@ -193,6 +347,66 @@ AI::StrategicIntent::StrategicIntent()
 AI::SummonCandidate::SummonCandidate()
     : staticValue(0), partySynergy(0), frontierValue(0), score(0)
 {
+}
+
+AI::AdventureFollowUp::AdventureFollowUp()
+    : distance(0), visibleDefense(0), attackStrength(0), score(0)
+{
+}
+
+std::string AI::AdventureFollowUp::trace(void) const
+{
+    std::ostringstream os;
+    os << "adventure=" << (target.isValid() ? target.toString() : "none")
+       << ", origin=" << (origin.isValid() ? origin.toString() : "none")
+       << ", distance=" << distance << ", visible_defense=" << visibleDefense
+       << ", attack=" << attackStrength << ", score=" << score;
+    return os.str();
+}
+
+AI::TurnBranch::TurnBranch()
+    : action(StrategicAction::Summon), immediateScore(0), intentScore(0),
+      followUpScore(0), score(0)
+{
+}
+
+bool AI::TurnBranch::isValid(void) const
+{
+    return action == StrategicAction::Spell ? spell.isValid() : summon.isValid();
+}
+
+std::string AI::TurnBranch::trace(void) const
+{
+    std::ostringstream os;
+    os << "action=" << (action == StrategicAction::Spell ? "spell" : "summon");
+    if(action == StrategicAction::Spell)
+    {
+        os << ", spell=" << (spell.spell.isValid() ? GameData::spellInfo(spell.spell).name : "none")
+           << ", target=" << spell.target() << ", land=" << spell.land.toString()
+           << ", unit=" << spell.unit;
+    }
+    else
+    {
+        os << ", " << summon.trace();
+    }
+    os << ", total=" << score << ", immediate=" << immediateScore
+       << ", intent=" << intentScore << ", follow_up=" << followUpScore
+       << ", " << adventure.trace();
+    return os.str();
+}
+
+const AI::TurnBranch* AI::TurnPlan::selected(void) const
+{
+    return branches.empty() ? nullptr : &branches.front();
+}
+
+std::string AI::TurnPlan::trace(void) const
+{
+    std::ostringstream os;
+    os << intent.trace();
+    for(std::size_t index = 0; index < branches.size(); ++index)
+        os << "; branch[" << index << "] " << branches[index].trace();
+    return os.str();
 }
 
 std::string AI::SummonCandidate::trace(void) const
@@ -336,4 +550,66 @@ std::vector<AI::SummonCandidate> AI::rankSummonCandidates(const AIObservation & 
         return left.destination() < right.destination();
     });
     return result;
+}
+
+AI::TurnPlan AI::chooseStrategicTurnPlan(const AIObservation & observation,
+                                         const Creatures & summons, const Spells & casts,
+                                         BehaviorProfile profile, Difficulty difficulty)
+{
+    TurnPlan plan;
+    plan.intent = chooseStrategicIntent(observation, profile, difficulty);
+    const BehaviorRules & rules = behaviorRules(profile);
+
+    std::set<int> plannedCreatures;
+    const std::vector<SummonCandidate> summonCandidates =
+        observation.player().army.isMaximumSummoning() ? std::vector<SummonCandidate>() :
+        rankSummonCandidates(observation, summons, profile);
+    for(const SummonCandidate & candidate : summonCandidates)
+    {
+        if(!plannedCreatures.insert(candidate.creature()).second) continue;
+
+        TurnBranch branch;
+        branch.action = StrategicAction::Summon;
+        branch.summon = candidate;
+        branch.adventure = chooseVisibleAdventureFollowUp(
+            observation, candidate.destination,
+            combatStrength(GameData::creatureInfo(candidate.creature).stat), rules);
+        branch.immediateScore = rules.summonOverrideScore - 1;
+        branch.intentScore = strategicGoalBonus(plan.intent, StrategicGoalType::Summon,
+                                                candidate.creature());
+        branch.followUpScore = boundedFollowUpScore(branch.adventure);
+        branch.score = branch.immediateScore + branch.intentScore + branch.followUpScore;
+        plan.branches.push_back(branch);
+    }
+
+    const Spells futureSpells = knownSpellCasts(observation.player());
+    std::set<int> plannedSpells;
+    for(const Spell & spell : casts)
+    {
+        if(!plannedSpells.insert(spell()).second) continue;
+
+        Spells oneSpell;
+        oneSpell.push_back(spell);
+        const SpellCastPlan spellPlan = chooseSpellCast(
+            observation.state(), oneSpell, profile, futureSpells);
+        if(!spellPlan.isValid()) continue;
+
+        TurnBranch branch;
+        branch.action = StrategicAction::Spell;
+        branch.spell = spellPlan;
+        branch.adventure = chooseVisibleAdventureFollowUp(observation, rules);
+        branch.immediateScore = spellPlan.score;
+        branch.intentScore = strategicGoalBonus(plan.intent, StrategicGoalType::Spell, spell());
+        branch.followUpScore = boundedFollowUpScore(branch.adventure);
+        if(branch.adventure.isValid() && spellPlan.land == branch.adventure.target)
+            branch.followUpScore = std::min(24, branch.followUpScore + 8);
+        branch.score = branch.immediateScore + branch.intentScore + branch.followUpScore;
+        plan.branches.push_back(branch);
+    }
+
+    std::sort(plan.branches.begin(), plan.branches.end(), betterTurnBranch);
+    const int branchLimit = difficultyRules(difficulty).strategicBranchLimit;
+    if(static_cast<int>(plan.branches.size()) > branchLimit)
+        plan.branches.resize(branchLimit);
+    return plan;
 }
