@@ -109,7 +109,9 @@ Each match runs in a fresh child process; it exports detailed event telemetry,
 versioned JSON, per-player CSV, a concise text report and full replays for
 failures/statistical outliers. The fixed seed list, legal clan/seat rotation
 contract and larger-run guidance are in
-[`docs/BalanceLab.md`](docs/BalanceLab.md).
+[`docs/BalanceLab.md`](docs/BalanceLab.md). The current controlled strength view,
+including direct fixed-clan and provisional clan-adjusted tiers, is in
+[`docs/BalanceTiers.md`](docs/BalanceTiers.md).
 
 ## Crash Diagnostics
 

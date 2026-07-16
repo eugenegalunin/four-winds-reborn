@@ -268,3 +268,8 @@ mean rank and mean total together. The Wilson intervals still overlap and this
 is not yet evidence for a specific numeric edit. Inspect paired fixture deltas
 and representative Ziag/Kierac replays before changing one passive, creature,
 spell or scoring family at a time.
+
+The resulting direct fixed-clan tiers and provisional clan-adjusted nine-avatar
+ranking are maintained in [`BalanceTiers.md`](BalanceTiers.md). The legacy
+`--balance-only` table remains a fast data/plan diagnostic, not the current tier
+list.
