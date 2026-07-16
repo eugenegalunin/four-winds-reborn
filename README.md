@@ -9,6 +9,11 @@ This repository is a modified continuation of
 original copyright notices and GPL-3.0 license are preserved. Project changes
 from 2026 onward are maintained as Four Winds Reborn.
 
+The canonical clans are Maitha (`maitha`), Kartha (`kartha`), Iz (`iz`) and
+Marz (`marz`). Historical color strings are load-only compatibility aliases;
+the identity contract is recorded in
+[`docs/RulesDecisions.md`](docs/RulesDecisions.md#rd-006-canonical-clan-identities).
+
 The bundled engine is maintained separately as
 [Four Winds Engine](https://github.com/jaskes/four-winds-engine), with
 its original LGPL-3.0-or-later license and upstream attribution preserved.

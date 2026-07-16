@@ -418,7 +418,7 @@ MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("
         forecastSurvival = GameTheme::jsonTextInfo(*forecast, "textinfo:survival");
     }
 
-    // const Texture & tmp = GameTheme::texture(GameData::clanInfo(Clan::Red).button);
+    // const Texture & tmp = GameTheme::texture(GameData::clanInfo(Clan::Maitha).button);
 
     bar1.setPosition(topClanPos);
     bar2.setPosition(botClanPos);

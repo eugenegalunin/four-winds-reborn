@@ -64,6 +64,7 @@ JsonObject personScoreJson(const MatchScore::PlayerResult & score)
     JsonObject object;
     object.addString("avatar", score.person.avatar.toString());
     object.addString("clan", score.person.clan.toString());
+    object.addString("clan_name", score.person.clan.canonicalName());
     object.addString("wind", score.person.wind.toString());
     object.addInteger("final_rank", score.finalRank);
     object.addInteger("total_score", score.totalScore);
@@ -448,7 +449,7 @@ Tournament::Schedule Tournament::buildSchedule(const Config & config)
     }
 
     std::array<Clan, 4> clans = {
-        Clan(Clan::Red), Clan(Clan::Yellow), Clan(Clan::Aqua), Clan(Clan::Purple)
+        Clan(Clan::Maitha), Clan(Clan::Kartha), Clan(Clan::Iz), Clan(Clan::Marz)
     };
     std::vector<std::array<Clan, 4>> legalClans;
     do
@@ -949,7 +950,7 @@ std::string Tournament::toCsv(const Result & tournament)
     std::ostringstream stream;
     stream.imbue(std::locale::classic());
     stream << "run,seed,seed_index,clan_assignment,seat_rotation,difficulty,behavior_profile,"
-              "status,avatar,clan,wind,"
+              "status,avatar,clan,clan_id,wind,"
               "final_rank,total_score,summons,spells_cast,casualties,dismissals,peak_units,final_units";
     for(const char* category : categoryNames) stream << ',' << category;
     for(std::size_t stage = 0; stage < Simulation::MatchStageCount; ++stage)
@@ -975,8 +976,8 @@ std::string Tournament::toCsv(const Result & tournament)
                    << AI::difficultyName(record.plan.match.difficulty) << ','
                    << behaviorProfileName(record.plan.match) << ','
                    << Simulation::statusName(record.result.status) << ','
-                   << person.avatar.toString() << ',' << person.clan.toString() << ','
-                   << person.wind.toString() << ',';
+                   << person.avatar.toString() << ',' << person.clan.canonicalName() << ','
+                   << person.clan.toString() << ',' << person.wind.toString() << ',';
             if(score) stream << score->finalRank << ',' << score->totalScore;
             else stream << ',';
             if(telemetry != record.result.players.end())

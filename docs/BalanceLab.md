@@ -7,7 +7,7 @@ simplified rules model and not a blocking thousands-of-games unit test.
 ## Baseline matrix
 
 The first published roster is Nucrus, Lakkho, Ziag and Dayla. Their legal clans
-are fixed to red, yellow, aqua and purple respectively. For every seed, the
+are fixed to Maitha, Kartha, Iz and Marz respectively. For every seed, the
 schedule rotates the four avatars through East, South, West and North. Persons
 are stored in that same canonical wind order, so this also rotates any engine
 iteration-order seat effect.
@@ -168,14 +168,16 @@ forced doctrine, difficulty, seeds and seat rotations remain fixed:
 ```powershell
 .\scripts\run-balance-cohorts.ps1
 .\scripts\run-balance-cohorts.ps1 -SeedCount 8 -OutputDirectory diagnostics\balance-cohorts-full
-.\scripts\run-balance-cohorts.ps1 -Clans Aqua -SeedCount 2
+.\scripts\run-balance-cohorts.ps1 -Clans Iz -SeedCount 2
 ```
 
 The cohort root exports `balance-cohorts.json`, `balance-cohorts.csv` and
 `balance-cohorts.txt`. Deltas are candidate minus the baseline avatar in the
 same clan slot; a negative mean-rank delta is an improvement. `native` is
 deliberately unavailable here because it would change doctrine together with
-the avatar and defeat the control.
+the avatar and defeat the control. Machine-readable reports use the canonical
+IDs `maitha`, `kartha`, `iz` and `marz`; the `clan` display column uses the
+corresponding capitalized names.
 
 Verify one retained replay, one scenario, or a complete matrix after the run:
 
@@ -243,27 +245,27 @@ delta is better.
 
 | Clan | Baseline | Candidate | Rank one | Delta | Mean rank | Delta | Mean total | Delta |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Red | Nucrus | Nucrus | 43.75% | - | 1.813 | - | 15.688 | - |
-| Red | Nucrus | Orachi | 37.50% | -6.25 pp | 2.281 | +0.469 | 14.719 | -0.969 |
-| Red | Nucrus | Javed | 18.75% | -25.00 pp | 2.688 | +0.875 | 13.719 | -1.969 |
-| Red | Nucrus | Logun | 31.25% | -12.50 pp | 2.281 | +0.469 | 14.438 | -1.250 |
-| Yellow | Lakkho | Lakkho | 34.38% | - | 2.281 | - | 14.594 | - |
-| Yellow | Lakkho | Niana | 37.50% | +3.13 pp | 2.188 | -0.094 | 14.344 | -0.250 |
-| Yellow | Lakkho | Javed | 28.13% | -6.25 pp | 2.313 | +0.031 | 14.094 | -0.500 |
-| Yellow | Lakkho | Logun | 25.00% | -9.38 pp | 2.125 | -0.156 | 14.188 | -0.406 |
-| Aqua | Ziag | Ziag | 9.38% | - | 3.188 | - | 12.094 | - |
-| Aqua | Ziag | Niana | 12.50% | +3.13 pp | 2.906 | -0.281 | 13.031 | +0.938 |
-| Aqua | Ziag | Kierac | 28.13% | +18.75 pp | 2.313 | -0.875 | 14.000 | +1.906 |
-| Aqua | Ziag | Logun | 18.75% | +9.38 pp | 2.906 | -0.281 | 12.625 | +0.531 |
-| Purple | Dayla | Dayla | 21.88% | - | 2.313 | - | 14.688 | - |
-| Purple | Dayla | Orachi | 34.38% | +12.50 pp | 2.000 | -0.313 | 14.844 | +0.156 |
-| Purple | Dayla | Kierac | 31.25% | +9.38 pp | 2.313 | +0.000 | 14.156 | -0.531 |
-| Purple | Dayla | Logun | 40.63% | +18.75 pp | 2.219 | -0.094 | 14.438 | -0.250 |
+| Maitha | Nucrus | Nucrus | 43.75% | - | 1.813 | - | 15.688 | - |
+| Maitha | Nucrus | Orachi | 37.50% | -6.25 pp | 2.281 | +0.469 | 14.719 | -0.969 |
+| Maitha | Nucrus | Javed | 18.75% | -25.00 pp | 2.688 | +0.875 | 13.719 | -1.969 |
+| Maitha | Nucrus | Logun | 31.25% | -12.50 pp | 2.281 | +0.469 | 14.438 | -1.250 |
+| Kartha | Lakkho | Lakkho | 34.38% | - | 2.281 | - | 14.594 | - |
+| Kartha | Lakkho | Niana | 37.50% | +3.13 pp | 2.188 | -0.094 | 14.344 | -0.250 |
+| Kartha | Lakkho | Javed | 28.13% | -6.25 pp | 2.313 | +0.031 | 14.094 | -0.500 |
+| Kartha | Lakkho | Logun | 25.00% | -9.38 pp | 2.125 | -0.156 | 14.188 | -0.406 |
+| Iz | Ziag | Ziag | 9.38% | - | 3.188 | - | 12.094 | - |
+| Iz | Ziag | Niana | 12.50% | +3.13 pp | 2.906 | -0.281 | 13.031 | +0.938 |
+| Iz | Ziag | Kierac | 28.13% | +18.75 pp | 2.313 | -0.875 | 14.000 | +1.906 |
+| Iz | Ziag | Logun | 18.75% | +9.38 pp | 2.906 | -0.281 | 12.625 | +0.531 |
+| Marz | Dayla | Dayla | 21.88% | - | 2.313 | - | 14.688 | - |
+| Marz | Dayla | Orachi | 34.38% | +12.50 pp | 2.000 | -0.313 | 14.844 | +0.156 |
+| Marz | Dayla | Kierac | 31.25% | +9.38 pp | 2.313 | +0.000 | 14.156 | -0.531 |
+| Marz | Dayla | Logun | 40.63% | +18.75 pp | 2.219 | -0.094 | 14.438 | -0.250 |
 
 The controls materially narrow the diagnosis. Nucrus remains strongest among
-the tested Red candidates; the Yellow substitutions are close to Lakkho; and
-the Purple result depends on which outcome is emphasized. The clearest
-directional signal is Aqua: replacing Ziag with Kierac improves rank-one rate,
+the tested Maitha candidates; the Kartha substitutions are close to Lakkho; and
+the Marz result depends on which outcome is emphasized. The clearest
+directional signal is Iz: replacing Ziag with Kierac improves rank-one rate,
 mean rank and mean total together. The Wilson intervals still overlap and this
 is not yet evidence for a specific numeric edit. Inspect paired fixture deltas
 and representative Ziag/Kierac replays before changing one passive, creature,

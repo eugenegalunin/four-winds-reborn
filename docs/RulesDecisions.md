@@ -103,3 +103,28 @@ Griffon while preventing unrelated armies from leaking hidden information.
 `gameplay_regressions` covers no detector, a non-adjacent detector, an adjacent
 detector on invaded land, a third-party detector, Monacle, own units, the Tower,
 and authoritative-state purity.
+
+## RD-006: canonical clan identities
+
+Status: accepted on 2026-07-16.
+
+Reborn identifies the four clans by their actual names in code, theme data,
+saves, replays, command-line tools and reports:
+
+| Canonical ID | Display name | Historical color alias |
+| --- | --- | --- |
+| `maitha` | Maitha | `red` |
+| `kartha` | Kartha | `yellow` |
+| `iz` | Iz | `aqua` |
+| `marz` | Marz | `purple` |
+
+The color strings are accepted only as load/input aliases for inherited saves
+and commands. Reborn never emits them as clan identity. Visual colors still
+describe UI highlighting, rune suits and assets; this decision does not rename
+Red Dragon or other genuine color terminology.
+
+The enum order remains unchanged, so the migration does not alter clan rules,
+map ownership or seat scheduling. Serialized strings do change, which
+intentionally changes authoritative state hashes and requires a fresh
+deterministic canary. `theme_data_validation` locks the canonical theme IDs and
+names; `gameplay_regressions` locks canonical output plus legacy alias loading.

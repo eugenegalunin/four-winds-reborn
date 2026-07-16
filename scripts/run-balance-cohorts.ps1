@@ -6,8 +6,7 @@ param(
     [string]$Difficulty = "Normal",
     [ValidateSet("Balanced", "Aggressive", "Economic", "Control")]
     [string]$BehaviorProfile = "Balanced",
-    [ValidateSet("Red", "Yellow", "Aqua", "Purple")]
-    [string[]]$Clans = @("Red", "Yellow", "Aqua", "Purple"),
+    [string[]]$Clans = @("Maitha", "Kartha", "Iz", "Marz"),
     [switch]$KeepEngineLog,
     [switch]$KeepMatchRecords
 )
@@ -22,6 +21,18 @@ $outputPath = if ([IO.Path]::IsPathRooted($OutputDirectory)) {
 }
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $invariant = [Globalization.CultureInfo]::InvariantCulture
+$clanNames = [ordered]@{
+    maitha = "Maitha"
+    kartha = "Kartha"
+    iz = "Iz"
+    marz = "Marz"
+}
+$clanIdsByInput = @{
+    maitha = "maitha"; red = "maitha"
+    kartha = "kartha"; yellow = "kartha"
+    iz = "iz"; aqua = "iz"
+    marz = "marz"; purple = "marz"
+}
 
 $expectedScenariosPath = [IO.Path]::GetFullPath((Join-Path $outputPath "scenarios"))
 $outputPrefix = $outputPath.TrimEnd([IO.Path]::DirectorySeparatorChar,
@@ -37,20 +48,25 @@ if (Test-Path -LiteralPath $scenariosPath) {
 New-Item -ItemType Directory -Path $scenariosPath -Force | Out-Null
 
 $baseline = [ordered]@{
-    red = "nucrus"
-    yellow = "lakkho"
-    aqua = "ziag"
-    purple = "dayla"
+    maitha = "nucrus"
+    kartha = "lakkho"
+    iz = "ziag"
+    marz = "dayla"
 }
 $candidates = [ordered]@{
-    red = @("nucrus", "orachi", "javed", "logun")
-    yellow = @("lakkho", "niana", "javed", "logun")
-    aqua = @("ziag", "niana", "kierac", "logun")
-    purple = @("dayla", "orachi", "kierac", "logun")
+    maitha = @("nucrus", "orachi", "javed", "logun")
+    kartha = @("lakkho", "niana", "javed", "logun")
+    iz = @("ziag", "niana", "kierac", "logun")
+    marz = @("dayla", "orachi", "kierac", "logun")
 }
-$slotIndexes = @{ red = 0; yellow = 1; aqua = 2; purple = 3 }
-$selectedClans = @($Clans | ForEach-Object { $_.ToLowerInvariant() } |
-    Select-Object -Unique)
+$slotIndexes = @{ maitha = 0; kartha = 1; iz = 2; marz = 3 }
+$selectedClans = @($Clans | ForEach-Object {
+    $inputName = $_.ToLowerInvariant()
+    if (-not $clanIdsByInput.ContainsKey($inputName)) {
+        throw "Unknown clan '$($_)'. Use Maitha, Kartha, Iz, or Marz."
+    }
+    $clanIdsByInput[$inputName]
+} | Select-Object -Unique)
 if (-not $selectedClans.Count) {
     throw "At least one clan cohort is required."
 }
@@ -67,9 +83,13 @@ function Find-AvatarSummary($Report, [string]$Avatar) {
 }
 
 function New-Roster([string]$Clan, [string]$Candidate) {
-    $roster = @($baseline.red, $baseline.yellow, $baseline.aqua, $baseline.purple)
+    $roster = @($baseline.maitha, $baseline.kartha, $baseline.iz, $baseline.marz)
     $roster[$slotIndexes[$Clan]] = $Candidate
     return $roster
+}
+
+function Get-CohortScenarioId([string]$Clan, [string]$Candidate) {
+    return "$Clan-$Candidate"
 }
 
 function Invoke-CohortScenario([string]$Id, [string[]]$Roster) {
@@ -108,12 +128,13 @@ function Invoke-CohortScenario([string]$Id, [string[]]$Roster) {
     }
 }
 
-$baselineRoster = New-Roster "red" $baseline.red
+$baselineRoster = New-Roster "maitha" $baseline.maitha
 $scenarioData = @(Invoke-CohortScenario "baseline" $baselineRoster)
 foreach ($clan in $selectedClans) {
     foreach ($candidate in $candidates[$clan]) {
         if ($candidate -eq $baseline[$clan]) { continue }
-        $scenarioData += Invoke-CohortScenario "$clan-$candidate" `
+        $scenarioData += Invoke-CohortScenario `
+            (Get-CohortScenarioId $clan $candidate) `
             (New-Roster $clan $candidate)
     }
 }
@@ -133,7 +154,8 @@ foreach ($clan in $selectedClans) {
         $scenario = if ($candidate -eq $baselineAvatar) {
             $baselineScenario
         } else {
-            $scenarioData | Where-Object { $_.id -eq "$clan-$candidate" } |
+            $scenarioId = Get-CohortScenarioId $clan $candidate
+            $scenarioData | Where-Object { $_.id -eq $scenarioId } |
                 Select-Object -First 1
         }
         $summary = Find-AvatarSummary $scenario.report $candidate
@@ -160,7 +182,8 @@ foreach ($clan in $selectedClans) {
                 [double]$baselineSummary.mean_final_categories.land_claims
         }
         $cell = [ordered]@{
-            clan = $clan
+            clan = $clanNames[$clan]
+            clan_id = $clan
             baseline_avatar = $baselineAvatar
             candidate_avatar = $candidate
             scenario = $scenario.id
@@ -182,7 +205,8 @@ foreach ($clan in $selectedClans) {
         }
         $cells += [PSCustomObject]$cell
         $csvRows += [PSCustomObject][ordered]@{
-            clan = $clan
+            clan = $clanNames[$clan]
+            clan_id = $clan
             baseline_avatar = $baselineAvatar
             candidate_avatar = $candidate
             scenario = $scenario.id
@@ -215,7 +239,7 @@ $engineDirty = [bool](git -C (Join-Path $repoRoot "engine") `
     -c safe.directory=$((Join-Path $repoRoot "engine").Replace('\', '/')) status --porcelain)
 
 $reportRoot = [ordered]@{
-    schema_version = 1
+    schema_version = 2
     game_revision = $gameRevision
     game_dirty = $gameDirty
     engine_revision = $engineRevision
@@ -224,7 +248,14 @@ $reportRoot = [ordered]@{
     seeds = @($baselineScenario.report.seeds)
     difficulty = $Difficulty.ToLowerInvariant()
     behavior_profile = $BehaviorProfile.ToLowerInvariant()
-    selected_clans = $selectedClans
+    selected_clans = @($selectedClans | ForEach-Object { $clanNames[$_] })
+    selected_clan_ids = $selectedClans
+    clan_identity = @($clanNames.GetEnumerator() | ForEach-Object {
+        [PSCustomObject][ordered]@{
+            id = $_.Key
+            name = $_.Value
+        }
+    })
     baseline_roster = @($baselineRoster)
     scenario_count = $scenarioData.Count
     planned_matches = [int](($scenarioData | ForEach-Object {

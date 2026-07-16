@@ -36,10 +36,10 @@ or close enough that the current cohort does not justify separating the pair.
 
 | Fixed clan | Current order | Reading |
 | --- | --- | --- |
-| Red | **S Nucrus** > **A Orachi** > **B Logun** > **D Javed** | Nucrus leads all three outcomes; Javed trails all three. |
-| Yellow | **S Niana ~ Lakkho** > **A Logun** > **B Javed** | Niana leads wins/rank, Lakkho leads total; there is no runaway winner. |
-| Aqua | **S Kierac** >> **B Logun ~ Niana** > **D Ziag** | Kierac leads all three outcomes; Ziag trails all three. |
-| Purple | **S Orachi** > **A Logun** > **B Dayla ~ Kierac** | Logun wins more often, but Orachi has the best rank and total; Dayla/Kierac split the remaining metrics. |
+| Maitha | **S Nucrus** > **A Orachi** > **B Logun** > **D Javed** | Nucrus leads all three outcomes; Javed trails all three. |
+| Kartha | **S Niana ~ Lakkho** > **A Logun** > **B Javed** | Niana leads wins/rank, Lakkho leads total; there is no runaway winner. |
+| Iz | **S Kierac** >> **B Logun ~ Niana** > **D Ziag** | Kierac leads all three outcomes; Ziag trails all three. |
+| Marz | **S Orachi** > **A Logun** > **B Dayla ~ Kierac** | Logun wins more often, but Orachi has the best rank and total; Dayla/Kierac split the remaining metrics. |
 
 ## Provisional clan-adjusted overall tiers
 
@@ -68,14 +68,14 @@ not a claim of precision.
 
 Nucrus is still the current S-tier signal, but the controlled evidence says
 something narrower than the old synthetic ranking: he is dominant in the tested
-Red slot, while his average-clan estimate is bridged through shared candidates
+Maitha slot, while his average-clan estimate is bridged through shared candidates
 rather than directly observed in four clans. Orachi and Kierac form a credible
 A tier instead of leaving Nucrus alone above an undifferentiated field.
 
 Logun is the best cross-clan anchor because he was observed in all four slots.
-Ziag remains the weakest adjusted avatar and the weakest direct Aqua candidate,
-although his adjusted rank-one estimate is higher than the raw Aqua result; that
-is evidence that both Ziag and the Aqua slot contribute to the old collapse.
+Ziag remains the weakest adjusted avatar and the weakest direct Iz candidate,
+although his adjusted rank-one estimate is higher than the raw Iz result; that
+is evidence that both Ziag and the Iz slot contribute to the old collapse.
 
 Do not balance against the tier letters alone. The next decision should compare
 paired Ziag/Kierac fixtures and representative replays, then change one reviewed

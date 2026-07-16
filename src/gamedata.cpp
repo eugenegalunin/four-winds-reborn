@@ -298,7 +298,7 @@ const RemotePlayer & LocalData::playerOfClan(const Clan & clan) const
 
     if(it == players.end())
     {
-	ERROR("player not found" << ", " << "clan: " << clan.toString());
+	ERROR("player not found" << ", " << "clan: " << clan.canonicalName());
 	Engine::except(__FUNCTION__, "exit");
     }
 
@@ -1064,7 +1064,7 @@ void GameData::dumpOrderPersons(void)
 	LocalPlayer & player = playerOfWind(id);
 
 	DEBUG("wind: " << player.wind.toString() << ", " << "player: " << player.name() << ", " <<
-		(! player.isAI() ? " (*)" : "") << ", " << "clan: " << player.clan.toString() << ", " <<
+		(! player.isAI() ? " (*)" : "") << ", " << "clan: " << player.clan.canonicalName() << ", " <<
 		"stones: " <<  player.stones.toString() << ", " << "new stone: " << player.newStone.toString());
     }
 }

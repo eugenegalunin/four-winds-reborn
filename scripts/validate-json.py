@@ -51,6 +51,13 @@ CANONICAL_CREATURE_PRICES = {
     "great_carol": 180,
 }
 
+CANONICAL_CLAN_NAMES = {
+    "maitha": "Maitha",
+    "kartha": "Kartha",
+    "iz": "Iz",
+    "marz": "Marz",
+}
+
 CANONICAL_SPELL_PRICES = {
     "demonic_compulsion": 30,
     "dispel_magic": 120,
@@ -383,6 +390,10 @@ class ThemeValidator:
                 self.error(creature_path, f"{speciality} grantor '{grantors[0]}' must be a unique creature")
 
         if theme.name == "default":
+            for clan_id, expected in CANONICAL_CLAN_NAMES.items():
+                actual = tables["clans"].get(clan_id, {}).get("name")
+                if actual != expected:
+                    self.error(clan_path, f"canonical clan id '{clan_id}' must be named '{expected}', got {actual!r}")
             for creature_id, expected in CANONICAL_CREATURE_PRICES.items():
                 actual = tables["creatures"].get(creature_id, {}).get("cost")
                 if actual != expected:
