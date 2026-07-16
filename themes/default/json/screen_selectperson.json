@@ -35,8 +35,10 @@
 		],
     "ai:difficulty": {
                     "area": [ 925, 660, 86, 44 ],
-                    "textinfo:title": { "position": [ 968, 660 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" },
-                    "textinfo:value": { "position": [ 968, 681 ], "font": "dejavus18", "color": "OrangeRed", "align": "center" }
+                    "color:background": "#e9e4cf",
+                    "color:border": "#17140d",
+                    "color:inner_border": "#8f886c",
+                    "textinfo:value": { "position": [ 968, 668 ], "font": "dejavus22", "color": "#a71a23", "align": "center" }
             },
     "area:clans":	[
                     { "id": "red", "area": [ 330, 612, 142, 142 ] },

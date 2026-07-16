@@ -8,14 +8,19 @@ phase. The original game rules remain in `docs/Manual.txt`.
 1. Hellblast creatures reduce every opposing creature by the configured Hell
    Blast loyalty damage when the parties enter combat. Both sides resolve this
    ability before casualties are removed.
-2. The defending territory fires first. Ignore Missiles creatures cannot be
-   selected, and Force Shield reduces the received ranged damage.
-3. Attacking and defending creature missiles are planned before damage is
-   applied, then resolved simultaneously. A shooter killed by the opposing
-   volley still completes its planned shot.
-4. Battle AI selects the opening leader. If the selected creature has First
-   Strike, creature missile combat is skipped and the attacking party acts
-   first in melee. Otherwise the defending party or territory acts first.
+2. The human attacker selects an opening leader; Auto Resolve uses Battle AI's
+   recommendation through the same choice primitive. If the selected creature
+   has First Strike, creature missile combat is skipped and the attacking party
+   acts first in melee.
+3. The defending territory fires after the leader is selected. Ignore Missiles
+   creatures cannot be selected, and Force Shield reduces received ranged
+   damage. Territory fire is not skipped by First Strike.
+4. Without First Strike, every surviving attacker shooter receives a manual
+   target assignment. No damage is applied until all assignments are present;
+   the defending plan is built from the same untouched state and both creature
+   volleys then resolve simultaneously. A shooter killed by the opposing volley
+   still completes its planned shot, including deterministic overkill when no
+   other legal target existed in the pre-volley state.
 5. Melee continues action by action until the attacking party is defeated or
    the territory is captured. Initiative and targets are recalculated after
    every exchange.
@@ -26,6 +31,34 @@ attacks every member of the opposing party. Fire Shield retaliates after a
 melee hit. Mighty Blow has a 25 percent chance to add three melee and always
 deals at least one damage when it triggers. Regeneration restores full loyalty
 at the start of the map phase.
+
+## Player-controlled battle session
+
+Human attackers enter a serializable authoritative `BattleSession`. The state
+machine pauses for the opening leader, then once for every attacker missile
+assignment, and again before each attacker melee action until the battle ends.
+Missile assignments are saved without applying a partial volley, so save and
+recovery are supported even between two shooters.
+
+The choice screen uses stable battle-unit IDs. Yellow outlines are legal
+actors, red outlines are legal targets and blue outlines show the Battle AI
+recommendation. A leader click commits the target-free opening choice; missile
+and melee choices select an actor and target. The current phase, latest
+authoritative event and concise damage/hit/Mighty Blow preview remain visible.
+`Enter` accepts the recommendation; the visible `Auto Resolve` control or
+`Escape` delegates every remaining choice to Battle AI.
+
+The selected action and Auto Resolve both call the same damage and speciality
+primitives in `battle.cpp`. Invalid or stale actor/target IDs are rejected
+without changing state. The pending session stores parties, town, phase, round,
+profiles and emitted strikes in the authoritative save, recovery checkpoint and
+replay hash, so saving while the choice is visible is supported.
+
+The final combat playback shows phase/type, event progress and exact applied
+damage. It can be paused and resumed, and speed cycles through 1x, 2x and 4x.
+Playback timing uses a virtual clock and never blocks the Windows UI thread with
+per-strike sleeps. Auto Resolve stops safely after 1024 consecutive choices
+without damage instead of hanging forever on a pathological deterministic roll.
 
 ## Battle AI
 
@@ -40,7 +73,9 @@ The planner currently provides:
 - guaranteed First Strike opening priority without incorrectly preserving that
   bonus during later exchanges;
 - simultaneous ranged assignments with projected loyalty, Force Shield and
-  Ignore Missiles, redirecting later shots after a predicted kill;
+  Ignore Missiles, redirecting later shots after a predicted kill while still
+  assigning every shooter against the untouched state if all legal targets are
+  already projected dead;
 - dynamic melee attacker and target selection, including support, Merge,
   Swarm, Fire Shield risk, lethal damage, overkill and enemy threat;
 - separate attacker and defender profiles. AI players use their avatar's
@@ -80,6 +115,20 @@ claim balances.
 Undo restores the current player's complete army snapshot, including movement
 and dismissed creatures, then reverses all Land Claims made during that map
 turn and refunds their cost. Finishing the turn commits the snapshot.
+
+## Map visibility
+
+Invisible creatures are removed only from the copied `LocalData` sent to a
+specific observer. The authoritative armies always retain them. An ordinary
+observer reveals an invisible enemy only when their own Adventure Party,
+Griffon, or other See Invisible creature occupies an adjacent territory. The
+detector's territory owner does not matter, and another player's detector does
+not share visibility.
+
+Ziag's Monacle reveals every invisible creature globally. Players always see
+their own creatures, and creatures at the Tower of Four Winds are public. The
+full rationale and the resolved manual ambiguities are recorded in
+`docs/RulesDecisions.md`.
 
 ## Adventure AI
 
@@ -213,4 +262,13 @@ defensive reserve and coordinated capacity, Battle AI initiative, ranged
 allocation, profile targets, forecast determinism, copied-state purity and RNG
 isolation, Land Claim balances and legality, full Adventure Undo, simultaneous
 ranged combat, First Strike, Merge, Swarm, Regeneration, movement and Teleport
-invariants.
+invariants. BattleSession coverage includes legal and forged stable IDs,
+target-free leader selection, save/load at opening/melee and midway through a
+missile volley, explicit town targets, repeated manual rounds, simultaneous
+overkill, Auto Resolve equivalence, authoritative event history and the complete
+Adventure action flow. Deterministic BattleSession scenarios cover every
+battle-resolver speciality: creature Hellblast, First Strike, Ignore Missiles,
+Merge, Mighty Blow, Fire Shield and Swarm. Non-combat specialities (movement,
+visibility, spell resistance, Devotion, Regeneration and creature-cast Mahjong
+effects) remain covered in their owning phase rather than being simulated by
+BattleSession.

@@ -123,8 +123,10 @@ SelectPersonScreen::SelectPersonScreen() : JsonWindow("screen_selectperson.json"
     if(jo)
     {
         difficultyArea = JsonUnpack::rect(*jo, "area");
-        difficultyTitle = GameTheme::jsonTextInfo(*jo, "textinfo:title");
         difficultyValue = GameTheme::jsonTextInfo(*jo, "textinfo:value");
+        difficultyBackground = GameTheme::jsonColor(*jo, "color:background");
+        difficultyBorder = GameTheme::jsonColor(*jo, "color:border");
+        difficultyInnerBorder = GameTheme::jsonColor(*jo, "color:inner_border");
     }
 
     const JsonArray* ja = nullptr;
@@ -168,19 +170,29 @@ void SelectPersonScreen::renderWindow(void)
 
     if(difficultyArea.w && difficultyArea.h)
     {
-        renderRect(Color::DarkSlateGray, difficultyArea);
-        renderLine(difficultyTitle.color, difficultyArea.toPoint(),
+        renderRect(difficultyBackground, difficultyArea);
+        renderLine(difficultyBorder, difficultyArea.toPoint(),
                    Point(difficultyArea.x + difficultyArea.w - 1, difficultyArea.y));
-        renderLine(difficultyTitle.color, Point(difficultyArea.x, difficultyArea.y + difficultyArea.h - 1),
+        renderLine(difficultyBorder, Point(difficultyArea.x, difficultyArea.y + difficultyArea.h - 1),
                    Point(difficultyArea.x + difficultyArea.w - 1,
                          difficultyArea.y + difficultyArea.h - 1));
-        renderLine(difficultyTitle.color, difficultyArea.toPoint(),
+        renderLine(difficultyBorder, difficultyArea.toPoint(),
                    Point(difficultyArea.x, difficultyArea.y + difficultyArea.h - 1));
-        renderLine(difficultyTitle.color,
+        renderLine(difficultyBorder,
                    Point(difficultyArea.x + difficultyArea.w - 1, difficultyArea.y),
                    Point(difficultyArea.x + difficultyArea.w - 1,
                          difficultyArea.y + difficultyArea.h - 1));
-        renderTextInfo(difficultyTitle, _("AI Level"));
+
+        const Rect inner(difficultyArea.x + 3, difficultyArea.y + 3,
+                         difficultyArea.w - 6, difficultyArea.h - 6);
+        renderLine(difficultyInnerBorder, inner.toPoint(),
+                   Point(inner.x + inner.w - 1, inner.y));
+        renderLine(difficultyInnerBorder, Point(inner.x, inner.y + inner.h - 1),
+                   Point(inner.x + inner.w - 1, inner.y + inner.h - 1));
+        renderLine(difficultyInnerBorder, inner.toPoint(),
+                   Point(inner.x, inner.y + inner.h - 1));
+        renderLine(difficultyInnerBorder, Point(inner.x + inner.w - 1, inner.y),
+                   Point(inner.x + inner.w - 1, inner.y + inner.h - 1));
 
         const char* value = _("Normal");
         if(difficulty == AI::Difficulty::Easy) value = _("Easy");

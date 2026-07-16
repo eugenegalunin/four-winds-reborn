@@ -47,6 +47,7 @@ namespace Action
 
 	    MahjongDropSelected, MahjongOutOfTime, MahjongGameQuit, ButtonOrder,
 	    ClientLuckChoice, MahjongLuckChoice,
+	    ClientBattleChoice, AdventureBattleChoice,
             Last };
 }
 
@@ -389,6 +390,43 @@ struct AdventureCombat : AdventureMessage
     }
 };
 
+struct AdventureBattleChoice : AdventureMessage
+{
+    AdventureBattleChoice(const Wind & currentWind, const BattleLegend & legend,
+                          const std::string & phase,
+                          const BattleStrikes & strikes,
+                          const std::vector<int> & actors,
+                          const std::vector<int> & targets,
+                          const std::pair<int, int> & recommended)
+	: AdventureMessage(Action::AdventureBattleChoice, currentWind)
+    {
+	addObject("legend", legend.toJsonObject());
+	addString("phase", phase);
+	addArray("strikes", strikes.toJsonArray());
+	addArray("actors", JsonPack::stdVector<int>(actors));
+	addArray("targets", JsonPack::stdVector<int>(targets));
+	addInteger("recommendedActor", recommended.first);
+	addInteger("recommendedTarget", recommended.second);
+    }
+
+    BattleLegend legend(void) const
+    {
+	const JsonObject* jo = getObject("legend");
+	return jo ? BattleLegend::fromJsonObject(*jo) : BattleLegend();
+    }
+
+    std::string phase(void) const { return getString("phase", "attacker_melee"); }
+    BattleStrikes strikes(void) const
+    {
+	const JsonArray* ja = getArray("strikes");
+	return ja ? BattleStrikes::fromJsonArray(*ja) : BattleStrikes();
+    }
+    std::vector<int> actors(void) const { return getStdVector<int>("actors"); }
+    std::vector<int> targets(void) const { return getStdVector<int>("targets"); }
+    int recommendedActor(void) const { return getInteger("recommendedActor", -1); }
+    int recommendedTarget(void) const { return getInteger("recommendedTarget", -1); }
+};
+
 struct AdventureEnd : AdventureMessage
 {
     AdventureEnd(const Wind & currentWind) : AdventureMessage(Action::AdventureEnd, currentWind) {}
@@ -565,6 +603,21 @@ struct ClientAdventureUndo : ClientMessage
 struct ClientBattleReady : ClientMessage
 {
     ClientBattleReady() : ClientMessage(Action::ClientBattleReady) {}
+};
+
+struct ClientBattleChoice : ClientMessage
+{
+    ClientBattleChoice(int actor, int target, bool autoResolve = false)
+	: ClientMessage(Action::ClientBattleChoice)
+    {
+	addInteger("actor", actor);
+	addInteger("target", target);
+	addBoolean("autoResolve", autoResolve);
+    }
+
+    int actor(void) const { return getInteger("actor", -1); }
+    int target(void) const { return getInteger("target", -1); }
+    bool autoResolve(void) const { return getBoolean("autoResolve"); }
 };
 
 

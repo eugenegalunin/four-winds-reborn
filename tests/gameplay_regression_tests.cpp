@@ -227,6 +227,7 @@ void testActionReplay()
     messages.emplace_back(std::make_unique<ClientLandClaim>(Land::Corzen));
     messages.emplace_back(std::make_unique<ClientAdventureUndo>());
     messages.emplace_back(std::make_unique<ClientBattleReady>());
+    messages.emplace_back(std::make_unique<ClientBattleChoice>(601, 701, false));
     messages.emplace_back(std::make_unique<ClientLuckChoice>(1));
 
     for(const auto & message : messages)
@@ -648,6 +649,10 @@ void testAvatarPassives()
     orachi.avatar = Avatar::Orachi;
     orachi.clan = Clan::Red;
     orachi.wind = Wind::East;
+    BattleParty ownHiddenParty(Clan::Red, Land::Maithaius);
+    expect(ownHiddenParty.join(BattleCreature(Clan::Red, Creature::Shadow, 389)),
+           "own invisibility fixture must join");
+    orachi.army.push_back(ownHiddenParty);
     GameData::gamers.push_back(orachi);
 
     LocalPlayer ziag;
@@ -664,22 +669,72 @@ void testAvatarPassives()
     expect(hiddenParty.join(BattleCreature(Clan::Yellow, Creature::Shadow, 390)),
            "Monacle invisibility fixture must join");
     lakkho.army.push_back(hiddenParty);
+    BattleParty towerHiddenParty(Clan::Yellow, Land::TowerOf4Winds);
+    expect(towerHiddenParty.join(BattleCreature(Clan::Yellow, Creature::Shadow, 391)),
+           "Tower invisibility fixture must join");
+    lakkho.army.push_back(towerHiddenParty);
     GameData::gamers.push_back(lakkho);
 
     LocalPlayer dayla;
     dayla.avatar = Avatar::Dayla;
     dayla.clan = Clan::Purple;
     dayla.wind = Wind::North;
+    BattleParty thirdPartyDetector(Clan::Purple, Land::Corzen);
+    expect(thirdPartyDetector.join(BattleCreature(Clan::Purple, Creature::AdventureParty, 392)),
+           "third-party See Invisible fixture must join");
+    dayla.army.push_back(thirdPartyDetector);
     GameData::gamers.push_back(dayla);
 
     const LocalData ordinaryView = GameData::toLocalData(Avatar(Avatar::Orachi));
     const LocalData monacleView = GameData::toLocalData(Avatar(Avatar::Ziag));
+    const LocalData detectorOwnerView = GameData::toLocalData(Avatar(Avatar::Dayla));
     expect(!ordinaryView.playerOfAvatar(Avatar(Avatar::Lakkho)).army.findBattleUnitConst(390),
-           "an ordinary avatar must not receive hidden creatures in local map data");
+           "another player's adjacent detector must not reveal hidden creatures to the observer");
     expect(monacleView.playerOfAvatar(Avatar(Avatar::Lakkho)).army.findBattleUnitConst(390),
            "Monacle must reveal invisible creatures anywhere on the map");
+    expect(detectorOwnerView.playerOfAvatar(Avatar(Avatar::Lakkho)).army.findBattleUnitConst(390),
+           "an observer's detector must work even while occupying another clan's territory");
+    expect(ordinaryView.playerOfAvatar(Avatar(Avatar::Lakkho)).army.findBattleUnitConst(391),
+           "invisible creatures at the Tower of Four Winds must remain public");
+    expect(ordinaryView.playerOfAvatar(Avatar(Avatar::Orachi)).army.findBattleUnitConst(389),
+           "an observer must always receive their own invisible creatures");
     expect(GameData::gamers.playerOfAvatar(Avatar(Avatar::Lakkho))->army.findBattleUnitConst(390),
            "visibility filtering must not mutate the authoritative army");
+
+    LocalPlayer* ordinaryPlayer = GameData::gamers.playerOfAvatar(Avatar(Avatar::Orachi));
+    LocalPlayer* detectorOwner = GameData::gamers.playerOfAvatar(Avatar(Avatar::Dayla));
+    expect(ordinaryPlayer != nullptr, "ordinary visibility observer must exist");
+    expect(detectorOwner != nullptr, "third-party visibility observer must exist");
+    if(ordinaryPlayer && detectorOwner)
+    {
+        detectorOwner->army.clear();
+        ordinaryPlayer->army.clear();
+        BattleParty unrelatedDetector(Clan::Red, Land::Corzen);
+        expect(unrelatedDetector.join(BattleCreature(Clan::Red, Creature::AdventureParty, 395)),
+               "unrelated See Invisible fixture must join");
+        ordinaryPlayer->army.push_back(unrelatedDetector);
+        const LocalData unrelatedView = GameData::toLocalData(Avatar(Avatar::Dayla));
+        expect(!unrelatedView.playerOfAvatar(Avatar(Avatar::Lakkho)).army.findBattleUnitConst(390),
+               "a detector owned by another player must not leak visibility to the observer");
+
+        ordinaryPlayer->army.clear();
+        BattleParty farDetector(Clan::Red, Land::Maithaius);
+        expect(farDetector.join(BattleCreature(Clan::Red, Creature::AdventureParty, 393)),
+               "non-adjacent See Invisible fixture must join");
+        ordinaryPlayer->army.push_back(farDetector);
+        const LocalData farView = GameData::toLocalData(Avatar(Avatar::Orachi));
+        expect(!farView.playerOfAvatar(Avatar(Avatar::Lakkho)).army.findBattleUnitConst(390),
+               "See Invisible must not reveal creatures outside adjacent territories");
+
+        ordinaryPlayer->army.clear();
+        BattleParty invadingDetector(Clan::Red, Land::Inkartha);
+        expect(invadingDetector.join(BattleCreature(Clan::Red, Creature::AdventureParty, 394)),
+               "observer-specific See Invisible fixture must join");
+        ordinaryPlayer->army.push_back(invadingDetector);
+        const LocalData adjacentView = GameData::toLocalData(Avatar(Avatar::Orachi));
+        expect(adjacentView.playerOfAvatar(Avatar(Avatar::Lakkho)).army.findBattleUnitConst(390),
+               "the observer's adjacent detector must reveal invisibility even from invaded land");
+    }
     GameData::gamers = savedPlayers;
 
     LocalPlayer javed;
@@ -1291,6 +1346,400 @@ void testBattleAI()
            "Battle AI melee planning must not mutate its targets");
 }
 
+void testInteractiveBattleSession()
+{
+    const Battle::RandomRoll highRoll = [](int, int maximum) { return maximum; };
+
+    BattleParty attackers(Clan::Red, Land::Baliphon);
+    expect(attackers.join(combatCreature(Clan::Red, Creature::Durlock,
+                                         380, 9, 0, 1, 8)),
+           "interactive battle ordinary attacker fixture must join");
+    expect(attackers.join(combatCreature(Clan::Red, Creature::GreatCarol,
+                                         381, 4, 0, 1, 8)),
+           "interactive battle First Strike fixture must join");
+    BattleParty defenders(Clan::Yellow, Land::Baliphon);
+    expect(defenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                         390, 3, 0, 1, 6)),
+           "interactive battle first defender fixture must join");
+    expect(defenders.join(combatCreature(Clan::Yellow, Creature::AdventureParty,
+                                         391, 3, 0, 1, 6)),
+           "interactive battle second defender fixture must join");
+    BattleTown town(BattleUnit(BaseStat(1, 0, 1, 8)), Clan::Yellow, Land::Baliphon);
+
+    Battle::Session session(attackers, town, &defenders,
+                            AI::BehaviorProfile::Balanced,
+                            AI::BehaviorProfile::Balanced);
+    expect(session.prepare(highRoll, false) && session.awaitsChoice() &&
+           session.phase() == Battle::Session::Phase::OpeningLeader,
+           "human BattleSession must pause for the opening leader");
+    const std::vector<int> legalActors = session.legalActors();
+    expect(legalActors.size() == 2 &&
+           std::find(legalActors.begin(), legalActors.end(), 380) != legalActors.end(),
+           "opening leader choice must expose every living attacker as a stable unit id");
+    expect(session.legalTargets(380).empty(),
+           "opening leader choice must not expose a combat target");
+
+    const std::string awaitingState = session.toJsonObject().toString();
+    expect(!session.choose(9999, -1, highRoll, false) &&
+           session.toJsonObject().toString() == awaitingState,
+           "BattleSession must reject an unknown actor without mutating combat");
+
+    Battle::Session restored = Battle::Session::fromJsonObject(session.toJsonObject());
+    expect(restored.phase() == Battle::Session::Phase::OpeningLeader &&
+           restored.legalActors() == session.legalActors(),
+           "pending opening leader choice must survive a save/load round trip");
+    expect(restored.choose(381, -1, highRoll, false) && restored.awaitsChoice() &&
+           restored.phase() == Battle::Session::Phase::AttackerChoice,
+           "a First Strike opening leader must advance directly to manual melee");
+
+    const std::vector<int> legalTargets = restored.legalTargets(380);
+    expect(legalTargets.size() == 2 &&
+           std::find(legalTargets.begin(), legalTargets.end(), 391) != legalTargets.end(),
+           "manual melee must expose every living defender as a legal target");
+    const std::string meleeState = restored.toJsonObject().toString();
+    expect(!restored.choose(380, 9999, highRoll, false) &&
+           restored.toJsonObject().toString() == meleeState,
+           "BattleSession must reject an unknown melee target without mutating combat");
+
+    restored = Battle::Session::fromJsonObject(restored.toJsonObject());
+    expect(restored.choose(380, 391, highRoll, false) && restored.awaitsChoice(),
+           "a legal melee choice must pause again when the battle continues");
+    expect(!restored.strikes().empty() && restored.strikes().front().unit1 == 380 &&
+           restored.strikes().front().unit2 == 391,
+           "the first manual melee strike must use the selected actor and target");
+    expect(restored.choose(380, 390, highRoll, false) && restored.awaitsChoice(),
+           "manual melee must allow a second round without hidden Auto Resolve");
+    expect(restored.choose(380, town.battleUnit(), highRoll, false) && restored.isComplete(),
+           "manual melee must complete after the selected attacker captures the town");
+
+    BattleParty automaticAttackers = attackers;
+    BattleParty automaticDefenders = defenders;
+    BattleTown automaticTown = town;
+    const BattleStrikes adapterStrikes = Battle::doAttackParty(
+        automaticAttackers, automaticTown, &automaticDefenders,
+        AI::BehaviorProfile::Balanced, AI::BehaviorProfile::Balanced, highRoll, false);
+    Battle::Session automaticSession(attackers, town, &defenders,
+                                     AI::BehaviorProfile::Balanced,
+                                     AI::BehaviorProfile::Balanced);
+    expect(automaticSession.autoResolve(highRoll, false) && automaticSession.isComplete(),
+           "BattleSession Auto Resolve must complete without a UI choice");
+    expect(automaticSession.attackers().toString() == automaticAttackers.toString() &&
+           automaticSession.defenders().toString() == automaticDefenders.toString() &&
+           automaticSession.town().toString() == automaticTown.toString() &&
+           automaticSession.strikes().toString() == adapterStrikes.toString(),
+           "legacy automatic battle entry point must use the same BattleSession primitives");
+
+    BattleParty townAttackers(Clan::Red, Land::Baliphon);
+    expect(townAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+                                             395, 9, 0, 1, 8)),
+           "interactive town attacker fixture must join");
+    BattleTown targetTown(BattleUnit(BaseStat(0, 0, 0, 4)), Clan::Yellow, Land::Baliphon);
+    Battle::Session townSession(townAttackers, targetTown, nullptr,
+                                AI::BehaviorProfile::Balanced,
+                                AI::BehaviorProfile::Balanced);
+    expect(townSession.prepare(highRoll, false) &&
+           townSession.phase() == Battle::Session::Phase::OpeningLeader &&
+           townSession.choose(395, -1, highRoll, false) && townSession.awaitsChoice() &&
+           townSession.legalTargets(395).size() == 1 &&
+           townSession.legalTargets(395).front() == targetTown.battleUnit(),
+           "an undefended territory must expose its stable town id as the manual target");
+
+    BattleParty rangedAttackers(Clan::Red, Land::Baliphon);
+    expect(rangedAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+                                                430, 1, 2, 0, 5)) &&
+           rangedAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+                                                431, 1, 2, 0, 5)),
+           "interactive ranged attacker fixtures must join");
+    BattleParty rangedDefenders(Clan::Yellow, Land::Baliphon);
+    expect(rangedDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                                440, 0, 0, 0, 1)) &&
+           rangedDefenders.join(combatCreature(Clan::Yellow, Creature::KiLin,
+                                                441, 0, 0, 0, 8)),
+           "interactive ranged defender fixtures must join");
+    BattleTown rangedTargetTown(BattleUnit(BaseStat(0, 0, 0, 3)),
+                                 Clan::Yellow, Land::Baliphon);
+    Battle::Session rangedSession(rangedAttackers, rangedTargetTown, &rangedDefenders,
+                                  AI::BehaviorProfile::Balanced,
+                                  AI::BehaviorProfile::Balanced);
+    expect(rangedSession.prepare(highRoll, false) &&
+           rangedSession.choose(430, -1, highRoll, false) &&
+           rangedSession.phase() == Battle::Session::Phase::AttackerRangedChoice,
+           "ordinary opening leader must advance to manual missile assignment");
+    const int firstShooter = rangedSession.legalActors().front();
+    const std::vector<int> missileTargets = rangedSession.legalTargets(firstShooter);
+    expect(std::find(missileTargets.begin(), missileTargets.end(), 440) != missileTargets.end() &&
+           std::find(missileTargets.begin(), missileTargets.end(), 441) == missileTargets.end(),
+           "manual missile assignment must exclude Ignore Missiles targets");
+    expect(rangedSession.choose(firstShooter, 440, highRoll, false) &&
+           rangedSession.phase() == Battle::Session::Phase::AttackerRangedChoice &&
+           rangedSession.strikes().empty(),
+           "the first missile assignment must not apply a partial volley");
+
+    rangedSession = Battle::Session::fromJsonObject(rangedSession.toJsonObject());
+    expect(rangedSession.phase() == Battle::Session::Phase::AttackerRangedChoice &&
+           rangedSession.legalActors().size() == 1,
+           "a partially assigned missile volley must survive save/load");
+    const int secondShooter = rangedSession.legalActors().front();
+    expect(secondShooter != firstShooter &&
+           rangedSession.choose(secondShooter, 440, highRoll, false),
+           "the restored volley must accept the remaining shooter assignment");
+    expect(std::count_if(rangedSession.strikes().begin(), rangedSession.strikes().end(),
+                         [](const BattleStrike & strike)
+                         { return strike.type == BattleStrike::Ranger; }) == 2,
+           "all manually assigned shooters must fire from the untouched pre-volley state");
+    expect(rangedSession.autoResolve(highRoll, false) && rangedSession.isComplete(),
+           "Auto Resolve must finish from a partially manual BattleSession phase");
+}
+
+void testBattleSessionSpecialities()
+{
+    const Battle::RandomRoll highRoll = [](int, int maximum) { return maximum; };
+    const Battle::RandomRoll lowRoll = [](int minimum, int) { return minimum; };
+
+    // Creature-cast Hellblast resolves simultaneously at session entry.
+    BattleParty hellAttackers(Clan::Red, Land::Baliphon);
+    BattleParty hellDefenders(Clan::Yellow, Land::Baliphon);
+    expect(hellAttackers.join(combatCreature(Clan::Red, Creature::MazRa,
+                                              500, 0, 0, 0, 10)) &&
+           hellAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+                                              501, 0, 0, 0, 10)) &&
+           hellDefenders.join(combatCreature(Clan::Yellow, Creature::MazRa,
+                                              510, 0, 0, 0, 10)) &&
+           hellDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                              511, 0, 0, 0, 10)),
+           "BattleSession Hellblast fixtures must join");
+    BattleTown hellTown(BattleUnit(BaseStat(0, 0, 20, 20)),
+                        Clan::Yellow, Land::Baliphon);
+    Battle::Session hellSession(hellAttackers, hellTown, &hellDefenders,
+                                AI::BehaviorProfile::Balanced,
+                                AI::BehaviorProfile::Balanced);
+    expect(hellSession.prepare(highRoll, false) && hellSession.strikes().size() == 4,
+           "opposing BattleSession Hellblast casters must hit every pre-entry creature");
+    expect(std::count_if(hellSession.strikes().begin(), hellSession.strikes().end(),
+                         [](const BattleStrike & strike)
+                         { return strike.unit1 == 500 || strike.unit1 == 510; }) == 4,
+           "BattleSession Hellblast strikes must retain their stable caster ids");
+
+    // First Strike is a leader decision and suppresses both creature volleys.
+    BattleParty firstAttackers(Clan::Red, Land::Baliphon);
+    BattleParty firstDefenders(Clan::Yellow, Land::Baliphon);
+    expect(firstAttackers.join(combatCreature(Clan::Red, Creature::GreatCarol,
+                                               520, 5, 0, 5, 10)) &&
+           firstAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+                                               521, 1, 8, 5, 10)) &&
+           firstDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                               522, 1, 8, 0, 10)),
+           "BattleSession First Strike fixtures must join");
+    Battle::Session firstSession(firstAttackers, hellTown, &firstDefenders,
+                                 AI::BehaviorProfile::Balanced,
+                                 AI::BehaviorProfile::Balanced);
+    expect(firstSession.prepare(highRoll, false) &&
+           firstSession.choose(520, -1, highRoll, false) &&
+           firstSession.phase() == Battle::Session::Phase::AttackerChoice &&
+           std::none_of(firstSession.strikes().begin(), firstSession.strikes().end(),
+                        [](const BattleStrike & strike)
+                        { return strike.type == BattleStrike::Ranger; }),
+           "selected First Strike leader must skip the simultaneous creature volley");
+
+    // Matching Merge defenders alter the real manual hit calculation.
+    BattleParty mergeAttackers(Clan::Red, Land::Baliphon);
+    BattleParty mergeDefenders(Clan::Yellow, Land::Baliphon);
+    expect(mergeAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+                                               530, 2, 0, 20, 10)) &&
+           mergeDefenders.join(combatCreature(Clan::Yellow, Creature::Griffon,
+                                               531, 0, 0, 1, 5)) &&
+           mergeDefenders.join(combatCreature(Clan::Yellow, Creature::Griffon,
+                                               532, 0, 0, 1, 5)),
+           "BattleSession Merge fixtures must join");
+    Battle::Session mergeSession(mergeAttackers, hellTown, &mergeDefenders,
+                                 AI::BehaviorProfile::Balanced,
+                                 AI::BehaviorProfile::Balanced);
+    expect(mergeSession.prepare(highRoll, false) &&
+           mergeSession.choose(530, -1, highRoll, false) &&
+           mergeSession.choose(530, 531, highRoll, false),
+           "BattleSession Merge fixture must reach and accept manual melee");
+    expect(std::any_of(mergeSession.strikes().begin(), mergeSession.strikes().end(),
+                       [](const BattleStrike & strike)
+                       { return strike.unit1 == 530 && strike.unit2 == 531 &&
+                                strike.damage == 0; }),
+           "Merge defense must turn the deterministic manual melee hit into a miss");
+    const Battle::AttackPreview mergePreview = Battle::previewAttack(
+        mergeSession.attackers(), mergeSession.town(), &mergeSession.defenders(),
+        530, 531, false);
+    expect(mergePreview.valid && mergePreview.damage == 1 && mergePreview.hitChance == 50,
+           "damage preview must use the same Merge modifier as BattleSession");
+
+    // Mighty Blow uses an injected deterministic roll and guarantees one damage.
+    BattleParty mightyAttackers(Clan::Red, Land::Baliphon);
+    BattleParty mightyDefenders(Clan::Yellow, Land::Baliphon);
+    expect(mightyAttackers.join(combatCreature(Clan::Red, Creature::KnightTemplar,
+                                                540, 0, 0, 20, 10)) &&
+           mightyDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                                541, 0, 0, 10, 5)),
+           "BattleSession Mighty Blow fixtures must join");
+    Battle::Session mightySession(mightyAttackers, hellTown, &mightyDefenders,
+                                  AI::BehaviorProfile::Balanced,
+                                  AI::BehaviorProfile::Balanced);
+    expect(mightySession.prepare(highRoll, false) &&
+           mightySession.choose(540, -1, highRoll, false) &&
+           mightySession.choose(540, 541, lowRoll, false),
+           "BattleSession Mighty Blow fixture must accept its forced proc");
+    expect(std::any_of(mightySession.strikes().begin(), mightySession.strikes().end(),
+                       [](const BattleStrike & strike)
+                       { return strike.unit1 == 540 && strike.unit2 == 541 &&
+                                strike.damage == 1; }),
+           "a triggered Mighty Blow must deal at least one BattleSession damage");
+    const Battle::AttackPreview mightyPreview = Battle::previewAttack(
+        mightySession.attackers(), mightySession.town(), &mightySession.defenders(),
+        540, 541, false);
+    expect(mightyPreview.valid && mightyPreview.mightyChance == 25 &&
+           mightyPreview.mightyDamage == 1,
+           "damage preview must expose the Mighty Blow branch without rolling it");
+
+    // Fire Shield retaliates even when the selected melee strike is lethal.
+    BattleParty fireAttackers(Clan::Red, Land::Baliphon);
+    BattleParty fireDefenders(Clan::Yellow, Land::Baliphon);
+    expect(fireAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+                                              550, 5, 0, 20, 10)) &&
+           fireDefenders.join(combatCreature(Clan::Yellow, Creature::FireElemental,
+                                              551, 0, 0, 0, 5)),
+           "BattleSession Fire Shield fixtures must join");
+    Battle::Session fireSession(fireAttackers, hellTown, &fireDefenders,
+                                AI::BehaviorProfile::Balanced,
+                                AI::BehaviorProfile::Balanced);
+    expect(fireSession.prepare(highRoll, false) &&
+           fireSession.choose(550, -1, highRoll, false) &&
+           fireSession.choose(550, 551, highRoll, false),
+           "BattleSession Fire Shield fixture must accept manual melee");
+    expect(std::any_of(fireSession.strikes().begin(), fireSession.strikes().end(),
+                       [](const BattleStrike & strike)
+                       { return strike.type == BattleStrike::FireShield &&
+                                strike.unit1 == 551 && strike.unit2 == 550 &&
+                                strike.damage == 1; }) &&
+           fireSession.attackers().findBattleUnitConst(550)->loyalty() == 9,
+           "Fire Shield must retaliate through the selected BattleSession action");
+
+    // Swarm retains the selected first target and strikes the entire party.
+    BattleParty swarmAttackers(Clan::Red, Land::Baliphon);
+    BattleParty swarmDefenders(Clan::Yellow, Land::Baliphon);
+    expect(swarmAttackers.join(combatCreature(Clan::Red, Creature::SkeletonHorde,
+                                               560, 10, 0, 20, 10)) &&
+           swarmDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                               561, 0, 0, 0, 1)) &&
+           swarmDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                               562, 0, 0, 0, 1)) &&
+           swarmDefenders.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                               563, 0, 0, 0, 1)),
+           "BattleSession Swarm fixtures must join");
+    Battle::Session swarmSession(swarmAttackers, hellTown, &swarmDefenders,
+                                 AI::BehaviorProfile::Balanced,
+                                 AI::BehaviorProfile::Balanced);
+    expect(swarmSession.prepare(highRoll, false) &&
+           swarmSession.choose(560, -1, highRoll, false) &&
+           swarmSession.choose(560, 562, highRoll, false),
+           "BattleSession Swarm fixture must accept a selected first target");
+    expect(std::count_if(swarmSession.strikes().begin(), swarmSession.strikes().end(),
+                         [](const BattleStrike & strike)
+                         { return strike.type == BattleStrike::Melee &&
+                                  strike.unit1 == 560 && 561 <= strike.unit2 &&
+                                  strike.unit2 <= 563; }) == 3 &&
+           swarmSession.defenders().isEmpty(),
+           "Swarm must strike every defender through one manual BattleSession choice");
+}
+
+void testAdventureBattleSessionFlow()
+{
+    GameData::initPersons(Person(Avatar::Lakkho, Clan::Yellow, Wind::East));
+    GameData::gamers.clear();
+
+    LocalPlayer attacker;
+    attacker.avatar = Avatar::Lakkho;
+    attacker.clan = Clan::Yellow;
+    attacker.wind = Wind::East;
+    BattleParty invadingParty(Clan::Yellow, Land::Baliphon);
+    expect(invadingParty.join(combatCreature(Clan::Yellow, Creature::GreatCarol,
+                                              410, 8, 0, 2, 20)),
+           "Adventure interactive attacker fixture must join");
+    attacker.army.push_back(invadingParty);
+
+    LocalPlayer defender;
+    defender.avatar = Avatar::Nucrus;
+    defender.clan = Clan::Red;
+    defender.wind = Wind::South;
+    defender.setAI(true);
+    BattleParty defendingParty(Clan::Red, Land::Baliphon);
+    expect(defendingParty.join(combatCreature(Clan::Red, Creature::Durlock,
+                                               420, 2, 0, 2, 12)),
+           "Adventure interactive defender fixture must join");
+    defender.army.push_back(defendingParty);
+
+    GameData::gamers.push_back(attacker);
+    GameData::gamers.push_back(defender);
+    GameData::landsInfo[Land::Baliphon].clan = Clan::Red;
+    expect(GameData::initAdventure(),
+           "Adventure interactive battle fixture must initialize");
+
+    ActionList actions;
+    expect(GameData::client2Adventure(attacker.avatar, ClientBattleReady(), actions),
+           "human attacker must be allowed to finish movement before battle choice");
+    expect(GameData::adventure2Client(attacker.avatar, actions) && !actions.empty() &&
+           actions.back().type() == Action::AdventureBattleChoice &&
+           GameData::currentWind == Wind(Wind::East),
+           "Adventure must pause on a battle choice without shifting the current wind");
+
+    const AdventureBattleChoice choice =
+        static_cast<const AdventureBattleChoice &>(actions.back());
+    expect(choice.phase() == "opening_leader" && choice.recommendedActor() == 410 &&
+           choice.recommendedTarget() == -1 && choice.targets().empty(),
+           "Adventure battle choice must expose a target-free opening leader phase");
+    const JsonObject pendingState = GameData::authoritativeState();
+    expect(pendingState.getObject("battleSession") != nullptr &&
+           GameData::restoreState(pendingState) &&
+           GameData::authoritativeState().getObject("battleSession") != nullptr,
+           "authoritative save/load must preserve a pending Adventure battle");
+
+    const std::string beforeInvalidChoice = GameData::authoritativeState().toString();
+    ActionList rejected;
+    expect(!GameData::client2Adventure(attacker.avatar,
+                                       ClientBattleChoice(9999, -1),
+                                       rejected) && rejected.empty() &&
+           GameData::authoritativeState().toString() == beforeInvalidChoice,
+           "Adventure must reject a forged battle actor without mutating state");
+
+    ActionList meleeActions;
+    expect(GameData::client2Adventure(attacker.avatar,
+                                      ClientBattleChoice(choice.recommendedActor(), -1),
+                                      meleeActions) && !meleeActions.empty() &&
+           meleeActions.back().type() == Action::AdventureBattleChoice,
+           "a legal opening leader must emit the next Adventure battle phase");
+    const AdventureBattleChoice meleeChoice =
+        static_cast<const AdventureBattleChoice &>(meleeActions.back());
+    expect(meleeChoice.phase() == "attacker_melee" &&
+           meleeChoice.recommendedTarget() == 420,
+           "Adventure must expose the stable recommended target for manual melee");
+
+    ActionList continued;
+    expect(GameData::client2Adventure(attacker.avatar,
+                                      ClientBattleChoice(meleeChoice.recommendedActor(),
+                                                         meleeChoice.recommendedTarget()),
+                                      continued) && !continued.empty() &&
+           continued.back().type() == Action::AdventureBattleChoice,
+           "a nonlethal manual attack must emit the next battle decision");
+    const AdventureBattleChoice continuedChoice =
+        static_cast<const AdventureBattleChoice &>(continued.back());
+    expect(!continuedChoice.strikes().empty(),
+           "each later battle decision must carry its authoritative event timeline");
+
+    ActionList resolved;
+    expect(GameData::client2Adventure(attacker.avatar,
+                                      ClientBattleChoice(-1, -1, true), resolved) &&
+           !resolved.empty() && resolved.back().type() == Action::AdventureCombat,
+           "Auto Resolve must finish an Adventure battle from a later manual phase");
+    expect(GameData::authoritativeState().getObject("battleSession") == nullptr &&
+           GameData::currentWind == Wind(Wind::East),
+           "resolved combat must clear the pending session and leave wind advancement to the loop");
+}
+
 int runRecoverySelfTest()
 {
     const char* directoryValue = std::getenv("FOUR_WINDS_RECOVERY_DIR");
@@ -1556,8 +2005,14 @@ void testMahjongCastDeadTargetMessage()
     {
         return action.type() == Action::MahjongInfo;
     });
-    expect(info != emitted.end() && info->getString("info").find("vanquished") != std::string::npos,
+    const std::string vanquishedInfo = info == emitted.end() ? std::string() :
+        info->getString("info");
+    expect(vanquishedInfo.find("vanquished") != std::string::npos,
            "lethal spell dispatch must own a valid vanquished-unit message");
+    expect(vanquishedInfo.find("Durlock") != std::string::npos &&
+           vanquishedInfo.find("battleUnit") == std::string::npos &&
+           vanquishedInfo.find("creature(") == std::string::npos,
+           "vanquished-unit UI messages must use the display name without diagnostic ids");
     expect(GameData::findBattleCreature(491) == nullptr,
            "lethal Lightning Bolt dispatch must remove its defeated target");
 
@@ -1680,6 +2135,19 @@ int main(int argc, char** argv)
     GameData::landsInfo = loadIndexed<LandInfo>("lands.json");
     GameData::avatarsInfo = loadIndexed<AvatarInfo>("avatars.json");
 
+    expect(GameData::creatureInfo(Creature::Tornado).cost == 240,
+           "Tornado must use the canonical 240-point price");
+    expect(GameData::creatureInfo(Creature::Griffon).cost == 170,
+           "Griffon must use the canonical 170-point price");
+    expect(GameData::creatureInfo(Creature::GreatCarol).cost == 180,
+           "Carol must retain the documented Reborn 180-point price");
+    expect(GameData::spellInfo(Spell::DemonicCompulsion).cost == 30,
+           "Demonic Compulsion must retain the documented Reborn 30-point price");
+    expect(GameData::spellInfo(Spell::DispelMagic).cost == 120,
+           "Dispel Magic must retain the documented Reborn 120-point price");
+    expect(GameData::spellInfo(Spell::Heroism).cost == 30,
+           "Heroism must retain the documented Reborn 30-point price");
+
     if(2 < argc && std::string(argv[1]) == "--captured-lightning-repro")
         return runCapturedLightningRepro(argv[2]);
 
@@ -1707,6 +2175,9 @@ int main(int argc, char** argv)
     testAdventureProfiles();
     testAdventureCoordination();
     testBattleAI();
+    testInteractiveBattleSession();
+    testBattleSessionSpecialities();
+    testAdventureBattleSessionFlow();
     testGameplayRngState();
     testActionReplay();
 
@@ -1931,6 +2402,24 @@ int main(int argc, char** argv)
     expect(std::count_if(rangedStrikes.begin(), rangedStrikes.end(), [](const BattleStrike & strike)
            { return strike.type == BattleStrike::Ranger; }) == 2,
            "simultaneous ranged combat must record both shots");
+
+    BattleParty townRangedAttackers(Clan::Red, Land::Baliphon);
+    BattleParty townRangedDefenders(Clan::Yellow, Land::Baliphon);
+    expect(townRangedAttackers.join(combatCreature(Clan::Red, Creature::Durlock,
+                                                    212, 0, 2, 0, 1)),
+           "territory ranged attacker fixture must join");
+    expect(townRangedDefenders.join(combatCreature(Clan::Yellow, Creature::AdventureParty,
+                                                    213, 0, 2, 0, 1)),
+           "territory ranged defender fixture must join");
+    BattleTown rangedTown(BattleUnit(BaseStat(0, 1, 100, 100)), Clan::Yellow, Land::Baliphon);
+    const BattleStrikes townRangedStrikes =
+        Battle::doAttackParty(townRangedAttackers, rangedTown, &townRangedDefenders);
+    expect(townRangedAttackers.isEmpty() && !townRangedDefenders.isEmpty(),
+           "a lethal territory shot must remove its target before creature volleys are planned");
+    expect(std::count_if(townRangedStrikes.begin(), townRangedStrikes.end(),
+                         [](const BattleStrike & strike)
+                         { return strike.type == BattleStrike::Ranger; }) == 1,
+           "territory fire must resolve before the simultaneous creature ranged round");
 
     BattleParty firstStrikeAttackers(Clan::Red, Land::Baliphon);
     BattleParty firstStrikeDefenders(Clan::Yellow, Land::Baliphon);

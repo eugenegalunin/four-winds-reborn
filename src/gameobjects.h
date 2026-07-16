@@ -762,7 +762,7 @@ public:
     bool			join(const Creature &, const Land &);
     void			remove(const BattleCreature &);
     void			removeUnloyalty(void);
-    void			applyInvisibility(void);
+    void			applyInvisibility(const Clan & observer);
     void			shrinkEmpty(void);
     bool			isFullHouse(void) const;
     std::string			toString(void) const;

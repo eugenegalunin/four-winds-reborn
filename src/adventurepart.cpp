@@ -1441,6 +1441,10 @@ void AdventurePartScreen::tickEvent(u32 ms)
 		    redraw = actionAdventureClaim(action);
 		    break;
 
+		case Action::AdventureBattleChoice:
+		    redraw = actionAdventureBattleChoice(action);
+		    break;
+
 		case Action::AdventureCombat:
 		    redraw = actionAdventureCombat(action);
 		    break;
@@ -1517,6 +1521,35 @@ bool AdventurePartScreen::actionAdventureClaim(const ActionMessage & v)
     DEBUG("land owner changed: " << action.land().toString() << ", previous owner: " <<
           action.previousOwner().toString() << ", owner: " << action.owner().toString() <<
           ", cost: " << action.cost() << ", reverted: " << action.reverted());
+    return true;
+}
+
+bool AdventurePartScreen::actionAdventureBattleChoice(const ActionMessage & v)
+{
+    const AdventureBattleChoice & action = static_cast<const AdventureBattleChoice &>(v);
+    ld.currentWind = action.currentWind();
+    const BattleLegend legend = action.legend();
+    if(myAvatar != legend.attacker)
+    {
+	ERROR("battle choice delivered to non-attacker: " << myAvatar.toString());
+	return false;
+    }
+
+    allowTickEvent = false;
+    animationsDisabled(true);
+
+    BattleChoiceDialog dialog(legend, action.phase(), action.strikes(),
+                              action.actors(), action.targets(),
+	                      action.recommendedActor(), action.recommendedTarget(), *this);
+    dialog.exec();
+
+    const ClientBattleChoice choice(dialog.actor(), dialog.target(), dialog.autoResolve());
+    const bool accepted = GameData::client2Adventure(myAvatar, choice, actions);
+    if(!accepted)
+	ERROR("interactive battle choice was rejected");
+
+    allowTickEvent = true;
+    animationsDisabled(false);
     return true;
 }
 

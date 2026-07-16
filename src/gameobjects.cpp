@@ -2480,21 +2480,19 @@ void BattleArmy::removeUnloyalty(void)
     shrinkEmpty();
 }
 
-void BattleArmy::applyInvisibility(void)
+void BattleArmy::applyInvisibility(const Clan & observer)
 {
-    auto findLandInvisible = [](const std::vector<Land> & lands, const Clan & clan) -> Land
+    const BattleArmy & observerArmy = GameData::getBattleArmy(observer);
+
+    auto observerHasAdjacentDetector = [&observerArmy](const std::vector<Land> & lands) -> bool
     {
 	for(auto & land : lands)
 	{
-	    const LandInfo & borderInfo = GameData::landInfo(land);
-	    if(borderInfo.clan.isValid() && borderInfo.clan != clan)
-	    {
-		const BattleParty* party = GameData::getBattleArmy(borderInfo.clan).findPartyConst(land);
-		if(party && party->toBattleCreatures(Specials() << Speciality::SeeInvisible, true).size())
-		    return land;
-	    }
+	    const BattleParty* party = observerArmy.findPartyConst(land);
+	    if(party && party->toBattleCreatures(Specials() << Speciality::SeeInvisible, true).size())
+		return true;
 	}
-	return Land();
+	return false;
     };
 
     // remove if Speciality::Invisibility
@@ -2511,10 +2509,9 @@ void BattleArmy::applyInvisibility(void)
 	    remove = false;
 	else
 	{
-	    auto land = findLandInvisible(positionInfo.borders, positionInfo.clan);
-	    if(land.isValid())
+	    if(observerHasAdjacentDetector(positionInfo.borders))
 	    {
-                DEBUG("found Speciality::SeeInvisible" << ", " << "land: " << land.toString());
+		DEBUG("found Speciality::SeeInvisible" << ", " << "observer: " << observer.toString() << ", " << "land: " << party.land().toString());
                 remove = false;
             }
 	}

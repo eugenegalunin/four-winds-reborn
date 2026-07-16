@@ -24,6 +24,8 @@
 #define _RWNA_BATTLE_
 
 #include <functional>
+#include <utility>
+#include <vector>
 
 #include "gametheme.h"
 
@@ -36,9 +38,93 @@ namespace Battle
 {
     using RandomRoll = std::function<int(int, int)>;
 
+    struct AttackPreview
+    {
+        bool valid;
+        bool ranged;
+        int damage;
+        int hitChance;
+        int mightyDamage;
+        int mightyChance;
+
+        AttackPreview()
+            : valid(false), ranged(false), damage(0), hitChance(0),
+              mightyDamage(0), mightyChance(0) {}
+    };
+
+    class Session
+    {
+    public:
+        enum class Phase
+        {
+            None,
+            OpeningLeader,
+            AttackerRangedChoice,
+            AttackerChoice,
+            Complete
+        };
+
+    private:
+        BattleParty            attackersState;
+        BattleParty            defendersState;
+        BattleTown             townState;
+        BattleStrikes          battleStrikes;
+        AI::BehaviorProfile    attackersProfile;
+        AI::BehaviorProfile    defendersProfile;
+        Phase                  currentPhase;
+        bool                   defendersPresent;
+        bool                   attackersFirst;
+        int                    round;
+        int                    openingLeader;
+        std::vector<int>       rangedActors;
+        std::vector<int>       rangedRecommendations;
+        std::vector<int>       rangedChoiceActors;
+        std::vector<int>       rangedChoiceTargets;
+
+        void resolveRemaining(const RandomRoll &, bool logEffects);
+        void advanceToMelee(const RandomRoll &, bool logEffects);
+        void resolveRangedChoices(const RandomRoll &, bool logEffects);
+
+    public:
+        Session();
+        Session(const BattleParty &, const BattleTown &, const BattleParty*,
+                AI::BehaviorProfile, AI::BehaviorProfile);
+
+        bool prepare(const RandomRoll &, bool logEffects = true);
+        bool choose(int attacker, int target, const RandomRoll &, bool logEffects = true);
+        bool autoResolve(const RandomRoll &, bool logEffects = true);
+
+        bool isValid(void) const { return townState.isValid(); }
+        bool awaitsChoice(void) const
+        {
+            return currentPhase == Phase::OpeningLeader ||
+                   currentPhase == Phase::AttackerRangedChoice ||
+                   currentPhase == Phase::AttackerChoice;
+        }
+        bool isComplete(void) const { return currentPhase == Phase::Complete; }
+        bool hasDefenders(void) const { return defendersPresent; }
+        Phase phase(void) const { return currentPhase; }
+        const char* phaseName(void) const;
+
+        std::vector<int> legalActors(void) const;
+        std::vector<int> legalTargets(int attacker) const;
+        std::pair<int, int> recommendedChoice(void) const;
+
+        const BattleParty & attackers(void) const { return attackersState; }
+        const BattleParty & defenders(void) const { return defendersState; }
+        const BattleTown & town(void) const { return townState; }
+        const BattleStrikes & strikes(void) const { return battleStrikes; }
+
+        JsonObject toJsonObject(void) const;
+        static Session fromJsonObject(const JsonObject &);
+    };
+
     int                 rangedDamage(int strength, int reduction);
     int                 meleeHitChance(int attack, int defense);
     int                 mergeDefenseBonus(const BattleParty &, const BattleCreature &);
+    AttackPreview       previewAttack(const BattleParty &, const BattleTown &,
+                                      const BattleParty*, int actor, int target,
+                                      bool ranged);
     BattleStrikes       doAttackParty(BattleParty & attackers, BattleTown & town, BattleParty* defenders);
     BattleStrikes       doAttackParty(BattleParty & attackers, BattleTown & town, BattleParty* defenders,
                                       AI::BehaviorProfile attackersProfile,

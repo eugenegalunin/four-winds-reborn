@@ -15,7 +15,8 @@ bool recordingEnabled = true;
 bool isAdventureAction(int type)
 {
     return type == Action::ClientUnitMoved || type == Action::ClientLandClaim ||
-           type == Action::ClientAdventureUndo || type == Action::ClientBattleReady;
+           type == Action::ClientAdventureUndo || type == Action::ClientBattleReady ||
+           type == Action::ClientBattleChoice;
 }
 
 struct RecordingPause
@@ -75,6 +76,9 @@ std::unique_ptr<ClientMessage> Replay::clientMessageFromJson(const JsonObject & 
             return std::make_unique<ClientLandClaim>(Land(action.getString("land")));
         case Action::ClientAdventureUndo: return std::make_unique<ClientAdventureUndo>();
         case Action::ClientBattleReady: return std::make_unique<ClientBattleReady>();
+        case Action::ClientBattleChoice:
+            return std::make_unique<ClientBattleChoice>(action.getInteger("actor", -1),
+                action.getInteger("target", -1), action.getBoolean("autoResolve"));
         case Action::ClientLuckChoice:
             return std::make_unique<ClientLuckChoice>(action.getInteger("index", -1));
         default: return nullptr;

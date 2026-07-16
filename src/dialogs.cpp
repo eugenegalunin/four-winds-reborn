@@ -26,6 +26,7 @@
 
 #include "gametheme.h"
 #include "actions.h"
+#include "battle.h"
 #include "settings.h"
 #include "dialogs.h"
 
@@ -972,9 +973,36 @@ CombatUnit* CombatUnits::find(int uid)
     return it != end() ? & (*it) : nullptr;
 }
 
+namespace
+{
+    std::string battleStrikePhase(int type)
+    {
+        if(type == BattleStrike::Ranger) return _("Missile volley");
+        if(type == BattleStrike::FireShield) return _("Fire Shield");
+        return _("Melee");
+    }
+
+    std::string battleStrikeSummary(const BattleStrike & strike)
+    {
+        return std::string("#").append(std::to_string(strike.unit1))
+            .append(" -> #").append(std::to_string(strike.unit2))
+            .append(": ").append(std::to_string(strike.damage))
+            .append(" ").append(_("damage"));
+    }
+
+    std::string battleChoicePhase(const std::string & phase)
+    {
+        if(phase == "opening_leader") return _("Opening leader");
+        if(phase == "attacker_ranged") return _("Missile assignment");
+        return _("Melee round");
+    }
+}
+
 /* CombatScreenDialog */
 CombatScreenDialog::CombatScreenDialog(const BattleLegend & leg, const BattleStrikes & str, Window & win)
     : DialogWindow("dialog_combat.json", win), legend(leg), strikes(str),
+	totalStrikes(str.size()), appliedStrikes(0), hasLastStrike(false),
+	playbackPaused(false), playbackSpeed(1), playbackClock(0), lastTickMs(0),
 	animationStrikeMelee(jobject, "animation:strike_melee"),
 	animationStrikeRanger(jobject, "animation:strike_ranger"),
 	animationFireShield(jobject, "animation:fire_shield"),
@@ -1008,6 +1036,7 @@ CombatScreenDialog::CombatScreenDialog(const BattleLegend & leg, const BattleStr
     Point offsetParty23 = GameTheme::jsonPoint(jobject, "offset:party23");
 
     textColor = GameTheme::jsonColor(jobject, "color:text");
+    controlColor = GameTheme::jsonColor(jobject, "color:recommended");
     damageColors.first = GameTheme::jsonColor(jobject, "color:alive");
     damageColors.second = GameTheme::jsonColor(jobject, "color:damage");
 
@@ -1018,35 +1047,55 @@ CombatScreenDialog::CombatScreenDialog(const BattleLegend & leg, const BattleStr
     center1Pos = GameTheme::jsonPoint(jobject, "offset:center1");
     center2Pos = GameTheme::jsonPoint(jobject, "offset:center2");
 
+    phasePos = GameTheme::jsonPoint(jobject, "offset:playback_phase");
+    timelinePos = GameTheme::jsonPoint(jobject, "offset:playback_timeline");
+    pauseArea = GameTheme::jsonRect(jobject, "area:pause");
+    speedArea = GameTheme::jsonRect(jobject, "area:speed");
+    pauseTextPos = GameTheme::jsonPoint(jobject, "offset:pause");
+    speedTextPos = GameTheme::jsonPoint(jobject, "offset:speed");
+    controlFont = jobject.getString("font:choice", "dejavus18");
+
     renderWindow();
     setVisible(true);
 }
 
 void CombatScreenDialog::tickEvent(u32 ms)
 {
+    if(!lastTickMs)
+    {
+        lastTickMs = ms;
+        playbackClock = ms;
+    }
+    else
+    {
+        if(!playbackPaused) playbackClock += (ms - lastTickMs) * playbackSpeed;
+        lastTickMs = ms;
+    }
+    if(playbackPaused) return;
+    const u32 playbackMs = playbackClock;
+
     if(animationFireShield.isEnabled())
     {
-	if(animationFireShield.next(ms))
+	if(animationFireShield.next(playbackMs))
 	    renderWindow();
     }
     else
     if(animationStrikeMelee.isEnabled())
     {
-	if(animationStrikeMelee.next(ms))
+	if(animationStrikeMelee.next(playbackMs))
 	    renderWindow();
     }
     else
     if(animationStrikeRanger.isEnabled())
     {
-	if(animationStrikeRanger.next(ms))
+	if(animationStrikeRanger.next(playbackMs))
 	    renderWindow();
     }
     else
-    if(tt.check(ms, 200))
+    if(tt.check(playbackMs, doDialogClose ? delayCombatScreen : delayStrikeAnim))
     {
 	if(doDialogClose)
 	{
-	    Tools::delay(delayCombatScreen);
 	    actionDialogClose();
 	}
 	else
@@ -1055,6 +1104,7 @@ void CombatScreenDialog::tickEvent(u32 ms)
 	    {
 		renderSummary(legend.wins ? legend.attacker : legend.defender);
 		doDialogClose = true;
+		tt.latest = playbackMs;
 	    }
 	    else
 	    // apply strike
@@ -1069,14 +1119,17 @@ void CombatScreenDialog::tickEvent(u32 ms)
 		else
 		    animation = & animationStrikeMelee;
 
-		Rect strikeArea = applyStrikeDamage(strikes.front());
+		lastStrike = strikes.front();
+		hasLastStrike = true;
+		Rect strikeArea = applyStrikeDamage(lastStrike);
 
 		animation->setEnabled(true);
 		animation->setPosition(strikeArea.toPoint() + (animation->spriteSize() - strikeArea.toSize()) / 2);
 		animation->next();
 
 		strikes.pop_front();
-		Tools::delay(delayStrikeAnim);
+		++appliedStrikes;
+		tt.latest = playbackMs;
 	    }
 
 	    renderWindow();
@@ -1100,6 +1153,31 @@ void CombatScreenDialog::renderWindow(void)
 
     renderText(defaultFont, name1, textColor, center1Pos, AlignCenter, AlignCenter);
     renderText(defaultFont, name2, textColor, center2Pos, AlignCenter, AlignCenter);
+
+    const BattleStrike* visibleStrike = hasLastStrike ? &lastStrike :
+        (strikes.empty() ? nullptr : &strikes.front());
+    std::string phaseText = std::string(_("Phase: ")).append(
+        visibleStrike ? battleStrikePhase(visibleStrike->type) : _("Complete"));
+    if(playbackPaused) phaseText = std::string(_("Paused - ")).append(phaseText);
+    renderText(GameTheme::fontRender(controlFont), phaseText, textColor,
+               phasePos, AlignCenter, AlignCenter);
+
+    const std::string timelineText = hasLastStrike ?
+        std::string(_("Event ")).append(std::to_string(appliedStrikes)).append("/")
+            .append(std::to_string(totalStrikes)).append(": ")
+            .append(battleStrikeSummary(lastStrike)) :
+        std::string(_("Events: ")).append(std::to_string(totalStrikes));
+    renderText(GameTheme::fontRender(controlFont), timelineText, textColor,
+               timelinePos, AlignCenter, AlignCenter);
+
+    renderRect(controlColor, pauseArea);
+    renderRect(controlColor, speedArea);
+    renderText(GameTheme::fontRender(controlFont),
+               playbackPaused ? _("Resume") : _("Pause"), textColor,
+               pauseTextPos, AlignCenter, AlignCenter);
+    renderText(GameTheme::fontRender(controlFont),
+               std::string(_("Speed: ")).append(std::to_string(playbackSpeed)).append("x"),
+               textColor, speedTextPos, AlignCenter, AlignCenter);
 
     if(animationFireShield.isEnabled()) animationFireShield.render(*this);
     else
@@ -1156,9 +1234,225 @@ void CombatScreenDialog::renderSummary(const Avatar & winner)
     renderCorpse = false;
 }
 
-bool CombatScreenDialog::mouseClickEvent(const ButtonsEvent &)
+bool CombatScreenDialog::mouseClickEvent(const ButtonsEvent & coords)
 {
-    return false;
+    if(!coords.isButtonLeft()) return true;
+    if(coords.isClick(pauseArea))
+    {
+        playbackPaused = !playbackPaused;
+        renderWindow();
+        return true;
+    }
+    if(coords.isClick(speedArea))
+    {
+        playbackSpeed = playbackSpeed == 1 ? 2 : playbackSpeed == 2 ? 4 : 1;
+        renderWindow();
+        return true;
+    }
+    return true;
+}
+
+/* BattleChoiceDialog */
+BattleChoiceDialog::BattleChoiceDialog(const BattleLegend & leg,
+                                       const std::string & battlePhase,
+                                       const BattleStrikes & battleHistory,
+                                       const std::vector<int> & legalActors,
+                                       const std::vector<int> & legalTargets,
+                                       int preferredActor, int preferredTarget,
+                                       Window & win)
+    : DialogWindow("dialog_combat.json", win), legend(leg), phase(battlePhase),
+      history(battleHistory), actors(legalActors),
+      targets(legalTargets), recommendedActor(preferredActor),
+      recommendedTarget(preferredTarget), selectedActor(-1), selectedTarget(-1),
+      resolveAutomatically(false)
+{
+    background = GameTheme::jsonSprite(jobject, "background");
+    const Texture lifeStatus = GameTheme::jsonSprite(jobject, "sprite:lifestatus");
+    const Texture cellFill = GameTheme::jsonSprite(jobject, "sprite:cellfill");
+
+    choiceColor = GameTheme::jsonColor(jobject, "color:choice");
+    targetColor = GameTheme::jsonColor(jobject, "color:target");
+    selectedColor = GameTheme::jsonColor(jobject, "color:selected");
+    recommendedColor = GameTheme::jsonColor(jobject, "color:recommended");
+    damageColors.first = GameTheme::jsonColor(jobject, "color:alive");
+    damageColors.second = GameTheme::jsonColor(jobject, "color:damage");
+    hintFont = jobject.getString("font:choice", "dejavus18");
+    hintPos = GameTheme::jsonPoint(jobject, "offset:choice");
+    autoArea = GameTheme::jsonRect(jobject, "area:auto");
+    autoTextPos = GameTheme::jsonPoint(jobject, "offset:auto");
+
+    const AvatarInfo & avatar1Info = GameData::avatarInfo(legend.attacker);
+    const AvatarInfo & avatar2Info = GameData::avatarInfo(legend.defender);
+    name1 = avatar1Info.name;
+    name2 = avatar2Info.name;
+    spritePort1.setTexture(GameTheme::texture(avatar1Info.portrait));
+    spritePort1.setPosition(GameTheme::jsonPoint(jobject, "offset:port1"));
+    spritePort2.setTexture(GameTheme::texture(avatar2Info.portrait));
+    spritePort2.setPosition(GameTheme::jsonPoint(jobject, "offset:port2"));
+    center1Pos = GameTheme::jsonPoint(jobject, "offset:center1");
+    center2Pos = GameTheme::jsonPoint(jobject, "offset:center2");
+    phasePos = GameTheme::jsonPoint(jobject, "offset:choice_phase");
+    timelinePos = GameTheme::jsonPoint(jobject, "offset:choice_timeline");
+    previewPos = GameTheme::jsonPoint(jobject, "offset:choice_preview");
+
+    units.push_back(CombatUnit(&legend.town, GameTheme::jsonPoint(jobject, "offset:tower"),
+                               cellFill, lifeStatus));
+    units.push_back(GameTheme::jsonPoint(jobject, "offset:party11"),
+                    GameTheme::jsonPoint(jobject, "offset:party12"),
+                    GameTheme::jsonPoint(jobject, "offset:party13"),
+                    cellFill, lifeStatus, legend.attackers.toBattleCreatures());
+    units.push_back(GameTheme::jsonPoint(jobject, "offset:party21"),
+                    GameTheme::jsonPoint(jobject, "offset:party22"),
+                    GameTheme::jsonPoint(jobject, "offset:party23"),
+                    cellFill, lifeStatus, legend.defenders.toBattleCreatures());
+
+    renderWindow();
+    setVisible(true);
+}
+
+bool BattleChoiceDialog::contains(const std::vector<int> & values, int value) const
+{
+    return std::find(values.begin(), values.end(), value) != values.end();
+}
+
+void BattleChoiceDialog::renderWindow(void)
+{
+    for(CombatUnit & unit : units)
+        unit.render(*this, damageColors, false);
+
+    renderTexture(background, Point(0, 0));
+    renderTexture(spritePort1);
+    renderTexture(spritePort2);
+
+    const FontRender & defaultFont = GameTheme::fontRender(font);
+    renderText(defaultFont, name1, textColor, center1Pos, AlignCenter, AlignCenter);
+    renderText(defaultFont, name2, textColor, center2Pos, AlignCenter, AlignCenter);
+
+    renderText(GameTheme::fontRender(hintFont),
+               std::string(_("Phase: ")).append(battleChoicePhase(phase)), textColor,
+               phasePos, AlignCenter, AlignCenter);
+    if(!history.empty())
+    {
+        const BattleStrike & recent = history.back();
+        const std::string event = std::string(_("Last event: "))
+            .append(battleStrikePhase(recent.type)).append(" - ")
+            .append(battleStrikeSummary(recent));
+        renderText(GameTheme::fontRender(hintFont), event, textColor,
+                   timelinePos, AlignCenter, AlignCenter);
+    }
+
+    for(const CombatUnit & unit : units)
+    {
+        if(!unit.battle || !unit.battle->isAlive()) continue;
+        if(unit.uid() == selectedActor)
+            renderRect(selectedColor, unit.area());
+        else if(unit.uid() == recommendedActor)
+            renderRect(recommendedColor, unit.area());
+        else if(contains(actors, unit.uid()))
+            renderRect(choiceColor, unit.area());
+
+        if(unit.uid() == selectedTarget)
+            renderRect(selectedColor, unit.area());
+        else if(unit.uid() == recommendedTarget)
+            renderRect(recommendedColor, unit.area());
+        else if(contains(targets, unit.uid()))
+            renderRect(targetColor, unit.area());
+    }
+
+    if(phase != "opening_leader")
+    {
+        const int previewActor = 0 < selectedActor ? selectedActor : recommendedActor;
+        int previewTarget = 0 < selectedTarget ? selectedTarget : recommendedTarget;
+        if(!contains(targets, previewTarget) && !targets.empty()) previewTarget = targets.front();
+        const Battle::AttackPreview preview = Battle::previewAttack(
+            legend.attackers, legend.town, &legend.defenders, previewActor, previewTarget,
+            phase == "attacker_ranged");
+        if(preview.valid)
+        {
+            std::string previewText = std::string(_("Preview: "))
+                .append(std::to_string(preview.damage)).append(" ").append(_("damage"));
+            if(preview.hitChance < 100)
+                previewText.append(" (").append(std::to_string(preview.hitChance)).append("% ")
+                    .append(_("hit")).append(")");
+            if(0 < preview.mightyChance)
+                previewText.append("; ").append(_("Mighty Blow: "))
+                    .append(std::to_string(preview.mightyDamage)).append(" @ ")
+                    .append(std::to_string(preview.mightyChance)).append("%");
+            renderText(GameTheme::fontRender(hintFont), previewText, textColor,
+                       previewPos, AlignCenter, AlignCenter);
+        }
+    }
+
+    std::string hint;
+    if(phase == "opening_leader")
+        hint = _("Choose the opening leader. Enter: recommended. Esc: Auto Resolve.");
+    else if(phase == "attacker_ranged")
+        hint = selectedActor < 0 ?
+            _("Choose a missile attacker. Enter: recommended. Esc: Auto Resolve.") :
+            _("Choose a missile target. Enter: recommended. Esc: Auto Resolve.");
+    else
+        hint = selectedActor < 0 ?
+            _("Choose an attacker. Enter: recommended. Esc: Auto Resolve.") :
+            _("Choose a target. Enter: recommended. Esc: Auto Resolve.");
+    renderText(GameTheme::fontRender(hintFont), hint, textColor,
+               hintPos, AlignCenter, AlignCenter);
+    renderRect(recommendedColor, autoArea);
+    renderText(GameTheme::fontRender(hintFont), _("Auto Resolve"), textColor,
+               autoTextPos, AlignCenter, AlignCenter);
+}
+
+bool BattleChoiceDialog::mouseClickEvent(const ButtonsEvent & coords)
+{
+    if(!coords.isButtonLeft()) return true;
+
+    if(coords.isClick(autoArea))
+    {
+        resolveAutomatically = true;
+        actionDialogClose();
+        return true;
+    }
+
+    for(const CombatUnit & unit : units)
+    {
+        if(!unit.battle || !coords.isClick(unit.area())) continue;
+        if(contains(actors, unit.uid()))
+        {
+            selectedActor = unit.uid();
+            selectedTarget = -1;
+            if(phase == "opening_leader")
+            {
+                actionDialogClose();
+                return true;
+            }
+            renderWindow();
+            return true;
+        }
+        if(0 < selectedActor && contains(targets, unit.uid()))
+        {
+            selectedTarget = unit.uid();
+            actionDialogClose();
+            return true;
+        }
+    }
+    return true;
+}
+
+bool BattleChoiceDialog::keyPressEvent(const KeySym & key)
+{
+    if(key.keycode() == Key::ESCAPE)
+    {
+        resolveAutomatically = true;
+        actionDialogClose();
+        return true;
+    }
+    if(key.keycode() == Key::RETURN)
+    {
+        selectedActor = recommendedActor;
+        selectedTarget = recommendedTarget;
+        actionDialogClose();
+        return true;
+    }
+    return true;
 }
 
 /* TargetPlayerDialog */

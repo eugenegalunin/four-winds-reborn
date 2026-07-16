@@ -62,11 +62,14 @@ cmake --build build-tests -j
 ctest --test-dir build-tests --output-on-failure
 ```
 
-GitHub Actions runs Debug and Release builds plus CTest on Linux, macOS and
-Windows UCRT64. The suite includes a fixed-seed replay hash canary so an
-authoritative simulation drift between platforms is visible immediately. Tags
-matching `v*` publish tested Linux, macOS and self-contained Windows archives,
-along with SHA-256 checksums, to GitHub Releases.
+GitHub Actions runs Debug and Release builds plus CTest for pushes and pull
+requests targeting `develop` or `main` on Linux, macOS and Windows UCRT64. The
+suite includes a fixed-seed replay hash canary so an authoritative simulation
+drift between platforms is visible immediately. Tags matching `v*` publish
+tested Linux, macOS and self-contained Windows archives, along with SHA-256
+checksums, to GitHub Releases only when the tagged commit is already on `main`.
+The branch, release and hotfix procedure is documented in
+[`docs/ReleaseProcess.md`](docs/ReleaseProcess.md).
 
 Print the deterministic avatar and Hell Blast balance report:
 ```bash

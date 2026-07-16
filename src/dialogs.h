@@ -254,6 +254,8 @@ struct CombatUnit
 
     void		render(Window &, const std::pair<Color, Color> &, bool showCorpse = true);
     bool		isUid(int uid) const { return battle ? battle->isBattleUnit(uid) : false; }
+    int                 uid(void) const { return battle ? battle->battleUnit() : -1; }
+    Rect                area(void) const { return Rect(pos, back.size()); }
 };
 
 struct CombatUnits : std::vector<CombatUnit>
@@ -270,11 +272,20 @@ class CombatScreenDialog : public DialogWindow
 {
     BattleLegend	legend;
     BattleStrikes	strikes;
+    std::size_t         totalStrikes;
+    std::size_t         appliedStrikes;
+    BattleStrike        lastStrike;
+    bool                hasLastStrike;
     int			delayStrikeAnim;
     int			delayCombatScreen;
+    bool                playbackPaused;
+    int                 playbackSpeed;
+    u32                 playbackClock;
+    u32                 lastTickMs;
 
     Texture		background;
     Color		textColor;
+    Color               controlColor;
     std::pair<Color, Color>
 			damageColors;
 
@@ -293,6 +304,13 @@ class CombatScreenDialog : public DialogWindow
 
     Point		center1Pos;
     Point		center2Pos;
+    Point               phasePos;
+    Point               timelinePos;
+    Point               pauseTextPos;
+    Point               speedTextPos;
+    Rect                pauseArea;
+    Rect                speedArea;
+    std::string         controlFont;
 
     bool		renderCorpse;
     bool		doDialogClose;
@@ -308,6 +326,59 @@ public:
     CombatScreenDialog(const BattleLegend &, const BattleStrikes &, Window &);
 
     void		renderWindow(void) override;
+};
+
+class BattleChoiceDialog : public DialogWindow
+{
+    BattleLegend        legend;
+    std::string         phase;
+    BattleStrikes       history;
+    std::vector<int>    actors;
+    std::vector<int>    targets;
+    int                 recommendedActor;
+    int                 recommendedTarget;
+    int                 selectedActor;
+    int                 selectedTarget;
+    bool                resolveAutomatically;
+
+    Texture             background;
+    Color               choiceColor;
+    Color               targetColor;
+    Color               selectedColor;
+    Color               recommendedColor;
+    std::pair<Color, Color> damageColors;
+    std::string         hintFont;
+    Point               hintPos;
+    Point               phasePos;
+    Point               timelinePos;
+    Point               previewPos;
+    Rect                autoArea;
+    Point               autoTextPos;
+    std::string         name1;
+    std::string         name2;
+    Sprite              spritePort1;
+    Sprite              spritePort2;
+    Point               center1Pos;
+    Point               center2Pos;
+    CombatUnits         units;
+
+    bool contains(const std::vector<int> &, int) const;
+
+protected:
+    bool                mouseClickEvent(const ButtonsEvent &) override;
+    bool                keyPressEvent(const KeySym &) override;
+
+public:
+    BattleChoiceDialog(const BattleLegend &, const std::string & phase,
+                       const BattleStrikes & history,
+                       const std::vector<int> & actors,
+                       const std::vector<int> & targets, int recommendedActor,
+                       int recommendedTarget, Window &);
+
+    void                renderWindow(void) override;
+    int                 actor(void) const { return selectedActor; }
+    int                 target(void) const { return selectedTarget; }
+    bool                autoResolve(void) const { return resolveAutomatically; }
 };
 
 class TargetPlayerButton : public JsonButton

@@ -291,6 +291,7 @@ class AdventurePartScreen : public MapScreenBase
     bool		actionAdventureTurn(const ActionMessage &);
     bool		actionAdventureMoves(const ActionMessage &);
     bool                actionAdventureClaim(const ActionMessage &);
+    bool                actionAdventureBattleChoice(const ActionMessage &);
     bool		actionAdventureCombat(const ActionMessage &);
     bool		actionAdventureEnd(const ActionMessage &);
 

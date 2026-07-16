@@ -1,0 +1,105 @@
+# Rules Decisions
+This ledger records intentional Four Winds: Reborn behavior where the original
+`Manual.txt`, inherited theme data, and the implemented rules disagree. A data
+change is not canonical merely because it appears in the current JSON: changing
+one of these decisions requires updating this document and its focused test.
+
+## RD-001: Tornado and Griffon prices
+
+Status: accepted on 2026-07-16.
+
+The classic manual prices Tornado at 240 and Griffon at 170. The inherited
+Reborn theme had those values transposed: Tornado cost 170 and Griffon cost
+240. Reborn now follows the manual: Tornado costs 240 and Griffon costs 170.
+
+The old values made two-Tornado parties disproportionately efficient and
+materially inflated Dayla and Nucrus in the deterministic balance diagnostic.
+The transposition had no accompanying design note, while the creature order
+and manual values provide a narrow, internally consistent correction.
+
+Regression contract: `theme_data_validation` and `gameplay_regressions` assert
+both prices. The avatar balance baseline must be reviewed after this change.
+
+## RD-002: Carol and three spell prices
+
+Status: accepted as the current Reborn balance baseline on 2026-07-16.
+
+There are four total price differences, not four spell differences:
+
+| Item | Classic manual | Reborn | Delta |
+| --- | ---: | ---: | ---: |
+| Carol the Great | 160 | 180 | +20 |
+| Demonic Compulsion | 20 | 30 | +10 |
+| Dispel Magic | 100 | 120 | +20 |
+| Heroism | 50 | 30 | -20 |
+
+These inherited values are retained until playtesting gives evidence for a
+specific rebalance. Unlike the Tornado/Griffon transposition, they do not form
+an obvious swap, and changing all four together would obscure which adjustment
+caused an AI or balance shift.
+
+Regression contract: `theme_data_validation` and `gameplay_regressions` assert
+the Reborn values. Any future change should be a separate decision with balance
+metrics and targeted playtest notes.
+
+## RD-003: territory ranged timing
+
+Status: accepted on 2026-07-16.
+
+The manual's general combat paragraph calls the whole ranged round
+simultaneous, including the territory. Its worked combat example is more
+specific: territory fire resolves first, then creature ranged attacks resolve
+simultaneously. Reborn follows the worked example.
+
+The territory selects and damages an attacker first. A creature killed by that
+shot does not enter the creature volley. Surviving attacking and defending
+creatures then plan their shots before either creature side takes damage, so a
+creature killed by the opposing creature volley still fires its planned shot.
+
+This gives defending territory fire a real initiative advantage without
+turning creature missiles into alternating attacks. `gameplay_regressions`
+covers both a lethal territory shot and mutually lethal creature shooters.
+
+## RD-004: Ziag lore and Monacle
+
+Status: accepted on 2026-07-16.
+
+The concise classic ability entry gives Ziag permanent See Invisibility. One
+long inherited biography additionally claimed that all of his creatures are
+invisible. Reborn implements Monacle as global visibility for Ziag and does not
+grant Invisibility to his roster.
+
+Blanket roster invisibility would be a second, very strong passive that is not
+represented by the avatar ability or creature data. The player-facing English
+biography now describes the implemented global reveal and no longer promises
+the unimplemented passive.
+
+Regression contract: the default theme must assign Ziag `monacle`, and
+`gameplay_regressions` proves that he receives invisible units anywhere on the
+map without changing authoritative army state.
+
+## RD-005: See Invisible observers
+
+Status: accepted on 2026-07-16.
+
+See Invisible is observer-specific. For ordinary avatars, an invisible enemy
+on the map is revealed only when that observer's own army has a creature with
+See Invisible in an adjacent territory. Territory ownership is irrelevant: a
+detector in an invaded enemy territory still observes its neighbors. A third
+player's Adventure Party or Griffon never shares visibility with the observer.
+
+Additional visibility rules are explicit:
+
+- A player always sees their own invisible creatures.
+- Ziag's Monacle reveals all invisible creatures globally.
+- Invisible creatures at the Tower of Four Winds are public to every player.
+- Filtering changes only the copied `LocalData`; the authoritative armies are
+  never modified.
+- In combat, the resolver uses authoritative parties; map filtering does not
+  remove a combatant from battle.
+
+This preserves the manual's adjacent scouting role for Adventure Party and
+Griffon while preventing unrelated armies from leaking hidden information.
+`gameplay_regressions` covers no detector, a non-adjacent detector, an adjacent
+detector on invaded land, a third-party detector, Monacle, own units, the Tower,
+and authoritative-state purity.

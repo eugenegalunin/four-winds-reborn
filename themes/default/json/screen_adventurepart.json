@@ -109,9 +109,9 @@
     "area:spell_affected2": [ 982, 260, 28, 140 ],
 
     "battle:forecast": {
-        "textinfo:title": { "position": [ 898, 420 ], "font": "dejavus22", "color": "#efe4ae", "align": "center" },
-        "textinfo:capture": { "position": [ 898, 454 ], "font": "dejavus22", "color": "OrangeRed", "align": "center" },
-        "textinfo:survival": { "position": [ 898, 488 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" }
+        "textinfo:title": { "position": [ 898, 420 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" },
+        "textinfo:capture": { "position": [ 898, 466 ], "font": "dejavus18", "color": "OrangeRed", "align": "center" },
+        "textinfo:survival": { "position": [ 898, 492 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" }
     },
 
     "sprite:town_tower_winds": { "id": "town0", "type": "file", "file": "map.png", "crop": [984, 918, 24, 50], "colorkey": "#ffd2d2" },

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(FourWindsReborn VERSION 20260716.1)
+project(FourWindsReborn VERSION 20260716.2)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -26,7 +26,8 @@ if(GIT_FOUND)
         ERROR_QUIET)
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" -c "safe.directory=${CMAKE_CURRENT_SOURCE_DIR}"
-            -C "${CMAKE_CURRENT_SOURCE_DIR}" diff --quiet --ignore-submodules=dirty
+            -C "${CMAKE_CURRENT_SOURCE_DIR}" diff --quiet --ignore-space-at-eol
+            --ignore-submodules=dirty
         RESULT_VARIABLE FOUR_WINDS_GAME_DIRTY
         ERROR_QUIET)
     if(FOUR_WINDS_GAME_DIRTY EQUAL 1)
@@ -41,7 +42,7 @@ if(GIT_FOUND)
         ERROR_QUIET)
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" -c "safe.directory=${CMAKE_CURRENT_SOURCE_DIR}/engine"
-            -C "${CMAKE_CURRENT_SOURCE_DIR}/engine" diff --quiet
+            -C "${CMAKE_CURRENT_SOURCE_DIR}/engine" diff --quiet --ignore-space-at-eol
         RESULT_VARIABLE FOUR_WINDS_ENGINE_DIRTY
         ERROR_QUIET)
     if(FOUR_WINDS_ENGINE_DIRTY EQUAL 1)
@@ -101,6 +102,10 @@ set_target_properties(four_winds_reborn PROPERTIES
 option(BUILD_TESTING "Build gameplay regression tests" OFF)
 include(CTest)
 if(BUILD_TESTING)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME theme_data_validation
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/validate-json.py")
+
     add_executable(gameplay_regression_tests
         tests/gameplay_regression_tests.cpp
         tests/avatar_balance_tests.cpp

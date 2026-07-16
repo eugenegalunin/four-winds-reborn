@@ -47,8 +47,10 @@ class SelectPersonScreen : public JsonWindow
     Clan		selectedClan;
     AI::Difficulty      difficulty;
     Rect                difficultyArea;
-    JsonTextInfo        difficultyTitle;
     JsonTextInfo        difficultyValue;
+    Color               difficultyBackground;
+    Color               difficultyBorder;
+    Color               difficultyInnerBorder;
 
     Texture		gray, marker;
     Point		personImagePos, creaturesPos, textPos;
