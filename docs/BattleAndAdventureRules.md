@@ -263,6 +263,14 @@ copies, a bounded draw-completion estimate, mana gap and component scores in a
 deterministic trace. Discard selection and Nucrus Luck both reuse these rune
 values instead of optimizing Mahjong combinations in isolation.
 
+Optional Chao, Pung and Kong calls use the same strategic intent. The AI scores
+the completed exposed set, its point reward and progress toward a Mahjong hand
+against the value of uncast runes that would be removed from future summon and
+spell goals. `Game` is always accepted; other calls may prefer `Pass`. When
+several Chao variants are legal, the selected variant preserves the strongest
+strategic runes. The authoritative Chao mutation moves exactly one copy of each
+sequence rune out of the concealed hand.
+
 Summon planning ranks `(creature, destination)` candidates as resulting parties,
 not as independent creature and land lists. Static profile value is combined
 with party role coverage, movement coherence, matching Merge defense, visible
@@ -300,4 +308,10 @@ battle-resolver speciality: creature Hellblast, First Strike, Ignore Missiles,
 Merge, Mighty Blow, Fire Shield and Swarm. Non-combat specialities (movement,
 visibility, spell resistance, Devotion, Regeneration and creature-cast Mahjong
 effects) remain covered in their owning phase rather than being simulated by
-BattleSession.
+BattleSession. Focused contracts additionally lock the exact persistent stat
+effects of Smoke, Demonic Compulsion, Mass Panic, Reduction, Battle Fury, Dust
+Cloud, Heroism, Brilliant Lights and Magical Aura; Dispel cleanup; all three
+directed rune draws; the inclusive 25%/90% Magic Resistance chances; Devotion;
+and every creature-to-spell speciality mapping. Mahjong call tests cover
+strategic Pass, Kong/Pung selection, Chao variant choice and duplicate-safe
+concealed-hand removal.

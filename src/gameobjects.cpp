@@ -1296,11 +1296,10 @@ void GameStones::remove(const WinRule & rule)
 	case WinRule::Chao:
 	    if(! rule.stone().isSpecial())
 	    {
-		auto itend = std::remove_if(begin(), end(),
-				    [&](const Stone & st){ return st == rule.stone().next() || st == rule.stone().next().next(); });
-		if(itend != end())
-		    erase(itend, end());
-		else
+		const bool removedFirst = removeStone(rule.stone());
+		const bool removedSecond = removeStone(rule.stone().next());
+		const bool removedThird = removeStone(rule.stone().next().next());
+		if(!removedFirst || !removedSecond || !removedThird)
 		    ERROR("chao not found: " << rule.stone().id());
 	    }
 	    break;
@@ -1848,7 +1847,7 @@ bool BattleCreature::applySpell(const Spell & spell)
     {
 	int chance = SpecialityMagicResistence().chance(Creature::id());
 
-	if(chance > GameplayRng::uniform(1, 100))
+	if(chance >= GameplayRng::uniform(1, 100))
 	{
 	    VERBOSE("Speciality: " << "Magic Resistence!");
 	    return false;

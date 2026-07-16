@@ -28,9 +28,30 @@
 
 namespace AI
 {
+    enum class MahjongCallType
+    {
+        Pass,
+        Chao,
+        Pung,
+        Kong
+    };
+
+    struct MahjongCallPlan
+    {
+        MahjongCallType type;
+        int variant;
+        int score;
+
+        MahjongCallPlan() : type(MahjongCallType::Pass), variant(-1), score(0) {}
+        bool isCall(void) const { return type != MahjongCallType::Pass; }
+    };
+
     bool        mahjongTurn(const Wind &, const Avatar &, const VecStones & trash,
                             const WinRules & left, const WinRules & right, const WinRules & top,
                             bool showGame, bool showKong, ActionList &);
+
+    MahjongCallPlan chooseMahjongCall(const LocalPlayer &, const Wind &, const Stone &,
+                                      const StrategicIntent &);
 
     bool        mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWind,
 			    const Stone & dropStone, WinResults &, ActionList &, bool sayOnly);

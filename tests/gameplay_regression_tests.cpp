@@ -1033,6 +1033,217 @@ void testAvatarPassives()
            "Silence must still block a non-Telepath wizard");
 }
 
+void testMahjongCallPlanning()
+{
+    LocalPlayer pung;
+    pung.avatar = Avatar::Orachi;
+    pung.clan = Clan::Maitha;
+    pung.wind = Wind::South;
+    pung.stones.add(GameStone(Stone::Dragon1));
+    pung.stones.add(GameStone(Stone::Dragon1));
+
+    const AI::MahjongCallPlan ordinaryPung = AI::chooseMahjongCall(
+        pung, Wind(Wind::East), Stone(Stone::Dragon1), AI::StrategicIntent());
+    expect(ordinaryPung.type == AI::MahjongCallType::Pung && 0 < ordinaryPung.score,
+           "Mahjong AI must accept a useful Pung when it does not sacrifice a strategic rune goal");
+
+    AI::StrategicIntent protectedIntent;
+    AI::RuneGoal protectedDragon;
+    protectedDragon.required << Stone(Stone::Dragon1);
+    protectedDragon.score = 300;
+    protectedIntent.runeGoals.push_back(protectedDragon);
+    const AI::MahjongCallPlan protectedPung = AI::chooseMahjongCall(
+        pung, Wind(Wind::East), Stone(Stone::Dragon1), protectedIntent);
+    expect(protectedPung.type == AI::MahjongCallType::Pass,
+           "Mahjong AI must pass when exposing a Pung would destroy a much stronger rune goal");
+
+    LocalPlayer kong = pung;
+    kong.stones.add(GameStone(Stone::Dragon1));
+    const AI::MahjongCallPlan ordinaryKong = AI::chooseMahjongCall(
+        kong, Wind(Wind::East), Stone(Stone::Dragon1), AI::StrategicIntent());
+    expect(ordinaryKong.type == AI::MahjongCallType::Kong,
+           "Mahjong AI must retain Kong as the strongest ordinary matching-rune call");
+
+    LocalPlayer chao;
+    chao.avatar = Avatar::Orachi;
+    chao.clan = Clan::Maitha;
+    chao.wind = Wind::South;
+    chao.stones.add(GameStone(Stone::Sword1));
+    chao.stones.add(GameStone(Stone::Sword2));
+    chao.stones.add(GameStone(Stone::Sword4));
+    chao.stones.add(GameStone(Stone::Sword5));
+
+    AI::StrategicIntent chaoIntent;
+    AI::RuneGoal protectedSequence;
+    protectedSequence.required << Stone(Stone::Sword1) << Stone(Stone::Sword2);
+    protectedSequence.score = 400;
+    chaoIntent.runeGoals.push_back(protectedSequence);
+    const AI::MahjongCallPlan selectedChao = AI::chooseMahjongCall(
+        chao, Wind(Wind::East), Stone(Stone::Sword3), chaoIntent);
+    expect(selectedChao.type == AI::MahjongCallType::Chao && selectedChao.variant == 2,
+           "Mahjong AI must choose the Chao variant that preserves its strategic runes");
+
+    LocalPlayer duplicateChao;
+    duplicateChao.stones.add(GameStone(Stone::Sword2));
+    duplicateChao.stones.add(GameStone(Stone::Sword2));
+    duplicateChao.stones.add(GameStone(Stone::Sword3));
+    duplicateChao.stones.add(GameStone(Stone::Sword3));
+    duplicateChao.stones.add(GameStone(Stone::Sword9));
+    duplicateChao.setMahjongChao(Stone(Stone::Sword1), 0);
+    expect(duplicateChao.rules.size() == 1 && duplicateChao.rules.front().isChao() &&
+           duplicateChao.stones.size() == 3 &&
+           duplicateChao.stones.countStone(Stone(Stone::Sword1)) == 0 &&
+           duplicateChao.stones.countStone(Stone(Stone::Sword2)) == 1 &&
+           duplicateChao.stones.countStone(Stone(Stone::Sword3)) == 1,
+           "Chao must move exactly one copy of all three sequence runes out of the concealed hand");
+}
+
+void testSpellAndSpecialityContracts()
+{
+    struct PersistentEffectCase
+    {
+        Spell::spell_t spell;
+        int attack;
+        int ranger;
+        int defense;
+        int loyalty;
+        const char* name;
+    };
+
+    const PersistentEffectCase effects[] = {
+        { Spell::Smoke, 0, -1, 0, 0, "Smoke" },
+        { Spell::DemonicCompulsion, 0, 0, 0, 1, "Demonic Compulsion" },
+        { Spell::MassPanic, 0, 0, 0, -1, "Mass Panic" },
+        { Spell::Reduction, -1, 0, -1, 0, "Reduction" },
+        { Spell::BattleFury, 1, 0, 0, 0, "Battle Fury" },
+        { Spell::DustCloud, -1, 0, 0, 0, "Dust Cloud" },
+        { Spell::Heroism, 1, 0, 0, 1, "Heroism" },
+        { Spell::BrilliantLights, 0, 0, -1, 0, "Brilliant Lights" },
+        { Spell::MagicalAura, 0, 0, 1, 0, "Magical Aura" }
+    };
+
+    int unit = 500;
+    for(const PersistentEffectCase & effect : effects)
+    {
+        BattleCreature target = combatCreature(Clan::Maitha, Creature::Durlock,
+                                                unit++, 5, 4, 3, 6);
+        const Spell spell(effect.spell);
+        expect(target.applySpell(spell),
+               (std::string(effect.name) + " must apply to a legal creature").c_str());
+        expect(target.isAffectedSpell(spell) &&
+               target.attack() == 5 + effect.attack &&
+               target.ranger() == 4 + effect.ranger &&
+               target.defense() == 3 + effect.defense &&
+               target.loyalty() == 6 + effect.loyalty,
+               (std::string(effect.name) + " must expose its exact persistent stat effect").c_str());
+        expect(target.applySpell(Spell(Spell::DispelMagic)) &&
+               target.attack() == 5 && target.ranger() == 4 &&
+               target.defense() == 3 && target.loyalty() == 6,
+               (std::string("Dispel Magic must remove ") + effect.name).c_str());
+    }
+
+    auto directedDraw = [](Spell::spell_t spellId, Stone::stone_t expectedRune,
+                           Stone::stone_t ordinaryTop, const char* name)
+    {
+        RemotePlayer player;
+        player.avatar = Avatar::Orachi;
+        expect(player.mahjongApplySpell(Spell(spellId)),
+               (std::string(name) + " must apply to its owning player").c_str());
+
+        CroupierSet wall;
+        wall.bank.clear();
+        wall.trash.clear();
+        wall.luckDraw.clear();
+        wall.bank.push_back(Stone(expectedRune));
+        wall.bank.push_back(Stone(ordinaryTop));
+        const Stone drawn = wall.get(player);
+        expect(drawn == Stone(expectedRune) && !player.isAffectedSpell(Spell(spellId)),
+               (std::string(name) +
+                " must find the requested rune family and expire after one draw").c_str());
+    };
+    directedDraw(Spell::DrawSkull, Stone::Skull4, Stone::Number9, "Summon Skull Rune");
+    directedDraw(Spell::DrawSword, Stone::Sword6, Stone::Skull9, "Summon Sword Rune");
+    directedDraw(Spell::DrawNumber, Stone::Number7, Stone::Sword9, "Summon Number Rune");
+
+    const JsonObject savedRng = GameplayRng::toJsonObject();
+    auto seedForRoll = [](int expected)
+    {
+        for(std::uint64_t seed = 1; seed < 100000; ++seed)
+        {
+            GameplayRng::seed(seed);
+            if(GameplayRng::uniform(1, 100) == expected) return seed;
+        }
+        return UINT64_C(0);
+    };
+    const std::uint64_t resistanceSeed = seedForRoll(90);
+    expect(resistanceSeed != 0, "Magic Resistance boundary fixture must find a deterministic 90 roll");
+    if(resistanceSeed)
+    {
+        GameplayRng::seed(resistanceSeed);
+        BattleCreature resistant = combatCreature(Clan::Kartha, Creature::KingDrago,
+                                                   unit++, 5, 1, 6, 6);
+        expect(!resistant.applySpell(Spell(Spell::BrilliantLights)) && resistant.defense() == 6,
+               "90% Magic Resistance must reject a spell on the inclusive 90 boundary");
+    }
+    expect(SpecialityMagicResistence().chance(Creature::MazRa) == 25 &&
+           SpecialityMagicResistence().chance(Creature::KingDrago) == 90,
+           "minor and major Magic Resistance chances must remain 25% and 90%");
+    expect(GameplayRng::fromJsonObject(savedRng),
+           "Magic Resistance tests must restore the gameplay RNG state");
+
+    BattleCreature devoted = combatCreature(Clan::Marz, Creature::Shanahan,
+                                             unit++, 5, 2, 4, 8);
+    devoted.applyDamage(3);
+    devoted.initAdventurePart(Ability::None);
+    expect(devoted.loyalty() == 7,
+           "Devotion must restore exactly two loyalty before movement without exceeding base loyalty");
+
+    struct CreatureCastCase
+    {
+        Creature::creature_t creature;
+        Speciality::speciality_t speciality;
+        Spell::spell_t spell;
+    };
+    const CreatureCastCase creatureCasts[] = {
+        { Creature::MazRa, Speciality::CastHellblast, Spell::HellBlast },
+        { Creature::WhiteDragon, Speciality::CastDrawNumber, Spell::DrawNumber },
+        { Creature::GreenDragon, Speciality::CastDrawSword, Spell::DrawSword },
+        { Creature::RedDragon, Speciality::CastDrawSkull, Spell::DrawSkull },
+        { Creature::FireElemental, Speciality::CastRandomDiscard, Spell::RandomDiscard },
+        { Creature::AirElemental, Speciality::CastSilence, Spell::Silence },
+        { Creature::EarthElemental, Speciality::CastScryRunes, Spell::ScryRunes },
+        { Creature::WaterElemental, Speciality::CastManaFog, Spell::ManaFog }
+    };
+
+    BattleArmy casterArmy;
+    for(const CreatureCastCase & cast : creatureCasts)
+    {
+        expect(Speciality(cast.speciality).toSpell() == Spell(cast.spell) &&
+               GameData::creatureInfo(cast.creature).specials.check(Speciality(cast.speciality)),
+               "creature-cast speciality must map its owning creature to the normal spell contract");
+        BattleParty party(Clan::Maitha, Land::Corzen);
+        expect(party.join(combatCreature(Clan::Maitha, Creature(cast.creature),
+                                         unit++, 3, 1, 3, 5)),
+               "creature-cast speciality fixture must join its caster");
+        casterArmy.push_back(party);
+    }
+
+    const Spells granted = casterArmy.allCastSpells();
+    for(const CreatureCastCase & cast : creatureCasts)
+        expect(std::find(granted.begin(), granted.end(), Spell(cast.spell)) != granted.end(),
+               "an in-play creature must grant its mapped spell during the Mahjong phase");
+
+    LocalPlayer dragonWizard;
+    dragonWizard.avatar = Avatar::Orachi;
+    dragonWizard.clan = Clan::Maitha;
+    dragonWizard.wind = Wind::East;
+    dragonWizard.army = casterArmy;
+    expect(dragonWizard.allowCastSpell(Spell(Spell::DrawSkull)) &&
+           dragonWizard.allowCastSpell(Spell(Spell::DrawSword)) &&
+           dragonWizard.allowCastSpell(Spell(Spell::DrawNumber)),
+           "in-play dragons must authorize all three rune-draw spells in their owning phase");
+}
+
 void testSpellCastingAI()
 {
     GameData::gamers.clear();
@@ -3206,6 +3417,8 @@ int main(int argc, char** argv)
     testGateMovement();
     testLuckAbility();
     testAvatarPassives();
+    testMahjongCallPlanning();
+    testSpellAndSpecialityContracts();
     testSpellCastingAI();
     testMahjongCastDeadTargetMessage();
     testAdventureProfiles();
