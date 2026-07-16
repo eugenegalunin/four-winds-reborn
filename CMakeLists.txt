@@ -112,6 +112,7 @@ if(BUILD_TESTING)
     add_executable(gameplay_regression_tests
         tests/gameplay_regression_tests.cpp
         tests/avatar_balance_tests.cpp
+        src/tournament.cpp
         ${FOUR_WINDS_SOURCE})
     target_compile_definitions(gameplay_regression_tests PRIVATE
         RUNEWARS_NO_MAIN

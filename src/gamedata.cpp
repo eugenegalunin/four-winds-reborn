@@ -724,6 +724,7 @@ bool GameData::saveGame(const JsonObject & gui)
 
 bool GameData::saveRecovery(const JsonObject & gui, const std::string & reason)
 {
+    if(!Recovery::enabled()) return true;
     if(gamers.empty()) return false;
 
     CrashReport::breadcrumb(std::string("Recovery stage=begin reason=").append(reason));

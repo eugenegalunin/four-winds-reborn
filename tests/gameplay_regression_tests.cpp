@@ -18,6 +18,7 @@
 #include "replay.h"
 #include "settings.h"
 #include "simulation.h"
+#include "tournament.h"
 
 #if defined(_WIN32)
 #ifdef ERROR
@@ -2335,7 +2336,7 @@ void testMatchScoreContract()
            "negative resource values must not reduce canonical score");
 }
 
-int runHeadlessMatchSelfTest()
+void configureSimulationBonuses()
 {
     GameData::bonusStart = 250;
     GameData::bonusGame = 50;
@@ -2343,6 +2344,118 @@ int runHeadlessMatchSelfTest()
     GameData::bonusPung = 30;
     GameData::bonusChao = 20;
     GameData::bonusPass = 10;
+}
+
+void testTournamentContract()
+{
+    Tournament::Config config;
+    config.seeds = { UINT64_C(0x15a50001), UINT64_C(0x15a50002) };
+    config.avatars = Tournament::baselineAvatars();
+    config.maximumTicks = 20000;
+
+    const Tournament::Schedule schedule = Tournament::buildSchedule(config);
+    expect(schedule.valid(), "baseline tournament schedule must be valid");
+    expect(schedule.legalClanAssignments == 1,
+           "fixed-clan baseline must have exactly one legal clan assignment");
+    expect(schedule.matches.size() == 8,
+           "two baseline seeds must produce four seat rotations each");
+
+    for(std::size_t seedIndex = 0; seedIndex < config.seeds.size(); ++seedIndex)
+    {
+        std::map<int, int> windMasks;
+        for(const Avatar & avatar : config.avatars) windMasks[avatar()] = 0;
+
+        for(const Tournament::PlannedMatch & match : schedule.matches)
+        {
+            if(match.seedIndex != seedIndex) continue;
+            expect(match.match.persons.size() == 4,
+                   "every planned match must retain four seats");
+            for(std::size_t seat = 0; seat < match.match.persons.size(); ++seat)
+            {
+                const Person & person = match.match.persons[seat];
+                expect(person.wind() == static_cast<int>(seat + 1),
+                       "planned persons must be stored in canonical wind/seat order");
+                windMasks[person.avatar()] |= person.wind.mask();
+            }
+        }
+
+        const int allWindMask = Wind(Wind::East).mask() | Wind(Wind::South).mask() |
+            Wind(Wind::West).mask() | Wind(Wind::North).mask();
+        for(const auto & item : windMasks)
+            expect(item.second == allWindMask,
+                   "every avatar must occupy all four winds for every seed");
+    }
+
+    Tournament::Config flexible = config;
+    flexible.seeds.resize(1);
+    flexible.avatars = Avatars(std::vector<Avatar>{
+        Avatar(Avatar::Orachi), Avatar(Avatar::Niana),
+        Avatar(Avatar::Kierac), Avatar(Avatar::Logun)
+    });
+    const Tournament::Schedule flexibleSchedule = Tournament::buildSchedule(flexible);
+    expect(flexibleSchedule.legalClanAssignments == 4 &&
+           flexibleSchedule.matches.size() == 16,
+           "clan rotation must enumerate only the four legal bijections");
+
+    Tournament::Config duplicate = config;
+    duplicate.avatars[1] = duplicate.avatars[0];
+    expect(!Tournament::buildSchedule(duplicate).valid(),
+           "duplicate tournament avatars must be rejected");
+
+    Tournament::Result synthetic;
+    synthetic.config = config;
+    synthetic.config.seeds.resize(1);
+    synthetic.schedule = Tournament::buildSchedule(synthetic.config);
+    Tournament::MatchRecord record;
+    record.plan = synthetic.schedule.matches.front();
+    record.result.status = Simulation::MatchStatus::Complete;
+    record.result.seed = record.plan.match.seed;
+    record.result.ticks = 123;
+    record.result.mahjongHands = 16;
+    record.result.adventurePhases = 16;
+    record.result.emittedActions = 456;
+    record.result.rngDraws = 789;
+    record.result.finalStateHash = "synthetic";
+
+    std::vector<MatchScore::PlayerInput> inputs;
+    for(std::size_t player = 0; player < record.plan.match.persons.size(); ++player)
+    {
+        MatchScore::PlayerInput input;
+        input.person = record.plan.match.persons[player];
+        input.scores = {{ static_cast<int>(40 - player * 5),
+                          static_cast<int>(4 - player),
+                          static_cast<int>(400 - player * 50),
+                          static_cast<int>(100 - player * 10),
+                          static_cast<int>(80 - player * 10) }};
+        inputs.push_back(input);
+    }
+    record.result.score = MatchScore::calculate(inputs);
+    for(std::size_t stage = 0; stage < Simulation::MatchStageCount; ++stage)
+    {
+        record.result.stages[stage].adventurePhase = stage == 0 ? 5 : (stage == 1 ? 10 : 16);
+        record.result.stages[stage].score = record.result.score;
+    }
+    synthetic.matches.push_back(record);
+    Tournament::summarize(synthetic);
+
+    const std::string json = Tournament::toJsonObject(synthetic).toString();
+    const std::string csv = Tournament::toCsv(synthetic);
+    const std::string text = Tournament::toText(synthetic);
+    const JsonContentString parsed(json);
+    expect(parsed.isValid() && parsed.toObject().getInteger("schema_version") == 1,
+           "balance JSON export must be valid and versioned");
+    expect(csv.find("early_territory") != std::string::npos &&
+           csv.find("synthetic") != std::string::npos,
+           "balance CSV must contain stage telemetry and match hashes");
+    expect(text.find("95% Wilson") != std::string::npos,
+           "human balance report must label its uncertainty interval");
+    expect(synthetic.summaries.size() == 4 && synthetic.summaries[0].completed == 1,
+           "balance aggregation must retain every completed avatar result");
+}
+
+int runHeadlessMatchSelfTest()
+{
+    configureSimulationBonuses();
 
     Persons players;
     players.push_back(Person(Avatar::Nucrus, Clan::Red, Wind::East));
@@ -2372,6 +2485,11 @@ int runHeadlessMatchSelfTest()
         std::cerr << "FAIL: repeated headless match status=" << Simulation::statusName(second.status)
                   << ", ticks=" << second.ticks << ", hands=" << second.mahjongHands
                   << ", error=" << second.error << '\n';
+        return 1;
+    }
+    if(!Recovery::enabled())
+    {
+        std::cerr << "FAIL: headless match did not restore normal recovery behavior\n";
         return 1;
     }
 
@@ -2412,6 +2530,30 @@ int runHeadlessMatchSelfTest()
         }
     }
 
+    const std::array<std::size_t, Simulation::MatchStageCount> expectedPhases = {{ 5, 10, 16 }};
+    for(std::size_t stage = 0; stage < Simulation::MatchStageCount; ++stage)
+    {
+        if(!first.stages[stage].captured() ||
+           first.stages[stage].adventurePhase != expectedPhases[stage] ||
+           first.stages[stage].score.size() != second.stages[stage].score.size())
+        {
+            std::cerr << "FAIL: headless match did not capture deterministic stage telemetry\n";
+            return 1;
+        }
+        for(std::size_t player = 0; player < first.stages[stage].score.size(); ++player)
+        {
+            for(std::size_t category = 0; category < MatchScore::CategoryCount; ++category)
+            {
+                if(first.stages[stage].score[player].categories[category].score !=
+                   second.stages[stage].score[player].categories[category].score)
+                {
+                    std::cerr << "FAIL: repeated match produced different stage telemetry\n";
+                    return 1;
+                }
+            }
+        }
+    }
+
     Simulation::MatchConfig invalid = config;
     invalid.persons[1].wind = Wind(Wind::East);
     const Simulation::MatchResult rejected = Simulation::runMatch(invalid);
@@ -2439,6 +2581,47 @@ int runHeadlessMatchSelfTest()
     }
     std::cout << '\n';
     return 0;
+}
+
+int runBalanceLab(int argc, char** argv)
+{
+    const std::string outputDirectory = 2 < argc ? argv[2] : "balance-lab-output";
+    const std::size_t seedCount = 3 < argc ?
+        static_cast<std::size_t>(std::strtoul(argv[3], nullptr, 10)) : 1;
+    if(seedCount == 0 || Tournament::publishedSeeds().size() < seedCount)
+    {
+        std::cerr << "seed count must be between 1 and "
+                  << Tournament::publishedSeeds().size() << '\n';
+        return 2;
+    }
+
+    configureSimulationBonuses();
+    Tournament::Config config;
+    config.seeds.assign(Tournament::publishedSeeds().begin(),
+                        Tournament::publishedSeeds().begin() + seedCount);
+    config.avatars = Tournament::baselineAvatars();
+    config.maximumTicks = 20000;
+
+    const Tournament::Result result = Tournament::run(config,
+        [](std::size_t complete, std::size_t total, const Tournament::MatchRecord & record)
+        {
+            std::cout << "balance match " << complete << '/' << total
+                      << ": seed=" << record.result.seed
+                      << ", rotation=" << record.plan.seatRotation
+                      << ", status=" << Simulation::statusName(record.result.status)
+                      << ", hash=" << record.result.finalStateHash << '\n';
+        });
+
+    std::string saveError;
+    if(!Tournament::saveReports(result, outputDirectory, &saveError))
+    {
+        std::cerr << "FAIL: " << saveError << '\n';
+        return 1;
+    }
+
+    std::cout << Tournament::toText(result)
+              << "Reports: " << outputDirectory << '\n';
+    return result.completed() ? 0 : 1;
 }
 }
 
@@ -2542,6 +2725,9 @@ int main(int argc, char** argv)
     if(1 < argc && std::string(argv[1]) == "--headless-match-self-test")
         return runHeadlessMatchSelfTest();
 
+    if(1 < argc && std::string(argv[1]) == "--balance-lab")
+        return runBalanceLab(argc, argv);
+
     if(1 < argc && std::string(argv[1]) == "--balance-only")
     {
         const int balanceFailures = runAvatarBalanceTests();
@@ -2567,6 +2753,7 @@ int main(int argc, char** argv)
     testGameplayRngState();
     testActionReplay();
     testMatchScoreContract();
+    testTournamentContract();
 
     expect(Speciality(Speciality::CastSilence).toSpell()() == Spell::Silence,
            "CastSilence must grant Silence");

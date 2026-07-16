@@ -85,6 +85,16 @@ The baseline compares summon rosters, spell plans and avatar passives on common 
 Catastrophic is represented by Hell Blast in the spell score; Bard, Monacle, Luck and
 Telepath are reported in a separate passive column.
 
+Run the real-rules full-match balance laboratory on Windows (one published seed,
+four seat rotations by default):
+```powershell
+.\scripts\run-balance-lab.ps1
+```
+
+It exports versioned JSON, per-player CSV and a concise text report. The fixed
+seed list, legal clan/seat rotation contract and larger-run guidance are in
+[`docs/BalanceLab.md`](docs/BalanceLab.md).
+
 ## Crash Diagnostics
 
 The game keeps a persistent engine log and a crash report with recent Mahjong

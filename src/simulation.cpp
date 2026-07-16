@@ -5,10 +5,27 @@
 #include <set>
 
 #include "gameplayrng.h"
+#include "recovery.h"
 #include "replay.h"
 
 namespace
 {
+class RecoverySuppression
+{
+    bool previous;
+
+public:
+    RecoverySuppression() : previous(Recovery::enabled())
+    {
+        Recovery::setEnabled(false);
+    }
+
+    ~RecoverySuppression()
+    {
+        Recovery::setEnabled(previous);
+    }
+};
+
 bool validConfiguration(const Simulation::MatchConfig & config, std::string* error)
 {
     if(config.persons.size() != winds_all.size())
@@ -63,6 +80,26 @@ void finishResult(Simulation::MatchResult & result)
     result.replayTail = Replay::actionJournal(GameData::authoritativeState());
     result.score = MatchScore::current();
 }
+
+void captureStage(Simulation::MatchResult & result, Simulation::MatchStage stage)
+{
+    Simulation::MatchResult::StageSnapshot & snapshot =
+        result.stages[Simulation::index(stage)];
+    snapshot.adventurePhase = result.adventurePhases;
+    snapshot.score = MatchScore::current();
+}
+}
+
+const char* Simulation::stageName(MatchStage stage)
+{
+    switch(stage)
+    {
+        case MatchStage::Early: return "early";
+        case MatchStage::Middle: return "middle";
+        case MatchStage::Late: return "late";
+        case MatchStage::Count: break;
+    }
+    return "unknown";
 }
 
 const char* Simulation::statusName(MatchStatus status)
@@ -88,6 +125,7 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
 
     try
     {
+        RecoverySuppression suppressRecovery;
         GameplayRng::seed(config.seed);
         GameData::setAIDifficulty(config.difficulty);
         if(!GameData::initPersons(config.persons))
@@ -128,8 +166,14 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
 
                 case Menu::BattleSummaryPart:
                     ++result.adventurePhases;
+                    if(result.adventurePhases == 5)
+                        captureStage(result, MatchStage::Early);
+                    else if(result.adventurePhases == 10)
+                        captureStage(result, MatchStage::Middle);
+
                     if(GameData::isGameOver())
                     {
+                        captureStage(result, MatchStage::Late);
                         GameData::setGamePart(Menu::GameSummaryPart);
                         result.status = MatchStatus::Complete;
                         finishResult(result);

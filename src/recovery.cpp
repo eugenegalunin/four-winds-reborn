@@ -13,6 +13,8 @@
 
 namespace
 {
+bool recoveryEnabled = true;
+
 bool moveFile(const std::string & source, const std::string & destination)
 {
     if(!SWE::Systems::isFile(source)) return true;
@@ -76,6 +78,16 @@ std::string canonicalJson(const SWE::JsonValue & value)
 
     return value.toString();
 }
+}
+
+bool Recovery::enabled(void)
+{
+    return recoveryEnabled;
+}
+
+void Recovery::setEnabled(bool value)
+{
+    recoveryEnabled = value;
 }
 
 std::string Recovery::defaultDirectory(void)

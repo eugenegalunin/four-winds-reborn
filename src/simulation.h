@@ -1,6 +1,7 @@
 #ifndef FOUR_WINDS_SIMULATION_H
 #define FOUR_WINDS_SIMULATION_H
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -11,6 +12,16 @@
 
 namespace Simulation
 {
+    enum class MatchStage : std::size_t
+    {
+        Early,
+        Middle,
+        Late,
+        Count
+    };
+
+    constexpr std::size_t MatchStageCount = static_cast<std::size_t>(MatchStage::Count);
+
     enum class MatchStatus
     {
         Complete,
@@ -33,6 +44,14 @@ namespace Simulation
 
     struct MatchResult
     {
+        struct StageSnapshot
+        {
+            std::size_t adventurePhase = 0;
+            MatchScore::Results score;
+
+            bool captured(void) const { return !score.empty(); }
+        };
+
         MatchStatus status = MatchStatus::InvalidConfiguration;
         std::uint64_t seed = 0;
         std::uint64_t rngDraws = 0;
@@ -45,10 +64,17 @@ namespace Simulation
         std::string error;
         JsonObject replayTail;
         MatchScore::Results score;
+        std::array<StageSnapshot, MatchStageCount> stages{};
 
         bool completed(void) const { return status == MatchStatus::Complete; }
     };
 
+    constexpr std::size_t index(MatchStage stage)
+    {
+        return static_cast<std::size_t>(stage);
+    }
+
+    const char* stageName(MatchStage);
     const char* statusName(MatchStatus);
     MatchResult runMatch(const MatchConfig &);
 }
