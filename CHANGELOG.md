@@ -17,6 +17,19 @@ First SemVer release candidate. This is the cumulative player-facing release
 since the upstream baseline, including the earlier Reborn development
 checkpoints listed at the end of this file.
 
+### Fixed - Mahjong calls
+
+- Fixed exposed Kong announcements from AI being sent as the concealed-Kong
+  action type and therefore rejected.
+- Restored the mandatory replacement draw after an exposed Kong. The missing
+  draw could leave a player one rune short and eventually produce an empty
+  concealed hand while the part continued.
+- Prevented the dropper's stale local snapshot from briefly offering Game on
+  their own discard, and added authoritative revalidation before a Game claim
+  can finish the part.
+- Cleared a completed multi-variant Chao selection before rendering refreshed
+  state, avoiding invalid-rune additions in the log.
+
 ### Added - front end and presentation
 
 - Added a full 1024x768 main menu with Reborn branding, the owner-selected

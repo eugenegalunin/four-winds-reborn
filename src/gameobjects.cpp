@@ -3555,7 +3555,7 @@ bool LocalPlayer::isWinMahjong(const Wind & currentWind, const Wind & roundWind,
     if(newStone.isValid())
         winStone = newStone;
     else
-    if(dropStone.isValid())
+    if(dropStone.isValid() && currentWind != wind)
         winStone = dropStone;
     else
         return false;

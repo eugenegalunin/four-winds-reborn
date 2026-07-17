@@ -1447,6 +1447,15 @@ bool GameData::clientButtonGame(const Avatar & avatar, const ClientMessage & act
 
     DEBUG(client.toString());
 
+    WinResults validatedResult;
+    if(!client.isWinMahjong(currentWind, roundWind, dropStone, &validatedResult))
+    {
+	ERROR("invalid Mahjong Game claim: " << client.toString());
+	return false;
+    }
+
+    winResult = validatedResult;
+
     client.setMahjongGame(winResult);
 
     const int score = winResult.totalScore();
@@ -1526,7 +1535,10 @@ bool GameData::clientButtonKong1(const Avatar & avatar, const ClientMessage & ac
     dropStone.reset();
     currentWind = client.wind;
     actions.push_back(MahjongData(currentWind));
-    skipNewStone = true;
+    // An exposed Kong, unlike Pung or Chao, receives a replacement draw.
+    // Skipping it leaves the caller one rune short and can eventually empty
+    // the concealed hand before the part is over.
+    skipNewStone = false;
 
     return true;
 }

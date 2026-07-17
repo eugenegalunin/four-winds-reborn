@@ -66,6 +66,14 @@ extern int bonusChao;
 extern int bonusPass;
 extern LocalPlayers gamers;
 extern Wind currentWind;
+extern Wind roundWind;
+extern CroupierSet croupier;
+extern int stoneLastCount;
+extern Stone dropStone;
+extern WinResults winResult;
+extern bool skipRepeatSay;
+extern bool skipNewStone;
+extern bool skipNewTurn;
 JsonObject toJsonObject(const JsonObject &);
 }
 
@@ -1163,6 +1171,12 @@ void testAvatarPassives()
     for(const Stone::stone_t stone : winningStones) game.stones.add(GameStone(stone));
     expect(game.isWinMahjong(Wind(Wind::East), Wind(Wind::East), Stone(Stone::WindEast)),
            "Telepath must retain Game while Silence is present");
+    expect(!game.isWinMahjong(Wind(Wind::South), Wind(Wind::East), Stone(Stone::WindEast)),
+           "a player must not claim Game on their own discard");
+
+    game.newStone = GameStone(Stone(Stone::WindEast), false);
+    expect(game.isWinMahjong(Wind(Wind::South), Wind(Wind::East), Stone()),
+           "a valid self-drawn Game must remain available");
 
     LocalPlayer ordinaryWizard;
     ordinaryWizard.avatar = Avatar::Lakkho;
@@ -1236,6 +1250,93 @@ void testMahjongCallPlanning()
            duplicateChao.stones.countStone(Stone(Stone::Sword2)) == 1 &&
            duplicateChao.stones.countStone(Stone(Stone::Sword3)) == 1,
            "Chao must move exactly one copy of all three sequence runes out of the concealed hand");
+}
+
+void testExposedKongDispatchAndReplacementDraw()
+{
+    const LocalPlayers savedPlayers = GameData::gamers;
+    const Wind savedCurrentWind = GameData::currentWind;
+    const Wind savedRoundWind = GameData::roundWind;
+    const CroupierSet savedCroupier = GameData::croupier;
+    const int savedStoneLastCount = GameData::stoneLastCount;
+    const Stone savedDropStone = GameData::dropStone;
+    const WinResults savedWinResult = GameData::winResult;
+    const bool savedSkipRepeatSay = GameData::skipRepeatSay;
+    const bool savedSkipNewStone = GameData::skipNewStone;
+    const bool savedSkipNewTurn = GameData::skipNewTurn;
+
+    auto player = [](Avatar::avatar_t avatar, Clan::clan_t clan, Wind::wind_t wind)
+    {
+        LocalPlayer result;
+        result.avatar = avatar;
+        result.clan = clan;
+        result.wind = wind;
+        result.points = 0;
+        result.setAI(true);
+        return result;
+    };
+
+    GameData::gamers.clear();
+    GameData::gamers.push_back(player(Avatar::Javed, Clan::Red, Wind::East));
+    GameData::gamers.push_back(player(Avatar::Orachi, Clan::Yellow, Wind::South));
+    GameData::gamers.push_back(player(Avatar::Niana, Clan::Aqua, Wind::West));
+    GameData::gamers.push_back(player(Avatar::Dayla, Clan::Purple, Wind::North));
+
+    LocalPlayer & caller = GameData::gamers[1];
+    caller.stones.add(GameStone(Stone::Dragon1));
+    caller.stones.add(GameStone(Stone::Dragon1));
+    caller.stones.add(GameStone(Stone::Dragon1));
+    caller.stones.add(GameStone(Stone::Sword1));
+
+    GameData::currentWind = Wind(Wind::East);
+    GameData::roundWind = Wind(Wind::East);
+    GameData::croupier = CroupierSet();
+    GameData::stoneLastCount = 100;
+    GameData::dropStone = Stone(Stone::Dragon1);
+    GameData::winResult = WinResults();
+    GameData::skipRepeatSay = false;
+    GameData::skipNewStone = false;
+    GameData::skipNewTurn = false;
+
+    ActionList announced;
+    const bool announcedKong = AI::mahjongGameKongPungChao(
+        GameData::currentWind, GameData::roundWind, GameData::dropStone,
+        GameData::winResult, announced, true);
+    const auto kongAnnouncement = std::find_if(announced.begin(), announced.end(),
+        [](const ActionMessage & action)
+        {
+            return action.type() == Action::MahjongKong1 &&
+                action.getBoolean("sayOnly") &&
+                action.getString("currentWind") == "south";
+        });
+    expect(announcedKong && kongAnnouncement != announced.end(),
+           "Mahjong AI must announce an exposed Kong as Kong type 1");
+
+    ActionList committed;
+    expect(GameData::client2Mahjong(caller.avatar, ClientButtonKong1(), committed),
+           "an announced exposed Kong must be accepted");
+    expect(caller.rules.size() == 1 && caller.rules.front().isKong() &&
+           caller.stones.size() == 1 && caller.stones.front() == Stone(Stone::Sword1),
+           "an exposed Kong must consume exactly the three matching concealed runes");
+    expect(!GameData::skipNewStone,
+           "an exposed Kong must draw a replacement rune instead of skipping the draw");
+
+    ActionList replacementTurn;
+    expect(GameData::mahjong2Client(caller.avatar, replacementTurn),
+           "an exposed Kong caller must receive a replacement turn");
+    expect(GameData::stoneLastCount == 99 && caller.stones.size() == 1,
+           "the replacement draw must consume one wall rune without emptying the caller's hand");
+
+    GameData::gamers = savedPlayers;
+    GameData::currentWind = savedCurrentWind;
+    GameData::roundWind = savedRoundWind;
+    GameData::croupier = savedCroupier;
+    GameData::stoneLastCount = savedStoneLastCount;
+    GameData::dropStone = savedDropStone;
+    GameData::winResult = savedWinResult;
+    GameData::skipRepeatSay = savedSkipRepeatSay;
+    GameData::skipNewStone = savedSkipNewStone;
+    GameData::skipNewTurn = savedSkipNewTurn;
 }
 
 void testSpellAndSpecialityContracts()
@@ -3800,6 +3901,7 @@ int main(int argc, char** argv)
     testLuckAbility();
     testAvatarPassives();
     testMahjongCallPlanning();
+    testExposedKongDispatchAndReplacementDraw();
     testSpellAndSpecialityContracts();
     testSpellCastingAI();
     testMahjongCastDeadTargetMessage();
