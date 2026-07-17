@@ -31,7 +31,7 @@
 #include "gameplayrng.h"
 #include "gamedata.h"
 
-std::initializer_list<Clan::clan_t> clans_all = { Clan::Maitha, Clan::Kartha, Clan::Iz, Clan::Marz };
+std::initializer_list<Clan::clan_t> clans_all = { Clan::Red, Clan::Yellow, Clan::Aqua, Clan::Purple };
 std::initializer_list<Wind::wind_t> winds_all = { Wind::East, Wind::South, Wind::West, Wind::North };
 std::initializer_list<Land::land_t> lands_all = { Land::TowerOf4Winds, Land::Maithaius, Land::Baliphon, Land::Vermille, Land::Sulanthia,
 		Land::Trojensek, Land::Talon, Land::Siramak, Land::Ronzinol, Land::Corzen, Land::Greenbaw, Land::Zubrus, Land::Corimar,
@@ -58,14 +58,14 @@ namespace
     const StringList & creaturesId = idsList[6];
     const StringList & landsId = idsList[7];
 
-    const char* legacyClanId(const Clan & clan)
+    const char* legacyNamedClanId(const Clan & clan)
     {
         switch(clan())
         {
-            case Clan::Maitha: return "red";
-            case Clan::Kartha: return "yellow";
-            case Clan::Iz:     return "aqua";
-            case Clan::Marz:   return "purple";
+            case Clan::Red:    return "maitha";
+            case Clan::Yellow: return "kartha";
+            case Clan::Aqua:   return "iz";
+            case Clan::Purple: return "marz";
             default: break;
         }
         return "none";
@@ -148,10 +148,10 @@ std::string Wind::toString(void) const
 
 Clan::Clan(const std::string & str) : Enum(None)
 {
-    if(str == "Maitha" || str == "maitha" || str == "red") val = Maitha;
-    else if(str == "Kartha" || str == "kartha" || str == "yellow") val = Kartha;
-    else if(str == "Iz" || str == "iz" || str == "aqua") val = Iz;
-    else if(str == "Marz" || str == "marz" || str == "purple") val = Marz;
+    if(str == "Red" || str == "red" || str == "Maitha" || str == "maitha") val = Red;
+    else if(str == "Yellow" || str == "yellow" || str == "Kartha" || str == "kartha") val = Yellow;
+    else if(str == "Aqua" || str == "aqua" || str == "Iz" || str == "iz") val = Aqua;
+    else if(str == "Purple" || str == "purple" || str == "Marz" || str == "marz") val = Purple;
     else if(str != "none")
     {
 	auto it = std::find(clansId.begin(), clansId.end(), str);
@@ -164,10 +164,10 @@ Clan Clan::prev(void) const
 {
     switch(id())
     {
-	case Maitha:	return Marz;
-	case Kartha:	return Maitha;
-	case Iz:	return Kartha;
-	case Marz:	return Iz;
+	case Red:	return Purple;
+	case Yellow:	return Red;
+	case Aqua:	return Yellow;
+	case Purple:	return Aqua;
 	default: break;
     }
     return None;
@@ -177,10 +177,10 @@ Clan Clan::next(void) const
 {
     switch(id())
     {
-	case Maitha:	return Kartha;
-	case Kartha:	return Iz;
-	case Iz:	return Marz;
-	case Marz:	return Maitha;
+	case Red:	return Yellow;
+	case Yellow:	return Aqua;
+	case Aqua:	return Purple;
+	case Purple:	return Red;
 	default: break;
     }
     return None;
@@ -197,10 +197,10 @@ std::string Clan::canonicalName(void) const
 {
     switch(id())
     {
-        case Maitha:    return "Maitha";
-        case Kartha:    return "Kartha";
-        case Iz:        return "Iz";
-        case Marz:      return "Marz";
+        case Red:    return "Red";
+        case Yellow: return "Yellow";
+        case Aqua:   return "Aqua";
+        case Purple: return "Purple";
         default: break;
     }
     return "None";
@@ -2596,7 +2596,7 @@ bool BattleArmy::canMoveCreature(const BattleCreature & bcr, const Land & fromLa
 {
     if(path.empty())
     {
-	ERROR("creature can't move: empty path from " << fromLand.toString());
+        DEBUG("creature can't move: empty path from " << fromLand.toString());
 	return false;
     }
 
@@ -2608,7 +2608,7 @@ bool BattleArmy::canMoveCreature(const BattleCreature & bcr, const Land & fromLa
     // check move point
     if(! bcr.canMove(movementCost))
     {
-	ERROR("creature can't move: " << "move cost: " << movementCost << ", " << bcr.toString() << " " << "point: " << bcr.freeMovePoint() << ", " <<
+	DEBUG("creature can't move: " << "move cost: " << movementCost << ", " << bcr.toString() << " " << "point: " << bcr.freeMovePoint() << ", " <<
 	    "from: " << fromLand.toString() << ", " << "to: " << toLand.toString());
 	return false;
     }
@@ -3271,7 +3271,7 @@ LandClaims LandClaims::fromJsonObject(const JsonObject & jo)
         const Clan clan(clanId);
         int points = jo.getInteger(clan.toString(), -1);
         if(points < 0)
-            points = jo.getInteger(legacyClanId(clan), 0);
+            points = jo.getInteger(legacyNamedClanId(clan), 0);
         res.values[clan()] = std::max(0, points);
     }
     return res;
@@ -3868,6 +3868,14 @@ WinResults::WinResults(const Wind & wind1, const Wind & wind2, const Wind & wind
 
     pairStone = winPair;
     lastStone = winStone;
+}
+
+WinResults WinResults::drawn(const Wind & deal, const Wind & round)
+{
+    WinResults res;
+    res.dealWind = deal;
+    res.roundWind = round;
+    return res;
 }
 
 WinRules WinResults::winRulesConcealed(void) const

@@ -18,8 +18,8 @@ Each player receives five raw category scores:
 | Land Claim | Unspent land-claim points against all three opposing clans |
 
 Negative resource values are clamped to zero. Stable avatar, clan and wind IDs
-identify a player; display names are never used as identity. Canonical clan IDs
-are `maitha`, `kartha`, `iz` and `marz` as defined by
+identify a player; display names are never used as identity. Canonical faction
+IDs are `red`, `yellow`, `aqua` and `purple` as defined by
 [`RulesDecisions.md`](RulesDecisions.md#rd-006-canonical-clan-identities).
 
 ## Ranks and total

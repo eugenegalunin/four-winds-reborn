@@ -1,12 +1,12 @@
 {
     "cursor":		"hardware",
     "background":	{ "id": "screen3", "type": "file", "file": "all.png", "crop": [0, 0, 1024, 768], "colorkey": "#ffd2d2" },
-    "music":		[ "mahjong1", "mahjong2", "mahjong3", "mahjong4" ],
     "default:font":	"dejavus18",
     "default:color":	"#efe4ae",
 
-    "mahjongdrop:delay": 5,
+    "mahjongdrop:delay": 12,
     "mahjongdrop:step": 40,
+    "mahjongdeal:delay": 55,
 
     "buttons":      [
                       { "id": "but_chow", "position": [ 426, 286 ], "sprites": [ "but_chow1", "but_chow2" ] },

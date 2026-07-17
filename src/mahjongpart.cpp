@@ -78,6 +78,25 @@ public:
     ScopedTickPause & operator=(const ScopedTickPause &) = delete;
 };
 
+class ScopedFlag
+{
+    bool & flag;
+
+public:
+    explicit ScopedFlag(bool & value) : flag(value)
+    {
+	flag = true;
+    }
+
+    ~ScopedFlag()
+    {
+	flag = false;
+    }
+
+    ScopedFlag(const ScopedFlag &) = delete;
+    ScopedFlag & operator=(const ScopedFlag &) = delete;
+};
+
 class LuckDrawDialog : public DialogWindow
 {
     StoneSprite		first;
@@ -250,10 +269,13 @@ MahjongPartScreen::MahjongPartScreen() : JsonWindow("screen_mahjongpart.json", n
     animationChao(jobject, "animation:chao"), animationPung(jobject, "animation:pung"),
     animationKong(jobject, "animation:kong"), animationGame(jobject, "animation:game"),
     stoneSelected(-1), variantSelected(-1), playersMarker(0), animationDropStep(40),
-    animationDropDelay(5), iconAffectedSkull(this), iconAffectedSword(this), iconAffectedNumber(this),
-    iconAffectedDiscard(this), iconAffectedSilence(this), iconAffectedScry(this), playerReady(false)
+    animationDropDelay(12), animationDealDelay(55), dealingInitialHand(false), dealtStoneCount(0),
+    animatingDrawStone(false), iconAffectedSkull(this), iconAffectedSword(this), iconAffectedNumber(this),
+    iconAffectedDiscard(this), iconAffectedSilence(this), iconAffectedScry(this), playerReady(false),
+    resolvingLuckChoice(false)
 {
     ld = GameData::toLocalData(myAvatar);
+    playMusic(GameData::myPerson().clan.toString());
 
     stonesPos.reserve(GAME_SET_COUNT);
     stoneActiveSprite = GameTheme::jsonSprite(jobject, "stone:active");
@@ -266,8 +288,14 @@ MahjongPartScreen::MahjongPartScreen() : JsonWindow("screen_mahjongpart.json", n
     defaultFont = jobject.getString("default:font");
     namesFont = jobject.getString("names:font");
 
-    animationDropDelay = jobject.getInteger("mahjongdrop:delay", 5);
+    animationDropDelay = Settings::presentationDelay(jobject.getInteger("mahjongdrop:delay", 12));
     animationDropStep = jobject.getInteger("mahjongdrop:step", 40);
+    animationDealDelay = Settings::presentationDelay(jobject.getInteger("mahjongdeal:delay", 55));
+
+    animationChao.delay = Settings::presentationDelay(animationChao.delay);
+    animationPung.delay = Settings::presentationDelay(animationPung.delay);
+    animationKong.delay = Settings::presentationDelay(animationKong.delay);
+    animationGame.delay = Settings::presentationDelay(animationGame.delay);
 
     iconAffectedSkull.setJsonObject(jobject.getObject("affected:skull"));
     iconAffectedSkull.setVisible(false);
@@ -856,6 +884,13 @@ void MahjongPartScreen::actionQuit(void)
     setVisible(false);
 }
 
+void MahjongPartScreen::restoreMahjongMusic(void)
+{
+#ifndef SWE_DISABLE_AUDIO
+    if(Settings::music()) playMusic(GameData::myPerson().clan.toString());
+#endif
+}
+
 void MahjongPartScreen::actionButtonShowCast(void)
 {
     const LocalPlayer & player = ld.myPlayer();
@@ -916,6 +951,9 @@ void MahjongPartScreen::actionButtonShowCast(void)
 	}
     }
 
+    // Map-based spell and summon dialogs use the adventure screen theme.
+    // Restore the local clan track before returning to the rune table.
+    restoreMahjongMusic();
     renderWindow();
 }
 
@@ -1015,14 +1053,31 @@ bool MahjongPartScreen::actionCreateScreenshot(void)
 
 bool MahjongPartScreen::actionButtonSystem(void)
 {
-    if(MessageBox(Application::name(), _("Exit game?"), *this).exec())
+    ScopedTickPause pause(*this);
+    const int choice = InGameMenuDialog(*this).exec();
+
+    if(choice == InGameMenuResult::SaveGame)
     {
-	GameData::saveGame(toJsonObject());
-        setResultCode(Menu::GameExit);
+        SaveGameAs(toJsonObject(), *this);
+        renderWindow();
+        return true;
+    }
+
+    if(choice == InGameMenuResult::MainMenu)
+    {
+        if(!GameData::saveGame(toJsonObject()))
+        {
+            MessageBox(_("Save Game"), _("Unable to update the autosave."), *this, false).exec();
+            renderWindow();
+            return true;
+        }
+        setResultCode(Menu::MainMenu);
         setVisible(false);
 	return true;
     }
-    return false;
+
+    renderWindow();
+    return true;
 }
 
 void MahjongPartScreen::actionButtonSummary(void)
@@ -1033,6 +1088,7 @@ void MahjongPartScreen::actionButtonSummary(void)
 void MahjongPartScreen::actionButtonMap(void)
 {
     ShowMapDialog(ld, *this).exec();
+    restoreMahjongMusic();
 }
 
 void MahjongPartScreen::renderDropStone(void)
@@ -1075,6 +1131,52 @@ void MahjongPartScreen::renderDropStone(void)
 	animationTurn.setPause(false);
 	renderWindow();
     }
+}
+
+void MahjongPartScreen::renderDrawStone(void)
+{
+    const LocalPlayer & player = ld.myPlayer();
+    if(!player.newStone.isValid() || animationDropStep <= 0) return;
+
+    const StoneSprite sprite(player.newStone, StoneSprite::Large);
+    const Point source = remainsPos - sprite.size() / 2;
+    const Point destination = newStonePos().toPoint();
+    const Points points = Tools::renderLine(source, destination, animationDropStep);
+
+    animationTurn.setPause(true);
+    animatingDrawStone = true;
+    for(const Point & point : points)
+    {
+        drawStoneAnimationPos = point;
+        setDirty(true);
+        DisplayScene::sceneRedraw();
+        Tools::delay(1 < animationDropDelay ? animationDropDelay : 1);
+    }
+    animatingDrawStone = false;
+    animationTurn.setPause(false);
+    renderWindow();
+}
+
+void MahjongPartScreen::renderInitialDeal(void)
+{
+    const std::size_t stoneCount = ld.myPlayer().stones.size();
+    if(!stoneCount) return;
+
+    dealingInitialHand = true;
+    dealtStoneCount = 0;
+    renderWindow();
+    playSound("stone2");
+
+    while(dealtStoneCount < stoneCount)
+    {
+        ++dealtStoneCount;
+        renderWindow();
+        DisplayScene::sceneRedraw();
+        Tools::delay(1 < animationDealDelay ? animationDealDelay : 1);
+    }
+
+    dealingInitialHand = false;
+    renderWindow();
 }
 
 void MahjongPartScreen::renderNames(void)
@@ -1326,9 +1428,12 @@ void MahjongPartScreen::renderLocalSet(const GameStones & stones)
     if(stones.size())
     {
 	const StoneSprite sprite(stones[0], StoneSprite::Large);
-	Point pos = Point(localSetPos.x - (sprite.width() * stones.size()) / 2, localSetPos.y);
+        const std::size_t visibleCount = dealingInitialHand ?
+            std::min(dealtStoneCount, stones.size()) : stones.size();
+	Point pos = Point(localSetPos.x - (sprite.width() * visibleCount) / 2, localSetPos.y);
 
-	for(auto it = stones.begin(); it != stones.end(); ++it)
+	std::size_t visibleIndex = 0;
+	for(auto it = stones.begin(); it != stones.end() && visibleIndex < visibleCount; ++it, ++visibleIndex)
 	{
 	    const StoneSprite sprite(*it, StoneSprite::Large);
 
@@ -1368,13 +1473,16 @@ void MahjongPartScreen::renderLocalSet(const GameStones & stones)
 
 	if(player.newStone.isValid())
 	{
-	    renderTexture(StoneSprite(player.newStone, StoneSprite::Large), newStonePos());
+	    const StoneSprite sprite(player.newStone, StoneSprite::Large);
+            const Rect stonePosition = animatingDrawStone ? Rect(drawStoneAnimationPos, sprite.size()) :
+                                      newStonePos();
+	    renderTexture(sprite, stonePosition);
 
 	    if(! player.newStone.isCasted())
-		renderTexture(stoneActiveSprite, newStonePos());
+		renderTexture(stoneActiveSprite, stonePosition);
 
-	    if(stones.size() == stoneSelected)
-		renderTexture(stoneSelectedSprite, newStonePos().toPoint() - Point(4, 6));
+	    if(!animatingDrawStone && stones.size() == stoneSelected)
+		renderTexture(stoneSelectedSprite, stonePosition.toPoint() - Point(4, 6));
 	}
     }
 }
@@ -1392,6 +1500,10 @@ void MahjongPartScreen::renderWaitPlayers(const Wind & wind)
 
 void MahjongPartScreen::tickEvent(u32 ms)
 {
+    // Modal dialogs run a nested event loop. Keep the Mahjong client from polling
+    // and handling the same server prompt again while a Luck choice is open.
+    if(resolvingLuckChoice) return;
+
     if(animationGame.isEnabled())
     {
 	if(animationGame.next(ms))
@@ -1434,9 +1546,11 @@ void MahjongPartScreen::tickEvent(u32 ms)
 	    renderWindow();
     }
 
-    if(playerReady && tt.check(ms, 100))
+    if(playerReady && tt.check(ms, Settings::presentationDelay(100)))
     {
-	GameData::mahjong2Client(myAvatar, actions);
+	// Presentation actions can deliberately remain queued while an animation runs.
+	// Consume them before asking the authoritative state for another action.
+	if(actions.empty()) GameData::mahjong2Client(myAvatar, actions);
 	bool redraw = false;
 
 	while(actions.size())
@@ -1559,12 +1673,19 @@ bool MahjongPartScreen::actionMahjongLuckChoice(const ActionMessage & v)
 	return false;
     }
 
+    ScopedFlag resolving(resolvingLuckChoice);
     LuckDrawDialog dialog(choices, *this);
     {
 	// A nested dialog loop still ticks its parent unless explicitly paused.
 	ScopedTickPause pause(*this);
 	dialog.exec();
     }
+
+    // Older/re-entrant polling may already have queued copies of this prompt.
+    // They can never be a new valid choice before MahjongTurn/MahjongData.
+    actions.remove_if([](const ActionMessage & queued) {
+	return queued.type() == Action::MahjongLuckChoice;
+    });
 
     const int selected = dialog.resultCode();
     if(selected < 0 || 1 < selected)
@@ -1584,6 +1705,11 @@ bool MahjongPartScreen::actionMahjongEnd(const ActionMessage & v)
     auto action = static_cast<const MahjongEnd &>(v);
     ld.currentWind = action.currentWind();
 
+    // The authoritative round end invalidates any countdown that belonged to
+    // the last local turn.  Leaving it active can emit a stale timeout while
+    // the end-of-round presentation is running.
+    animationTurn.setEnabled(false);
+
 #ifndef SWE_DISABLE_AUDIO
     playSoundWait();
     Music::reset();
@@ -1601,6 +1727,9 @@ bool MahjongPartScreen::actionMahjongBegin(const ActionMessage & v)
     ld.currentWind = action.currentWind();
     ld.roundWind = action.roundWind();
 
+    // A new part must never inherit the final countdown from the previous one.
+    animationTurn.setEnabled(false);
+
     playSound("begin");
     playSoundWait();
 
@@ -1610,8 +1739,10 @@ bool MahjongPartScreen::actionMahjongBegin(const ActionMessage & v)
 	playSoundWait();
     }
 
-    gameLogs << StringFormat("Game Begins With %1").arg(GameData::windInfo(ld.roundWind).name);
+    gameLogs << StringFormat(_("Game Begins With %1")).arg(GameData::windInfo(ld.roundWind).name);
     DEBUG("new round: " << (action.newRound() ? "true" : "false") << ", " << "wind round: " << ld.roundWind.toString());
+
+    renderInitialDeal();
 
     return false;
 }
@@ -1620,6 +1751,11 @@ bool MahjongPartScreen::actionMahjongTurn(const ActionMessage & v)
 {
     auto action = static_cast<const MahjongTurn &>(v);
     ld.currentWind = action.currentWind();
+
+    // Every authoritative turn change retires the previous local countdown.
+    // Previously a submitted move left the animation ticking through later AI
+    // turns until it raised MahjongOutOfTime with no remaining choice to make.
+    animationTurn.setEnabled(false);
 
     stoneSelected = -1;
     variantSelected = -1;
@@ -1655,6 +1791,7 @@ bool MahjongPartScreen::actionMahjongTurn(const ActionMessage & v)
     {
 	playSound("stone2");
 	stoneSelected = player.stones.size();
+	renderDrawStone();
 
 	DEBUG("current wind: " << ld.currentWind.toString() << ", " << "new stone: " << player.newStone());
 	return true;
@@ -1682,7 +1819,7 @@ bool MahjongPartScreen::actionMahjongGame(const ActionMessage & v)
 	playSound(owner.avatar.toString().append("_game"));
 	renderWaitPlayers(ownerWind);
 
-	fastLogText.text = StringFormat("%1 Call Game").arg(owner.name());
+	fastLogText.text = StringFormat(_("%1 Call Game")).arg(owner.name());
 	fastLogOwner = ownerWind;
 
 	gameLogs << fastLogText.text;
@@ -1729,7 +1866,7 @@ bool MahjongPartScreen::actionMahjongKong1(const ActionMessage & v)
 	timerVoiceAnimation = Timer::create(100, startAnimationBackgroundGuard, & animationKong);
 	renderWaitPlayers(ownerWind);
 
-	fastLogText.text = StringFormat("%1 Kongs The Last Discard").arg(owner.name());
+	fastLogText.text = StringFormat(_("%1 Kongs The Last Discard")).arg(owner.name());
 	fastLogOwner = ownerWind;
 
 	gameLogs << fastLogText.text;
@@ -1755,7 +1892,7 @@ bool MahjongPartScreen::actionMahjongKong2(const ActionMessage & v)
     playSound(owner.avatar.toString().append("_kong"));
     timerVoiceAnimation = Timer::create(100, startAnimationBackgroundGuard, & animationKong);
 
-    fastLogText.text = StringFormat("%1 Kongs The Last Drawn Rule").arg(owner.name());
+    fastLogText.text = StringFormat(_("%1 Kongs The Last Drawn Rule")).arg(owner.name());
     fastLogOwner = ld.currentWind;
 
     gameLogs << fastLogText.text;
@@ -1776,7 +1913,7 @@ bool MahjongPartScreen::actionMahjongPung(const ActionMessage & v)
 	timerVoiceAnimation = Timer::create(100, startAnimationBackgroundGuard, & animationPung);
 	renderWaitPlayers(ownerWind);
 
-	fastLogText.text = StringFormat("%1 Pungs The Last Discard").arg(owner.name());
+	fastLogText.text = StringFormat(_("%1 Pungs The Last Discard")).arg(owner.name());
 	fastLogOwner = ownerWind;
 	gameLogs << fastLogText.text;
 	return true;
@@ -1802,7 +1939,7 @@ bool MahjongPartScreen::actionMahjongChao(const ActionMessage & v)
 	timerVoiceAnimation = Timer::create(100, startAnimationBackgroundGuard, & animationChao);
 	renderWaitPlayers(ownerWind);
 
-	fastLogText.text = StringFormat("%1 Chows The Last Discard").arg(owner.name());
+	fastLogText.text = StringFormat(_("%1 Chows The Last Discard")).arg(owner.name());
 	fastLogOwner = ownerWind;
 	gameLogs << fastLogText.text;
 
@@ -1876,7 +2013,7 @@ bool MahjongPartScreen::actionMahjongSummon(const ActionMessage & v)
 
     playSound(creatureInfo.sound1);
 
-    fastLogText.text = StringFormat("%1 summons %2 in %3").
+    fastLogText.text = StringFormat(_("%1 summons %2 in %3")).
 			arg(GameData::avatarInfo(owner.avatar).name).
 			arg(creatureInfo.name).
 			arg(landInfo.name);
@@ -1909,7 +2046,7 @@ bool MahjongPartScreen::actionMahjongCast(const ActionMessage & v)
     {
 	Land land = action.land();
 	const LandInfo & landInfo = GameData::landInfo(land);
-	fastLogText.text = StringFormat("%1 casts %2 over %3").
+	fastLogText.text = StringFormat(_("%1 casts %2 over %3")).
 			    arg(owner.name()).arg(spellInfo.name).arg(landInfo.name);
 	gameLogs << fastLogText.text;
     }
@@ -1917,7 +2054,7 @@ bool MahjongPartScreen::actionMahjongCast(const ActionMessage & v)
     if(spellInfo.target() == SpellTarget::MyPlayer ||
 	spellInfo.target() == SpellTarget::AllPlayers)
     {
-	fastLogText.text = StringFormat("%1 casts %2").
+	fastLogText.text = StringFormat(_("%1 casts %2")).
 			    arg(owner.name()).arg(spellInfo.name);
 	gameLogs << fastLogText.text;
 
@@ -1928,7 +2065,7 @@ bool MahjongPartScreen::actionMahjongCast(const ActionMessage & v)
 	Avatar target = action.target();
 	const RemotePlayer & remote = ld.playerOfAvatar(target);
 
-	fastLogText.text = StringFormat("%1 casts %2 to %3").
+	fastLogText.text = StringFormat(_("%1 casts %2 to %3")).
 			    arg(owner.name()).arg(spellInfo.name).arg(remote.name());
 	gameLogs << fastLogText.text;
     }
@@ -1942,19 +2079,19 @@ bool MahjongPartScreen::actionMahjongCast(const ActionMessage & v)
 	    bool resist = resists.end() != std::find(resists.begin(), resists.end(), target->battleUnit());
 
 	    DEBUG(target->toString());
-	    if(resist) DEBUG("Magic Resistence!");
+	    if(resist) DEBUG("Magic Resistance!");
 
 	    const CreatureInfo & creatureInfo = GameData::creatureInfo(*target);
 	    std::string tmp;
 
 	    if(owner.clan != target->clan())
-		tmp = StringFormat("%1 casts %2 at %3's %4").
+		tmp = StringFormat(_("%1 casts %2 at %3's %4")).
 		    arg(owner.name()).arg(spellInfo.name).arg(ld.playerOfClan(target->clan()).name()).arg(creatureInfo.name);
 	    else
-		tmp = StringFormat("%1 casts %2 at friendly %3").
+		tmp = StringFormat(_("%1 casts %2 at friendly %3")).
 		    arg(owner.name()).arg(spellInfo.name).arg(creatureInfo.name);
 
-	    if(resist) tmp.append(", ").append("Magic Resistence!");
+	    if(resist) tmp.append(", ").append(_("Magic Resistance!"));
 
 	    if(fastLogText.text.empty()) fastLogText.text = tmp;
 	    gameLogs << tmp;
@@ -1963,7 +2100,7 @@ bool MahjongPartScreen::actionMahjongCast(const ActionMessage & v)
 
     if(fastLogText.text.empty() && !targetUnits.empty())
     {
-	fastLogText.text = StringFormat("%1 casts %2").arg(owner.name()).arg(spellInfo.name);
+	fastLogText.text = StringFormat(_("%1 casts %2")).arg(owner.name()).arg(spellInfo.name);
 	gameLogs << fastLogText.text;
     }
 

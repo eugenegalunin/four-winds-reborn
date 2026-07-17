@@ -7,20 +7,14 @@
 		        "hotkey":   "RETURN",
 		        "position": [ 925, 707 ],
 		        "tooltip":  "start screen",
-                        "sprites":  [
-					{ "id": "but_start1", "type": "file", "file": "buttons.png", "crop": [516, 92, 86, 46], "colorkey": "#ffd2d2" },
-					{ "id": "but_start2", "type": "file", "file": "buttons.png", "crop": [602, 92, 86, 46], "colorkey": "#ffd2d2" }
-			            ]
+                        "sprites":  [ "but_start1", "but_start2" ]
                       },
                       {
                         "id":      "but_cancel",
 		        "hotkey":   "ESCAPE",
 		        "position": [ 10, 707 ],
 		        "tooltip":  "cancel screen",
-                        "sprites":  [
-					{ "id": "but_cancel1", "type": "file", "file": "buttons.png", "crop": [688, 45, 86, 46], "colorkey": "#ffd2d2" },
-					{ "id": "but_cancel2", "type": "file", "file": "buttons.png", "crop": [774, 45, 86, 46], "colorkey": "#ffd2d2" }
-			            ]
+                        "sprites":  [ "but_cancel1", "but_cancel2" ]
                       }
 		],
     "default:font":	"dejavus34",

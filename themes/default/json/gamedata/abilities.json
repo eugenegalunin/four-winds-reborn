@@ -1,13 +1,13 @@
 [
     {
-        "id": "monacle",
-	"name": "Monacle",
-	"description": "%1's monacle allows him to see all invisible units on the map."
+	"id": "monacle",
+	"name": "Monocle",
+	"description": "%1's monocle allows him to see all invisible units on the map."
     },
     {
 	"id": "catasrophic",
-	"name": "Catasrophic",
-	"description": "%1's catasrophic Hellblast can wipe out entire army lines and is unique to her."
+	"name": "Catastrophic",
+	"description": "%1's catastrophic Hell Blast can wipe out entire army lines and is unique to her."
     },
     {
 	"id": "bard",

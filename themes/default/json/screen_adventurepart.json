@@ -1,6 +1,7 @@
 {
     "cursor":		"hardware",
     "background":	{ "id": "screen4", "type": "file", "file": "map.png", "crop": [0, 0, 1024, 768], "colorkey": "#ffd2d2" },
+    "music":		[ "map" ],
     "default:font":	"dejavus26",
     "default:color":	"#efe4ae",
 

@@ -5,5 +5,7 @@
 /tech-build
 /diagnostics/
 /*.log
+/ninja-ui.err
+/ninja-ui.out
 /pslog.txt
 /WINDOWS_HANDOFF_CONTEXT.txt

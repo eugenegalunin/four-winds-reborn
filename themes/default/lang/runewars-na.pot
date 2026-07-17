@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# Copyright (C) YEAR Four Winds Reborn community
+# This file is distributed under the same license as the Four Winds Reborn package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-10-19 17:59+0800\n"
+"Project-Id-Version: Four Winds Reborn 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/jaskes/four-winds-reborn/issues\n"
+"POT-Creation-Date: 2026-07-17 03:02+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,496 +17,520 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/game/strings.cpp:3
+#: src\strings.cpp:3
 msgid "Original Theme"
 msgstr ""
 
-#: ../src/game/strings.cpp:5
+#: src\strings.cpp:5
+msgid "Select Wizard & Clan"
+msgstr ""
+
+#: src\strings.cpp:6
+msgid "Wizard:"
+msgstr ""
+
+#: src\strings.cpp:7
+msgid "Clan:"
+msgstr ""
+
+#: src\strings.cpp:8
+msgid "Epithet:"
+msgstr ""
+
+#: src\strings.cpp:9
+msgid "Clans:"
+msgstr ""
+
+#: src\strings.cpp:10
+msgid "Creature:"
+msgstr ""
+
+#: src\strings.cpp:12
 msgid "Empty Stone"
 msgstr ""
 
-#: ../src/game/strings.cpp:6
+#: src\strings.cpp:13
 msgid "1 Skull"
 msgstr ""
 
-#: ../src/game/strings.cpp:7
+#: src\strings.cpp:14
 msgid "2 Skulls"
 msgstr ""
 
-#: ../src/game/strings.cpp:8
+#: src\strings.cpp:15
 msgid "3 Skulls"
 msgstr ""
 
-#: ../src/game/strings.cpp:9
+#: src\strings.cpp:16
 msgid "4 Skulls"
 msgstr ""
 
-#: ../src/game/strings.cpp:10
+#: src\strings.cpp:17
 msgid "5 Skulls"
 msgstr ""
 
-#: ../src/game/strings.cpp:11
+#: src\strings.cpp:18
 msgid "6 Skulls"
 msgstr ""
 
-#: ../src/game/strings.cpp:12
+#: src\strings.cpp:19
 msgid "7 Skulls"
 msgstr ""
 
-#: ../src/game/strings.cpp:13
+#: src\strings.cpp:20
 msgid "8 Skulls"
 msgstr ""
 
-#: ../src/game/strings.cpp:14
+#: src\strings.cpp:21
 msgid "9 Skulls"
 msgstr ""
 
-#: ../src/game/strings.cpp:15
+#: src\strings.cpp:22
 msgid "1 Sword"
 msgstr ""
 
-#: ../src/game/strings.cpp:16
+#: src\strings.cpp:23
 msgid "2 Swords"
 msgstr ""
 
-#: ../src/game/strings.cpp:17
+#: src\strings.cpp:24
 msgid "3 Swords"
 msgstr ""
 
-#: ../src/game/strings.cpp:18
+#: src\strings.cpp:25
 msgid "4 Swords"
 msgstr ""
 
-#: ../src/game/strings.cpp:19
+#: src\strings.cpp:26
 msgid "5 Swords"
 msgstr ""
 
-#: ../src/game/strings.cpp:20
+#: src\strings.cpp:27
 msgid "6 Swords"
 msgstr ""
 
-#: ../src/game/strings.cpp:21
+#: src\strings.cpp:28
 msgid "7 Swords"
 msgstr ""
 
-#: ../src/game/strings.cpp:22
+#: src\strings.cpp:29
 msgid "8 Swords"
 msgstr ""
 
-#: ../src/game/strings.cpp:23
+#: src\strings.cpp:30
 msgid "9 Swords"
 msgstr ""
 
-#: ../src/game/strings.cpp:24
+#: src\strings.cpp:31
 msgid "1 Number"
 msgstr ""
 
-#: ../src/game/strings.cpp:25
+#: src\strings.cpp:32
 msgid "2 Numbers"
 msgstr ""
 
-#: ../src/game/strings.cpp:26
+#: src\strings.cpp:33
 msgid "3 Numbers"
 msgstr ""
 
-#: ../src/game/strings.cpp:27
+#: src\strings.cpp:34
 msgid "4 Numbers"
 msgstr ""
 
-#: ../src/game/strings.cpp:28
+#: src\strings.cpp:35
 msgid "5 Numbers"
 msgstr ""
 
-#: ../src/game/strings.cpp:29
+#: src\strings.cpp:36
 msgid "6 Numbers"
 msgstr ""
 
-#: ../src/game/strings.cpp:30
+#: src\strings.cpp:37
 msgid "7 Numbers"
 msgstr ""
 
-#: ../src/game/strings.cpp:31
+#: src\strings.cpp:38
 msgid "8 Numbers"
 msgstr ""
 
-#: ../src/game/strings.cpp:32
+#: src\strings.cpp:39
 msgid "9 Numbers"
 msgstr ""
 
-#: ../src/game/strings.cpp:33
+#: src\strings.cpp:40
 msgid "East Wind"
 msgstr ""
 
-#: ../src/game/strings.cpp:34
+#: src\strings.cpp:41
 msgid "South Wind"
 msgstr ""
 
-#: ../src/game/strings.cpp:35
+#: src\strings.cpp:42
 msgid "West Wind"
 msgstr ""
 
-#: ../src/game/strings.cpp:36
+#: src\strings.cpp:43
 msgid "Nord Wind"
 msgstr ""
 
-#: ../src/game/strings.cpp:37 ../src/game/strings.cpp:72
+#: src\strings.cpp:44 src\strings.cpp:79
 msgid "White Dragon"
 msgstr ""
 
-#: ../src/game/strings.cpp:38 ../src/game/strings.cpp:73
+#: src\strings.cpp:45 src\strings.cpp:80
 msgid "Green Dragon"
 msgstr ""
 
-#: ../src/game/strings.cpp:39 ../src/game/strings.cpp:74
+#: src\strings.cpp:46 src\strings.cpp:81
 msgid "Red Dragon"
 msgstr ""
 
-#: ../src/game/strings.cpp:41
+#: src\strings.cpp:48
 msgid "East"
 msgstr ""
 
-#: ../src/game/strings.cpp:42
+#: src\strings.cpp:49
 msgid "South"
 msgstr ""
 
-#: ../src/game/strings.cpp:43
+#: src\strings.cpp:50
 msgid "West"
 msgstr ""
 
-#: ../src/game/strings.cpp:44
+#: src\strings.cpp:51
 msgid "North"
 msgstr ""
 
-#: ../src/game/strings.cpp:46
-msgid "Maitha"
+#: src\strings.cpp:53
+msgid "Red"
 msgstr ""
 
-#: ../src/game/strings.cpp:47
-msgid "Kartha"
+#: src\strings.cpp:54
+msgid "Yellow"
 msgstr ""
 
-#: ../src/game/strings.cpp:48
-msgid "Iz"
+#: src\strings.cpp:55
+msgid "Aqua"
 msgstr ""
 
-#: ../src/game/strings.cpp:49
-msgid "Marz"
+#: src\strings.cpp:56
+msgid "Purple"
 msgstr ""
 
-#: ../src/game/strings.cpp:51
+#: src\strings.cpp:58
 msgid "Skeleton Horde"
 msgstr ""
 
-#: ../src/game/strings.cpp:52
+#: src\strings.cpp:59
 msgid "Shadow"
 msgstr ""
 
-#: ../src/game/strings.cpp:53
+#: src\strings.cpp:60
 msgid "Durlock"
 msgstr ""
 
-#: ../src/game/strings.cpp:54
+#: src\strings.cpp:61
 msgid "Wraith"
 msgstr ""
 
-#: ../src/game/strings.cpp:55
+#: src\strings.cpp:62
 msgid "Maz'Ra"
 msgstr ""
 
-#: ../src/game/strings.cpp:56
+#: src\strings.cpp:63
 msgid "Knight Templar"
 msgstr ""
 
-#: ../src/game/strings.cpp:57
+#: src\strings.cpp:64
 msgid "Minotaur"
 msgstr ""
 
-#: ../src/game/strings.cpp:58
+#: src\strings.cpp:65
 msgid "Adventure Party"
 msgstr ""
 
-#: ../src/game/strings.cpp:59
+#: src\strings.cpp:66
 msgid "Fire Giant"
 msgstr ""
 
-#: ../src/game/strings.cpp:60
+#: src\strings.cpp:67
 msgid "Sand Wraith"
 msgstr ""
 
-#: ../src/game/strings.cpp:61
+#: src\strings.cpp:68
 msgid "Stone Golem"
 msgstr ""
 
-#: ../src/game/strings.cpp:62
+#: src\strings.cpp:69
 msgid "Thunder Bird"
 msgstr ""
 
-#: ../src/game/strings.cpp:63
+#: src\strings.cpp:70
 msgid "Ki-Lin"
 msgstr ""
 
-#: ../src/game/strings.cpp:64
+#: src\strings.cpp:71
 msgid "Tornado"
 msgstr ""
 
-#: ../src/game/strings.cpp:65
+#: src\strings.cpp:72
 msgid "Griffon"
 msgstr ""
 
-#: ../src/game/strings.cpp:66
+#: src\strings.cpp:73
 msgid "Chameleon"
 msgstr ""
 
-#: ../src/game/strings.cpp:67
+#: src\strings.cpp:74
 msgid "Kilor Celsbane"
 msgstr ""
 
-#: ../src/game/strings.cpp:68
+#: src\strings.cpp:75
 msgid "Carol the Great"
 msgstr ""
 
-#: ../src/game/strings.cpp:69
+#: src\strings.cpp:76
 msgid "King Drago"
 msgstr ""
 
-#: ../src/game/strings.cpp:70
+#: src\strings.cpp:77
 msgid "Learra the Siren"
 msgstr ""
 
-#: ../src/game/strings.cpp:71
+#: src\strings.cpp:78
 msgid "Shanahan"
 msgstr ""
 
-#: ../src/game/strings.cpp:75
+#: src\strings.cpp:82
 msgid "Fire Elemental"
 msgstr ""
 
-#: ../src/game/strings.cpp:76
+#: src\strings.cpp:83
 msgid "Earth Elemental"
 msgstr ""
 
-#: ../src/game/strings.cpp:77
+#: src\strings.cpp:84
 msgid "Air Elemental"
 msgstr ""
 
-#: ../src/game/strings.cpp:78
+#: src\strings.cpp:85
 msgid "Water Elemental"
 msgstr ""
 
-#: ../src/game/strings.cpp:79
+#: src\strings.cpp:86
 msgid "Juggernaut"
 msgstr ""
 
-#: ../src/game/strings.cpp:81
+#: src\strings.cpp:88
 msgid "Smoke"
 msgstr ""
 
-#: ../src/game/strings.cpp:82
+#: src\strings.cpp:89
 msgid "Demonic Compulsion"
 msgstr ""
 
-#: ../src/game/strings.cpp:83
+#: src\strings.cpp:90
 msgid "Mass Panic"
 msgstr ""
 
-#: ../src/game/strings.cpp:84
+#: src\strings.cpp:91
 msgid "Paralyze"
 msgstr ""
 
-#: ../src/game/strings.cpp:85
+#: src\strings.cpp:92
 msgid "Reduction"
 msgstr ""
 
-#: ../src/game/strings.cpp:86
+#: src\strings.cpp:93
 msgid "Battle Fury"
 msgstr ""
 
-#: ../src/game/strings.cpp:87
+#: src\strings.cpp:94
 msgid "Guidance"
 msgstr ""
 
-#: ../src/game/strings.cpp:88
+#: src\strings.cpp:95
 msgid "Force Shield"
 msgstr ""
 
-#: ../src/game/strings.cpp:89
+#: src\strings.cpp:96
 msgid "Dust Cloud"
 msgstr ""
 
-#: ../src/game/strings.cpp:90
+#: src\strings.cpp:97
 msgid "Heroism"
 msgstr ""
 
-#: ../src/game/strings.cpp:91
+#: src\strings.cpp:98
 msgid "Mystical Fountain"
 msgstr ""
 
-#: ../src/game/strings.cpp:92
+#: src\strings.cpp:99
 msgid "Blind Ambition"
 msgstr ""
 
-#: ../src/game/strings.cpp:93
+#: src\strings.cpp:100
 msgid "Brilliant Lights"
 msgstr ""
 
-#: ../src/game/strings.cpp:94
+#: src\strings.cpp:101
 msgid "Magical Aura"
 msgstr ""
 
-#: ../src/game/strings.cpp:95
+#: src\strings.cpp:102 src\adventurepart.cpp:980
 msgid "Teleport"
 msgstr ""
 
-#: ../src/game/strings.cpp:96
+#: src\strings.cpp:103
 msgid "Dispel Magic"
 msgstr ""
 
-#: ../src/game/strings.cpp:97
+#: src\strings.cpp:104
 msgid "Lightning Bolt"
 msgstr ""
 
-#: ../src/game/strings.cpp:98
+#: src\strings.cpp:105
 msgid "Healing"
 msgstr ""
 
-#: ../src/game/strings.cpp:99
+#: src\strings.cpp:106
 msgid "Hell Blast"
 msgstr ""
 
-#: ../src/game/strings.cpp:100
+#: src\strings.cpp:107
 msgid "Summon Skull Rune"
 msgstr ""
 
-#: ../src/game/strings.cpp:101
+#: src\strings.cpp:108
 msgid "Summon Sword Rune"
 msgstr ""
 
-#: ../src/game/strings.cpp:102
+#: src\strings.cpp:109
 msgid "Summon Number Rune"
 msgstr ""
 
-#: ../src/game/strings.cpp:103
+#: src\strings.cpp:110
 msgid "Random Discard"
 msgstr ""
 
-#: ../src/game/strings.cpp:104
+#: src\strings.cpp:111
 msgid "Scry Runes"
 msgstr ""
 
-#: ../src/game/strings.cpp:105
+#: src\strings.cpp:112
 msgid "Silence"
 msgstr ""
 
-#: ../src/game/strings.cpp:106
+#: src\strings.cpp:113
 msgid "Mana Fog"
 msgstr ""
 
-#: ../src/game/strings.cpp:107
+#: src\strings.cpp:114
 msgid "Mass Dispel Magic"
 msgstr ""
 
-#: ../src/game/strings.cpp:109
+#: src\strings.cpp:116
 msgid "Orachi"
 msgstr ""
 
-#: ../src/game/strings.cpp:110
+#: src\strings.cpp:117
 msgid "Lakkho"
 msgstr ""
 
-#: ../src/game/strings.cpp:111
+#: src\strings.cpp:118
 msgid "Dayla"
 msgstr ""
 
-#: ../src/game/strings.cpp:112
+#: src\strings.cpp:119
 msgid "Ziag"
 msgstr ""
 
-#: ../src/game/strings.cpp:113
+#: src\strings.cpp:120
 msgid "Niana"
 msgstr ""
 
-#: ../src/game/strings.cpp:114
+#: src\strings.cpp:121
 msgid "Kierac"
 msgstr ""
 
-#: ../src/game/strings.cpp:115
+#: src\strings.cpp:122
 msgid "Logun"
 msgstr ""
 
-#: ../src/game/strings.cpp:116
+#: src\strings.cpp:123
 msgid "Nucrus"
 msgstr ""
 
-#: ../src/game/strings.cpp:117
+#: src\strings.cpp:124
 msgid "Javed"
 msgstr ""
 
-#: ../src/game/strings.cpp:119
-msgid "%1's monacle allows him to see all invisible units on the map."
+#: src\strings.cpp:126
+msgid "%1's monocle allows him to see all invisible units on the map."
 msgstr ""
 
-#: ../src/game/strings.cpp:120
+#: src\strings.cpp:127
 msgid ""
-"%1's catasrophic Hellblast can wipe out entire army lines and is unique to "
+"%1's catastrophic Hell Blast can wipe out entire army lines and is unique to "
 "her."
 msgstr ""
 
-#: ../src/game/strings.cpp:121
+#: src\strings.cpp:128
 msgid ""
 "Being a bard, %1 is loved by all people and creatures around him. His songs "
 "inspire bravery which cause his creatures to regain 2 loyalty each round."
 msgstr ""
 
-#: ../src/game/strings.cpp:122
+#: src\strings.cpp:129
 msgid ""
 "%1 possesses uncanny luck in the Rune Game. On each unforced turn draw, he "
 "sees two runes and keeps one; the other returns to the bottom of the wall. "
 "Directed draw spells take precedence."
 msgstr ""
 
-#: ../src/game/strings.cpp:123
+#: src\strings.cpp:130
 msgid ""
 "%1 is a telepath. This allows him to chose, pung, kong, game and cast spells "
 "even when silence has been cast."
 msgstr ""
 
-#: ../src/game/strings.cpp:125
+#: src\strings.cpp:132
 msgid "Lord of the Dead"
 msgstr ""
 
-#: ../src/game/strings.cpp:126
+#: src\strings.cpp:133
 msgid "High Lord Templar"
 msgstr ""
 
-#: ../src/game/strings.cpp:127
+#: src\strings.cpp:134
 msgid "Sea Princess"
 msgstr ""
 
-#: ../src/game/strings.cpp:128
+#: src\strings.cpp:135
 msgid "The Tactician"
 msgstr ""
 
-#: ../src/game/strings.cpp:129
+#: src\strings.cpp:136
 msgid "Enchantress of Fire"
 msgstr ""
 
-#: ../src/game/strings.cpp:130
+#: src\strings.cpp:137
 msgid "The Shapeshifter"
 msgstr ""
 
-#: ../src/game/strings.cpp:131
+#: src\strings.cpp:138
 msgid "Minstrel of Magic"
 msgstr ""
 
-#: ../src/game/strings.cpp:132
+#: src\strings.cpp:139
 msgid "The Trickster"
 msgstr ""
 
-#: ../src/game/strings.cpp:133
+#: src\strings.cpp:140
 msgid "Master of the Skies"
 msgstr ""
 
-#: ../src/game/strings.cpp:135
+#: src\strings.cpp:142
 msgid ""
 "\tThe spawn of all that is evil and callous is the necromancer called %1. "
 "The Isle of Four winds knows no individual as ruthless as he, the one "
@@ -546,7 +570,7 @@ msgid ""
 "stone, for %1 does not let up."
 msgstr ""
 
-#: ../src/game/strings.cpp:139
+#: src\strings.cpp:146
 msgid ""
 "\t%1 of the Kartha stands by the chivalric code of the honorable knight. All "
 "that he accomplishes or attempts is for the good of his nation. His piety "
@@ -581,7 +605,7 @@ msgid ""
 "opponent in the coming Rune War."
 msgstr ""
 
-#: ../src/game/strings.cpp:142
+#: src\strings.cpp:149
 msgid ""
 "\tThere is a point in the development of a powerful wizard when a teacher "
 "realizes his pupil is truly gifted. %1, a disciple of Kierac, never attained "
@@ -600,7 +624,7 @@ msgid ""
 "is a very little known fact."
 msgstr ""
 
-#: ../src/game/strings.cpp:145
+#: src\strings.cpp:152
 msgid ""
 "\tAccording to %1, conditions for his victory are extremely ripe. His clan "
 "has become somewhat negligible in the eyes the other races due to the "
@@ -624,9 +648,8 @@ msgid ""
 "with calculating speed. He has repeated his training methods so often that "
 "it has become instinct for him to adapt to different scenarios effectively. "
 "%1 prides himself on lightning quick thought, and will definitely outclass "
-"his opponents in this area of cerebral battle. He is able to see all "
-"invisible creatures with his controversial monocle. As well, all of his "
-"creatures are invisible.\n"
+"his opponents in this area of cerebral battle. His controversial monocle "
+"reveals every invisible creature on the map.\n"
 "\tThe nature of %1's magic is inherently versatile. Although the focus of "
 "his summoning is based in the realm of skulls, he utilizes all areas of "
 "tactical spell casting, enchanting his creatures with a full complement of "
@@ -643,7 +666,7 @@ msgid ""
 "annoyance."
 msgstr ""
 
-#: ../src/game/strings.cpp:149
+#: src\strings.cpp:156
 msgid ""
 "\t%1 is another foreigner to the Isle of Four Winds, a human. Her intense "
 "aversion to the forces of evil have attracted her to the Isle. She has been "
@@ -687,7 +710,7 @@ msgid ""
 "an enchanter of these two realms, and a potent force in the coming Rune War."
 msgstr ""
 
-#: ../src/game/strings.cpp:152
+#: src\strings.cpp:159
 msgid ""
 "\t\"The absolute master of summoning\" is a title that describes %1. He is "
 "thought to be the oldest wizard on the Isle of Four Winds because of his "
@@ -726,7 +749,7 @@ msgid ""
 "tell."
 msgstr ""
 
-#: ../src/game/strings.cpp:157
+#: src\strings.cpp:164
 msgid ""
 "\tAlthough %1 is a new face on the Isle of Four Winds, his participation in "
 "the coming Rune War is much anticipated. Not resident to the isle, %1 is a "
@@ -757,7 +780,7 @@ msgid ""
 "source of victory. %1 will be one to watch for this reason alone."
 msgstr ""
 
-#: ../src/game/strings.cpp:160
+#: src\strings.cpp:167
 msgid ""
 "\tTouted as the elite Rune War contestant, %1 is a representative of the "
 "Maitha clan. A veteran of past competition, %1 is the purest student of the "
@@ -792,7 +815,7 @@ msgid ""
 "the veterans a lesson and embarrass any new comers to the event."
 msgstr ""
 
-#: ../src/game/strings.cpp:163
+#: src\strings.cpp:170
 msgid ""
 "%1's affiliation to a clan is torn due to his lack of a true birthright. He "
 "is born of native persuasion, however, he shares the blood of two races. "
@@ -832,226 +855,226 @@ msgid ""
 "of the rage that will boil inside him."
 msgstr ""
 
-#: ../src/game/strings.cpp:167
+#: src\strings.cpp:174
 msgid "Tower of 4 Winds"
 msgstr ""
 
-#: ../src/game/strings.cpp:168
+#: src\strings.cpp:175
 msgid "Maithaius"
 msgstr ""
 
-#: ../src/game/strings.cpp:169
+#: src\strings.cpp:176
 msgid "Baliphon"
 msgstr ""
 
-#: ../src/game/strings.cpp:170
+#: src\strings.cpp:177
 msgid "Vermille"
 msgstr ""
 
-#: ../src/game/strings.cpp:171
+#: src\strings.cpp:178
 msgid "Sulanthia"
 msgstr ""
 
-#: ../src/game/strings.cpp:172
+#: src\strings.cpp:179
 msgid "Trojensek"
 msgstr ""
 
-#: ../src/game/strings.cpp:173
+#: src\strings.cpp:180
 msgid "Talon"
 msgstr ""
 
-#: ../src/game/strings.cpp:174
+#: src\strings.cpp:181
 msgid "Siramak"
 msgstr ""
 
-#: ../src/game/strings.cpp:175
+#: src\strings.cpp:182
 msgid "Ronzinol"
 msgstr ""
 
-#: ../src/game/strings.cpp:176
+#: src\strings.cpp:183
 msgid "Corzen"
 msgstr ""
 
-#: ../src/game/strings.cpp:177
+#: src\strings.cpp:184
 msgid "Greenbaw"
 msgstr ""
 
-#: ../src/game/strings.cpp:178
+#: src\strings.cpp:185
 msgid "Zubrus"
 msgstr ""
 
-#: ../src/game/strings.cpp:179
+#: src\strings.cpp:186
 msgid "Corimar"
 msgstr ""
 
-#: ../src/game/strings.cpp:180
+#: src\strings.cpp:187
 msgid "Inkartha"
 msgstr ""
 
-#: ../src/game/strings.cpp:181
+#: src\strings.cpp:188
 msgid "Hexan"
 msgstr ""
 
-#: ../src/game/strings.cpp:182
+#: src\strings.cpp:189
 msgid "Firland"
 msgstr ""
 
-#: ../src/game/strings.cpp:183
+#: src\strings.cpp:190
 msgid "Vesna"
 msgstr ""
 
-#: ../src/game/strings.cpp:184
+#: src\strings.cpp:191
 msgid "Kern"
 msgstr ""
 
-#: ../src/game/strings.cpp:185
+#: src\strings.cpp:192
 msgid "Regency Peaks"
 msgstr ""
 
-#: ../src/game/strings.cpp:186
+#: src\strings.cpp:193
 msgid "Knighthaven"
 msgstr ""
 
-#: ../src/game/strings.cpp:187
+#: src\strings.cpp:194
 msgid "Rikter"
 msgstr ""
 
-#: ../src/game/strings.cpp:188
+#: src\strings.cpp:195
 msgid "Gorok"
 msgstr ""
 
-#: ../src/game/strings.cpp:189
+#: src\strings.cpp:196
 msgid "Suntura"
 msgstr ""
 
-#: ../src/game/strings.cpp:190
+#: src\strings.cpp:197
 msgid "Bertram"
 msgstr ""
 
-#: ../src/game/strings.cpp:191
+#: src\strings.cpp:198
 msgid "Mastenbroek"
 msgstr ""
 
-#: ../src/game/strings.cpp:192
+#: src\strings.cpp:199
 msgid "Reisse"
 msgstr ""
 
-#: ../src/game/strings.cpp:193
+#: src\strings.cpp:200
 msgid "Cirrus"
 msgstr ""
 
-#: ../src/game/strings.cpp:194
+#: src\strings.cpp:201
 msgid "Grosek"
 msgstr ""
 
-#: ../src/game/strings.cpp:195
+#: src\strings.cpp:202
 msgid "Chahrr"
 msgstr ""
 
-#: ../src/game/strings.cpp:196
+#: src\strings.cpp:203
 msgid "Saugrezz"
 msgstr ""
 
-#: ../src/game/strings.cpp:197
+#: src\strings.cpp:204
 msgid "Mahnjeet"
 msgstr ""
 
-#: ../src/game/strings.cpp:198
+#: src\strings.cpp:205
 msgid "Trassk"
 msgstr ""
 
-#: ../src/game/strings.cpp:199
+#: src\strings.cpp:206
 msgid "Bechnarr"
 msgstr ""
 
-#: ../src/game/strings.cpp:200
+#: src\strings.cpp:207
 msgid "Azuria"
 msgstr ""
 
-#: ../src/game/strings.cpp:201
+#: src\strings.cpp:208
 msgid "Pyramus Reach"
 msgstr ""
 
-#: ../src/game/strings.cpp:202
+#: src\strings.cpp:209
 msgid "Serenity Plains"
 msgstr ""
 
-#: ../src/game/strings.cpp:203
+#: src\strings.cpp:210
 msgid "Sunspot"
 msgstr ""
 
-#: ../src/game/strings.cpp:204
+#: src\strings.cpp:211
 msgid "Charmers Expanse"
 msgstr ""
 
-#: ../src/game/strings.cpp:205
+#: src\strings.cpp:212
 msgid "Gambit's Run"
 msgstr ""
 
-#: ../src/game/strings.cpp:206
+#: src\strings.cpp:213
 msgid "Ash Point"
 msgstr ""
 
-#: ../src/game/strings.cpp:207
+#: src\strings.cpp:214
 msgid "Orchid Bay"
 msgstr ""
 
-#: ../src/game/strings.cpp:208
+#: src\strings.cpp:215
 msgid "Mocklebury"
 msgstr ""
 
-#: ../src/game/strings.cpp:209
+#: src\strings.cpp:216
 msgid "Celestial Wood"
 msgstr ""
 
-#: ../src/game/strings.cpp:210
+#: src\strings.cpp:217
 msgid "Tortoise Isle"
 msgstr ""
 
-#: ../src/game/strings.cpp:211
+#: src\strings.cpp:218
 msgid "Siphon's Chute"
 msgstr ""
 
-#: ../src/game/strings.cpp:213
+#: src\strings.cpp:220
 msgid ""
 "Creatures employing the ability to swarm may attack a full party instead of "
 "just the leader, overwhelming them with sheer numbers."
 msgstr ""
 
-#: ../src/game/strings.cpp:214
+#: src\strings.cpp:221
 msgid ""
 "This ability allows creatures of the same type to link together in battle, "
 "instilling a +1 melee and +1 defense to each of these creatures, instead of "
 "just the +1 melee usually granted for supporting creatures."
 msgstr ""
 
-#: ../src/game/strings.cpp:215
+#: src\strings.cpp:222
 msgid ""
 "Invisible creatures may move across the isle free from detection, only to "
 "appear in combat. Surprise!"
 msgstr ""
 
-#: ../src/game/strings.cpp:216
+#: src\strings.cpp:223
 msgid ""
 "Regenerating creatures are restored to maximum loyalty at the beginning of "
 "the map phase."
 msgstr ""
 
-#: ../src/game/strings.cpp:217
+#: src\strings.cpp:224
 msgid ""
 "The presence of the possessor of this ability sends even the bravest of "
 "souls into panic. This is reflected by the loss of 2 loyalty points to all "
 "that combat it."
 msgstr ""
 
-#: ../src/game/strings.cpp:218
+#: src\strings.cpp:225
 #, c-format
 msgid ""
 "Those possessing Major Magic Resistence receive a %%{percent} chance to "
 "ignore the effects of spells directed at them by any wizard."
 msgstr ""
 
-#: ../src/game/strings.cpp:219
+#: src\strings.cpp:226
 msgid ""
 "This fearsome ability gives the possessor a %25 chance to strike a "
 "devastating blow in combat. A succesful mighty blow boosts melee strength by "
@@ -1059,157 +1082,157 @@ msgid ""
 "opponents defense rating."
 msgstr ""
 
-#: ../src/game/strings.cpp:220
+#: src\strings.cpp:227
 msgid ""
 "This ability allows the unit to teleport into any friendly territory "
 "containing a summoning circle by calling on the portals of travel."
 msgstr ""
 
-#: ../src/game/strings.cpp:221
+#: src\strings.cpp:228
 msgid ""
 "Those who possess this ability and lead their party into combat forego "
 "ranged combat, and are granted first strike in melee combat. This only "
 "applies to attacking parties."
 msgstr ""
 
-#: ../src/game/strings.cpp:222
+#: src\strings.cpp:229
 msgid ""
 "Those blessed with this ability can see invisible units in adjacent "
 "territories."
 msgstr ""
 
-#: ../src/game/strings.cpp:223
+#: src\strings.cpp:230
 msgid ""
 "Creatures with this ability can avoid the effects of missile fire when in "
 "combat."
 msgstr ""
 
-#: ../src/game/strings.cpp:224
+#: src\strings.cpp:231
 msgid "Shannahan heals 2 loyalty before movement phase."
 msgstr ""
 
-#: ../src/game/strings.cpp:225
+#: src\strings.cpp:232
 msgid ""
 "The fire shield reduces the loyalty of any creature that strikes its bearer "
 "in melee combat by one."
 msgstr ""
 
-#: ../src/game/strings.cpp:227
+#: src\strings.cpp:234
 msgid ""
 "\tFoot soldiers of the skull summoning chain, the skeleton horde provides "
 "support. Their sheer numbers allow them to swarm, attacking every member of "
 "an opposing army."
 msgstr ""
 
-#: ../src/game/strings.cpp:228
+#: src\strings.cpp:235
 msgid ""
 "\tShadows are a useful staple in the skull realm. Their ability to merge "
 "amongst themselves and maintain invisibility greatly enhances their "
 "attacking prowess."
 msgstr ""
 
-#: ../src/game/strings.cpp:229
+#: src\strings.cpp:236
 msgid ""
 "\tA valued member of the skull summoning realm, the Durlock provides an "
 "initial foundation for a strong force with its missile fire and robust "
 "attack."
 msgstr ""
 
-#: ../src/game/strings.cpp:230
+#: src\strings.cpp:237
 msgid ""
 "\tWraiths provide the most bang for the buck in the skull regime. "
 "Regeneration supplies durability in combat allowing the wraith to clean up "
 "any low to mid-range enemies and territories."
 msgstr ""
 
-#: ../src/game/strings.cpp:231
+#: src\strings.cpp:238
 msgid ""
 "\tThe Knight Templar is a solid low range summoning. He has the ability to "
 "combat any low to mid-range opponent with his impressive mighty blow."
 msgstr ""
 
-#: ../src/game/strings.cpp:232
+#: src\strings.cpp:239
 msgid ""
 "\tExtremely resilient, the minotaur is an excellent choice for summoners. It "
 "possesses solid battle attributes at a reasonable cost."
 msgstr ""
 
-#: ../src/game/strings.cpp:233
+#: src\strings.cpp:240
 msgid ""
 "\tThe adventure party is a wise magical investment. It combines a formidable "
 "ground and air assault with a stalwart defense. Its ability to see the "
 "invisible can foil enemy plans."
 msgstr ""
 
-#: ../src/game/strings.cpp:234
+#: src\strings.cpp:241
 msgid ""
 "\tThis high range creature is strong in all facets of combat like most sword "
 "creatures. Its initial ranged strike is followed by a potent melee attack."
 msgstr ""
 
-#: ../src/game/strings.cpp:235
+#: src\strings.cpp:242
 msgid ""
 "\tThe sand wraith is an exceptional strategic unit because of its "
 "invisibility. Pair off a sand wraith or two with a mid range creature and "
 "watch the overconfident big ones fall."
 msgstr ""
 
-#: ../src/game/strings.cpp:236
+#: src\strings.cpp:243
 msgid ""
 "\tWith its exceptional resilience and regeneration, the stone golem makes "
 "for a solid low range creature ideal for support."
 msgstr ""
 
-#: ../src/game/strings.cpp:237
+#: src\strings.cpp:244
 msgid ""
 "\tThe thunder bird introduces a ranged attack to the number realm. Couple "
 "this with hearty melee and loyalty values and you have a powerful mid-range "
 "unit."
 msgstr ""
 
-#: ../src/game/strings.cpp:238
+#: src\strings.cpp:245
 msgid ""
 "\tThis fearsome serpent like beast has no visible weaknesses. Its lack of a "
 "ranged attack is offset by its ability to ignore missiles while its other "
 "abilities are very impressive."
 msgstr ""
 
-#: ../src/game/strings.cpp:239
+#: src\strings.cpp:246
 msgid ""
 "\tA wizard must draw upon the power of the winds to summon a tornado. "
 "Astronge mid-ranged being, the tornado offers immunity to missile attacks "
 "and consistent battle attributes."
 msgstr ""
 
-#: ../src/game/strings.cpp:240
+#: src\strings.cpp:247
 msgid ""
 "\tThe griffon is a credible strategic unit. Its ability to merge and see the "
 "invisible along with its capable combat properties makes it a useful low "
 "range creature. An excellent scout with its high movement."
 msgstr ""
 
-#: ../src/game/strings.cpp:241
+#: src\strings.cpp:248
 msgid ""
 "\tChameleons are stealthy archers of the lizard persuasion. Their hearty "
 "nature and loyalty to Ziag allow them to recuperate quickly. This is the "
 "only invisible unit with ranged attack capability."
 msgstr ""
 
-#: ../src/game/strings.cpp:242
+#: src\strings.cpp:249
 msgid ""
 "\tThe invisible undead knight is a formidable adversary to any mid-range "
 "unit. With the addition of supplemental enchantments, Kilor becomes a potent "
 "foe to any opponent."
 msgstr ""
 
-#: ../src/game/strings.cpp:243
+#: src\strings.cpp:250
 msgid ""
 "\tThe Demon Lord known as Maz'Ra may well be the most fearsome creature "
 "available to summoners. It can single handedly dispatch many capable armies "
 "with its overwhelming attack strength and intimidating Hellblast ability."
 msgstr ""
 
-#: ../src/game/strings.cpp:244
+#: src\strings.cpp:251
 msgid ""
 "\tCarol is a versatile addition to any summoner that can call her to battle. "
 "Her pendant allows her to gate to friendly summoning circles and gives her "
@@ -1217,7 +1240,7 @@ msgid ""
 "displacement ability of her pendant."
 msgstr ""
 
-#: ../src/game/strings.cpp:245
+#: src\strings.cpp:252
 msgid ""
 "\tKing Drago is the jewel of the realm of swords. His consistencies in the "
 "art of war are bolstered by his resistance to magic. Add his mastery of the "
@@ -1225,28 +1248,28 @@ msgid ""
 "he is difficult to heal."
 msgstr ""
 
-#: ../src/game/strings.cpp:246
+#: src\strings.cpp:253
 msgid ""
 "\tA hauntingly gorgeous individual, Learra's hypnotic song freezes opponents "
 "in combat when she leads an attacking party, providing her with the first "
 "strike. A good melee property makes this strike quite nasty."
 msgstr ""
 
-#: ../src/game/strings.cpp:247
+#: src\strings.cpp:254
 msgid ""
 "\tShanahan the Cloud Giant is the pinnacle of the number realm. There are "
 "many options available to the commander of this big boy. Overwhelm most "
 "anything by itself, or attach it to a party and wreak havoc across the Isle."
 msgstr ""
 
-#: ../src/game/strings.cpp:248
+#: src\strings.cpp:255
 msgid ""
 "\tThe White Dragon is extremely resilient and loyal by nature. Factor in its "
 "ability to allow the summoner to draw a character rune and its consistent "
 "battle characteristics and you have a top notch unit at your command."
 msgstr ""
 
-#: ../src/game/strings.cpp:249
+#: src\strings.cpp:256
 msgid ""
 "\tThe Green Dragon is a very hostile and aggressive beast. Its lack of a "
 "missile strike is supplemented by a fearsome attack strength and a high "
@@ -1254,7 +1277,7 @@ msgid ""
 "a sword rune."
 msgstr ""
 
-#: ../src/game/strings.cpp:250
+#: src\strings.cpp:257
 msgid ""
 "\tThe Red Dragon has a particular affinity to the skull realm, allowing its "
 "summoner the ability to draw a rune of skulls. It has an intense ranged "
@@ -1262,647 +1285,1211 @@ msgid ""
 "your bidding."
 msgstr ""
 
-#: ../src/game/strings.cpp:251
+#: src\strings.cpp:258
 msgid ""
 "\tThe Fire Elemental is a particularly volatile creature. A potent attack "
 "force that employs a solid melee and ranged attack, its ability to grant the "
 "random discard spell is its real burn."
 msgstr ""
 
-#: ../src/game/strings.cpp:252
+#: src\strings.cpp:259
 msgid ""
 "\tBorn from the ground beneath, the Earth Elemental is another consistent "
 "battle force. The one who controls it receives the ability to peek at his or "
 "her opponents hands with the scry runes spell."
 msgstr ""
 
-#: ../src/game/strings.cpp:253
+#: src\strings.cpp:260
 msgid ""
 "\tThe Air Elemental proves to be the greatest combatant af all the elements. "
 "Summoners calling upon this element gain the favor of the silence spell, an "
 "annoyance to all wizards who are stricken with it."
 msgstr ""
 
-#: ../src/game/strings.cpp:254
+#: src\strings.cpp:261
 msgid ""
 "\tThe Water Elemental is a powerful force on the Isle, and in the Rune Game. "
 "Fog is the strategic annoyance granted to the commander of this element."
 msgstr ""
 
-#: ../src/game/strings.cpp:255
+#: src\strings.cpp:262
 msgid ""
 "\tThis creature leads its category on the battlefield. It combines strength, "
 "resilience, and broad movement. The Juggernaut is indeed a powerful summons."
 msgstr ""
 
-#: ../src/game/strings.cpp:257
+#: src\strings.cpp:264
 msgid ""
 "\tA cloud of billowing smoke surrounds one enemy creature limiting its "
 "visibility. This will reduce or negate the target's ability to make a ranged "
 "attack."
 msgstr ""
 
-#: ../src/game/strings.cpp:258
+#: src\strings.cpp:265
 msgid ""
 "\tThe caster draws upon the power of the demons to bolster the loyalty of "
 "one of his minions."
 msgstr ""
 
-#: ../src/game/strings.cpp:259
+#: src\strings.cpp:266
 msgid ""
 "\tThe summoner directs the face of fear at an enemy army group, sending them "
 "into panic and reducing their loyalty."
 msgstr ""
 
-#: ../src/game/strings.cpp:260
+#: src\strings.cpp:267
 msgid ""
 "\tAnother mind altering spell, paralyzing fear ceases the movement of one "
 "enemy creature for one turn as it becomes wracked with terror."
 msgstr ""
 
-#: ../src/game/strings.cpp:261
+#: src\strings.cpp:268
 msgid ""
 "\tWith this spell the summoner is able to harness the power of the skull "
 "realm to drain the will of one enemy creature, reducing its combat "
 "characteristics."
 msgstr ""
 
-#: ../src/game/strings.cpp:262
+#: src\strings.cpp:269
 msgid ""
 "\tAn intense bloodlust flows through the veins of the recipient of this "
 "spell, making it a more fierce attacker."
 msgstr ""
 
-#: ../src/game/strings.cpp:263
+#: src\strings.cpp:270
 msgid ""
 "\tThis spell sharpens the vision of one friendly creature with ranged combat "
 "ability, enabling it to pinpoint its ranged attack."
 msgstr ""
 
-#: ../src/game/strings.cpp:264
+#: src\strings.cpp:271
 msgid ""
 "\tThe caster of this spell is able to conjure a shield of energy around a "
 "single friendly creature, reducing the effectiveness of missile and "
 "territory fire against it."
 msgstr ""
 
-#: ../src/game/strings.cpp:265
+#: src\strings.cpp:272
 msgid ""
 "\tSwirling winds surround the target of this spell kicking up dust and other "
 "debris. The target becomes distracted and unable to fully defend itself."
 msgstr ""
 
-#: ../src/game/strings.cpp:266
+#: src\strings.cpp:273
 msgid ""
 "\tThe target of this spell becomes inspired by visions of mighty warriors "
 "cutting down their enemies. This greatly enhances the combat ability of the "
 "enchanted."
 msgstr ""
 
-#: ../src/game/strings.cpp:267
+#: src\strings.cpp:274
 msgid ""
 "\tThe waters of a great mystical fountain are sprinkled upon the recipient "
 "of this spell giving it a random bonus. The target receives +Melee, +Loyalty "
 "or +Ranged."
 msgstr ""
 
-#: ../src/game/strings.cpp:268
+#: src\strings.cpp:275
 msgid ""
 "\tWhen a friendly creature is enchanted with this spell it becomes extremely "
 "eager for battle, sacrificing loyalty for the lust of battle."
 msgstr ""
 
-#: ../src/game/strings.cpp:269
+#: src\strings.cpp:276
 msgid ""
 "\tExtremely bright lights appear and dance around the target of this spell, "
 "distracting it from battle and reducing its ability to defend itself."
 msgstr ""
 
-#: ../src/game/strings.cpp:270
+#: src\strings.cpp:277
 msgid ""
 "\tThe magic of this enchantment consumes its target, making it feel more "
 "confident in its abilities. As a result, the creature touched by this gains "
 "in defense."
 msgstr ""
 
-#: ../src/game/strings.cpp:271
+#: src\strings.cpp:278
 msgid ""
 "\tAn excellent utility spell, teleport allows the caster to call upon the "
 "gates of travel to shift any one of his or her minions to any friendly "
 "territory."
 msgstr ""
 
-#: ../src/game/strings.cpp:272
+#: src\strings.cpp:279
 msgid ""
 "\tRemoves all enchantments from the target creature. Does not affect any "
 "special abilities."
 msgstr ""
 
-#: ../src/game/strings.cpp:273
+#: src\strings.cpp:280
 msgid ""
 "\tThe caster of this spell summons the power of the skies to strike an enemy "
 "creature with a lightning bolt. Shocking!"
 msgstr ""
 
-#: ../src/game/strings.cpp:274
+#: src\strings.cpp:281
 msgid ""
 "\tAn important supplementary spell, healing restores two loyalty to a "
 "friendly unit. Loyalty will be added up to the target's maximum."
 msgstr ""
 
-#: ../src/game/strings.cpp:275
+#: src\strings.cpp:282
 msgid ""
 "\tThe most destructive spell in the lands, hellblast surrounds a targeted "
 "enemy army with a searing hot firestorm causing some major damage."
 msgstr ""
 
-#: ../src/game/strings.cpp:277 ../src/screen/mahjongsummarypart.cpp:79
-msgid "Land Claims"
-msgstr ""
-
-#: ../src/game/strings.cpp:278 ../src/screen/mahjongsummarypart.cpp:82
-msgid "Spell Points"
-msgstr ""
-
-#: ../src/game/strings.cpp:279 ../src/screen/mahjongsummarypart.cpp:73
-msgid "Win Rune"
-msgstr ""
-
-#: ../src/game/strings.cpp:280 ../src/screen/mahjongsummarypart.cpp:76
-msgid "Sets:"
-msgstr ""
-
-#: ../src/game/strings.cpp:281 ../src/screen/mahjongsummarypart.cpp:182
-msgid "Points:"
-msgstr ""
-
-#: ../src/game/strings.cpp:282 ../src/screen/mahjongsummarypart.cpp:237
-msgid "Doubles:"
-msgstr ""
-
-#: ../src/game/strings.cpp:284
-msgid "Combat"
-msgstr ""
-
-#: ../src/game/strings.cpp:285
-msgid "Summary"
-msgstr ""
-
-#: ../src/game/strings.cpp:286 ../src/game/dialogs.cpp:1144
-#: ../src/screen/battlesummarypart.cpp:93
-msgid "Winner is"
-msgstr ""
-
-#: ../src/game/strings.cpp:288 ../src/screen/gamesummarypart.cpp:33
-msgid "Category"
-msgstr ""
-
-#: ../src/game/strings.cpp:289 ../src/game/strings.cpp:291
-#: ../src/screen/gamesummarypart.cpp:36 ../src/screen/gamesummarypart.cpp:39
-#: ../src/screen/gamesummarypart.cpp:42 ../src/screen/gamesummarypart.cpp:45
-msgid "Score"
-msgstr ""
-
-#: ../src/game/strings.cpp:290 ../src/screen/gamesummarypart.cpp:48
-#: ../src/screen/gamesummarypart.cpp:51 ../src/screen/gamesummarypart.cpp:54
-#: ../src/screen/gamesummarypart.cpp:57
-msgid "Rank"
-msgstr ""
-
-#: ../src/game/strings.cpp:292 ../src/screen/gamesummarypart.cpp:60
-msgid "Territory Score"
-msgstr ""
-
-#: ../src/game/strings.cpp:293 ../src/screen/gamesummarypart.cpp:63
-msgid "Summon Circle Score"
-msgstr ""
-
-#: ../src/game/strings.cpp:294 ../src/screen/gamesummarypart.cpp:66
-msgid "Unit Score"
-msgstr ""
-
-#: ../src/game/strings.cpp:295 ../src/screen/gamesummarypart.cpp:69
-msgid "Spell Point Score"
-msgstr ""
-
-#: ../src/game/strings.cpp:296 ../src/screen/gamesummarypart.cpp:72
-msgid "Land Claim Score"
-msgstr ""
-
-#: ../src/game/strings.cpp:297 ../src/screen/gamesummarypart.cpp:75
-msgid "Total Score"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:154
-msgid "Speciality"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:198
-msgid "Unique"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:212
-msgid "Attack:"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:218
-msgid "Ranger:"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:224
-msgid "Defense:"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:230
-msgid "Loyalty:"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:236
-msgid "Move Point:"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:269
-msgid "Curse"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:274
-msgid "Effect: "
-msgstr ""
-
-#: ../src/game/dialogs.cpp:278
-msgid "Target: "
-msgstr ""
-
-#: ../src/game/dialogs.cpp:292
-msgid "Ability"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:407
-msgid " (unique)"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:419
-msgid " (curse)"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:464
-msgid "%{name}'s Spells"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:465
-msgid "Spell Points: %{points}"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:803
-msgid "You Are %1"
-msgstr ""
-
-#: ../src/game/dialogs.cpp:804
-msgid "Order Of Play"
-msgstr ""
-
-#: ../src/game/runewars.cpp:44
-msgid "Continue with the last saved game?"
-msgstr ""
-
-#: ../src/game/runewars.cpp:47 ../src/screen/showplayers.cpp:72
-msgid "Info"
-msgstr ""
-
-#: ../src/game/runewars.cpp:47 ../src/screen/showplayers.cpp:72
-msgid "Game data rendering..."
-msgstr ""
-
-#: ../src/game/runewars.cpp:217 ../src/screen/adventurepart.cpp:860
-#: ../src/screen/adventurepart.cpp:881
-msgid "Error"
-msgstr ""
-
-#: ../src/game/runewars.cpp:217
-msgid "load theme error, see log for details"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:39
-msgid "-%1 Loyalty"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:40
-msgid "+%1 Loyalty"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:42
-msgid "+%1 Attack"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:43
-msgid "-%1 Attack"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:45
-msgid "+%1 Missile"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:46
-msgid "-%1 Missile"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:48
-msgid "+%1 Defense"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:49
-msgid "-%1 Defense"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:51
-msgid "+%1 Attack, +%2 Max Loyalty"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:52
-msgid "+%1 Attack or +%2 Missile or +%3 Max Loyalty"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:53
-msgid "+%1 Attack, +%2 Defense, -%3 Max Loyalty"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:54
-msgid "+%1 Loyalty, up to max"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:55
-msgid "-%1 Defense, -%2 Attack"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:56
-msgid "Missile attacks do %1 less damage"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:58
-msgid "Freeze creature"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:59
-msgid "Move one unit to any friendly territory"
-msgstr ""
-
-#: ../src/game/gamedata.cpp:61
-msgid "Remove enchantments"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3567
-msgid "One Chance"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3568
-msgid "Self Drawn"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3569
-msgid "All Concealed, with Discard"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3581
-msgid "Lucky Sets"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3582
-msgid "One Suit plus Honors"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3583
-msgid "No Points"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3584
-msgid "Four Triplets"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3585
-msgid "Terminals and Honors"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3586
-msgid "Terminal, Honor in each set"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3587
-msgid "All Simples"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3588
-msgid "Three Little Dragons"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3589
-msgid "One Suit Only"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3590
-msgid "Three Consecutive Sequences"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3591
-msgid "All Concealed, Self Drawn"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3592
-msgid "Last Tile"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3593
-msgid "Three Concealed Triplets"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3594
-msgid "Robbed a Kong"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3595
-msgid "Supplemental Tile"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3596
-msgid "Three Big Dragons"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3597
-msgid "Big Four Winds"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3598
-msgid "All Terminals"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3599
-msgid "All Honors"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3600
-msgid "Nine Gates"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3601
-msgid "Heavenly Hand"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3602
-msgid "Four Concealed Triplets"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3603
-msgid "Thirteen Orphans"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3604
-msgid "Little Four Winds"
-msgstr ""
-
-#: ../src/game/gameobjects.cpp:3605
-msgid "Earthly Hand"
-msgstr ""
-
-#: ../src/screen/mahjongpart.cpp:800
-msgid "Now it is not your turn. Sorry..."
-msgstr ""
-
-#: ../src/screen/mahjongpart.cpp:903
-msgid "Exit game?"
-msgstr ""
-
-#: ../src/screen/jsongui.cpp:72
-msgid "Creature: %1, stats [%2, %3, %4, %5]"
-msgstr ""
-
-#: ../src/screen/jsongui.cpp:87
-msgid "Spell: %1, target: %2, %3"
-msgstr ""
-
-#: ../src/screen/jsongui.cpp:137
-msgid "Clan: %1"
-msgstr ""
-
-#: ../src/screen/jsongui.cpp:143
-msgid "Avatar: %1"
-msgstr ""
-
-#: ../src/screen/adventurepart.cpp:745
-msgid "View Map"
-msgstr ""
-
-#: ../src/screen/adventurepart.cpp:827
-msgid "Summoning"
-msgstr ""
-
-#: ../src/screen/adventurepart.cpp:859
-msgid "Apply spell: %1, on land: %2?"
-msgstr ""
-
-#: ../src/screen/adventurepart.cpp:880
-msgid "Can'not apply spell: %1, incorrect target: %2"
-msgstr ""
-
-#: ../src/screen/adventurepart.cpp:1012
-msgid "Movement Phase"
-msgstr ""
-
-msgid "Select destination"
-msgstr ""
-
-msgid "Order"
-msgstr ""
-
-msgid "Selected creatures cannot move to this territory."
-msgstr ""
-
-#: ../src/screen/battlesummarypart.cpp:92
-msgid "Combat Summary"
-msgstr ""
-
-#: ../src/screen/battlesummarypart.cpp:102
-msgid "%1 in %2"
-msgstr ""
-
-#: ../src/screen/selectperson.cpp:170
-msgid "Random"
-msgstr ""
-
-#: ../src/screen/selectperson.cpp:205
-msgid "Supplemential Spells:"
-msgstr ""
-
-#: ../src/screen/selectperson.cpp:234
-msgid "Special Abilities:"
-msgstr ""
-
-#: ../src/screen/mahjongsummarypart.cpp:85
-msgid "%1 Round: %2 Deal"
-msgstr ""
-
-#: ../src/screen/mahjongsummarypart.cpp:93
-msgid "Game Drawn"
-msgstr ""
-
-#: ../src/screen/mahjongsummarypart.cpp:98
-msgid "Drawn"
-msgstr ""
-
-#: ../src/screen/mahjongsummarypart.cpp:100
-msgid "%1 (%2) wins from %3"
-msgstr ""
-
-#: ../src/screen/mahjongsummarypart.cpp:219
-msgid "Base Score:"
-msgstr ""
-
-#: ../src/screen/mahjongsummarypart.cpp:233
-msgid "Total Points:"
-msgstr ""
-
-#: ../src/screen/mahjongsummarypart.cpp:260
-msgid "%1 wins %2 x%3 from %4 = %5"
-msgstr ""
-
-#: ../src/screen/mahjongsummarypart.cpp:269
-msgid "Multiplier:"
-msgstr ""
-
-#: ../src/screen/mahjongsummarypart.cpp:275
-msgid "Total Score:"
-msgstr ""
-
-#: ../src/selectperson.cpp
-msgid "AI Level"
-msgstr ""
-
-#: ../src/selectperson.cpp
-msgid "Easy"
-msgstr ""
-
-#: ../src/selectperson.cpp
-msgid "Normal"
-msgstr ""
-
-#: ../src/selectperson.cpp
-msgid "Hard"
-msgstr ""
-
-#: ../src/adventurepart.cpp
-msgid "Battle Forecast"
-msgstr ""
-
-#: ../src/adventurepart.cpp
-msgid "Capture: %1%"
-msgstr ""
-
-#: ../src/adventurepart.cpp
-msgid "Attackers remain: %1%"
-msgstr ""
-
-#: ../src/mahjongpart.cpp
+#: src\strings.cpp:284 src\mahjongpart.cpp:173
 msgid "Luck: choose a rune"
 msgstr ""
 
-#: ../src/mahjongpart.cpp
+#: src\strings.cpp:285 src\mahjongpart.cpp:185
 msgid "The other rune returns to the wall."
+msgstr ""
+
+#: src\strings.cpp:286 src\mahjongsummarypart.cpp:86
+msgid "Land Claims"
+msgstr ""
+
+#: src\strings.cpp:287 src\mahjongsummarypart.cpp:89
+msgid "Spell Points"
+msgstr ""
+
+#: src\strings.cpp:288 src\mahjongsummarypart.cpp:80
+msgid "Win Rune"
+msgstr ""
+
+#: src\strings.cpp:289 src\mahjongsummarypart.cpp:83
+msgid "Sets:"
+msgstr ""
+
+#: src\strings.cpp:290 src\mahjongsummarypart.cpp:182
+msgid "Points:"
+msgstr ""
+
+#: src\strings.cpp:291 src\mahjongsummarypart.cpp:237
+msgid "Doubles:"
+msgstr ""
+
+#: src\strings.cpp:293
+msgid "Combat"
+msgstr ""
+
+#: src\strings.cpp:294
+msgid "Summary"
+msgstr ""
+
+#: src\strings.cpp:295 src\dialogs.cpp:1527 src\battlesummarypart.cpp:93
+msgid "Winner is"
+msgstr ""
+
+#: src\strings.cpp:297 src\gamesummarypart.cpp:34
+msgid "Category"
+msgstr ""
+
+#: src\strings.cpp:298 src\strings.cpp:300 src\gamesummarypart.cpp:37
+#: src\gamesummarypart.cpp:40 src\gamesummarypart.cpp:43
+#: src\gamesummarypart.cpp:46
+msgid "Score"
+msgstr ""
+
+#: src\strings.cpp:299 src\gamesummarypart.cpp:49 src\gamesummarypart.cpp:52
+#: src\gamesummarypart.cpp:55 src\gamesummarypart.cpp:58
+msgid "Rank"
+msgstr ""
+
+#: src\strings.cpp:301 src\gamesummarypart.cpp:61
+msgid "Territory Score"
+msgstr ""
+
+#: src\strings.cpp:302 src\gamesummarypart.cpp:64
+msgid "Summon Circle Score"
+msgstr ""
+
+#: src\strings.cpp:303 src\gamesummarypart.cpp:67
+msgid "Unit Score"
+msgstr ""
+
+#: src\strings.cpp:304 src\gamesummarypart.cpp:70
+msgid "Spell Point Score"
+msgstr ""
+
+#: src\strings.cpp:305 src\gamesummarypart.cpp:73
+msgid "Land Claim Score"
+msgstr ""
+
+#: src\strings.cpp:306 src\gamesummarypart.cpp:76
+msgid "Total Score"
+msgstr ""
+
+#: src\showplayers.cpp:72 src\runewars.cpp:84
+msgid "Info"
+msgstr ""
+
+#: src\showplayers.cpp:72 src\runewars.cpp:84
+msgid "Game data rendering..."
+msgstr ""
+
+#: src\settingsmenu.cpp:66
+msgid "Language"
+msgstr ""
+
+#: src\settingsmenu.cpp:67
+msgid "Game Speed"
+msgstr ""
+
+#: src\settingsmenu.cpp:68
+msgid "Music"
+msgstr ""
+
+#: src\settingsmenu.cpp:69
+msgid "Sound Effects"
+msgstr ""
+
+#: src\settingsmenu.cpp:70
+msgid "Guardian Voices"
+msgstr ""
+
+#: src\settingsmenu.cpp:71
+msgid "Display Mode"
+msgstr ""
+
+#: src\settingsmenu.cpp:72
+msgid "Apply"
+msgstr ""
+
+#: src\settingsmenu.cpp:73 src\loadrecovery.cpp:271
+msgid "Back"
+msgstr ""
+
+#: src\settingsmenu.cpp:82
+msgid "Russian"
+msgstr ""
+
+#: src\settingsmenu.cpp:82
+msgid "English"
+msgstr ""
+
+#: src\settingsmenu.cpp:84
+msgid "Classic"
+msgstr ""
+
+#: src\settingsmenu.cpp:85
+msgid "Fast"
+msgstr ""
+
+#: src\settingsmenu.cpp:86 src\selectperson.cpp:197
+msgid "Normal"
+msgstr ""
+
+#: src\settingsmenu.cpp:87 src\settingsmenu.cpp:88 src\settingsmenu.cpp:89
+msgid "ON"
+msgstr ""
+
+#: src\settingsmenu.cpp:87 src\settingsmenu.cpp:88 src\settingsmenu.cpp:89
+msgid "OFF"
+msgstr ""
+
+#: src\settingsmenu.cpp:90
+msgid "Fullscreen"
+msgstr ""
+
+#: src\settingsmenu.cpp:90
+msgid "Windowed"
+msgstr ""
+
+#: src\settingsmenu.cpp:118 src\mainmenu.cpp:80
+msgid "THE RUNE WAR"
+msgstr ""
+
+#: src\settingsmenu.cpp:119 src\mainmenu.cpp:81
+msgid "FOUR"
+msgstr ""
+
+#: src\settingsmenu.cpp:120 src\mainmenu.cpp:82
+msgid "WINDS"
+msgstr ""
+
+#: src\settingsmenu.cpp:121 src\mainmenu.cpp:83
+msgid "REBORN"
+msgstr ""
+
+#: src\settingsmenu.cpp:123 src\mainmenu.cpp:85
+msgid "OLD RUNES,"
+msgstr ""
+
+#: src\settingsmenu.cpp:124 src\mainmenu.cpp:86
+msgid "A NEW WAR"
+msgstr ""
+
+#: src\settingsmenu.cpp:126 src\mainmenu.cpp:88
+msgid "COMMUNITY RESTORATION"
+msgstr ""
+
+#: src\settingsmenu.cpp:128 src\mainmenu.cpp:90
+msgid "OF THE ORIGINAL GAME"
+msgstr ""
+
+#: src\settingsmenu.cpp:131
+msgid "SETTINGS"
+msgstr ""
+
+#: src\settingsmenu.cpp:167
+msgid "Changes apply immediately"
+msgstr ""
+
+#: src\settingsmenu.cpp:202 src\settingsmenu.cpp:218 src\mainmenu.cpp:42
+msgid "Settings"
+msgstr ""
+
+#: src\settingsmenu.cpp:202
+msgid "Could not switch display mode."
+msgstr ""
+
+#: src\settingsmenu.cpp:219
+msgid "Could not save settings: %1"
+msgstr ""
+
+#: src\selectperson.cpp:198
+msgid "Easy"
+msgstr ""
+
+#: src\selectperson.cpp:199
+msgid "Hard"
+msgstr ""
+
+#: src\selectperson.cpp:213
+msgid "Random"
+msgstr ""
+
+#: src\selectperson.cpp:248
+msgid "Supplemental Spells:"
+msgstr ""
+
+#: src\selectperson.cpp:277
+msgid "Special Abilities:"
+msgstr ""
+
+#: src\runewars.cpp:80
+msgid "Recovery Warning"
+msgstr ""
+
+#: src\runewars.cpp:81
+msgid ""
+"The checkpoint was loaded, but the current autosave could not be replaced: %1"
+msgstr ""
+
+#: src\runewars.cpp:91 src\mainmenu.cpp:39
+msgid "Load Game"
+msgstr ""
+
+#: src\runewars.cpp:91
+msgid "The saved game could not be loaded. The file was left untouched."
+msgstr ""
+
+#: src\runewars.cpp:318 src\adventurepart.cpp:964 src\adventurepart.cpp:988
+#: src\adventurepart.cpp:1014 src\adventurepart.cpp:1415
+msgid "Error"
+msgstr ""
+
+#: src\runewars.cpp:318
+msgid "load theme error, see log for details"
+msgstr ""
+
+#: src\mainmenu.cpp:34
+msgid "Continue"
+msgstr ""
+
+#: src\mainmenu.cpp:35
+msgid "INVALID SAVE"
+msgstr ""
+
+#: src\mainmenu.cpp:35
+msgid "NO SAVED GAME"
+msgstr ""
+
+#: src\mainmenu.cpp:37 src\mainmenu.cpp:156
+msgid "New Game"
+msgstr ""
+
+#: src\mainmenu.cpp:39
+msgid "NO SAVES"
+msgstr ""
+
+#: src\mainmenu.cpp:41
+msgid "Encyclopedia"
+msgstr ""
+
+#: src\mainmenu.cpp:41 src\mainmenu.cpp:43
+msgid "PLANNED"
+msgstr ""
+
+#: src\mainmenu.cpp:43
+msgid "Multiplayer"
+msgstr ""
+
+#: src\mainmenu.cpp:44
+msgid "Quit"
+msgstr ""
+
+#: src\mainmenu.cpp:93
+msgid "MAIN MENU"
+msgstr ""
+
+#: src\mainmenu.cpp:132
+msgid "RELEASE"
+msgstr ""
+
+#: src\mainmenu.cpp:137
+msgid "DEV BUILD"
+msgstr ""
+
+#: src\mainmenu.cpp:157
+msgid ""
+"Start a new game? The current autosave will be replaced when new progress is "
+"saved."
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:92
+msgid "%1 Round: %2 Deal"
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:100
+msgid "Game Drawn"
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:106
+msgid "Drawn"
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:108
+msgid "%1 (%2) wins from %3"
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:219
+msgid "Base Score:"
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:233
+msgid "Total Points:"
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:260
+msgid "%1 wins %2 x%3 from %4 = %5"
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:269
+msgid "Multiplier:"
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:275
+msgid "Total Score:"
+msgstr ""
+
+#: src\mahjongpart.cpp:950
+msgid "Now it is not your turn. Sorry..."
+msgstr ""
+
+#: src\mahjongpart.cpp:1070 src\dialogs.cpp:772 src\dialogs.cpp:1047
+#: src\dialogs.cpp:1052
+msgid "Save Game"
+msgstr ""
+
+#: src\mahjongpart.cpp:1070
+msgid "Unable to update the autosave."
+msgstr ""
+
+#: src\mahjongpart.cpp:1734
+msgid "Game Begins With %1"
+msgstr ""
+
+#: src\mahjongpart.cpp:1809
+msgid "%1 Call Game"
+msgstr ""
+
+#: src\mahjongpart.cpp:1856
+msgid "%1 Kongs The Last Discard"
+msgstr ""
+
+#: src\mahjongpart.cpp:1882
+msgid "%1 Kongs The Last Drawn Rule"
+msgstr ""
+
+#: src\mahjongpart.cpp:1903
+msgid "%1 Pungs The Last Discard"
+msgstr ""
+
+#: src\mahjongpart.cpp:1929
+msgid "%1 Chows The Last Discard"
+msgstr ""
+
+#: src\mahjongpart.cpp:2003
+msgid "%1 summons %2 in %3"
+msgstr ""
+
+#: src\mahjongpart.cpp:2036
+msgid "%1 casts %2 over %3"
+msgstr ""
+
+#: src\mahjongpart.cpp:2044 src\mahjongpart.cpp:2090
+msgid "%1 casts %2"
+msgstr ""
+
+#: src\mahjongpart.cpp:2055
+msgid "%1 casts %2 to %3"
+msgstr ""
+
+#: src\mahjongpart.cpp:2075
+msgid "%1 casts %2 at %3's %4"
+msgstr ""
+
+#: src\mahjongpart.cpp:2078
+msgid "%1 casts %2 at friendly %3"
+msgstr ""
+
+#: src\mahjongpart.cpp:2081
+msgid "Magic Resistance!"
+msgstr ""
+
+#: src\loadrecovery.cpp:23
+msgid "Mahjong"
+msgstr ""
+
+#: src\loadrecovery.cpp:24
+msgid "Mahjong Summary"
+msgstr ""
+
+#: src\loadrecovery.cpp:25
+msgid "Adventure"
+msgstr ""
+
+#: src\loadrecovery.cpp:26
+msgid "Battle Summary"
+msgstr ""
+
+#: src\loadrecovery.cpp:27
+msgid "Game Summary"
+msgstr ""
+
+#: src\loadrecovery.cpp:28
+msgid "Between rounds"
+msgstr ""
+
+#: src\loadrecovery.cpp:29
+msgid "Saved game"
+msgstr ""
+
+#: src\loadrecovery.cpp:35 src\loadrecovery.cpp:40 src\loadrecovery.cpp:42
+#: src\loadrecovery.cpp:47
+msgid "Unknown time"
+msgstr ""
+
+#: src\loadrecovery.cpp:104
+msgid "Autosave"
+msgstr ""
+
+#: src\loadrecovery.cpp:107 src\loadrecovery.cpp:126 src\loadrecovery.cpp:144
+msgid "Difficulty"
+msgstr ""
+
+#: src\loadrecovery.cpp:108 src\loadrecovery.cpp:127 src\loadrecovery.cpp:151
+msgid "INVALID"
+msgstr ""
+
+#: src\loadrecovery.cpp:111
+msgid "Updated automatically"
+msgstr ""
+
+#: src\loadrecovery.cpp:112
+msgid "The file will be left untouched"
+msgstr ""
+
+#: src\loadrecovery.cpp:128
+msgid "Named save"
+msgstr ""
+
+#: src\loadrecovery.cpp:128
+msgid "The file can be deleted but not loaded"
+msgstr ""
+
+#: src\loadrecovery.cpp:139
+msgid "Emergency checkpoint %1"
+msgstr ""
+
+#: src\loadrecovery.cpp:147
+msgid "Unknown version"
+msgstr ""
+
+#: src\loadrecovery.cpp:152
+msgid "The checkpoint will be left untouched"
+msgstr ""
+
+#: src\loadrecovery.cpp:229
+msgid "LOAD GAME"
+msgstr ""
+
+#: src\loadrecovery.cpp:231
+msgid "EMERGENCY RECOVERY"
+msgstr ""
+
+#: src\loadrecovery.cpp:231
+msgid "AUTOSAVE AND NAMED SAVES"
+msgstr ""
+
+#: src\loadrecovery.cpp:256
+msgid "No recovery checkpoint was found."
+msgstr ""
+
+#: src\loadrecovery.cpp:256
+msgid "No autosave or named save was found."
+msgstr ""
+
+#: src\loadrecovery.cpp:272
+msgid "Saves"
+msgstr ""
+
+#: src\loadrecovery.cpp:272
+msgid "Recovery"
+msgstr ""
+
+#: src\loadrecovery.cpp:273
+msgid "Delete"
+msgstr ""
+
+#: src\loadrecovery.cpp:274
+msgid "Loading..."
+msgstr ""
+
+#: src\loadrecovery.cpp:274
+msgid "Load"
+msgstr ""
+
+#: src\loadrecovery.cpp:277
+msgid "Double-click or use Load. Restoring recovery replaces the autosave."
+msgstr ""
+
+#: src\loadrecovery.cpp:278
+msgid "Double-click a valid save to load. Delete removes named saves only."
+msgstr ""
+
+#: src\loadrecovery.cpp:289
+msgid "Restore Recovery"
+msgstr ""
+
+#: src\loadrecovery.cpp:290
+msgid ""
+"Restore this emergency checkpoint as the current autosave? The existing "
+"autosave will be kept as a backup."
+msgstr ""
+
+#: src\loadrecovery.cpp:320 src\loadrecovery.cpp:331
+msgid "Delete Save"
+msgstr ""
+
+#: src\loadrecovery.cpp:321
+msgid "Delete the named save '%1'? This cannot be undone from the game menu."
+msgstr ""
+
+#: src\loadrecovery.cpp:332
+msgid "The save could not be deleted: %1"
+msgstr ""
+
+#: src\jsongui.cpp:72
+msgid "Creature: %1, stats [%2, %3, %4, %5]"
+msgstr ""
+
+#: src\jsongui.cpp:87
+msgid "Spell: %1, target: %2, %3"
+msgstr ""
+
+#: src\jsongui.cpp:137
+msgid "Clan: %1"
+msgstr ""
+
+#: src\jsongui.cpp:143
+msgid "Avatar: %1"
+msgstr ""
+
+#: src\intropart.cpp:171
+msgid "ESC / ENTER / CLICK TO SKIP"
+msgstr ""
+
+#: src\gameobjects.cpp:3943
+msgid "One Chance"
+msgstr ""
+
+#: src\gameobjects.cpp:3944
+msgid "Self Drawn"
+msgstr ""
+
+#: src\gameobjects.cpp:3945
+msgid "All Concealed, with Discard"
+msgstr ""
+
+#: src\gameobjects.cpp:3957
+msgid "Lucky Sets"
+msgstr ""
+
+#: src\gameobjects.cpp:3958
+msgid "One Suit plus Honors"
+msgstr ""
+
+#: src\gameobjects.cpp:3959
+msgid "No Points"
+msgstr ""
+
+#: src\gameobjects.cpp:3960
+msgid "Four Triplets"
+msgstr ""
+
+#: src\gameobjects.cpp:3961
+msgid "Terminals and Honors"
+msgstr ""
+
+#: src\gameobjects.cpp:3962
+msgid "Terminal, Honor in each set"
+msgstr ""
+
+#: src\gameobjects.cpp:3963
+msgid "All Simples"
+msgstr ""
+
+#: src\gameobjects.cpp:3964
+msgid "Three Little Dragons"
+msgstr ""
+
+#: src\gameobjects.cpp:3965
+msgid "One Suit Only"
+msgstr ""
+
+#: src\gameobjects.cpp:3966
+msgid "Three Consecutive Sequences"
+msgstr ""
+
+#: src\gameobjects.cpp:3967
+msgid "All Concealed, Self Drawn"
+msgstr ""
+
+#: src\gameobjects.cpp:3968
+msgid "Last Tile"
+msgstr ""
+
+#: src\gameobjects.cpp:3969
+msgid "Three Concealed Triplets"
+msgstr ""
+
+#: src\gameobjects.cpp:3970
+msgid "Robbed a Kong"
+msgstr ""
+
+#: src\gameobjects.cpp:3971
+msgid "Supplemental Tile"
+msgstr ""
+
+#: src\gameobjects.cpp:3972
+msgid "Three Big Dragons"
+msgstr ""
+
+#: src\gameobjects.cpp:3973
+msgid "Big Four Winds"
+msgstr ""
+
+#: src\gameobjects.cpp:3974
+msgid "All Terminals"
+msgstr ""
+
+#: src\gameobjects.cpp:3975
+msgid "All Honors"
+msgstr ""
+
+#: src\gameobjects.cpp:3976
+msgid "Nine Gates"
+msgstr ""
+
+#: src\gameobjects.cpp:3977
+msgid "Heavenly Hand"
+msgstr ""
+
+#: src\gameobjects.cpp:3978
+msgid "Four Concealed Triplets"
+msgstr ""
+
+#: src\gameobjects.cpp:3979
+msgid "Thirteen Orphans"
+msgstr ""
+
+#: src\gameobjects.cpp:3980
+msgid "Little Four Winds"
+msgstr ""
+
+#: src\gameobjects.cpp:3981
+msgid "Earthly Hand"
+msgstr ""
+
+#: src\gamedata.cpp:57
+msgid "-%1 Loyalty"
+msgstr ""
+
+#: src\gamedata.cpp:58
+msgid "+%1 Loyalty"
+msgstr ""
+
+#: src\gamedata.cpp:60
+msgid "+%1 Attack"
+msgstr ""
+
+#: src\gamedata.cpp:61
+msgid "-%1 Attack"
+msgstr ""
+
+#: src\gamedata.cpp:63
+msgid "+%1 Missile"
+msgstr ""
+
+#: src\gamedata.cpp:64
+msgid "-%1 Missile"
+msgstr ""
+
+#: src\gamedata.cpp:66
+msgid "+%1 Defense"
+msgstr ""
+
+#: src\gamedata.cpp:67
+msgid "-%1 Defense"
+msgstr ""
+
+#: src\gamedata.cpp:69
+msgid "+%1 Attack, +%2 Max Loyalty"
+msgstr ""
+
+#: src\gamedata.cpp:70
+msgid "+%1 Attack or +%2 Missile or +%3 Max Loyalty"
+msgstr ""
+
+#: src\gamedata.cpp:71
+msgid "+%1 Attack, +%2 Missile, -%3 Max Loyalty"
+msgstr ""
+
+#: src\gamedata.cpp:72
+msgid "+%1 Loyalty, up to max"
+msgstr ""
+
+#: src\gamedata.cpp:73
+msgid "-%1 Defense, -%2 Attack"
+msgstr ""
+
+#: src\gamedata.cpp:74
+msgid "Missile attacks do %1 less damage"
+msgstr ""
+
+#: src\gamedata.cpp:76
+msgid "Freeze creature"
+msgstr ""
+
+#: src\gamedata.cpp:77
+msgid "Move one unit to any friendly territory"
+msgstr ""
+
+#: src\gamedata.cpp:79
+msgid "Remove enchantments"
+msgstr ""
+
+#: src\gamedata.cpp:1863
+msgid "%1's %2 was vanquished"
+msgstr ""
+
+#: src\dialogs.cpp:156
+msgid "Speciality"
+msgstr ""
+
+#: src\dialogs.cpp:200
+msgid "Unique"
+msgstr ""
+
+#: src\dialogs.cpp:214
+msgid "Attack:"
+msgstr ""
+
+#: src\dialogs.cpp:220
+msgid "Ranger:"
+msgstr ""
+
+#: src\dialogs.cpp:226
+msgid "Defense:"
+msgstr ""
+
+#: src\dialogs.cpp:232
+msgid "Loyalty:"
+msgstr ""
+
+#: src\dialogs.cpp:238
+msgid "Move Point:"
+msgstr ""
+
+#: src\dialogs.cpp:271
+msgid "Curse"
+msgstr ""
+
+#: src\dialogs.cpp:276
+msgid "Effect: "
+msgstr ""
+
+#: src\dialogs.cpp:280
+msgid "Target: "
+msgstr ""
+
+#: src\dialogs.cpp:294
+msgid "Ability"
+msgstr ""
+
+#: src\dialogs.cpp:412
+msgid " (unique)"
+msgstr ""
+
+#: src\dialogs.cpp:424
+msgid " (curse)"
+msgstr ""
+
+#: src\dialogs.cpp:469
+msgid "%{name}'s Spells"
+msgstr ""
+
+#: src\dialogs.cpp:470
+msgid "Spell Points: %{points}"
+msgstr ""
+
+#: src\dialogs.cpp:772
+msgid "Create or overwrite a named save"
+msgstr ""
+
+#: src\dialogs.cpp:774
+msgid "Return to Main Menu"
+msgstr ""
+
+#: src\dialogs.cpp:774
+msgid "The autosave will be updated"
+msgstr ""
+
+#: src\dialogs.cpp:776 src\dialogs.cpp:948
+msgid "Cancel"
+msgstr ""
+
+#: src\dialogs.cpp:793
+msgid "GAME MENU"
+msgstr ""
+
+#: src\dialogs.cpp:923
+msgid "SAVE GAME"
+msgstr ""
+
+#: src\dialogs.cpp:924
+msgid "Enter a name for this save"
+msgstr ""
+
+#: src\dialogs.cpp:929
+msgid "Save name"
+msgstr ""
+
+#: src\dialogs.cpp:943
+msgid "Save"
+msgstr ""
+
+#: src\dialogs.cpp:971
+msgid "Enter a save name."
+msgstr ""
+
+#: src\dialogs.cpp:1036
+msgid "Overwrite Save"
+msgstr ""
+
+#: src\dialogs.cpp:1037
+msgid ""
+"A save named '%1' already exists. Replace it? The previous file will be kept "
+"as a backup."
+msgstr ""
+
+#: src\dialogs.cpp:1047
+msgid "The game could not be saved: %1"
+msgstr ""
+
+#: src\dialogs.cpp:1052
+msgid "Saved as '%1'."
+msgstr ""
+
+#: src\dialogs.cpp:1106
+msgid "You Are %1"
+msgstr ""
+
+#: src\dialogs.cpp:1107
+msgid "Order Of Play"
+msgstr ""
+
+#: src\dialogs.cpp:1279
+msgid "Missile volley"
+msgstr ""
+
+#: src\dialogs.cpp:1280
+msgid "Fire Shield"
+msgstr ""
+
+#: src\dialogs.cpp:1281
+msgid "Melee"
+msgstr ""
+
+#: src\dialogs.cpp:1289 src\dialogs.cpp:1675
+msgid "damage"
+msgstr ""
+
+#: src\dialogs.cpp:1294
+msgid "Opening leader"
+msgstr ""
+
+#: src\dialogs.cpp:1295
+msgid "Missile assignment"
+msgstr ""
+
+#: src\dialogs.cpp:1296
+msgid "Melee round"
+msgstr ""
+
+#: src\dialogs.cpp:1461 src\dialogs.cpp:1634
+msgid "Phase: "
+msgstr ""
+
+#: src\dialogs.cpp:1462
+msgid "Complete"
+msgstr ""
+
+#: src\dialogs.cpp:1463
+msgid "Paused - "
+msgstr ""
+
+#: src\dialogs.cpp:1468
+msgid "Event "
+msgstr ""
+
+#: src\dialogs.cpp:1471
+msgid "Events: "
+msgstr ""
+
+#: src\dialogs.cpp:1478
+msgid "Resume"
+msgstr ""
+
+#: src\dialogs.cpp:1478
+msgid "Pause"
+msgstr ""
+
+#: src\dialogs.cpp:1481
+msgid "Speed: "
+msgstr ""
+
+#: src\dialogs.cpp:1639
+msgid "Last event: "
+msgstr ""
+
+#: src\dialogs.cpp:1674
+msgid "Preview: "
+msgstr ""
+
+#: src\dialogs.cpp:1678
+msgid "hit"
+msgstr ""
+
+#: src\dialogs.cpp:1680
+msgid "Mighty Blow: "
+msgstr ""
+
+#: src\dialogs.cpp:1690
+msgid "Choose the opening leader. Enter: recommended. Esc: Auto Resolve."
+msgstr ""
+
+#: src\dialogs.cpp:1693
+msgid "Choose a missile attacker. Enter: recommended. Esc: Auto Resolve."
+msgstr ""
+
+#: src\dialogs.cpp:1694
+msgid "Choose a missile target. Enter: recommended. Esc: Auto Resolve."
+msgstr ""
+
+#: src\dialogs.cpp:1697
+msgid "Choose an attacker. Enter: recommended. Esc: Auto Resolve."
+msgstr ""
+
+#: src\dialogs.cpp:1698
+msgid "Choose a target. Enter: recommended. Esc: Auto Resolve."
+msgstr ""
+
+#: src\dialogs.cpp:1702
+msgid "Auto Resolve"
+msgstr ""
+
+#: src\battlesummarypart.cpp:92
+msgid "Combat Summary"
+msgstr ""
+
+#: src\battlesummarypart.cpp:102
+msgid "%1 in %2"
+msgstr ""
+
+#: src\adventurepart.cpp:602
+msgid "Battle Forecast"
+msgstr ""
+
+#: src\adventurepart.cpp:604
+msgid "Capture: %1%"
+msgstr ""
+
+#: src\adventurepart.cpp:606
+msgid "Attackers remain: %1%"
+msgstr ""
+
+#: src\adventurepart.cpp:849
+msgid "View Map"
+msgstr ""
+
+#: src\adventurepart.cpp:931
+msgid "Summoning"
+msgstr ""
+
+#: src\adventurepart.cpp:963
+msgid "Apply spell: %1, on land: %2?"
+msgstr ""
+
+#: src\adventurepart.cpp:979
+msgid "Teleport selected creature to %1?"
+msgstr ""
+
+#: src\adventurepart.cpp:988
+msgid "Select another friendly territory with a free party slot."
+msgstr ""
+
+#: src\adventurepart.cpp:1013
+msgid "Can'not apply spell: %1, incorrect target: %2"
+msgstr ""
+
+#: src\adventurepart.cpp:1151
+msgid "Select destination"
+msgstr ""
+
+#: src\adventurepart.cpp:1151
+msgid "Movement Phase"
+msgstr ""
+
+#: src\adventurepart.cpp:1263 src\adventurepart.cpp:1399
+#: src\adventurepart.cpp:1408 src\adventurepart.cpp:1495
+msgid "Order"
+msgstr ""
+
+#: src\adventurepart.cpp:1263
+msgid "Selected creatures cannot move to this territory."
+msgstr ""
+
+#: src\adventurepart.cpp:1399 src\adventurepart.cpp:1408
+#: src\adventurepart.cpp:1495
+msgid "Unable to apply pending orders."
+msgstr ""
+
+#: src\adventurepart.cpp:1415
+msgid "Unable to save game."
 msgstr ""

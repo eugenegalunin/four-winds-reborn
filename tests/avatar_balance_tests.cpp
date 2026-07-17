@@ -153,20 +153,20 @@ namespace
 
         LocalPlayer candidate;
         candidate.avatar = tested;
-        candidate.clan = Clan::Maitha;
+        candidate.clan = Clan::Red;
         candidate.wind = Wind::East;
         candidate.points = 500;
 
-        BattleParty allies(Clan::Maitha, Land::Corzen);
-        BattleCreature wounded = battleCreature(Clan::Maitha, Creature::Durlock, 1001);
+        BattleParty allies(Clan::Red, Land::Corzen);
+        BattleCreature wounded = battleCreature(Clan::Red, Creature::Durlock, 1001);
         wounded.applyDamage(2);
         allies.join(wounded);
-        allies.join(battleCreature(Clan::Maitha, Creature::FireGiant, 1002));
+        allies.join(battleCreature(Clan::Red, Creature::FireGiant, 1002));
         candidate.army.push_back(allies);
         GameData::gamers.push_back(candidate);
 
         const std::vector<Avatar> opponents = opponentAvatars(tested);
-        const Clan::clan_t clans[] = { Clan::Kartha, Clan::Iz, Clan::Marz };
+        const Clan::clan_t clans[] = { Clan::Yellow, Clan::Aqua, Clan::Purple };
         const Wind::wind_t winds[] = { Wind::South, Wind::West, Wind::North };
 
         for(int index = 0; index < 3; ++index)
@@ -208,9 +208,9 @@ namespace
 
     int partySpellDamage(const Spell & spell, int targets)
     {
-        BattleParty party(Clan::Kartha, Land::Zubrus);
+        BattleParty party(Clan::Yellow, Land::Zubrus);
         for(int index = 0; index < targets; ++index)
-            expect(party.join(battleCreature(Clan::Kartha, Creature::Durlock, 1200 + index)),
+            expect(party.join(battleCreature(Clan::Yellow, Creature::Durlock, 1200 + index)),
                    "Hell Blast damage fixture must fit in a party");
 
         int before = 0;
@@ -280,7 +280,7 @@ namespace
                       << std::setw(7) << row.optionsScore << "  "
                       << std::left << std::setw(16) << spell << partyName(row.party) << '\n';
         }
-        std::cout << "passive model: Bard=2 loyalty x party x 14; Monacle=party x 12 utility; "
+        std::cout << "passive model: Bard=2 loyalty x party x 14; Monocle=party x 12 utility; "
                   << "Luck=6 draws x 8 option value; Telepath=70 Silence denial\n";
     }
 }

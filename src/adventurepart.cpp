@@ -31,6 +31,29 @@
 #include "aiprofile.h"
 #include "adventurepart.h"
 #include "crashreport.h"
+#include "swe/swe_music.h"
+
+namespace
+{
+class ScopedAdventureTickPause
+{
+    Window & window;
+
+public:
+    explicit ScopedAdventureTickPause(Window & win) : window(win)
+    {
+        window.disableTickEvent(true);
+    }
+
+    ~ScopedAdventureTickPause()
+    {
+        window.disableTickEvent(false);
+    }
+
+    ScopedAdventureTickPause(const ScopedAdventureTickPause &) = delete;
+    ScopedAdventureTickPause & operator=(const ScopedAdventureTickPause &) = delete;
+};
+}
 
 enum { LandPolygonClickLeft = 1111, LandPolygonClickRight, LandPolygonFocus, LandPolygonFlagAnimationReInit, LandPolygonCombatStatus, LandPolygonCombatStatusReset,
 	ClanIconClickLeft, ClanIconClickRight, CreatureIconClickLeft, CreatureIconClickRight, MapScreenClose,
@@ -205,10 +228,11 @@ void LandPolygon::renderWindow(void)
 
 	    if(win->isAllowLandClaim(landInfo))
 	    {
-		for(auto it = poly.begin(); it != poly.end(); ++it)
+		const Points & outline = poly.boundaryVertices();
+		for(auto it = outline.begin(); it != outline.end(); ++it)
 		{
 		    auto next = std::next(it);
-		    if(next == poly.end()) next = poly.begin();
+		    if(next == outline.end()) next = outline.begin();
 		    renderLine(Color::Yellow, *it - position(), *next - position());
 		}
 	    }
@@ -418,7 +442,7 @@ MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("
         forecastSurvival = GameTheme::jsonTextInfo(*forecast, "textinfo:survival");
     }
 
-    // const Texture & tmp = GameTheme::texture(GameData::clanInfo(Clan::Maitha).button);
+    // const Texture & tmp = GameTheme::texture(GameData::clanInfo(Clan::Red).button);
 
     bar1.setPosition(topClanPos);
     bar2.setPosition(botClanPos);
@@ -544,6 +568,8 @@ void MapScreenBase::clearBattleForecast(void)
 void MapScreenBase::updateBattleForecast(const Land & origin, const Land & target)
 {
     clearBattleForecast();
+    const AI::DifficultyRules & difficulty = AI::difficultyRules(GameData::aiDifficulty());
+    if(!difficulty.showPlayerBattleForecast) return;
     if(!origin.isValid() || !target.isValid() || origin == target || target.isTowerWinds()) return;
 
     const LocalPlayer & player = ld.myPlayer();
@@ -562,7 +588,7 @@ void MapScreenBase::updateBattleForecast(const Land & origin, const Land & targe
     const BattleParty* defenders = defender.army.findPartyConst(target);
     const AI::BehaviorProfile defenderProfile = defender.isAI() ?
         AI::behaviorProfile(defender) : AI::BehaviorProfile::Balanced;
-    const int samples = AI::difficultyRules(GameData::aiDifficulty()).battleForecastSamples;
+    const int samples = difficulty.battleForecastSamples;
     const AI::BattleForecast result = AI::forecastBattle(attackers, BattleTown(target), defenders,
         AI::BehaviorProfile::Balanced, defenderProfile, samples);
 
@@ -1038,13 +1064,6 @@ void MoveFlagWindow::mouseTrackingEvent(const Point & pos, u32 buttons)
     }
 }
 
-bool MoveFlagWindow::mouseReleaseEvent(const ButtonEvent & be)
-{
-    pushEventAction(AdventureTurnMoveStop, parent(), nullptr);
-    setVisible(false);
-    return true;
-}
-
 void MoveFlagWindow::setVisible(bool f)
 {
     if(f)
@@ -1066,7 +1085,7 @@ AdventurePartScreen::AdventurePartScreen(const Avatar & ava) : MapScreenBase(Gam
     moveFlag.setVisible(false);
     buttons.setVisible(false);
 
-    delayCombatResult = jobject.getInteger("delay:combatresult", 600);
+    delayCombatResult = Settings::presentationDelay(jobject.getInteger("delay:combatresult", 600));
     JsonButton* button = nullptr;
 
     buttonOrder = buttons.findIds("but_order");
@@ -1358,8 +1377,24 @@ void AdventurePartScreen::actionButtonOrder(void)
 
 void AdventurePartScreen::actionButtonMenu(void)
 {
-    if(!MessageBox(_("Menu"), _("Exit game?"), *this).exec())
+    ScopedAdventureTickPause pause(*this);
+    const int choice = InGameMenuDialog(*this).exec();
+    if(choice == InGameMenuResult::Cancel)
     {
+        renderWindow();
+        return;
+    }
+
+    JsonObject gui;
+    gui.addString("type", "AdventurePart");
+    if(choice == InGameMenuResult::SaveGame)
+    {
+        SaveGameAs(gui, *this, [this]()
+        {
+            if(commitPendingOrders()) return true;
+            MessageBox(_("Order"), _("Unable to apply pending orders."), *this, false).exec();
+            return false;
+        });
         renderWindow();
         return;
     }
@@ -1371,8 +1406,6 @@ void AdventurePartScreen::actionButtonMenu(void)
         return;
     }
 
-    JsonObject gui;
-    gui.addString("type", "AdventurePart");
     if(!GameData::saveGame(gui))
     {
         MessageBox(_("Error"), _("Unable to save game."), *this, false).exec();
@@ -1380,8 +1413,16 @@ void AdventurePartScreen::actionButtonMenu(void)
         return;
     }
 
-    setResultCode(Menu::GameExit);
+    setResultCode(Menu::MainMenu);
     setVisible(false);
+}
+
+bool AdventurePartScreen::mouseReleaseEvent(const ButtonEvent & be)
+{
+    if(be.isButtonLeft() && moveFlag.isVisible())
+        return userEvent(AdventureTurnMoveStop, nullptr);
+
+    return false;
 }
 
 void AdventurePartScreen::actionButtonDismiss(void)
@@ -1592,6 +1633,10 @@ bool AdventurePartScreen::actionAdventureBattleChoice(const ActionMessage & v)
     allowTickEvent = false;
     animationsDisabled(true);
 
+#ifndef SWE_DISABLE_AUDIO
+    if(Settings::music()) Music::reset();
+#endif
+
     BattleChoiceDialog dialog(legend, action.phase(), action.strikes(),
                               action.actors(), action.targets(),
 	                      action.recommendedActor(), action.recommendedTarget(), *this);
@@ -1617,6 +1662,11 @@ bool AdventurePartScreen::actionAdventureCombat(const ActionMessage & v)
 
     const BattleLegend legend = action.legend();
     const BattleStrikes strikes = action.strikes();
+    const bool visibleBattle = myAvatar == legend.attacker || myAvatar == legend.defender;
+
+#ifndef SWE_DISABLE_AUDIO
+    if(visibleBattle && Settings::music()) Music::reset();
+#endif
 
     DEBUG("current wind: " << ld.currentWind.toString() << ", " << "legend: " << legend.toString() << ", " << "strikes: " << strikes.toString());
     playSound("sndfight");
@@ -1627,7 +1677,7 @@ bool AdventurePartScreen::actionAdventureCombat(const ActionMessage & v)
     // Land combatLand = ;
     // Clan combatClan = legend.town.previousClan();
 
-    if(myAvatar == legend.attacker || myAvatar == legend.defender)
+    if(visibleBattle)
     {
 	// wait fightsnd
 	playSoundWait();
@@ -1669,6 +1719,8 @@ bool AdventurePartScreen::actionAdventureCombat(const ActionMessage & v)
     allowTickEvent = true;
     animationsDisabled(false);
 
+    if(visibleBattle) playMusic("map");
+
     return true;
 }
 
@@ -1677,6 +1729,15 @@ bool AdventurePartScreen::actionAdventureEnd(const ActionMessage & v)
     auto action = static_cast<const AdventureEnd &>(v);
 
     DEBUG("goto next screen");
+
+    // AdventureEnd is the stable boundary of a complete Mahjong/adventure
+    // round. Keep Continue current without exposing diagnostic checkpoints as
+    // ordinary player saves.
+    JsonObject gui;
+    gui.addString("type", "AdventurePart");
+
+    if(!GameData::saveGame(gui))
+        ERROR("round autosave failed");
 
     setResultCode(Menu::BattleSummaryPart);
     setVisible(false);

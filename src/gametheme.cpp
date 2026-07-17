@@ -341,7 +341,19 @@ const BinaryBuf & GameTheme::sound(const std::string & name)
     if(it == mapFilesInfo.end())
         ERROR("not found: " << name);
 
-    return readResource(it != mapFilesInfo.end() ? (*it).second.file : "");
+    if(it == mapFilesInfo.end())
+        return readResource("");
+
+    return readResource(localizedSoundFile((*it).second, Settings::language()));
+}
+
+std::string GameTheme::localizedSoundFile(const FileInfo & info, const std::string & value)
+{
+    const std::string language = String::toLower(value);
+    const bool russian = language == "ru" || language == "russian" ||
+        language.rfind("ru_", 0) == 0 || language.rfind("ru-", 0) == 0 ||
+        language.rfind("russian_", 0) == 0;
+    return russian && ! info.fileRu.empty() ? info.fileRu : info.file;
 }
 
 const BinaryBuf & GameTheme::music(const std::string & name)
@@ -356,6 +368,7 @@ const JsonValue & operator>> (const JsonValue & jv, ImageInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 	st.id = jo->getString("id");
 	st.file = jo->getString("file");
+	st.fileRu = jo->getString("file:ru");
 	st.crop = JsonUnpack::rect(*jo, "crop");
 	st.colorkey = jo->getString("colorkey");
     }
@@ -370,6 +383,7 @@ const JsonValue & operator>> (const JsonValue & jv, FileInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 	st.id = jo->getString("id");
 	st.file = jo->getString("file");
+	st.fileRu = jo->getString("file:ru");
     }
 
     return jv;
@@ -427,23 +441,29 @@ const JsonValue & operator>> (const JsonValue & jv, FontInfo & st)
 
 Sprite GameTheme::sprite(const std::string & key)
 {
-    Sprite res = cacheSprites[key];
-    if(res.isValid() || key == "null") return res;
+    if(key == "null") return cacheSprites[key];
 
     auto it = mapImagesInfo.find(key);
     if(it == mapImagesInfo.end())
     {
+	Sprite res = cacheSprites[key];
+	if(res.isValid()) return res;
         ERROR("id not found: " << key);
 	return res;
     }
 
     ImageInfo & info = (*it).second;
 
+    const std::string file = localizedSoundFile(info, Settings::language());
+    const std::string cacheKey = info.fileRu.empty() ? key : key + "\x1f" + file;
+    Sprite res = cacheSprites[cacheKey];
+    if(res.isValid()) return res;
+
     std::string path;
 
-    if(! findResource(info.file, &path))
+    if(! findResource(file, &path))
     {
-        ERROR("file not found: " << info.file);
+        ERROR("file not found: " << file);
         return res;
     }
 
@@ -454,7 +474,7 @@ Sprite GameTheme::sprite(const std::string & key)
     Surface sf(buf);
     if(! sf.isValid())
     {
-        ERROR("unknown format: " << info.file);
+        ERROR("unknown format: " << file);
         return res;
     }
 
@@ -470,7 +490,7 @@ Sprite GameTheme::sprite(const std::string & key)
         res.setTexture(tmp);
     }
 
-    cacheSprites[key] = res;
+    cacheSprites[cacheKey] = res;
 
     return res;
 }
@@ -998,7 +1018,8 @@ const JsonValue & operator>> (const JsonValue & jv, StoneInfo & st)
     {
 	auto jo = static_cast<const JsonObject*>(& jv);
 
-	st.name = jo->getString("name");
+	st.sourceName = jo->getString("name");
+	st.name = st.sourceName;
 	st.large = jo->getString("image1");
 	st.medium = jo->getString("image2");
 	st.small = jo->getString("image3");
@@ -1017,7 +1038,8 @@ const JsonValue & operator>> (const JsonValue & jv, WindInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 
 	st.id = Wind(jo->getString("id"));
-	st.name = _(jo->getString("name"));
+	st.sourceName = jo->getString("name");
+	st.name = st.sourceName;
 	st.image = jo->getString("image");
     }
     return jv;
@@ -1030,7 +1052,8 @@ const JsonValue & operator>> (const JsonValue & jv, ClanInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 
 	st.id = Clan(jo->getString("id"));
-	st.name = _(jo->getString("name"));
+	st.sourceName = jo->getString("name");
+	st.name = st.sourceName;
 	st.image = jo->getString("image");
 	st.flag1 = jo->getString("flag1");
 	st.flag2 = jo->getString("flag2");
@@ -1090,14 +1113,16 @@ const JsonValue & operator>> (const JsonValue & jv, CreatureInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 
 	st.id = Creature(jo->getString("id"));
-	st.name = _(jo->getString("name"));
+	st.sourceName = jo->getString("name");
+	st.name = st.sourceName;
 	st.image1 = jo->getString("image1");
 	st.image2 = jo->getString("image2");
 	st.sound1 = jo->getString("sound1");
 	st.unique = jo->getBoolean("unique");
 	st.fly = jo->getBoolean("fly");
 	st.cost = jo->getInteger("cost");
-	st.description = _(jo->getString("description"));
+	st.sourceDescription = jo->getString("description");
+	st.description = st.sourceDescription;
 	st.specials = Specials(jo->getStdList<std::string>("specials"));
 
 	StringList stoneList = jo->getStdList<std::string>("stones");
@@ -1121,8 +1146,10 @@ const JsonValue & operator>> (const JsonValue & jv, AbilityInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 
 	st.id = Ability(jo->getString("id"));
-	st.name = _(jo->getString("name"));
-	st.description = _(jo->getString("description"));
+	st.sourceName = jo->getString("name");
+	st.name = st.sourceName;
+	st.sourceDescription = jo->getString("description");
+	st.description = st.sourceDescription;
     }
 
     return jv;
@@ -1135,8 +1162,10 @@ const JsonValue & operator>> (const JsonValue & jv, SpecialityInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 
 	st.id = Speciality(jo->getString("id"));
-	st.name = _(jo->getString("name"));
-	st.description = _(jo->getString("description"));
+	st.sourceName = jo->getString("name");
+	st.name = st.sourceName;
+	st.sourceDescription = jo->getString("description");
+	st.description = st.sourceDescription;
     }
 
     return jv;
@@ -1149,7 +1178,8 @@ const JsonValue & operator>> (const JsonValue & jv, SpellInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 
 	st.id = Spell(jo->getString("id"));
-	st.name = _(jo->getString("name"));
+	st.sourceName = jo->getString("name");
+	st.name = st.sourceName;
 	st.target = SpellTarget(jo->getString("target"));
 
 	auto arr = jo->getStdVector<int>("effect");
@@ -1161,7 +1191,8 @@ const JsonValue & operator>> (const JsonValue & jv, SpellInfo & st)
 	st.value = jo->getInteger("value");
 	st.image =jo->getString("image");
 	st.sound =jo->getString("sound");
-	st.description = _(jo->getString("description"));
+	st.sourceDescription = jo->getString("description");
+	st.description = st.sourceDescription;
 
 	StringList stoneList = jo->getStdList<std::string>("stones");
 	std::transform(stoneList.begin(), stoneList.end(), stoneList.begin(),
@@ -1179,12 +1210,15 @@ const JsonValue & operator>> (const JsonValue & jv, AvatarInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 
 	st.id = Avatar(jo->getString("id"));
-	st.name = _(jo->getString("name"));
-	st.dignity = _(jo->getString("dignity"));
+	st.sourceName = jo->getString("name");
+	st.name = st.sourceName;
+	st.sourceDignity = jo->getString("dignity");
+	st.dignity = st.sourceDignity;
 	st.portrait = jo->getString("portrait");
 	st.image = jo->getString("image");
 	st.aiProfile = jo->getString("ai_profile", "balanced");
-	st.description = _(jo->getString("description"));
+	st.sourceDescription = jo->getString("description");
+	st.description = st.sourceDescription;
 
 	if(jo->hasKey("ability")) st.ability = Ability(jo->getString("ability"));
 
@@ -1221,7 +1255,8 @@ const JsonValue & operator>> (const JsonValue & jv, LandInfo & st)
 
 	st.id = Land(jo->getString("id"));
 	st.clan = Clan(jo->getString("clan"));
-	st.name = _(jo->getString("name"));
+	st.sourceName = jo->getString("name");
+	st.name = st.sourceName;
 	st.center = JsonUnpack::point(*jo, "center");
 	st.area = JsonUnpack::rect(*jo, "area");
 	st.iconrt = JsonUnpack::rect(*jo, "iconrt");

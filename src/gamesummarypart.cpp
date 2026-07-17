@@ -163,7 +163,7 @@ bool GameSummaryScreen::userEvent(int act, void* data)
     switch(act)
     {
         case Action::ButtonDone:
-            setResultCode(Menu::GameExit);
+            setResultCode(Menu::MainMenu);
             setVisible(false);
             break;
 

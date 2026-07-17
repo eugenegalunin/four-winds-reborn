@@ -23,6 +23,8 @@
 #ifndef _RWNA_DIALOGS_
 #define _RWNA_DIALOGS_
 
+#include <functional>
+
 #include "gamedata.h"
 
 struct CreatureInfo;
@@ -204,6 +206,82 @@ public:
     MessageBox(const std::string &, const std::string &, Window &, bool buttons = true);
     void		renderWindow(void) override;
 };
+
+namespace InGameMenuResult
+{
+    constexpr int Cancel = 0;
+    constexpr int SaveGame = 1;
+    constexpr int MainMenu = 2;
+}
+
+class InGameMenuDialog : public DialogWindow
+{
+    struct Entry
+    {
+        std::string label;
+        std::string note;
+        Rect        area;
+        int         result;
+    };
+
+    std::vector<Entry> entries;
+    int                selected;
+    std::string        titleFont;
+    std::string        entryFont;
+    std::string        smallFont;
+    Color              itemColor;
+    Color              itemSelectedColor;
+    Color              itemBorderColor;
+    Color              selectedBorderColor;
+    Color              mutedColor;
+
+    bool                activateSelected(void);
+    bool                selectNext(int);
+
+protected:
+    bool                keyPressEvent(const KeySym &) override;
+    bool                mouseClickEvent(const ButtonsEvent &) override;
+    bool                mouseMotionEvent(const Point &, u32) override;
+
+public:
+    explicit InGameMenuDialog(Window &);
+    void                renderWindow(void) override;
+};
+
+class SaveNameDialog : public DialogWindow
+{
+    std::string        saveName;
+    std::string        validationMessage;
+    Rect               inputArea;
+    Rect               saveArea;
+    Rect               cancelArea;
+    std::string        titleFont;
+    std::string        inputFont;
+    std::string        smallFont;
+    Color              inputColor;
+    Color              inputBorderColor;
+    Color              buttonColor;
+    Color              buttonBorderColor;
+    Color              mutedColor;
+    Color              errorColor;
+
+    bool               accept(void);
+    void               eraseLastCodepoint(void);
+
+protected:
+    bool               keyPressEvent(const KeySym &) override;
+    bool               textInputEvent(const std::string &) override;
+    bool               mouseClickEvent(const ButtonsEvent &) override;
+
+public:
+    explicit SaveNameDialog(Window &);
+    ~SaveNameDialog();
+
+    const std::string & name(void) const { return saveName; }
+    void               renderWindow(void) override;
+};
+
+bool SaveGameAs(const JsonObject &, Window &, const std::function<bool()> & prepare = {});
 
 class MapStatusDialog : public DialogWindow
 {

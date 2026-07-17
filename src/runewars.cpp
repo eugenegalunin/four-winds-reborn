@@ -27,6 +27,12 @@
 #include "gameplayrng.h"
 #include "gametheme.h"
 #include "settings.h"
+#include "intropart.h"
+#include "mainmenu.h"
+#include "settingsmenu.h"
+#include "loadrecovery.h"
+#include "recovery.h"
+#include "savegames.h"
 #include "selectperson.h"
 #include "showplayers.h"
 #include "mahjongpart.h"
@@ -38,25 +44,52 @@
 
 #include "runewars.h"
 
+#ifndef FOUR_WINDS_VERSION
+#define FOUR_WINDS_VERSION "unknown"
+#endif
+
+#ifndef FOUR_WINDS_BUILD_DATE
+#define FOUR_WINDS_BUILD_DATE "unknown"
+#endif
+
+#ifndef FOUR_WINDS_RELEASE_TAG
+#define FOUR_WINDS_RELEASE_TAG ""
+#endif
+
+#ifndef FOUR_WINDS_GAME_REVISION
+#define FOUR_WINDS_GAME_REVISION "unknown"
+#endif
+
 class GameLoadScreen : public DisplayWindow
 {
-    const std::string & savefile;
+    std::string sourceFile;
+    std::string primaryFile;
+    bool        promoteRecovery;
 
 protected:
     void windowCreateEvent(void) override
     {
-        if(MessageBox(Application::name(), _("Continue with the last saved game?"), *this).exec() &&
-            GameData::loadGame(savefile))
+        CrashReport::breadcrumb(std::string("Game load stage=begin source=").append(sourceFile)
+            .append(" promote=").append(promoteRecovery ? "true" : "false"));
+        if(GameData::loadGame(sourceFile))
         {
+            if(promoteRecovery)
+            {
+                std::string error;
+                if(!Recovery::promoteSave(sourceFile, primaryFile, &error))
+                    MessageBox(_("Recovery Warning"),
+                               StringFormat(_("The checkpoint was loaded, but the current autosave could not be replaced: %1"))
+                                   .arg(error), *this, false).exec();
+            }
             MessageTop(_("Info"), _("Game data rendering..."), *this);
+	    CrashReport::breadcrumb(std::string("Game load stage=end status=ok source=").append(sourceFile));
 	    setResultCode(1);
         }
         else
         {
-            Systems::remove(savefile);
-
-            std::string screenshot = Systems::concatePath(Systems::dirname(savefile), "game.png");
-            if(Systems::isFile(screenshot)) Systems::remove(screenshot);
+	    CrashReport::breadcrumb(std::string("Game load stage=end status=failed source=").append(sourceFile));
+	    MessageBox(_("Load Game"), _("The saved game could not be loaded. The file was left untouched."),
+	               *this, false).exec();
 	    setResultCode(0);
         }
 
@@ -65,7 +98,8 @@ protected:
     }
 
 public:
-    GameLoadScreen(const std::string & file) : DisplayWindow(Color::Black), savefile(file) {}
+    GameLoadScreen(const std::string & source, const std::string & primary, bool promote) :
+        DisplayWindow(Color::Black), sourceFile(source), primaryFile(primary), promoteRecovery(promote) {}
 };
 
 std::string Application::domain(void)
@@ -80,14 +114,31 @@ std::string Application::name(void)
 
 std::string Application::version(void)
 {
-    std::string version;
-#ifdef BUILDDATE
-    version.append(BUILDDATE);
- #ifdef SRCREVISION
-    version.append(".").append(SRCREVISION);
- #endif
-#endif
-    return version;
+    const std::string releaseTag = FOUR_WINDS_RELEASE_TAG;
+    return releaseTag.empty() ? std::string("v").append(FOUR_WINDS_VERSION).append("-dev") : releaseTag;
+}
+
+std::string Application::buildDate(void)
+{
+    return FOUR_WINDS_BUILD_DATE;
+}
+
+std::string Application::revision(void)
+{
+    std::string revision = FOUR_WINDS_GAME_REVISION;
+    const std::string dirtySuffix = "-dirty";
+    const bool dirty = revision.size() > dirtySuffix.size() &&
+        revision.compare(revision.size() - dirtySuffix.size(), dirtySuffix.size(), dirtySuffix) == 0;
+
+    if(dirty) revision.resize(revision.size() - dirtySuffix.size());
+    if(revision != "unknown" && revision.size() > 7) revision.resize(7);
+    if(dirty) revision.append(dirtySuffix);
+    return revision;
+}
+
+bool Application::isReleaseBuild(void)
+{
+    return std::string(FOUR_WINDS_RELEASE_TAG).size() > 0;
 }
 
 namespace
@@ -97,6 +148,7 @@ const char* menuName(int menu)
     switch(menu)
     {
         case Menu::GameExit: return "GameExit";
+        case Menu::MainMenu: return "MainMenu";
         case Menu::SelectPerson: return "SelectPerson";
         case Menu::ShowPlayers: return "ShowPlayers";
         case Menu::MahjongPart: return "Mahjong";
@@ -106,6 +158,8 @@ const char* menuName(int menu)
         case Menu::GameSummaryPart: return "GameSummary";
         case Menu::MahjongInitPart: return "MahjongInit";
         case Menu::GameLoadPart: return "GameLoad";
+        case Menu::LoadRecovery: return "LoadRecovery";
+        case Menu::SettingsMenu: return "Settings";
         default: return "Unknown";
     }
 }
@@ -183,13 +237,26 @@ void RuneWarsClient::parseCommandOptions(int argc, char** argv)
 
 bool RuneWarsClient::translationInit(void)
 {
+    Translation::reset();
     Translation::setStripContext('|');
+
+    const std::string language = String::toLower(Settings::language());
+    const bool sourceEnglish = language.empty() || language == "c" || language == "posix" ||
+        language == "en" || language == "english" || language.rfind("en_", 0) == 0 ||
+        language.rfind("en-", 0) == 0 || language.rfind("english_", 0) == 0;
+    if(sourceEnglish)
+    {
+	Translation::setLanguage("en");
+        VERBOSE("using built-in English strings");
+        return true;
+    }
 
     std::string lang = StringFormat("%1.mo").arg(Settings::language());
     std::string path;
 
     if(Translation::bindDomain(domain(), GameTheme::readResource(lang, &path)))
     {
+	Translation::setLanguage(Settings::language());
         VERBOSE("loaded from: " << path);
         Translation::setDomain(domain());
         return true;
@@ -262,9 +329,27 @@ bool RuneWarsClient::exec(void)
 	ERROR("translation not loaded");
 	}
     else
+	{
+	GameData::retranslateThemeData();
 	CrashReport::breadcrumb("Startup stage=translation_init status=ok");
+	}
 
-    int menu = Systems::isFile(savefile) ? Menu::GameLoadPart : Menu::SelectPerson;
+    bool showIntro = true;
+#ifdef BUILD_DEBUG
+    // Direct part launches are diagnostic shortcuts and should stay immediate.
+    showIntro = part == 0;
+#endif
+    if(showIntro && IntroScreen::supportsLanguage(Settings::language()))
+    {
+	CrashReport::breadcrumb(std::string("Startup stage=intro status=begin language=")
+	    .append(Settings::language()));
+	IntroScreen().exec();
+	CrashReport::breadcrumb("Startup stage=intro status=end");
+    }
+
+    int menu = Menu::MainMenu;
+    std::string pendingLoadFile = savefile;
+    bool promoteRecovery = false;
     Person selectedPerson;
     AI::Difficulty selectedDifficulty = AI::Difficulty::Normal;
 
@@ -310,6 +395,49 @@ bool RuneWarsClient::exec(void)
 	    .append(" id=").append(String::number(activeMenu)));
 	switch(menu)
 	{
+	    case Menu::MainMenu:
+	    {
+		pendingLoadFile = savefile;
+		promoteRecovery = false;
+		const bool recoveryExists = !Recovery::inspectCheckpoints(Recovery::defaultDirectory()).empty();
+		const bool manualSaveExists = SaveGames::hasManualSaves();
+		const bool saveExists = Systems::isFile(savefile);
+		const bool saveValid = saveExists && Recovery::validateSaveFile(savefile);
+		menu = MainMenuScreen(saveExists, saveValid,
+		                            recoveryExists || manualSaveExists).exec();
+	    }
+	    break;
+
+	    case Menu::LoadRecovery:
+	    {
+		LoadRecoveryScreen screen(savefile);
+		menu = screen.exec();
+		if(menu == Menu::GameLoadPart)
+		{
+		    pendingLoadFile = screen.loadFile();
+		    promoteRecovery = screen.shouldPromoteRecovery();
+		}
+	    }
+	    break;
+
+	    case Menu::SettingsMenu:
+	    {
+		const std::string previousLanguage = Settings::language();
+		menu = SettingsMenuScreen().exec();
+		if(previousLanguage != Settings::language())
+		{
+		    if(!translationInit())
+		    {
+			ERROR("translation not loaded after settings change");
+		    }
+		    else
+		    {
+			GameData::retranslateThemeData();
+		    }
+		}
+	    }
+	    break;
+
 	    case Menu::SelectPerson:
 	    {
 		SelectPersonScreen scr;
@@ -357,15 +485,17 @@ bool RuneWarsClient::exec(void)
 	    break;
 
 	    case Menu::GameLoadPart:
-		if(GameLoadScreen(savefile).exec())
+		if(GameLoadScreen(pendingLoadFile, savefile, promoteRecovery).exec())
 		{
 		    selectedPerson = GameData::myPerson();
 		    menu = GameData::loadedGamePart();
 		}
 		else
 		{
-		    menu = Menu::SelectPerson;
+		    menu = Menu::MainMenu;
 		}
+		pendingLoadFile = savefile;
+		promoteRecovery = false;
 	    break;
 
 	    default:

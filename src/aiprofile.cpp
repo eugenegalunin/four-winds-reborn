@@ -78,9 +78,9 @@ namespace
 
 const AI::DifficultyRules & AI::difficultyRules(Difficulty difficulty)
 {
-    static const DifficultyRules easy{ 8, 0, 1, -1, 2, 2, 3 };
-    static const DifficultyRules normal{ 16, 0, 3, 0, 4, 4, 6 };
-    static const DifficultyRules hard{ 48, 1, 4, 1, 6, 6, 10 };
+    static const DifficultyRules easy{ 8, 0, 1, -1, 2, 2, 3, true };
+    static const DifficultyRules normal{ 16, 0, 3, 0, 4, 4, 6, true };
+    static const DifficultyRules hard{ 48, 1, 4, 1, 6, 6, 10, false };
 
     switch(difficulty)
     {

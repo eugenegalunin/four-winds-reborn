@@ -1,6 +1,7 @@
 {
     "cursor":           "hardware",
     "background":       { "id": "screen2", "type": "file", "file": "menu.png" },
+    "music":            [ "win" ],
     "default:font":     "dejavus18",
     "default:color":    "#efe4ae",
 

@@ -90,6 +90,7 @@ namespace AI
         int strategicGoalLimit;
         int strategicDrawHorizon;
         int strategicBranchLimit;
+        bool showPlayerBattleForecast;
     };
 
     const char*             difficultyName(Difficulty);

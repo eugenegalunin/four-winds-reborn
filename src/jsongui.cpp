@@ -454,7 +454,7 @@ JsonWindow::JsonWindow(const std::string & res, Window* win) : Window(win), defa
 
 	    if(mus != tracks.end())
 	    {
-		if(! Music::isPlaying()) playMusic(*mus);
+		playMusic(*mus);
 		Music::setHookFinished(playRandomMusic);
 	    }
 #endif

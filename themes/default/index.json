@@ -19,7 +19,7 @@
     "bonus:pass":	10,
 
     "index:winds":	[ "none", "east", "south", "west", "north" ],
-    "index:clans":	[ "none", "maitha", "kartha", "iz", "marz" ],
+    "index:clans":	[ "none", "red", "yellow", "aqua", "purple" ],
     "index:abilities":	[ "none", "monacle", "catasrophic", "bard", "luck", "telepath" ],
     "index:specials":	[ "none", "swarm", "merge", "invisibility", "regeneration", "cast_hellblast", "magic_resistance", "mighty_blow", "gate",
 			    "first_strike", "see_invisible", "ignore_missiles", "devotion", "fire_shield", "cast_draw_number", "cast_draw_sword",

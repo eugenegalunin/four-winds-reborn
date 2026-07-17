@@ -35,12 +35,21 @@ namespace Settings
     std::string		fileSave(const std::string &);
     std::string		fileSaveGame(void);
     std::string		language(void);
+    void                setLanguage(const std::string &);
+    std::string         gameSpeed(void);
+    void                setGameSpeed(const std::string &);
+    int                 presentationDelay(int);
 
     bool		read(void);
+    bool                write(std::string* error = nullptr);
     bool		music(void);
+    void                setMusic(bool);
     bool		sound(void);
+    void                setSound(bool);
     bool		soundGuardianRules(void);
+    void                setSoundGuardianRules(bool);
     bool		fullscreen(void);
+    void                setFullscreen(bool);
     bool		accel(void);
 
     bool		storeCache(void);

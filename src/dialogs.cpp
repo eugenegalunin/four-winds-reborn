@@ -28,11 +28,12 @@
 #include "actions.h"
 #include "battle.h"
 #include "settings.h"
+#include "savegames.h"
 #include "dialogs.h"
 
 void MessageTop(const std::string & hdr, const std::string & msg, Window & win1)
 {
-    TermGUI::MessageBox win2(hdr, msg, 0, systemFont(), & win1);
+    TermGUI::MessageBox win2(hdr, msg, 0, GameTheme::fontRender("dejavus14"), & win1);
     DisplayScene::sceneRedraw();
 }
 
@@ -755,6 +756,304 @@ bool MessageBox::userEvent(int act, void* data)
     return false;
 }
 
+/* InGameMenuDialog */
+InGameMenuDialog::InGameMenuDialog(Window & win) :
+    DialogWindow("dialog_ingamemenu.json", win), selected(0)
+{
+    titleFont = jobject.getString("font:title", "dejavus26");
+    entryFont = jobject.getString("font:entry", "dejavus22");
+    smallFont = jobject.getString("font:small", "terminus14");
+    itemColor = GameTheme::jsonColor(jobject, "color:item");
+    itemSelectedColor = GameTheme::jsonColor(jobject, "color:item_selected");
+    itemBorderColor = GameTheme::jsonColor(jobject, "color:item_border");
+    selectedBorderColor = GameTheme::jsonColor(jobject, "color:selected_border");
+    mutedColor = GameTheme::jsonColor(jobject, "color:muted");
+
+    entries.push_back(Entry{ _("Save Game"), _("Create or overwrite a named save"),
+        JsonUnpack::rect(jobject, "entry:save"), InGameMenuResult::SaveGame });
+    entries.push_back(Entry{ _("Return to Main Menu"), _("The autosave will be updated"),
+        JsonUnpack::rect(jobject, "entry:menu"), InGameMenuResult::MainMenu });
+    entries.push_back(Entry{ _("Cancel"), "",
+        JsonUnpack::rect(jobject, "entry:cancel"), InGameMenuResult::Cancel });
+
+    setMouseTrack(true);
+    setKeyHandle(true);
+    setResultCode(InGameMenuResult::Cancel);
+    setVisible(true);
+}
+
+void InGameMenuDialog::renderWindow(void)
+{
+    renderColor(backgroundColor, rect());
+    renderRect(borderColor, rect());
+
+    const FontRender & title = GameTheme::fontRender(titleFont);
+    const FontRender & entryFontRender = GameTheme::fontRender(entryFont);
+    const FontRender & small = GameTheme::fontRender(smallFont);
+    renderText(title, _("GAME MENU"), headerColor, Point(width() / 2, 20), AlignCenter);
+
+    for(size_t index = 0; index < entries.size(); ++index)
+    {
+        const Entry & entry = entries[index];
+        const bool active = selected == static_cast<int>(index);
+        renderColor(active ? itemSelectedColor : itemColor, entry.area);
+        renderRect(active ? selectedBorderColor : itemBorderColor, entry.area);
+
+        if(entry.note.empty())
+        {
+            renderText(entryFontRender, entry.label, active ? headerColor : textColor,
+                       Point(entry.area.x + entry.area.w / 2, entry.area.y + entry.area.h / 2),
+                       AlignCenter, AlignCenter);
+        }
+        else
+        {
+            renderText(entryFontRender, entry.label, active ? headerColor : textColor,
+                       Point(entry.area.x + entry.area.w / 2, entry.area.y + 5), AlignCenter);
+            renderText(small, entry.note, mutedColor,
+                       Point(entry.area.x + entry.area.w / 2, entry.area.y + 36), AlignCenter);
+        }
+    }
+}
+
+bool InGameMenuDialog::activateSelected(void)
+{
+    if(selected < 0 || static_cast<size_t>(selected) >= entries.size()) return false;
+    setResultCode(entries[selected].result);
+    JsonWindow::playSound("button");
+    actionDialogClose();
+    return true;
+}
+
+bool InGameMenuDialog::selectNext(int direction)
+{
+    selected = (selected + direction + static_cast<int>(entries.size())) %
+        static_cast<int>(entries.size());
+    renderWindow();
+    return true;
+}
+
+bool InGameMenuDialog::keyPressEvent(const KeySym & key)
+{
+    switch(key.keycode())
+    {
+        case Key::UP: return selectNext(-1);
+        case Key::DOWN: return selectNext(1);
+        case Key::RETURN:
+        case Key::SPACE: return activateSelected();
+        case Key::ESCAPE:
+            setResultCode(InGameMenuResult::Cancel);
+            actionDialogClose();
+            return true;
+        default: break;
+    }
+    return false;
+}
+
+bool InGameMenuDialog::mouseClickEvent(const ButtonsEvent & coords)
+{
+    if(!coords.isButtonLeft()) return false;
+    for(size_t index = 0; index < entries.size(); ++index)
+    {
+        if(coords.isClick(entries[index].area))
+        {
+            selected = static_cast<int>(index);
+            return activateSelected();
+        }
+    }
+    return true;
+}
+
+bool InGameMenuDialog::mouseMotionEvent(const Point & pos, u32 buttons)
+{
+    (void) buttons;
+    for(size_t index = 0; index < entries.size(); ++index)
+    {
+        if(entries[index].area & pos)
+        {
+            if(selected != static_cast<int>(index))
+            {
+                selected = static_cast<int>(index);
+                renderWindow();
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+/* SaveNameDialog */
+SaveNameDialog::SaveNameDialog(Window & win) : DialogWindow("dialog_savegame.json", win)
+{
+    inputArea = JsonUnpack::rect(jobject, "input:area");
+    saveArea = JsonUnpack::rect(jobject, "button:save");
+    cancelArea = JsonUnpack::rect(jobject, "button:cancel");
+    titleFont = jobject.getString("font:title", "dejavus26");
+    inputFont = jobject.getString("font:input", "dejavus18");
+    smallFont = jobject.getString("font:small", "terminus14");
+    inputColor = GameTheme::jsonColor(jobject, "color:input");
+    inputBorderColor = GameTheme::jsonColor(jobject, "color:input_border");
+    buttonColor = GameTheme::jsonColor(jobject, "color:button");
+    buttonBorderColor = GameTheme::jsonColor(jobject, "color:button_border");
+    mutedColor = GameTheme::jsonColor(jobject, "color:muted");
+    errorColor = GameTheme::jsonColor(jobject, "color:error");
+
+    setKeyHandle(true);
+    setResultCode(0);
+#ifndef SWE_SDL12
+    SDL_StartTextInput();
+#endif
+    setVisible(true);
+}
+
+SaveNameDialog::~SaveNameDialog()
+{
+#ifndef SWE_SDL12
+    SDL_StopTextInput();
+#endif
+}
+
+void SaveNameDialog::renderWindow(void)
+{
+    renderColor(backgroundColor, rect());
+    renderRect(borderColor, rect());
+
+    const FontRender & title = GameTheme::fontRender(titleFont);
+    const FontRender & input = GameTheme::fontRender(inputFont);
+    const FontRender & small = GameTheme::fontRender(smallFont);
+    renderText(title, _("SAVE GAME"), headerColor, Point(width() / 2, 20), AlignCenter);
+    renderText(small, _("Enter a name for this save"), mutedColor,
+               Point(inputArea.x, inputArea.y - 24));
+
+    renderColor(inputColor, inputArea);
+    renderRect(inputBorderColor, inputArea);
+    const std::string shown = saveName.empty() ? _("Save name") : saveName;
+    const Color shownColor = saveName.empty() ? mutedColor : textColor;
+    Rect rendered = renderText(input, shown, shownColor,
+                               Point(inputArea.x + 12, inputArea.y + inputArea.h / 2),
+                               AlignLeft, AlignCenter);
+    if(!saveName.empty())
+    {
+        const int cursorX = std::min(inputArea.x + inputArea.w - 10, rendered.x + rendered.w + 2);
+        renderLine(textColor, Point(cursorX, inputArea.y + 9),
+                   Point(cursorX, inputArea.y + inputArea.h - 10));
+    }
+
+    renderColor(buttonColor, saveArea);
+    renderRect(buttonBorderColor, saveArea);
+    renderText(input, _("Save"), textColor,
+               Point(saveArea.x + saveArea.w / 2, saveArea.y + saveArea.h / 2),
+               AlignCenter, AlignCenter);
+    renderColor(buttonColor, cancelArea);
+    renderRect(buttonBorderColor, cancelArea);
+    renderText(input, _("Cancel"), textColor,
+               Point(cancelArea.x + cancelArea.w / 2, cancelArea.y + cancelArea.h / 2),
+               AlignCenter, AlignCenter);
+
+    if(!validationMessage.empty())
+        renderText(small, validationMessage, errorColor,
+                   Point(width() / 2, saveArea.y - 23), AlignCenter);
+}
+
+void SaveNameDialog::eraseLastCodepoint(void)
+{
+    if(saveName.empty()) return;
+    size_t position = saveName.size() - 1;
+    while(position && (static_cast<unsigned char>(saveName[position]) & 0xC0) == 0x80)
+        --position;
+    saveName.erase(position);
+}
+
+bool SaveNameDialog::accept(void)
+{
+    saveName = SaveGames::normalizedName(saveName);
+    if(saveName.empty())
+    {
+        validationMessage = _("Enter a save name.");
+        renderWindow();
+        return true;
+    }
+
+    setResultCode(1);
+    JsonWindow::playSound("button");
+    actionDialogClose();
+    return true;
+}
+
+bool SaveNameDialog::keyPressEvent(const KeySym & key)
+{
+    switch(key.keycode())
+    {
+        case Key::BACKSPACE:
+            eraseLastCodepoint();
+            validationMessage.clear();
+            renderWindow();
+            return true;
+        case Key::RETURN: return accept();
+        case Key::ESCAPE:
+            setResultCode(0);
+            actionDialogClose();
+            return true;
+        default: break;
+    }
+    return false;
+}
+
+bool SaveNameDialog::textInputEvent(const std::string & value)
+{
+    if(value.empty() || 80 <= saveName.size()) return true;
+    for(unsigned char symbol : value)
+        if(symbol < 0x20 || symbol == 0x7F) return true;
+
+    const size_t remaining = 80 - saveName.size();
+    if(value.size() > remaining) return true;
+    saveName.append(value);
+    validationMessage.clear();
+    renderWindow();
+    return true;
+}
+
+bool SaveNameDialog::mouseClickEvent(const ButtonsEvent & coords)
+{
+    if(!coords.isButtonLeft()) return false;
+    if(coords.isClick(saveArea)) return accept();
+    if(coords.isClick(cancelArea))
+    {
+        setResultCode(0);
+        JsonWindow::playSound("button");
+        actionDialogClose();
+        return true;
+    }
+    return true;
+}
+
+bool SaveGameAs(const JsonObject & gui, Window & parent, const std::function<bool()> & prepare)
+{
+    SaveNameDialog nameDialog(parent);
+    if(nameDialog.exec() != 1) return false;
+
+    const std::string name = nameDialog.name();
+    const bool overwrite = !SaveGames::existingPath(name).empty();
+    if(overwrite && !MessageBox(_("Overwrite Save"),
+        StringFormat(_("A save named '%1' already exists. Replace it? The previous file will be kept as a backup."))
+            .arg(name), parent).exec())
+        return false;
+
+    // Delay gameplay mutations until every cancelable prompt has been accepted.
+    if(prepare && !prepare()) return false;
+
+    std::string error;
+    if(!GameData::saveNamedGame(gui, name, overwrite, &error))
+    {
+        MessageBox(_("Save Game"), StringFormat(_("The game could not be saved: %1")).arg(error),
+                   parent, false).exec();
+        return false;
+    }
+
+    MessageBox(_("Save Game"), StringFormat(_("Saved as '%1'.")).arg(name),
+               parent, false).exec();
+    return true;
+}
+
 /* MapStatusDialog */
 MapStatusDialog::MapStatusDialog(const LocalData & data, Window & win)
     : DialogWindow("dialog_mapstatus.json", win), localData(data), buttonClose(jobject, "button:close", Action::ButtonClose, this)
@@ -1009,8 +1308,11 @@ CombatScreenDialog::CombatScreenDialog(const BattleLegend & leg, const BattleStr
 	renderCorpse(true), doDialogClose(false)
 {
     background = GameTheme::jsonSprite(jobject, "background");
-    delayStrikeAnim = jobject.getInteger("delay:strike", 300);
-    delayCombatScreen = jobject.getInteger("delay:combatscreen", 600);
+    delayStrikeAnim = Settings::presentationDelay(jobject.getInteger("delay:strike", 300));
+    delayCombatScreen = Settings::presentationDelay(jobject.getInteger("delay:combatscreen", 600));
+    animationStrikeMelee.delay = Settings::presentationDelay(animationStrikeMelee.delay);
+    animationStrikeRanger.delay = Settings::presentationDelay(animationStrikeRanger.delay);
+    animationFireShield.delay = Settings::presentationDelay(animationFireShield.delay);
 
     auto lifeStatus = GameTheme::jsonSprite(jobject, "sprite:lifestatus");
     auto cellFill = GameTheme::jsonSprite(jobject, "sprite:cellfill");

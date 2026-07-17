@@ -125,7 +125,7 @@ Griffon, or other See Invisible creature occupies an adjacent territory. The
 detector's territory owner does not matter, and another player's detector does
 not share visibility.
 
-Ziag's Monacle reveals every invisible creature globally. Players always see
+Ziag's Monocle reveals every invisible creature globally. Players always see
 their own creatures, and creatures at the Tower of Four Winds are public. The
 full rationale and the resolved manual ambiguities are recorded in
 `docs/RulesDecisions.md`.
@@ -180,19 +180,22 @@ or random rolls. It changes the AI planning budget:
 - `Normal` runs 16 battle samples and uses each behavior profile's normal spell
   horizon and army coordination.
 - `Hard` runs 48 battle samples, extends spell projection by one step (up to
-  four casts) and lets a profile coordinate one additional party per target.
+  four casts), lets a profile coordinate one additional party per target and
+  hides the player's map battle forecast.
 
 Behavior profiles and difficulty remain independent. An aggressive wizard on
 `Easy` still behaves aggressively, but plans less deeply; on `Hard` it keeps
 the same doctrine and evaluates it more thoroughly.
 
-During the player's movement phase, select movable creatures on one of your
-territories and hover an enemy territory. The right panel shows simulated
-capture chance and expected attacker survival for exactly the selected party.
-The preview uses the same battle resolver and the current difficulty's sample
-budget, runs on copies and never consumes the live game RNG. It also uses the
-player's filtered `LocalData`, so invisible enemies are not disclosed by the
-preview. The same forecast remains visible while dragging the party flag.
+On `Easy` and `Normal`, select movable creatures on one of your territories and
+hover an enemy territory during the movement phase. The right panel shows
+simulated capture chance and expected attacker survival for exactly the selected
+party. The preview uses the same battle resolver and the current difficulty's
+sample budget, runs on copies and never consumes the live game RNG. It also uses
+the player's filtered `LocalData`, so invisible enemies are not disclosed by the
+preview. The same forecast remains visible while dragging the party flag. On
+`Hard` the panel receives no forecast data; the AI still uses its full private
+48-sample evaluation when planning its own actions.
 
 ## Spellcasting AI
 

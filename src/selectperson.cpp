@@ -115,8 +115,25 @@ SelectPersonScreen::SelectPersonScreen() : JsonWindow("screen_selectperson.json"
         personClans = GameTheme::jsonTextInfo(*jo, "textinfo:clans");
         spellText = GameTheme::jsonTextInfo(*jo, "textinfo:spell");
 
-        supplementialSpells = personClans;
+        supplementalSpells = personClans;
         specialAbilities = personClans;
+	spellTextCompact = spellText;
+	spellTextTiny = spellText;
+	abilityText = personClans;
+
+	// Optional compact styles keep localized long names inside the two-column
+	// spell list while preserving the original size for short labels/themes.
+	if(const JsonValue* value = jo->getValue("textinfo:spell_compact"))
+	    spellTextCompact = GameTheme::jsonTextInfo(*value);
+	if(const JsonValue* value = jo->getValue("textinfo:spell_tiny"))
+	    spellTextTiny = GameTheme::jsonTextInfo(*value);
+	if(const JsonValue* value = jo->getValue("textinfo:section"))
+	{
+	    supplementalSpells = GameTheme::jsonTextInfo(*value);
+	    specialAbilities = supplementalSpells;
+	}
+	if(const JsonValue* value = jo->getValue("textinfo:ability"))
+	    abilityText = GameTheme::jsonTextInfo(*value);
     }
 
     jo = jobject.getObject("ai:difficulty");
@@ -245,47 +262,57 @@ void SelectPersonScreen::renderWindow(void)
 	// spells
 	drawPos.x = textPos.x;
 	drawPos.y = drawPos.y + icon_h + 5;
-	renderTextInfo(supplementialSpells, _("Supplemential Spells:"), drawPos);
+	renderTextInfo(supplementalSpells, _("Supplemental Spells:"), drawPos);
 
-	drawPos.y = drawPos.y + 40;
+	drawPos.y += GameTheme::fontRender(supplementalSpells.font).lineSkipHeight() + 6;
 	bool spellsUpdate = spellsIcon.empty();
 
 	for(auto it = avatarInfo.spells.begin(); it != avatarInfo.spells.end(); ++it)
 	{
 	    const SpellInfo & spellInfo = GameData::spellInfo(*it);
-	    drawPos.x = std::distance(avatarInfo.spells.begin(), it) % 2 ? textPos.x + 210 : textPos.x + 20;
+	    const std::size_t spellIndex = std::distance(avatarInfo.spells.begin(), it);
+	    const bool rightColumn = spellIndex % 2;
+	    const int secondColumnX = textPos.x + 210;
+	    drawPos.x = rightColumn ? secondColumnX : textPos.x + 20;
 	    Texture icon = GameTheme::texture(spellInfo.image);
 
 	    Rect rtClick(drawPos.x, drawPos.y, icon.width() + 3, icon.height());
 	    drawPos.x = drawPos.x + icon.width() + 3;
 	    icon_h = icon.height();
 
-	    const Rect & rt = renderTextInfo(spellText, spellInfo.name, drawPos);
+	    const int columnRight = rightColumn ? width() - 12 : secondColumnX - 6;
+	    const int availableWidth = std::max(1, columnRight - drawPos.x);
+	    const JsonTextInfo* fittedText = & spellText;
+	    if(GameTheme::fontRender(fittedText->font).stringSize(spellInfo.name).w > availableWidth)
+		fittedText = & spellTextCompact;
+	    if(GameTheme::fontRender(fittedText->font).stringSize(spellInfo.name).w > availableWidth)
+		fittedText = & spellTextTiny;
+
+	    const Rect & rt = renderTextInfo(*fittedText, spellInfo.name, drawPos);
 	    rtClick.w += rt.w;
 
 	    if(spellsUpdate)
 		spellsIcon.emplace_back(spellInfo, rtClick, *this);
 
-	    if(std::distance(avatarInfo.spells.begin(), it) % 2 &&
-		std::distance(avatarInfo.spells.begin(), it) < avatarInfo.spells.size() - 1)
-		drawPos.y = drawPos.y + icon.height() + 3;
+	    if(rightColumn && spellIndex < avatarInfo.spells.size() - 1)
+		drawPos.y += icon.height() + 2;
 	}
 
 	// ability
 	drawPos.x = textPos.x;
-	drawPos.y = drawPos.y + icon_h + 5;
+	drawPos.y += icon_h + 4;
 	renderTextInfo(specialAbilities, _("Special Abilities:"), drawPos);
 
 	if(avatarInfo.ability())
 	{
 	    const AbilityInfo & ability = GameData::abilityInfo(avatarInfo.ability);
 	    drawPos.x = textPos.x + 10;
-	    drawPos.y = drawPos.y + 30;
+	    drawPos.y += GameTheme::fontRender(specialAbilities.font).lineSkipHeight() + 4;
 
-	    const FontRender & fontRender = GameTheme::fontRender(personClans.font);
+	    const FontRender & fontRender = GameTheme::fontRender(abilityText.font);
 	    for(auto & ustr : fontRender.splitStringWidth(String::replace(ability.description, "%1", avatarInfo.name), 410))
 	    {
-		renderText(fontRender, ustr, personClans.color, drawPos);
+		renderText(fontRender, ustr, abilityText.color, drawPos);
 		drawPos.y += fontRender.lineSkipHeight();
 	    }
 	}
@@ -375,7 +402,7 @@ Person SelectPersonScreen::selectedPerson(void) const
 bool SelectPersonScreen::actionButtonClose(void)
 {
     playSound("button");
-    setResultCode(Menu::GameExit);
+    setResultCode(Menu::MainMenu);
     setVisible(false);
 
     return true;

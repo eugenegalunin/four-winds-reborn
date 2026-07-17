@@ -88,7 +88,7 @@ struct Clans;
 
 struct Clan : Enum
 {
-    enum clan_t { None = 0, Maitha, Kartha, Iz, Marz };
+    enum clan_t { None = 0, Red, Yellow, Aqua, Purple };
 
     Clan(clan_t v = None) : Enum(v) {}
     Clan(const std::string &);
@@ -1019,6 +1019,7 @@ struct WinResults
 
     WinResults() {}
     WinResults(const Wind &, const Wind &, const Wind &, const WinRules &, const WinRules &, const Stone &, const Stone &);
+    static WinResults		drawn(const Wind & dealWind, const Wind & roundWind);
 
     bool			isValid(void) const { return dealWind.isValid(); }
     bool			isDrawn(void) const { return ! lastStone.isValid(); }
@@ -1085,7 +1086,7 @@ struct Persons : public std::vector<Person>
 
 struct LandClaims
 {
-    std::array<int, Clan::Marz + 1> values{};
+    std::array<int, Clan::Purple + 1> values{};
 
     int                         points(const Clan &) const;
     void                        add(const Clan &, int);

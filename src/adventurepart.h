@@ -220,13 +220,13 @@ class MoveFlagWindow : public Window
     Land		land;
 
 protected:
-    bool		mouseReleaseEvent(const ButtonEvent &) override;
     void		mouseTrackingEvent(const Point &, u32 buttons) override;
 
 public:
     MoveFlagWindow(const Clan &, Window &);
 
     void		renderWindow(void) override;
+    bool                isAreaPoint(const Point &) const override { return false; }
 
     void		setVisible(bool);
     void		setLand(const Land & ln) { land = ln; }
@@ -300,6 +300,7 @@ protected:
     bool		userEvent(int, void*) override;
     void		tickEvent(u32) override;
     bool                keyPressEvent(const KeySym &) override;
+    bool                mouseReleaseEvent(const ButtonEvent &) override;
 
 public:
     AdventurePartScreen(const Avatar &);

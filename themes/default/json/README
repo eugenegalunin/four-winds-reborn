@@ -2,6 +2,7 @@
     id:string		- sprite cache id
     type:string		- file
     file:string		- filename in image source (see index.json)
+    file:ru:string	- optional Russian image source selected with the runtime language
     colorkey:string	- color format '#RRGGBB' or 'color name' (SDL_SetColorKey)
 
     offset:point	- sprite offset

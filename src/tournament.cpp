@@ -449,7 +449,7 @@ Tournament::Schedule Tournament::buildSchedule(const Config & config)
     }
 
     std::array<Clan, 4> clans = {
-        Clan(Clan::Maitha), Clan(Clan::Kartha), Clan(Clan::Iz), Clan(Clan::Marz)
+        Clan(Clan::Red), Clan(Clan::Yellow), Clan(Clan::Aqua), Clan(Clan::Purple)
     };
     std::vector<std::array<Clan, 4>> legalClans;
     do

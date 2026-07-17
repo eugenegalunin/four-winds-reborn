@@ -117,6 +117,11 @@ class MahjongPartScreen : public JsonWindow
     int			playersMarker;
     int			animationDropStep;
     int			animationDropDelay;
+    int                 animationDealDelay;
+    bool                dealingInitialHand;
+    std::size_t         dealtStoneCount;
+    bool                animatingDrawStone;
+    Point               drawStoneAnimationPos;
 
     IconToolTip		iconAffectedSkull;
     IconToolTip		iconAffectedSword;
@@ -140,6 +145,7 @@ class MahjongPartScreen : public JsonWindow
     JsonButton		buttonLocalGame;
 
     bool		playerReady;
+    bool		resolvingLuckChoice;
     ActionList		actions;
     TickTrigger		tt;
 
@@ -158,6 +164,7 @@ class MahjongPartScreen : public JsonWindow
     bool		actionButtonSystem(void);
     void		actionButtonSummary(void);
     void		actionButtonMap(void);
+    void                restoreMahjongMusic(void);
     bool		actionCreateScreenshot(void);
     bool		actionEventDebug1(void);
     bool		actionEventDebug2(void);
@@ -181,6 +188,8 @@ class MahjongPartScreen : public JsonWindow
     int			renderWinRuleVertical(const WinRule &, const Point &);
     int			renderWinRuleHorizontal(const WinRule &, const Point &);
     void		renderDropStone(void);
+    void                renderDrawStone(void);
+    void                renderInitialDeal(void);
     void		renderWaitPlayers(const Wind &);
     std::string		playerPrettyName(const RemotePlayer &) const;
 
