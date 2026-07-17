@@ -1651,6 +1651,11 @@ bool MahjongPartScreen::actionMahjongLoadData(void)
     ld = GameData::toLocalData(myAvatar);
     const LocalPlayer & player = ld.myPlayer();
 
+    // A completed Chao clears the authoritative discard before its data
+    // refresh reaches the screen. Do not keep rendering a now-invalid Chao
+    // variant against that cleared discard.
+    if(!ld.dropStone.isValid()) variantSelected = -1;
+
     iconAffectedSkull.setVisible(player.isAffectedSpell(Spell::DrawSkull));
     iconAffectedSword.setVisible(player.isAffectedSpell(Spell::DrawSword));
     iconAffectedNumber.setVisible(player.isAffectedSpell(Spell::DrawNumber));
@@ -1976,10 +1981,16 @@ bool MahjongPartScreen::actionMahjongDrop(const ActionMessage & v)
 
     LocalPlayer & player = ld.myPlayer();
 
-    bool showChao = player.isMahjongChao(ld.currentWind, ld.dropStone);
-    bool showPung = player.isMahjongPung(ld.currentWind, ld.dropStone);
-    bool showKong = player.isMahjongKong1(ld.currentWind, ld.dropStone);
-    bool showGame = player.isWinMahjong(ld.currentWind, ld.roundWind, ld.dropStone, & ld.winResult);
+    // The dropper cannot claim their own discard. The local snapshot still
+    // contains the just-discarded drawn rune until MahjongData is applied,
+    // which previously produced a one-frame phantom Game button before the
+    // dropper's automatic Pass resolved competing AI calls.
+    const bool mayClaimDiscard = !ld.yourTurn();
+    bool showChao = mayClaimDiscard && player.isMahjongChao(ld.currentWind, ld.dropStone);
+    bool showPung = mayClaimDiscard && player.isMahjongPung(ld.currentWind, ld.dropStone);
+    bool showKong = mayClaimDiscard && player.isMahjongKong1(ld.currentWind, ld.dropStone);
+    bool showGame = mayClaimDiscard &&
+	player.isWinMahjong(ld.currentWind, ld.roundWind, ld.dropStone, & ld.winResult);
 
     buttonPass->setVisible(true);
     buttonGame->setVisible(showGame);

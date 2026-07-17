@@ -312,7 +312,7 @@ bool AI::mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWin
 	for(const auto & entry : callPlans)
 	{
 	    if(entry.second.type == MahjongCallType::Kong)
-		return sayOnly ? GameData::client2Mahjong(entry.first, ClientSayKong(2), actions) :
+		return sayOnly ? GameData::client2Mahjong(entry.first, ClientSayKong(1), actions) :
 		                 GameData::client2Mahjong(entry.first, ClientButtonKong1(), actions);
 	    if(entry.second.type == MahjongCallType::Pung)
 		return sayOnly ? GameData::client2Mahjong(entry.first, ClientSayPung(), actions) :
