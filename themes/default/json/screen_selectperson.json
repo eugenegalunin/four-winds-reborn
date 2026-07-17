@@ -17,20 +17,14 @@
 		        "hotkey":   "RETURN",
 		        "position": [ 925, 612 ],
 		        "tooltip":  "next screen",
-                        "sprites":  [
-                                      { "id": "but_ok1", "type": "file", "file": "buttons.png", "crop": [ 172, 0, 86, 46], "colorkey": "#ffd2d2" },
-                                      { "id": "but_ok2", "type": "file", "file": "buttons.png", "crop": [ 258, 0, 86, 46], "colorkey": "#ffd2d2" }
-			            ]
+                        "sprites":  [ "but_ok1", "but_ok2" ]
                       },
                       {
                         "id":      "but_close",
 		        "hotkey":   "ESCAPE",
 		        "position": [ 925, 707 ],
 		        "tooltip":  "close screen",
-                        "sprites":  [
-                                      { "id": "but_close1", "type": "file", "file": "buttons.png", "crop": [ 688, 0, 86, 46], "colorkey": "#ffd2d2" },
-                                      { "id": "but_close2", "type": "file", "file": "buttons.png", "crop": [ 774, 0, 86, 46], "colorkey": "#ffd2d2" }
-			            ]
+                        "sprites":  [ "but_close1", "but_close2" ]
                       }
 		],
     "ai:difficulty": {
@@ -38,7 +32,7 @@
                     "color:background": "#e9e4cf",
                     "color:border": "#17140d",
                     "color:inner_border": "#8f886c",
-                    "textinfo:value": { "position": [ 968, 668 ], "font": "dejavus22", "color": "#a71a23", "align": "center" }
+                    "textinfo:value": { "position": [ 968, 671 ], "font": "dejavus18", "color": "#a71a23", "align": "center" }
             },
     "area:clans":	[
                     { "id": "red", "area": [ 330, 612, 142, 142 ] },
@@ -68,7 +62,11 @@
 		    "textinfo:description": { "position": [ 690, 84 ], "font": "dejavus22" },
 		    "textinfo:clans": { "position": [ 690, 118 ], "font": "dejavus22" },
 		    "textinfo:clan": { "position": [ 912, 38 ], "font": "dejavus22", "color": "#a71a23" },
-		    "textinfo:spell": { "font": "dejavus18" }
+		    "textinfo:spell": { "font": "dejavus18" },
+		    "textinfo:spell_compact": { "font": "dejavus14" },
+		    "textinfo:spell_tiny": { "font": "dejavus12" },
+		    "textinfo:section": { "font": "dejavus18" },
+		    "textinfo:ability": { "font": "dejavus14" }
 	    },
     "icon:disabled":	{ "color": "slategray", "size": [ 142, 142 ], "space": 2 },
     "sprite:marker":	{ "id": "marker", "type": "composite", "size": [ 140, 140 ], "tiles": [

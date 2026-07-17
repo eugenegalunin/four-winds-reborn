@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(FourWindsReborn VERSION 20260716.2)
+project(FourWindsReborn VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -16,6 +16,8 @@ add_subdirectory(engine)
 
 set(FOUR_WINDS_GAME_REVISION "unknown")
 set(FOUR_WINDS_ENGINE_REVISION "unknown")
+set(FOUR_WINDS_RELEASE_TAG "")
+string(TIMESTAMP FOUR_WINDS_BUILD_DATE "%Y-%m-%d")
 find_package(Git QUIET)
 if(GIT_FOUND)
     execute_process(
@@ -33,6 +35,13 @@ if(GIT_FOUND)
     if(FOUR_WINDS_GAME_DIRTY EQUAL 1)
         string(APPEND FOUR_WINDS_GAME_REVISION "-dirty")
     endif()
+
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -c "safe.directory=${CMAKE_CURRENT_SOURCE_DIR}"
+            -C "${CMAKE_CURRENT_SOURCE_DIR}" describe --tags --exact-match --match "v[0-9]*"
+        OUTPUT_VARIABLE FOUR_WINDS_RELEASE_TAG
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET)
 
     execute_process(
         COMMAND "${GIT_EXECUTABLE}" -c "safe.directory=${CMAKE_CURRENT_SOURCE_DIR}/engine"
@@ -58,6 +67,8 @@ endif()
 
 set(FOUR_WINDS_BUILD_DEFINITIONS
     FOUR_WINDS_VERSION="${PROJECT_VERSION}"
+    FOUR_WINDS_BUILD_DATE="${FOUR_WINDS_BUILD_DATE}"
+    FOUR_WINDS_RELEASE_TAG="${FOUR_WINDS_RELEASE_TAG}"
     FOUR_WINDS_GAME_REVISION="${FOUR_WINDS_GAME_REVISION}"
     FOUR_WINDS_ENGINE_REVISION="${FOUR_WINDS_ENGINE_REVISION}")
 
@@ -66,11 +77,16 @@ set(FOUR_WINDS_SOURCE
     src/gameplayrng.cpp
     src/matchscore.cpp
     src/recovery.cpp
+    src/savegames.cpp
     src/replay.cpp
     src/simulation.cpp
     src/strings.cpp
     src/gamedata.cpp
     src/runewars.cpp
+    src/intropart.cpp
+    src/mainmenu.cpp
+    src/settingsmenu.cpp
+    src/loadrecovery.cpp
     src/gametheme.cpp
     src/gameobjects.cpp
     src/settings.cpp
@@ -123,20 +139,31 @@ if(BUILD_TESTING)
         target_link_libraries(gameplay_regression_tests dbghelp)
     endif()
     add_test(NAME gameplay_regressions COMMAND gameplay_regression_tests)
+    set_tests_properties(gameplay_regressions PROPERTIES
+        ENVIRONMENT "FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test-gameplay;FOUR_WINDS_SAVE_DIR=${CMAKE_BINARY_DIR}/save-test-gameplay")
     add_test(NAME avatar_balance_metrics COMMAND gameplay_regression_tests --balance-only)
+    set_tests_properties(avatar_balance_metrics PROPERTIES
+        ENVIRONMENT "FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test-balance;FOUR_WINDS_SAVE_DIR=${CMAKE_BINARY_DIR}/save-test-balance")
     add_test(NAME crash_reporting COMMAND gameplay_regression_tests --crash-report-self-test)
     set_tests_properties(crash_reporting PROPERTIES
-        ENVIRONMENT "FOUR_WINDS_DIAGNOSTICS_DIR=${CMAKE_BINARY_DIR}/diagnostics-test")
+        ENVIRONMENT "FOUR_WINDS_DIAGNOSTICS_DIR=${CMAKE_BINARY_DIR}/diagnostics-test;FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test-crash;FOUR_WINDS_SAVE_DIR=${CMAKE_BINARY_DIR}/save-test-crash")
     add_test(NAME recovery_checkpointing COMMAND gameplay_regression_tests --recovery-self-test)
     set_tests_properties(recovery_checkpointing PROPERTIES
-        ENVIRONMENT "FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test")
+        ENVIRONMENT "FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test;FOUR_WINDS_SAVE_DIR=${CMAKE_BINARY_DIR}/save-test")
+    add_test(NAME settings_persistence COMMAND gameplay_regression_tests --settings-self-test)
+    set_tests_properties(settings_persistence PROPERTIES
+        ENVIRONMENT "FOUR_WINDS_SETTINGS_FILE=${CMAKE_BINARY_DIR}/settings-test/settings.json;FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test-settings;FOUR_WINDS_SAVE_DIR=${CMAKE_BINARY_DIR}/save-test-settings")
     add_test(NAME fixed_seed_replay COMMAND gameplay_regression_tests --fixed-seed-replay)
+    set_tests_properties(fixed_seed_replay PROPERTIES
+        ENVIRONMENT "FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test-replay;FOUR_WINDS_SAVE_DIR=${CMAKE_BINARY_DIR}/save-test-replay")
     add_test(NAME headless_match_simulation
         COMMAND gameplay_regression_tests --headless-match-self-test)
+    set_tests_properties(headless_match_simulation PROPERTIES
+        ENVIRONMENT "FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test-headless;FOUR_WINDS_SAVE_DIR=${CMAKE_BINARY_DIR}/save-test-headless")
     if(WIN32)
         add_test(NAME windows_native_crash_reporting
             COMMAND gameplay_regression_tests --windows-crash-report-self-test)
         set_tests_properties(windows_native_crash_reporting PROPERTIES
-            ENVIRONMENT "FOUR_WINDS_DIAGNOSTICS_DIR=${CMAKE_BINARY_DIR}/diagnostics-native-test")
+            ENVIRONMENT "FOUR_WINDS_DIAGNOSTICS_DIR=${CMAKE_BINARY_DIR}/diagnostics-native-test;FOUR_WINDS_RECOVERY_DIR=${CMAKE_BINARY_DIR}/recovery-test-native-crash;FOUR_WINDS_SAVE_DIR=${CMAKE_BINARY_DIR}/save-test-native-crash")
     endif()
 endif()

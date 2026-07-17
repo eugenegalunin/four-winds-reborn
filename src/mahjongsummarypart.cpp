@@ -59,15 +59,18 @@ MahjongSummaryPartScreen::MahjongSummaryPartScreen() : JsonWindow("screen_mahjon
     handBonusList = ld.winResult.bonusHands();
     opponentFinesList = ld.winResult.opponentFines();
 
-    const Wind & winWind = ld.winResult.winWind;
-    const Wind & dealWind = ld.winResult.dealWind;
-    const Wind & roundWind = ld.winResult.roundWind;
+    const bool gameDrawn = ld.winResult.isDrawn();
+    const Wind winWind = ld.winResult.winWind;
+    // Draws created before the draw-context fix contain none for every result
+    // wind. Keep those autosaves/recovery checkpoints loadable by falling back
+    // to the live Mahjong state carried by LocalData.
+    const Wind dealWind = ld.winResult.dealWind.isValid() ? ld.winResult.dealWind : ld.currentWind;
+    const Wind roundWind = ld.winResult.roundWind.isValid() ? ld.winResult.roundWind : ld.roundWind;
 
     DEBUG("wind win: " << winWind.toString());
     DEBUG("wind deal: " << dealWind.toString());
     DEBUG("wind round: " << roundWind.toString());
 
-    const Avatar & winAvatar = ld.playerOfWind(winWind).avatar;
     const Avatar & dealAvatar = ld.playerOfWind(dealWind).avatar;
 
     const std::string & roundWindName = GameData::windInfo(roundWind).name;
@@ -93,10 +96,11 @@ MahjongSummaryPartScreen::MahjongSummaryPartScreen() : JsonWindow("screen_mahjon
     bool selfDrawnHand = std::any_of(handBonusList.begin(), handBonusList.end(),
 				[](const HandBonus & bonus){ return bonus.isType(HandBonus::SelfDrawn); });
 
-    if(ld.winResult.isDrawn())
+    if(gameDrawn)
 	labels.back().text = _("Game Drawn");
     else
     {
+	const Avatar & winAvatar = ld.playerOfWind(winWind).avatar;
 	const std::string & winAvatarName = GameData::avatarInfo(winAvatar).name;
 	const std::string & winWindName = GameData::windInfo(winWind).name;
 	const std::string drawnName = _("Drawn");

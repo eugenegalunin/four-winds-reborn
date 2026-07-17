@@ -52,10 +52,10 @@ CANONICAL_CREATURE_PRICES = {
 }
 
 CANONICAL_CLAN_NAMES = {
-    "maitha": "Maitha",
-    "kartha": "Kartha",
-    "iz": "Iz",
-    "marz": "Marz",
+    "red": "Red",
+    "yellow": "Yellow",
+    "aqua": "Aqua",
+    "purple": "Purple",
 }
 
 CANONICAL_SPELL_PRICES = {
@@ -82,6 +82,33 @@ CANONICAL_CREATURE_OWNERS = {
     "juggernaut": {"logun"},
     "shanahan": {"kierac"},
     "tornado": {"dayla", "nucrus"},
+}
+
+RUSSIAN_SOUND_RESOURCE_IDS = {
+    "orachi_game": 1053,
+    "lakkho_game": 1063,
+    "dayla_game": 1073,
+    "ziag_game": 1083,
+    "niana_game": 1093,
+    "kierac_game": 1103,
+    "logun_kong": 1112,
+    "logun_game": 1113,
+    "nucrus_game": 1123,
+    "javed_game": 1133,
+    **{name: 1140 + offset for offset, name in enumerate((
+        "orachi_name", "lakkho_name", "dayla_name", "ziag_name", "niana_name",
+        "kierac_name", "logun_name", "nucrus_name", "javed_name",
+    ))},
+    **{f"creature{offset:02d}": 1149 + offset for offset in range(1, 30)},
+    "red_name": 1190,
+    "yellow_name": 1191,
+    "aqua_name": 1192,
+    "purple_name": 1193,
+    "begin": 1200,
+    "round_east": 1201,
+    "round_south": 1202,
+    "round_west": 1203,
+    "round_north": 1204,
 }
 
 
@@ -249,11 +276,14 @@ class ThemeValidator:
         for table_name in ("images", "sounds", "musics", "fonts"):
             path = paths[table_name]
             for record_id, record in tables[table_name].items():
-                filename = record.get("file")
-                if not isinstance(filename, str) or not filename:
-                    self.error(path, f"{record_id}.file must be a non-empty filename")
-                elif Path(filename).name.lower() not in resource_files:
-                    self.error(path, f"{record_id}.file resource '{filename}' does not exist in the theme")
+                for field in ("file", "file:ru"):
+                    filename = record.get(field)
+                    if field != "file" and filename is None:
+                        continue
+                    if not isinstance(filename, str) or not filename:
+                        self.error(path, f"{record_id}.{field} must be a non-empty filename")
+                    elif Path(filename).name.lower() not in resource_files:
+                        self.error(path, f"{record_id}.{field} resource '{filename}' does not exist in the theme")
 
         avatar_path = paths["avatars"]
         spell_owners: defaultdict[str, set[str]] = defaultdict(set)
@@ -390,6 +420,78 @@ class ThemeValidator:
                 self.error(creature_path, f"{speciality} grantor '{grantors[0]}' must be a unique creature")
 
         if theme.name == "default":
+            intro_path = theme / "json" / "screen_intro.json"
+            intro = self.document(intro_path, dict)
+            if intro is not None:
+                frames = intro.get("frames")
+                if not isinstance(frames, list) or len(frames) != 17:
+                    count = len(frames) if isinstance(frames, list) else "not an array"
+                    self.error(intro_path, f"original intro must contain 17 frames, got {count}")
+                else:
+                    for offset, frame in enumerate(frames, start=1):
+                        if not isinstance(frame, dict):
+                            self.error(intro_path, f"intro frame #{offset} must be an object")
+                            continue
+
+                        expected_image = f"introframe_{offset}.png"
+                        image = frame.get("image")
+                        actual_image = image.get("file") if isinstance(image, dict) else None
+                        if actual_image != expected_image:
+                            self.error(
+                                intro_path,
+                                f"intro frame #{offset} must use '{expected_image}', got {actual_image!r}",
+                            )
+
+                        for language, expected_sound_file in (
+                            ("en", f"intro_en_{offset:02d}.ogg"),
+                            ("ru", f"intro_ru_{offset:02d}.ogg"),
+                        ):
+                            expected_sound = f"intro_{language}_{offset:02d}"
+                            actual_sound = frame.get(f"sound:{language}")
+                            if actual_sound != expected_sound:
+                                self.error(
+                                    intro_path,
+                                    f"intro frame #{offset} must use sound '{expected_sound}', got {actual_sound!r}",
+                                )
+                            sound_file = tables["sounds"].get(expected_sound, {}).get("file")
+                            if sound_file != expected_sound_file:
+                                self.error(
+                                    paths["sounds"],
+                                    f"{expected_sound} must map to '{expected_sound_file}', got {sound_file!r}",
+                                )
+
+                        duration = frame.get("duration_ms")
+                        if isinstance(duration, bool) or not isinstance(duration, int) or duration < 1000:
+                            self.error(
+                                intro_path,
+                                f"intro frame #{offset}.duration_ms must be an integer of at least 1000",
+                            )
+
+            localized_sounds = {
+                record_id: record.get("file:ru")
+                for record_id, record in tables["sounds"].items()
+                if record.get("file:ru") is not None
+            }
+            expected_localized_sounds = {
+                record_id: f"voice_ru_{resource_id}.ogg"
+                for record_id, resource_id in RUSSIAN_SOUND_RESOURCE_IDS.items()
+            }
+            if localized_sounds != expected_localized_sounds:
+                missing = sorted(set(expected_localized_sounds) - set(localized_sounds))
+                stale = sorted(set(localized_sounds) - set(expected_localized_sounds))
+                wrong = sorted(
+                    record_id for record_id in set(localized_sounds) & set(expected_localized_sounds)
+                    if localized_sounds[record_id] != expected_localized_sounds[record_id]
+                )
+                details = []
+                if missing:
+                    details.append(f"missing: {', '.join(missing)}")
+                if stale:
+                    details.append(f"unexpected: {', '.join(stale)}")
+                if wrong:
+                    details.append(f"wrong file: {', '.join(wrong)}")
+                self.error(paths["sounds"], "Russian localized sound contract differs (" + "; ".join(details) + ")")
+
             for clan_id, expected in CANONICAL_CLAN_NAMES.items():
                 actual = tables["clans"].get(clan_id, {}).get("name")
                 if actual != expected:
@@ -411,7 +513,7 @@ class ThemeValidator:
                 if actual != expected:
                     self.error(avatar_path, f"canonical owners of creature '{creature_id}' must be {sorted(expected)}, got {sorted(actual)}")
             if tables["avatars"].get("ziag", {}).get("ability") != "monacle":
-                self.error(avatar_path, "Ziag must retain the documented Monacle ability")
+                self.error(avatar_path, "Ziag must retain the documented Monocle ability")
 
 
 def main() -> int:

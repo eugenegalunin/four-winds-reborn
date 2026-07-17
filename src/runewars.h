@@ -38,6 +38,9 @@ struct Application
     static std::string domain(void);
     static std::string name(void);
     static std::string version(void);
+    static std::string buildDate(void);
+    static std::string revision(void);
+    static bool        isReleaseBuild(void);
 };
 
 class RuneWarsClient : public Application

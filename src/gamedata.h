@@ -35,13 +35,30 @@ namespace AI
 
 namespace Menu
 {
-    enum { GameExit, SelectPerson, ShowPlayers, MahjongPart, MahjongSummaryPart, AdventurePart, BattleSummaryPart, GameSummaryPart, MahjongInitPart, GameLoadPart };
+    // Keep serialized gameplay part values stable; UI-only states belong at the end.
+    enum
+    {
+        GameExit = 0,
+        SelectPerson = 1,
+        ShowPlayers = 2,
+        MahjongPart = 3,
+        MahjongSummaryPart = 4,
+        AdventurePart = 5,
+        BattleSummaryPart = 6,
+        GameSummaryPart = 7,
+        MahjongInitPart = 8,
+        GameLoadPart = 9,
+        MainMenu = 10,
+        LoadRecovery = 11,
+        SettingsMenu = 12
+    };
 }
 
 struct FileInfo
 {
     std::string			id;
     std::string 		file;
+    std::string                 fileRu;
 
     FileInfo() {}
 };
@@ -69,6 +86,7 @@ struct StoneInfo
 {
     Stone			id;
     std::string 		name;
+    std::string                 sourceName;
     std::string 		large;
     std::string 		medium;
     std::string 		small;
@@ -80,6 +98,7 @@ struct WindInfo
 {
     Wind			id;
     std::string 		name;
+    std::string                 sourceName;
     std::string 		image;
 
     WindInfo() {}
@@ -89,6 +108,7 @@ struct ClanInfo
 {
     Clan			id;
     std::string 		name;
+    std::string                 sourceName;
     std::string 		image;
     std::string 		flag1;
     std::string 		flag2;
@@ -105,6 +125,8 @@ struct SpecialityInfo
     Speciality			id;
     std::string			name;
     std::string 		description;
+    std::string                 sourceName;
+    std::string                 sourceDescription;
 
     SpecialityInfo() {}
 };
@@ -121,6 +143,8 @@ struct CreatureInfo
     std::string 		image1;
     std::string 		image2;
     std::string			description;
+    std::string                 sourceName;
+    std::string                 sourceDescription;
     std::string 		sound1;
     Stones			stones;
 
@@ -134,6 +158,8 @@ struct SpellInfo
     std::string 		name;
     std::string 		image;
     std::string 		description;
+    std::string                 sourceName;
+    std::string                 sourceDescription;
     std::string 		sound;
     Stones			stones;
     BaseStat			effect;
@@ -155,6 +181,8 @@ struct AbilityInfo
     Ability			id;
     std::string 		name;
     std::string 		description;
+    std::string                 sourceName;
+    std::string                 sourceDescription;
 
     AbilityInfo() {}
 };
@@ -165,6 +193,9 @@ struct AvatarInfo
     std::string 		name;
     std::string 		dignity;
     std::string 		description;
+    std::string                 sourceName;
+    std::string                 sourceDignity;
+    std::string                 sourceDescription;
     std::string 		portrait;
     std::string 		image;
     std::string                 aiProfile;
@@ -186,6 +217,7 @@ struct LandInfo
     Rect			area;
     Rect			iconrt;
     std::string 		name;
+    std::string                 sourceName;
     std::vector<Land>		borders;
     Points			points;
 
@@ -233,6 +265,7 @@ struct ActionList : std::list<ActionMessage>
 namespace GameData
 {
     bool			init(const JsonObject &);
+    void                        retranslateThemeData(void);
 
     LocalData                   toLocalData(const Avatar &);
 
@@ -270,6 +303,8 @@ namespace GameData
     void                        setAIDifficulty(AI::Difficulty);
 
     bool			saveGame(const JsonObject &);
+    bool                        saveNamedGame(const JsonObject &, const std::string &,
+                                             bool overwrite, std::string* error = nullptr);
     bool                        saveRecovery(const JsonObject &, const std::string & reason);
     JsonObject                  authoritativeState(void);
     bool                        restoreState(const JsonObject &);

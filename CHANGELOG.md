@@ -1,0 +1,223 @@
+# Four Winds Reborn changelog
+
+This document records the cumulative changes made by **Four Winds Reborn**
+after it diverged from
+[`AndreyBarmaley/runewars.newage`](https://github.com/AndreyBarmaley/runewars.newage).
+The repositories share history through upstream commit
+[`9d1a47f`](https://github.com/AndreyBarmaley/runewars.newage/commit/9d1a47f58dcf8da5fd6913012e33fad0917c3842)
+(`fix clang build`, 2024-03-24). Reborn is hosted as a standalone repository,
+so that commit, rather than GitHub fork metadata, is the comparison baseline.
+
+The project retains the original credits and license. Entries below describe
+Reborn work only; they do not claim authorship of inherited code or assets.
+
+## [0.1.0] - 2026-07-17
+
+First SemVer release candidate. This is the cumulative player-facing release
+since the upstream baseline, including the earlier Reborn development
+checkpoints listed at the end of this file.
+
+### Added - front end and presentation
+
+- Added a full 1024x768 main menu with Reborn branding, the owner-selected
+  remastered central artwork and working Continue, New Game, Load Game,
+  Settings and Quit paths. Encyclopedia and Multiplayer are visible as
+  deliberately disabled future features.
+- Added development/release version information to the main menu. Development
+  builds show their build date and revision; tagged builds show the release
+  version.
+- Restored the original seventeen-frame story introduction with authentic
+  English and Russian narration. It plays once per launch and can be skipped
+  with Esc, Enter, Space or a left click.
+- Restored the original state-aware soundtrack: menu/selection, clan-specific
+  Mahjong, Adventure map and victory/summary music. Visible battles remain
+  intentionally unscored and resume map music when combat ends.
+- Added persistent settings for English/Russian language, music, sound effects,
+  Guardian voices, presentation speed and Windowed/Fullscreen display mode.
+  Language and display mode can be changed without restarting.
+- Added Classic, Normal and Fast presentation profiles. They affect deal,
+  draw, discard, Mahjong-call and visible-combat pacing without changing rules,
+  random results or authoritative state.
+
+### Added - saves and recovery
+
+- Added a stable autosave used by Continue and refreshed after completed
+  Mahjong/Adventure rounds and confirmed returns to the main menu.
+- Added user-named saves from the Mahjong and Adventure menus, including name
+  entry, overwrite confirmation and a hidden backup of the replaced save.
+- Added a Load Game screen for autosave and named saves. Valid rows support the
+  Load button and a 500 ms double click.
+- Added deletion of named saves with confirmation. Autosave and emergency
+  recovery checkpoints cannot be deleted from the ordinary save list.
+- Added rotating crash-recovery checkpoints in a separate Recovery view.
+  Checkpoints are validated as complete Classic four-player states before they
+  may be promoted to the current autosave; invalid files are preserved for
+  diagnosis.
+- Added save/recovery support for pending interactive battles, including saves
+  between individual missile assignments.
+
+### Added - gameplay and rules
+
+- Implemented the missing Adventure and battle foundations needed to play
+  complete rounds, including movement, Land Claim, combat resolution and score
+  accounting.
+- Added authoritative interactive battles with explicit leader, ranged and
+  melee choices; stable battle-unit IDs; legal actor/target validation; AI
+  recommendations; Auto Resolve; and deterministic event playback.
+- Added Nucrus's Luck rune-draw choice and validation.
+- Added observer-specific invisible-unit filtering. A player's adjacent See
+  Invisible creatures reveal enemies only for that player, while Ziag's
+  Monocle provides global detection and the Tower remains public.
+- Added Easy, Normal and Hard AI difficulty. Difficulty changes planning depth,
+  not unit statistics or random rolls. Hard uses the largest private evaluation
+  budget and hides the player's map battle forecast.
+- Added deterministic gameplay RNG, serialized random state, authoritative
+  action replay and fixed-seed replay verification.
+
+### Added - strategic AI and balance laboratory
+
+- Added an observer-safe AI boundary so strategic planning cannot read hidden
+  authoritative information unavailable to that player.
+- Added bounded AI planning for rune retention, Mahjong calls, summons, spells,
+  Adventure movement and battle choices.
+- Added distinct behavior profiles and independent difficulty budgets, with
+  deterministic traces for retained plans and their visible inputs.
+- Added isolated headless full-match simulation with versioned JSON, CSV and
+  text reports, per-event telemetry, complete replay retention and failure/
+  statistical-outlier capture.
+- Added balance tournaments, fixed faction/seat rotation, controlled
+  avatar/faction cohorts, published tier reports and paired Ziag/Kierac
+  comparisons in the Aqua slot. Cohort scenario IDs, filters and report rows use
+  the same neutral color identities as the game.
+- Added documented match-scoring and replay contracts so future balance changes
+  can be compared against a reproducible baseline.
+
+### Restored - localization and original-edition resources
+
+- Added runtime English/Russian localization using terminology decoded from
+  the localized original edition. The current Russian catalog contains 433
+  translated messages; 68 long-form encyclopedia-oriented messages remain
+  deferred.
+- Restored Russian avatar, creature, clan, round and Mahjong announcements from
+  the original localized sound resources. All 57 identified calls that differ
+  between the English and Russian editions now follow the selected language;
+  four unidentified differing resources remain unmapped.
+- Restored localized Russian image buttons for shared controls and Mahjong
+  actions. Reborn's new Order action has a matching Russian button; OK remains
+  language-neutral, as in the localized original.
+- Added translated player-facing ability descriptions and corrected visible
+  English spellings for `Monocle`, `Catastrophic` and `Supplemental`. Historical
+  internal identifiers such as `monacle` and `catasrophic` remain accepted for
+  save/data compatibility.
+
+### Changed - canonical data and documented rules
+
+- Standardized neutral color faction identities throughout themes, saves,
+  replays, command-line tools and balance reports: Red (`red`), Yellow
+  (`yellow`), Aqua (`aqua`) and Purple (`purple`). The earlier named IDs remain
+  load/input compatibility aliases and are no longer emitted as identity.
+- Corrected the inherited transposed creature prices to match the classic
+  manual: Griffon costs 170 and Tornado costs 240.
+- Defined territory ranged fire as resolving before the simultaneous creature
+  missile volley, following the classic manual's worked example.
+- Defined Ziag's Monocle as global See Invisible without also granting
+  Invisibility to his entire roster.
+- Recorded intentional rules/data differences and compatibility contracts in
+  `docs/RulesDecisions.md`, with focused regression coverage.
+
+### Fixed - gameplay and stability
+
+- Made exhaustion of the Mahjong wall a valid draw and taught summary screens
+  to handle a round with no winner instead of crashing.
+- Fixed a re-entrant duplicate Nucrus Luck prompt. Invalid selections are
+  rejected without consuming either offered rune.
+- Fixed a local Mahjong countdown surviving a submitted move and expiring
+  during a later AI turn.
+- Fixed invisible or invalid rune rendering paths and hardened theme resource
+  validation.
+- Fixed Adventure Save Game committing prepared movement orders before the
+  name/overwrite dialogs were accepted. Cancel is now a true no-op.
+- Fixed irregular Adventure province hit testing and dead strips along diagonal
+  borders with exact point-in-polygon tests. All 45 province centers have
+  regression coverage.
+- Fixed drag movement being intercepted by the cursor-following clan flag;
+  province hover and release now remain owned by the map.
+- Fixed save deletion ordering so a Windows-locked authoritative `.sav` leaves
+  its screenshot and backup intact for a safe retry.
+- Fixed false `.mo` loading errors when running with built-in English, C or
+  POSIX locales.
+- Added state validation around actions, battle IDs, saves and recovery so
+  invalid input is rejected without partially mutating authoritative state.
+
+### Fixed - UI and display
+
+- Fixed clipping and collisions in wizard selection, long spell lists, ability
+  descriptions, AI difficulty, battle forecast, score tables and the Russian
+  Load/Recovery button row.
+- Fixed player forecast layout and prevented Hard difficulty from leaking it.
+- Fixed Windowed/Fullscreen round trips, central 4:3 scaling of the logical
+  1024x768 canvas, coordinate conversion and texture invalidation after a mode
+  switch.
+- Fixed map mouse coordinates and polygon/rectangle hit testing in the bundled
+  engine continuation.
+- Fixed music leaking between spell, map, Mahjong and battle screens or
+  restarting unnecessarily when two screens request the same track.
+
+### Added - diagnostics, tests and delivery
+
+- Added rotating crash reports with recent-action breadcrumbs, uncaught C++/SWE
+  exception details, clean-shutdown markers and native Windows crash fallback.
+- Added focused regression suites for theme validation, gameplay, avatar
+  metrics, crash reporting, recovery, settings, fixed-seed replay, headless
+  simulation and native Windows crash capture.
+- Added semantic JSON/theme validation in addition to syntax checks.
+- Added repeatable CMake C++17 build and packaging scripts for Windows
+  MSYS2/UCRT64, Linux and macOS. Windows packaging stages output separately and
+  refuses to overwrite a running live distribution.
+- Added GitHub Actions Debug/Release builds and tests on Windows, Linux and
+  macOS for `develop` and `main`.
+- Added SemVer release automation that requires the tagged commit to be on
+  `main`, verifies the tag against the CMake project version and publishes
+  platform archives with SHA-256 checksums.
+- Adopted a `develop` integration branch and `main` release branch workflow,
+  with explicit release reconciliation and documented hotfix handling.
+- Split the inherited engine into the separately maintained
+  `jaskes/four-winds-engine` submodule so engine fixes can be reviewed and
+  versioned independently.
+
+### Known deferred scope
+
+- Encyclopedia content and Multiplayer remain disabled placeholders.
+- Volume sliders, selectable resolutions, integer/high-DPI scaling and
+  accessibility settings are not part of 0.1.0.
+- Duel/two-hand and coalition modes require separate versioned rules, save and
+  replay designs before implementation.
+- Four unidentified Russian sound resources and 68 long-form localization
+  messages remain restoration work.
+
+## Historical Reborn development checkpoints
+
+These date-based tags predate the SemVer release convention and are included
+for traceability. Their changes are cumulative in 0.1.0.
+
+### v20260716.3 - 2026-07-16
+
+- Added observer-safe strategic AI, behavior/difficulty profiles and bounded
+  multi-step planning.
+- Added deterministic full-match simulation, replay verification, balance
+  reports, controlled cohorts, tier lists and paired comparisons.
+- Canonicalized clan identities and closed the remaining rules/visibility audit
+  gaps found by the balance work.
+
+### v20260716.2 - 2026-07-16
+
+- Added interactive authoritative battles, stable choice validation, playback
+  and battle/adventure regression coverage.
+- Locked canonical combat, visibility and creature-price decisions in the rules
+  ledger.
+
+### v20260716.1 - 2026-07-16
+
+- Stabilized Windows gameplay and dependency/build wrappers.
+- Added deterministic replay foundations, crash/recovery diagnostics and the
+  first cross-platform CI/release pipeline.

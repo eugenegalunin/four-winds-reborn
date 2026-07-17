@@ -35,6 +35,7 @@
 #include "gamedata.h"
 #include "gameplayrng.h"
 #include "recovery.h"
+#include "savegames.h"
 #include "replay.h"
 
 #ifndef FOUR_WINDS_VERSION
@@ -182,6 +183,8 @@ bool GameData::init(const JsonObject & jo)
 
     if(! loadJson<LandInfo>("lands.json", landsInfo))
 	return false;
+
+    retranslateThemeData();
 
     initialLandOwners.resize(landsInfo.size());
     for(std::size_t index = 0; index < landsInfo.size(); ++index)
@@ -594,6 +597,47 @@ bool GameData::fromJsonObject(const JsonObject & jo)
 	return false;
     }
 
+    std::string validationError;
+    if(!Recovery::validateSaveState(jo, &validationError))
+    {
+	ERROR("invalid saved game: " << validationError);
+	return false;
+    }
+
+    const JsonObject* loadedPersonObject = jo.getObject("myperson");
+    const JsonArray* loadedPlayersArray = jo.getArray("players");
+    const Person loadedPerson = Person::fromJsonObject(*loadedPersonObject);
+    LocalPlayers loadedGamers = LocalPlayers::fromJsonArray(*loadedPlayersArray);
+
+    std::set<int> loadedAvatars;
+    std::set<int> loadedClans;
+    std::set<int> loadedWinds;
+    bool rosterIsValid = loadedPerson.avatar.isValid() &&
+        loadedPerson.avatar != Avatar(Avatar::Random) && loadedPerson.clan.isValid();
+    bool matchingLocalPlayer = false;
+    for(const LocalPlayer & player : loadedGamers)
+    {
+        const bool validIdentity = player.avatar.isValid() &&
+            player.avatar != Avatar(Avatar::Random) && player.clan.isValid() &&
+            player.wind.isValid();
+        if(!validIdentity || !loadedAvatars.insert(player.avatar()).second ||
+           !loadedClans.insert(player.clan()).second ||
+           !loadedWinds.insert(player.wind()).second)
+        {
+            rosterIsValid = false;
+            break;
+        }
+
+        if(player.avatar == loadedPerson.avatar && player.clan == loadedPerson.clan)
+            matchingLocalPlayer = true;
+    }
+
+    if(loadedGamers.size() != 4 || !rosterIsValid || !matchingLocalPlayer)
+    {
+	ERROR("invalid saved game: player roster is incomplete or inconsistent");
+	return false;
+    }
+
     VERBOSE("load gamedata, version: " << version);
 
     stoneLastCount = jo.getInteger("lastcount");
@@ -610,13 +654,7 @@ bool GameData::fromJsonObject(const JsonObject & jo)
 
     const JsonObject* jo2 = nullptr;
 
-    jo2 = jo.getObject("myperson");
-    if(! jo2)
-    {
-	ERROR("json parse: " << "myperson");
-	return false;
-    }
-    person = Person::fromJsonObject(*jo2);
+    person = loadedPerson;
 
     jo2 = jo.getObject("croupier");
     if(! jo2)
@@ -636,13 +674,7 @@ bool GameData::fromJsonObject(const JsonObject & jo)
 
     const JsonArray* ja2 = nullptr;
 
-    ja2 = jo.getArray("players");
-    if(! ja2)
-    {
-	ERROR("json parse: " << "players");
-	return false;
-    }
-    gamers = LocalPlayers::fromJsonArray(*ja2);
+    gamers = std::move(loadedGamers);
     landClaimJournal.clear();
     adventureSnapshotPlayer = Avatar();
     adventureArmySnapshot.clear();
@@ -719,7 +751,65 @@ bool GameData::saveGame(const JsonObject & gui)
     const std::string & share = Settings::shareDir();
     if(!Systems::isDirectory(share)) Systems::makeDirectory(share);
     Display::renderScreenshot(Settings::fileSave("game.png"));
-    return Systems::saveString2File(GameData::toJsonObject(gui).toString(), Settings::fileSaveGame());
+    std::string error;
+    const bool saved = SaveGames::writeAutosave(Settings::fileSaveGame(),
+                                                GameData::toJsonObject(gui), &error);
+    if(!saved) ERROR("autosave failed: " << error);
+    return saved;
+}
+
+bool GameData::saveNamedGame(const JsonObject & gui, const std::string & name,
+                             bool overwrite, std::string* error)
+{
+    std::string savedFile;
+    if(!SaveGames::writeManual(GameData::toJsonObject(gui), name, overwrite, &savedFile, error))
+        return false;
+
+    if(4 < savedFile.size() && savedFile.substr(savedFile.size() - 4) == ".sav")
+        Display::renderScreenshot(savedFile.substr(0, savedFile.size() - 4) + ".png");
+    return true;
+}
+
+void GameData::retranslateThemeData(void)
+{
+    const auto translated = [](const std::string & source) {
+        return source.empty() ? source : std::string(_(source));
+    };
+
+    for(auto & info : stonesInfo)
+        info.name = translated(info.sourceName);
+    for(auto & info : windsInfo)
+        info.name = translated(info.sourceName);
+    for(auto & info : clansInfo)
+        info.name = translated(info.sourceName);
+    for(auto & info : creaturesInfo)
+    {
+        info.name = translated(info.sourceName);
+        info.description = translated(info.sourceDescription);
+    }
+    for(auto & info : spellsInfo)
+    {
+        info.name = translated(info.sourceName);
+        info.description = translated(info.sourceDescription);
+    }
+    for(auto & info : specialsInfo)
+    {
+        info.name = translated(info.sourceName);
+        info.description = translated(info.sourceDescription);
+    }
+    for(auto & info : abilitiesInfo)
+    {
+        info.name = translated(info.sourceName);
+        info.description = translated(info.sourceDescription);
+    }
+    for(auto & info : avatarsInfo)
+    {
+        info.name = translated(info.sourceName);
+        info.dignity = translated(info.sourceDignity);
+        info.description = translated(info.sourceDescription);
+    }
+    for(auto & info : landsInfo)
+        info.name = translated(info.sourceName);
 }
 
 bool GameData::saveRecovery(const JsonObject & gui, const std::string & reason)
@@ -774,14 +864,16 @@ bool GameData::loadGame(void)
 bool GameData::loadGame(const std::string & fn)
 {
     std::string str;
+    std::string validationError;
 
-    if(Systems::readFile2String(fn, str))
+    if(Recovery::validateSaveFile(fn, &validationError, &str))
     {
 	const bool loaded = fromJsonObject(JsonContentString(str).toObject());
 	if(loaded) Replay::clearActionJournal();
 	return loaded;
     }
 
+    ERROR("saved game rejected: " << validationError);
     return false;
 }
 
@@ -837,7 +929,7 @@ LocalData GameData::toLocalData(const Avatar & ava)
 	}
     }
 
-    // check: Ability Monacle
+    // check: Ability Monocle
     if(avaInfo.ability() != Ability::Monacle)
     {
 	ld.players[0].army.applyInvisibility(ld.players[3].clan);
@@ -1151,6 +1243,7 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 
     if(0 == stoneLastCount)
     {
+	winResult = WinResults::drawn(currentWind, roundWind);
 	actions.push_back(MahjongEnd(currentWind));
 	validateMahjongSummary();
 	gamePart = Menu::MahjongSummaryPart;

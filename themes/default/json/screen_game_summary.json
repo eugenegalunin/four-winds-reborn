@@ -1,6 +1,7 @@
 {
     "cursor":           "hardware",
     "background":       { "id": "screen5", "type": "file", "file": "mapsummary.png", "colorkey": "#ffd2d2" },
+    "music":            [ "win" ],
     "default:font":     "dejavus22",
     "default:color":    "#efe4ae",
 

@@ -32,6 +32,31 @@ namespace
     bool gameFullscreen = false;
     bool guardianRulesSound = true;
     std::string lang;
+    std::string speed = "classic";
+
+    std::string normalizedLanguage(const std::string & value)
+    {
+	const std::string lower = String::toLower(value);
+	if(lower == "ru" || lower == "russian" || lower.rfind("ru_", 0) == 0 ||
+	   lower.rfind("ru-", 0) == 0 || lower.rfind("russian_", 0) == 0)
+	    return "ru";
+	return "en";
+    }
+
+    std::string normalizedGameSpeed(const std::string & value)
+    {
+	const std::string lower = String::toLower(value);
+	if(lower == "fast") return "fast";
+	if(lower == "normal") return "normal";
+	return "classic";
+    }
+
+    std::string userSettingsFile(void)
+    {
+	if(const char* overrideFile = Systems::environment("FOUR_WINDS_SETTINGS_FILE"))
+	    return overrideFile;
+	return Settings::fileSave("settings.json");
+    }
 }
 
 bool Settings::read(void)
@@ -46,9 +71,49 @@ bool Settings::read(void)
 	gameAccel = jo.getBoolean("display:accel", true);
 
 	guardianRulesSound = jo.getBoolean("sound:guardianrules", true);
-	lang = jo.getString("language", Systems::messageLocale(1));
+	lang = normalizedLanguage(jo.getString("language", Systems::messageLocale(1)));
+	speed = normalizedGameSpeed(jo.getString("game:speed", "classic"));
     }
 
+    JsonObject user = JsonContentFile(userSettingsFile()).toObject();
+    if(user.isValid())
+    {
+	gameMusic = user.getBoolean("music", gameMusic);
+	gameSound = user.getBoolean("sound", gameSound);
+	gameFullscreen = user.getBoolean("display:fullscreen", gameFullscreen);
+	guardianRulesSound = user.getBoolean("sound:guardianrules", guardianRulesSound);
+	lang = normalizedLanguage(user.getString("language", lang));
+	speed = normalizedGameSpeed(user.getString("game:speed", speed));
+    }
+
+    return true;
+}
+
+bool Settings::write(std::string* error)
+{
+    const std::string file = userSettingsFile();
+    const std::string directory = Systems::dirname(file);
+    if(!directory.empty() && !Systems::isDirectory(directory) && !Systems::makeDirectory(directory))
+    {
+	if(error) *error = "unable to create the settings directory";
+	return false;
+    }
+
+    JsonObject jo;
+    jo.addString("language", lang);
+    jo.addBoolean("music", gameMusic);
+    jo.addBoolean("sound", gameSound);
+    jo.addBoolean("display:fullscreen", gameFullscreen);
+    jo.addBoolean("sound:guardianrules", guardianRulesSound);
+    jo.addString("game:speed", speed);
+
+    if(!Systems::saveString2File(jo.toString(), file))
+    {
+	if(error) *error = "unable to write settings.json";
+	return false;
+    }
+
+    if(error) error->clear();
     return true;
 }
 
@@ -57,9 +122,40 @@ std::string Settings::language(void)
     return lang;
 }
 
+void Settings::setLanguage(const std::string & value)
+{
+    lang = normalizedLanguage(value);
+}
+
+std::string Settings::gameSpeed(void)
+{
+    return speed;
+}
+
+void Settings::setGameSpeed(const std::string & value)
+{
+    speed = normalizedGameSpeed(value);
+}
+
+int Settings::presentationDelay(int milliseconds)
+{
+    if(milliseconds <= 0) return milliseconds;
+
+    // Classic deliberately restores the more deliberate 1990s presentation.
+    // Normal preserves the New Age timing, while Fast is intended for repeat play.
+    const int scaled = speed == "classic" ? (milliseconds * 7 + 2) / 4 :
+                       speed == "fast" ? (milliseconds * 11 + 10) / 20 : milliseconds;
+    return 0 < scaled ? scaled : 1;
+}
+
 bool Settings::fullscreen(void)
 {
     return gameFullscreen;
+}
+
+void Settings::setFullscreen(bool value)
+{
+    gameFullscreen = value;
 }
 
 bool Settings::accel(void)
@@ -72,14 +168,29 @@ bool Settings::music(void)
     return gameMusic;
 }
 
+void Settings::setMusic(bool value)
+{
+    gameMusic = value;
+}
+
 bool Settings::sound(void)
 {
     return gameSound;
 }
 
+void Settings::setSound(bool value)
+{
+    gameSound = value;
+}
+
 bool Settings::soundGuardianRules(void)
 {
     return guardianRulesSound;
+}
+
+void Settings::setSoundGuardianRules(bool value)
+{
+    guardianRulesSound = value;
 }
 
 //////////////////////////////////////////////////////

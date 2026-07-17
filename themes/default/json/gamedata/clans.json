@@ -1,7 +1,7 @@
 [
         {
-	    "id": "maitha",
-	    "name": "Maitha",
+	    "id": "red",
+	    "name": "Red",
 	    "button": "button1",
 	    "flag1": "flag1",
 	    "flag2": "sflag1",
@@ -11,8 +11,8 @@
 	    "townflag2": "townflag12"
 	},
         {
-	    "id": "kartha",
-	    "name": "Kartha",
+	    "id": "yellow",
+	    "name": "Yellow",
 	    "button": "button2",
 	    "flag1": "flag2",
 	    "flag2": "sflag2",
@@ -22,8 +22,8 @@
 	    "townflag2": "townflag22"
 	},
         {
-	    "id": "iz",
-	    "name": "Iz",
+	    "id": "aqua",
+	    "name": "Aqua",
 	    "button": "button3",
 	    "flag1": "flag3",
 	    "flag2": "sflag3",
@@ -33,8 +33,8 @@
 	    "townflag2": "townflag32"
 	},
         {
-	    "id": "marz",
-	    "name": "Marz",
+	    "id": "purple",
+	    "name": "Purple",
 	    "button": "button4",
 	    "flag1": "flag4",
 	    "flag2": "sflag4",

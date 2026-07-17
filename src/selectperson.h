@@ -56,7 +56,8 @@ class SelectPersonScreen : public JsonWindow
     Point		personImagePos, creaturesPos, textPos;
 
     JsonTextInfo	personName1, personName2, personDescription, personClan, personClans, spellText;
-    JsonTextInfo	supplementialSpells, specialAbilities;
+    JsonTextInfo	spellTextCompact, spellTextTiny, abilityText;
+    JsonTextInfo	supplementalSpells, specialAbilities;
 
     std::list<AvatarIcon> avatarsIcon;
     std::list<ClanIcon>	clansIcon;

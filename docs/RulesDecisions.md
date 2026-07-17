@@ -60,13 +60,13 @@ This gives defending territory fire a real initiative advantage without
 turning creature missiles into alternating attacks. `gameplay_regressions`
 covers both a lethal territory shot and mutually lethal creature shooters.
 
-## RD-004: Ziag lore and Monacle
+## RD-004: Ziag lore and Monocle
 
 Status: accepted on 2026-07-16.
 
 The concise classic ability entry gives Ziag permanent See Invisibility. One
 long inherited biography additionally claimed that all of his creatures are
-invisible. Reborn implements Monacle as global visibility for Ziag and does not
+invisible. Reborn implements Monocle as global visibility for Ziag and does not
 grant Invisibility to his roster.
 
 Blanket roster invisibility would be a second, very strong passive that is not
@@ -74,7 +74,9 @@ represented by the avatar ability or creature data. The player-facing English
 biography now describes the implemented global reveal and no longer promises
 the unimplemented passive.
 
-Regression contract: the default theme must assign Ziag `monacle`, and
+Compatibility contract: the corrected player-facing spelling is `Monocle`, but
+the historical data/save identifier remains `monacle`. The default theme must
+assign Ziag `monacle`, and
 `gameplay_regressions` proves that he receives invisible units anywhere on the
 map without changing authoritative army state.
 
@@ -91,7 +93,7 @@ player's Adventure Party or Griffon never shares visibility with the observer.
 Additional visibility rules are explicit:
 
 - A player always sees their own invisible creatures.
-- Ziag's Monacle reveals all invisible creatures globally.
+- Ziag's Monocle reveals all invisible creatures globally.
 - Invisible creatures at the Tower of Four Winds are public to every player.
 - Filtering changes only the copied `LocalData`; the authoritative armies are
   never modified.
@@ -101,30 +103,30 @@ Additional visibility rules are explicit:
 This preserves the manual's adjacent scouting role for Adventure Party and
 Griffon while preventing unrelated armies from leaking hidden information.
 `gameplay_regressions` covers no detector, a non-adjacent detector, an adjacent
-detector on invaded land, a third-party detector, Monacle, own units, the Tower,
+detector on invaded land, a third-party detector, Monocle, own units, the Tower,
 and authoritative-state purity.
 
 ## RD-006: canonical clan identities
 
-Status: accepted on 2026-07-16.
+Status: revised and accepted on 2026-07-17.
 
-Reborn identifies the four clans by their actual names in code, theme data,
-saves, replays, command-line tools and reports:
+Reborn identifies the four playable factions by neutral color names in code,
+theme data, saves, replays, command-line tools and reports:
 
-| Canonical ID | Display name | Historical color alias |
+| Canonical ID | Display name | Legacy named alias |
 | --- | --- | --- |
-| `maitha` | Maitha | `red` |
-| `kartha` | Kartha | `yellow` |
-| `iz` | Iz | `aqua` |
-| `marz` | Marz | `purple` |
+| `red` | Red | `maitha` |
+| `yellow` | Yellow | `kartha` |
+| `aqua` | Aqua | `iz` |
+| `purple` | Purple | `marz` |
 
-The color strings are accepted only as load/input aliases for inherited saves
-and commands. Reborn never emits them as clan identity. Visual colors still
-describe UI highlighting, rune suits and assets; this decision does not rename
-Red Dragon or other genuine color terminology.
+The named strings are accepted only as load/input aliases for inherited saves,
+early Reborn development replays and commands. Reborn never emits them as
+faction identity. Original lore may still mention the historical peoples; that
+restoration text is content, not an authoritative ID or current UI label.
 
-The enum order remains unchanged, so the migration does not alter clan rules,
-map ownership or seat scheduling. Serialized strings do change, which
+The enum order remains unchanged, so the migration does not alter faction
+rules, map ownership or seat scheduling. Serialized strings do change, which
 intentionally changes authoritative state hashes and requires a fresh
 deterministic canary. `theme_data_validation` locks the canonical theme IDs and
-names; `gameplay_regressions` locks canonical output plus legacy alias loading.
+names; `gameplay_regressions` locks color output plus legacy named-alias loading.

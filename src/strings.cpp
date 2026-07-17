@@ -1,6 +1,13 @@
 #ifdef BUILD_STRINGS
 const char* messages[] = {
 _("Original Theme"),
+// JSON-only select person labels
+_("Select Wizard & Clan"),
+_("Wizard:"),
+_("Clan:"),
+_("Epithet:"),
+_("Clans:"),
+_("Creature:"),
 // stones
 _("Empty Stone"),
 _("1 Skull"),
@@ -43,10 +50,10 @@ _("South"),
 _("West"),
 _("North"),
 // clans
-_("Maitha"),
-_("Kartha"),
-_("Iz"),
-_("Marz"),
+_("Red"),
+_("Yellow"),
+_("Aqua"),
+_("Purple"),
 // creatures
 _("Skeleton Horde"),
 _("Shadow"),
@@ -116,8 +123,8 @@ _("Logun"),
 _("Nucrus"),
 _("Javed"),
 // person ability
-_("%1's monacle allows him to see all invisible units on the map."),
-_("%1's catasrophic Hellblast can wipe out entire army lines and is unique to her."),
+_("%1's monocle allows him to see all invisible units on the map."),
+_("%1's catastrophic Hell Blast can wipe out entire army lines and is unique to her."),
 _("Being a bard, %1 is loved by all people and creatures around him. His songs inspire bravery which cause his creatures to regain 2 loyalty each round."),
 _("%1 possesses uncanny luck in the Rune Game. On each unforced turn draw, he sees two runes and keeps one; the other returns to the bottom of the wall. Directed draw spells take precedence."),
 _("%1 is a telepath. This allows him to chose, pung, kong, game and cast spells even when silence has been cast."),
