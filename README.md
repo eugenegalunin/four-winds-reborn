@@ -1,17 +1,38 @@
 # Four Winds Reborn
 
 Community continuation of the retro strategy game *The Isle of Four Winds:
-Rune War*, focused on completing battle mode, tactical AI, spells, and modern
-desktop support.
+Rune War*, focused on completing its unfinished systems, restoring the original
+presentation and making the game comfortable on modern platforms.
 
-This repository is a modified continuation of
-[RuneWars: New Age](https://github.com/AndreyBarmaley/runewars.newage). The
-original copyright notices and GPL-3.0 license are preserved. Project changes
-from 2026 onward are maintained as Four Winds Reborn.
+This project continues
+[RuneWars: New Age](https://github.com/AndreyBarmaley/runewars.newage). Original
+copyright notices and the GPL-3.0 license are preserved. The bundled
+[Four Winds Engine](https://github.com/jaskes/four-winds-engine) retains its
+LGPL-3.0-or-later license and upstream attribution.
 
-The bundled engine is maintained separately as
-[Four Winds Engine](https://github.com/jaskes/four-winds-engine), with
-its original LGPL-3.0-or-later license and upstream attribution preserved.
+## Download
+
+The latest stable release is
+[Four Winds Reborn v0.2.0](https://github.com/jaskes/four-winds-reborn/releases/latest),
+with ready-to-run Windows, Linux and macOS x64 archives plus SHA-256 checksums.
+On Windows, unpack the archive and launch `four-winds-reborn.exe`.
+
+## Roadmap
+
+- Make Easy, Normal and Hard play deliberately differently, then validate the
+  result over deterministic match cohorts.
+- Add development tools for AI takeover, fast-forwarding and reproducible
+  near-end scenarios so long games can be tested quickly.
+- Improve battle explanations, training and replay viewing while incrementally
+  splitting the largest gameplay files into ruleset-ready modules.
+- Add versioned themes and mod support, including a legally distinct optional
+  art, music and naming set.
+- Ship an Android build with native touch controls, safe app lifecycle handling
+  and compatible saves.
+- Add local Duel and Coalition rulesets, followed by additional Rune Game rules
+  through a shared versioned ruleset contract.
+- Add authoritative multiplayer last, after the platforms and local rulesets
+  are stable.
 
 ## Screenshots
 
@@ -27,184 +48,63 @@ its original LGPL-3.0-or-later license and upstream attribution preserved.
 
 ![Four Winds Reborn narrated story intro](docs/images/story-intro.jpg)
 
-## Build and Run
+### Encyclopedia and game guide
 
-Clone with the engine submodule:
+![Four Winds Reborn illustrated Encyclopedia battle guide](docs/images/encyclopedia.jpg)
+
+## Highlights
+
+- A complete main menu with new game, continue, named saves, recovery and
+  persistent settings.
+- English and Russian interface, terminology, buttons, narration and restored
+  original voice resources.
+- Windowed and fullscreen modes with smooth fixed-canvas scaling.
+- Independent music, effects and voice volume controls, plus Classic, Normal
+  and Fast presentation speeds.
+- Restored story intro and separate menu, faction, map and summary music.
+- Easy, Normal and Hard AI, distinct wizard behavior profiles and improved
+  Mahjong, spell, summon, map and battle decisions.
+- Manual tactical battles with legal target selection, AI recommendations and
+  optional automatic resolution.
+- A bilingual Encyclopedia covering lore, factions, wizards, creatures, spells,
+  classic rules and a practical illustrated Rune Game guide.
+- Numerous crash, save, Rune Game, UI, localization, map input and invisible
+  rune fixes inherited from years of unfinished development.
+
+## Build from source
+
+Clone the game with its engine submodule:
+
 ```bash
 git clone --recurse-submodules https://github.com/jaskes/four-winds-reborn.git
 cd four-winds-reborn
 ```
 
-macOS or Linux builds the Release binary and runs all tests with one command:
-```bash
-./scripts/build.sh
-./four-winds-reborn
-```
+On Linux or macOS:
 
-On a fresh macOS or Debian/Ubuntu machine, let the script install dependencies:
 ```bash
 ./scripts/build.sh --install-deps
 ```
 
-Windows uses MSYS2 UCRT64/MinGW because the SDL engine is not an MSVC project:
+On Windows, install [MSYS2](https://www.msys2.org/) and run:
+
 ```powershell
 .\scripts\build-windows.ps1 -InstallDeps
-.\dist\windows\four-winds-reborn.exe
 ```
 
-Install [MSYS2](https://www.msys2.org/) in `C:\msys64` first, or pass
-`-MsysRoot D:\path\to\msys64`. Later builds only need
-`.\scripts\build-windows.ps1`. Unix scripts accept `--clean`, `--debug` and
-`--no-tests`; PowerShell accepts `-Clean`, `-DebugBuild` and `-NoTests`. Add
-`-ReleaseGui` only when checking a player-facing Windows package without the
-development console; the tagged release workflow enables it automatically.
+## Documentation
 
-Close a packaged game launched from `dist/windows` before rebuilding it. The
-PowerShell wrapper detects a live packaged executable and stops before touching
-the distribution; packaging is assembled in `dist/windows-staging` first so a
-failed copy cannot leave a half-populated release directory.
+- [Changelog](CHANGELOG.md)
+- [Battle and Adventure rules](docs/BattleAndAdventureRules.md)
+- [Spell lifecycle](docs/SpellLifecycle.md)
+- [Localization and source provenance](docs/Localization.md)
+- [Preserved Arcanium archive material](docs/ArcaniumArchive.md)
+- [Balance laboratory](docs/BalanceLab.md) and
+  [current balance tiers](docs/BalanceTiers.md)
+- [Branch and release process](docs/ReleaseProcess.md)
 
-Manual requirements are CMake 3.14+, a C++17 compiler, pkg-config, zlib, SDL2,
-SDL2_image, SDL2_mixer and SDL2_ttf. Boost stacktrace is optional because the
-game has a native crash-report fallback.
+## License and attribution
 
-Useful launch flags:
-```bash
-./four-winds-reborn -f              # fullscreen
-./four-winds-reborn -g 1280x720     # window size
-./four-winds-reborn -t default      # theme
-./four-winds-reborn -s /path/game.sav
-```
-
-## Saves and crash recovery
-
-`Continue` loads the current autosave. It is refreshed at the end of each
-completed Mahjong/adventure round and when returning to the main menu. During
-Mahjong or Adventure, open the in-game menu to create a named save; using an
-existing name asks before overwriting it.
-
-`Load Game` lists the autosave and all named saves. A valid row can be loaded by
-double-clicking it or using the Load button. Named saves may be deleted there
-after confirmation; the autosave and emergency recovery checkpoints cannot be
-deleted from this screen. Rotating recovery checkpoints remain in a separate
-Recovery view for crash recovery and are not ordinary save slots.
-
-## Music
-
-Music is enabled by default. The restored soundtrack follows the original game
-state mapping: the intro theme covers the main menu and player selection,
-Mahjong uses the local player's clan theme, the Adventure map uses the map
-theme, and score screens use the victory theme. Visible battle dialogs remain
-deliberately unscored and resume the map theme when combat ends. The modern
-build uses the original wavetable (`WT`) MIDI variants; sound effects remain
-independent.
-
-Startup also restores the original seventeen-frame narrated story intro before
-the main menu, using the authentic English or Russian track selected in
-Settings. It is shown once per launch and can be skipped with Esc, Enter, Space
-or a left click.
-
-## Settings and Russian localization
-
-The main-menu Settings screen persists language, independent 0–100% music,
-effects and voice levels, classic Guardian calls, presentation speed and
-Windowed/Fullscreen display mode in the per-user `settings.json`. Windowed mode
-offers 75%, 100%, 125%, 150%, 175% and 200% sizes when they fit the current
-desktop. Every size uses smooth 4:3 scaling of the fixed 1024x768 canvas, so the
-window and rendered image stay aligned without an internal black frame. Volume
-bars accept a
-mouse position or Left/Right keyboard adjustment. Display and audio changes take
-effect when Apply is pressed without restarting; the game always keeps its
-original 1024x768 logical canvas. Existing settings files with the older boolean
-music/sound keys remain compatible.
-
-Choice rows cycle forward with a left click and backward with a right click
-(secondary click on macOS); keyboard Left/Right navigation remains available.
-
-English uses the built-in source strings; Russian can be selected without
-restarting the game and uses the restored classic terminology. The original
-character, clan, creature and Mahjong call resources use the voice level;
-Guardian animation calls also retain their own toggle. Proven localized avatar,
-creature, clan and round announcements follow the selected English/Russian
-language, while calls identical in both original editions remain shared.
-
-Presentation speed has three profiles. `Classic` is the default and restores a
-more deliberate hand deal, rune draw/discard and combat presentation. `Normal`
-keeps the New Age timings, while `Fast` is intended for repeat play. The combat
-dialog's 1x/2x/4x control remains available as a temporary per-battle override.
-
-Manual gameplay regression tests:
-```bash
-cmake -S . -B build-tests -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
-cmake --build build-tests -j
-ctest --test-dir build-tests --output-on-failure
-```
-
-GitHub Actions runs Debug and Release builds plus CTest for pushes and pull
-requests targeting `develop` or `main` on Linux, macOS and Windows UCRT64. The
-suite includes a fixed-seed replay hash canary so an authoritative simulation
-drift between platforms is visible immediately. SemVer tags matching the CMake
-project version (for example `v0.1.0`) publish tested Linux, macOS and
-self-contained Windows archives, along with SHA-256 checksums, to GitHub
-Releases only when the tagged commit is already on `main`.
-The branch, release and hotfix procedure is documented in
-[`docs/ReleaseProcess.md`](docs/ReleaseProcess.md).
-Localization provenance and current coverage are recorded in
-[`docs/Localization.md`](docs/Localization.md).
-
-Print the deterministic avatar and Hell Blast balance report:
-```bash
-./build-tests/gameplay_regression_tests --balance-only
-```
-
-The baseline compares summon rosters, spell plans and avatar passives on common fixtures.
-Catastrophic is represented by Hell Blast in the spell score; Bard, Monocle, Luck and
-Telepath are reported in a separate passive column.
-
-Run the real-rules full-match balance laboratory on Windows (one published seed,
-four seat rotations by default):
-```powershell
-.\scripts\run-balance-lab.ps1
-```
-
-Run the independent doctrine/difficulty comparison matrix (60 isolated matches
-for one seed, 480 for all eight):
-```powershell
-.\scripts\run-balance-matrix.ps1
-.\scripts\run-balance-matrix.ps1 -SeedCount 8
-```
-
-Run controlled avatar substitutions in fixed clan slots (52 isolated matches
-for one seed, 416 for all eight):
-```powershell
-.\scripts\run-balance-cohorts.ps1
-.\scripts\run-balance-cohorts.ps1 -SeedCount 8
-```
-
-Each match runs in a fresh child process; it exports detailed event telemetry,
-versioned JSON, per-player CSV, a concise text report and full replays for
-failures/statistical outliers. The fixed seed list, legal clan/seat rotation
-contract and larger-run guidance are in
-[`docs/BalanceLab.md`](docs/BalanceLab.md). The current controlled strength view,
-including direct fixed-clan and provisional clan-adjusted tiers, is in
-[`docs/BalanceTiers.md`](docs/BalanceTiers.md).
-
-## Crash Diagnostics
-
-The game keeps a persistent engine log and a crash report with recent Mahjong
-actions. On macOS they are stored in:
-
-```text
-~/Library/Application Support/four-winds-reborn/four-winds-reborn.log
-~/Library/Application Support/four-winds-reborn/crash-report.log
-```
-
-Linux and Windows use the SDL per-user application data directory. All platforms
-record uncaught C++/SWE exceptions and recent actions; macOS/Linux also append a
-native stack for fatal signals. Reports rotate at 4 MiB; a hard crash deliberately
-has no `clean shutdown` marker.
-
-Implemented battle and map-phase rules are documented in
-[`docs/BattleAndAdventureRules.md`](docs/BattleAndAdventureRules.md). Spell
-effect lifetime rules are documented in
-[`docs/SpellLifecycle.md`](docs/SpellLifecycle.md).
+Four Winds Reborn preserves the original project credits and GPL-3.0 license.
+The Four Winds Engine submodule is LGPL-3.0-or-later. This repository documents
+Reborn changes without claiming authorship of inherited code or game assets.
