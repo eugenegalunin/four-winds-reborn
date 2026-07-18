@@ -7,6 +7,9 @@
 
     "color:stat_up":	"green",
     "color:stat_down":	"red",
+    "color:cue_move": "#42c7e8",
+    "color:cue_attack": "#ff7043",
+    "color:cue_claim": "#ffd54f",
 
     "delay:combatresult":  700,
 
@@ -104,6 +107,7 @@
     "offset:info1": [ 898, 428 ],
     "offset:info2": [ 898, 484 ],
     "offset:viewmap": [ 898, 542 ],
+    "textinfo:cue_legend": { "position": [ 898, 570 ], "font": "dejavus12", "color": "#c8b77a", "align": "center" },
 
     "area:icon_portrait": [ 826, 260, 140, 140 ],
     "area:spell_affected1": [ 782, 260, 28, 140 ],
@@ -111,8 +115,10 @@
 
     "battle:forecast": {
         "textinfo:title": { "position": [ 898, 420 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" },
-        "textinfo:capture": { "position": [ 898, 466 ], "font": "dejavus18", "color": "OrangeRed", "align": "center" },
-        "textinfo:survival": { "position": [ 898, 492 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" }
+        "textinfo:capture": { "position": [ 898, 448 ], "font": "dejavus16", "color": "OrangeRed", "align": "center" },
+        "textinfo:survival": { "position": [ 898, 472 ], "font": "dejavus16", "color": "#efe4ae", "align": "center" },
+        "textinfo:forces": { "position": [ 898, 498 ], "font": "dejavus12", "color": "#efe4ae", "align": "center" },
+        "textinfo:scope": { "position": [ 898, 518 ], "font": "dejavus12", "color": "#c8b77a", "align": "center" }
     },
 
     "sprite:town_tower_winds": { "id": "town0", "type": "file", "file": "map.png", "crop": [984, 918, 24, 50], "colorkey": "#ffd2d2" },

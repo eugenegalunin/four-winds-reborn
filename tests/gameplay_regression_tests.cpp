@@ -13,6 +13,7 @@
 #include "aispell.h"
 #include "aistrategy.h"
 #include "aiturn.h"
+#include "adventurehints.h"
 #include "avatar_balance_tests.h"
 #include "battle.h"
 #include "crashreport.h"
@@ -2303,6 +2304,97 @@ void testBattleAI()
            "Hard must penalize wasted battle damage more strongly than Normal and Easy");
 }
 
+void testAdventureHints()
+{
+    const LocalPlayers savedPlayers = GameData::gamers;
+    const Clan savedCorzenOwner = GameData::landsInfo[Land::Corzen].clan;
+    const Clan savedZubrusOwner = GameData::landsInfo[Land::Zubrus].clan;
+
+    GameData::landsInfo[Land::Corzen].clan = Clan::Red;
+    GameData::landsInfo[Land::Zubrus].clan = Clan::Yellow;
+    GameData::gamers.clear();
+
+    LocalPlayer red;
+    red.avatar = Avatar::Orachi;
+    red.clan = Clan::Red;
+    red.wind = Wind::East;
+    red.addLandClaimPoints(Clan::Yellow, 500);
+    BattleParty attackers(Clan::Red, Land::Corzen);
+    BattleCreature selected(Clan::Red, Creature::SkeletonHorde, 3600);
+    selected.setSelected(true);
+    expect(attackers.join(selected), "Adventure hint attacker fixture must join");
+    red.army.push_back(attackers);
+
+    LocalPlayer yellow;
+    yellow.avatar = Avatar::Lakkho;
+    yellow.clan = Clan::Yellow;
+    yellow.wind = Wind::South;
+    LocalPlayer aqua;
+    aqua.avatar = Avatar::Ziag;
+    aqua.clan = Clan::Aqua;
+    aqua.wind = Wind::West;
+    LocalPlayer purple;
+    purple.avatar = Avatar::Dayla;
+    purple.clan = Clan::Purple;
+    purple.wind = Wind::North;
+    GameData::gamers.push_back(red);
+    GameData::gamers.push_back(yellow);
+    GameData::gamers.push_back(aqua);
+    GameData::gamers.push_back(purple);
+
+    const LocalData baselineView = GameData::toLocalData(Avatar(Avatar::Orachi));
+    const AdventureHints::BattlePreview baseline = AdventureHints::battlePreview(
+        baselineView, Land::Corzen, Land::Zubrus, AI::Difficulty::Normal);
+    expect(baseline.available && baseline.showPercentages && 0 < baseline.samples &&
+           baseline.attackerCount == 1 && baseline.visibleDefenderCount == 0,
+           "Normal Adventure preview must explain its observer-visible battle basis");
+    expect(AdventureHints::destinationCue(baselineView, Land::Corzen, Land::Zubrus) ==
+               AdventureHints::DestinationCue::Attack,
+           "an observer-legal enemy destination must receive an attack cue");
+
+    GameData::landsInfo[Land::Zubrus].clan = Clan::Red;
+    expect(AdventureHints::destinationCue(baselineView, Land::Corzen, Land::Zubrus) ==
+               AdventureHints::DestinationCue::Move,
+           "an observer-legal friendly destination must receive a move cue");
+    GameData::landsInfo[Land::Zubrus].clan = Clan::Yellow;
+
+    BattleParty hiddenGuard(Clan::Yellow, Land::Zubrus);
+    expect(hiddenGuard.join(BattleCreature(Clan::Yellow, Creature::Shadow, 3601)),
+           "Adventure hint invisible guard fixture must join");
+    GameData::gamers[1].army.push_back(hiddenGuard);
+
+    const LocalData hiddenView = GameData::toLocalData(Avatar(Avatar::Orachi));
+    expect(!hiddenView.playerOfClan(Clan(Clan::Yellow)).army.findBattleUnitConst(3601),
+           "the Adventure hint observer view must not contain an invisible guard");
+    const AdventureHints::BattlePreview hidden = AdventureHints::battlePreview(
+        hiddenView, Land::Corzen, Land::Zubrus, AI::Difficulty::Normal);
+    expect(hidden.captureChance == baseline.captureChance &&
+           hidden.attackerSurvival == baseline.attackerSurvival &&
+           hidden.visibleDefenderCount == baseline.visibleDefenderCount,
+           "an invisible guard must not influence a passive battle preview");
+    expect(AdventureHints::canClaimObserved(hiddenView, Land::Zubrus) &&
+           !GameData::canClaimLand(GameData::gamers[0], Land::Zubrus),
+           "a passive claim cue must not reveal a hidden guard before an explicit attempt");
+
+    const AdventureHints::BattlePreview hard = AdventureHints::battlePreview(
+        hiddenView, Land::Corzen, Land::Zubrus, AI::Difficulty::Hard);
+    expect(hard.available && !hard.showPercentages && hard.samples == 0 &&
+           hard.attackerCount == 1 && hard.visibleDefenderCount == 0,
+           "Hard must expose known forces without leaking outcome percentages");
+
+    GameplayRng::seed(0x156EULL);
+    const std::uint64_t stateBefore = GameplayRng::state();
+    const std::uint64_t drawsBefore = GameplayRng::draws();
+    AdventureHints::battlePreview(hiddenView, Land::Corzen, Land::Zubrus,
+                                  AI::Difficulty::Normal);
+    expect(GameplayRng::state() == stateBefore && GameplayRng::draws() == drawsBefore,
+           "opening a battle preview must not consume gameplay RNG");
+
+    GameData::gamers = savedPlayers;
+    GameData::landsInfo[Land::Corzen].clan = savedCorzenOwner;
+    GameData::landsInfo[Land::Zubrus].clan = savedZubrusOwner;
+}
+
 void testInteractiveBattleSession()
 {
     const Battle::RandomRoll highRoll = [](int, int maximum) { return maximum; };
@@ -4192,6 +4284,7 @@ int main(int argc, char** argv)
     testAdventureProfiles();
     testAdventureCoordination();
     testBattleAI();
+    testAdventureHints();
     testInteractiveBattleSession();
     testBattleSessionSpecialities();
     testAdventureBattleSessionFlow();

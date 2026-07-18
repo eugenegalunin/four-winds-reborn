@@ -23,6 +23,7 @@
 #ifndef _RWNA_ADVENTUREPART_
 #define _RWNA_ADVENTUREPART_
 
+#include "adventurehints.h"
 #include "dialogs.h"
 class MapScreenBase;
 
@@ -98,6 +99,9 @@ protected:
     Color		defaultColor;
     Color		statChangedUpColor;
     Color		statChangedDownColor;
+    Color               cueMoveColor;
+    Color               cueAttackColor;
+    Color               cueClaimColor;
 
     std::list<LandPolygon*> lands;
 
@@ -120,9 +124,7 @@ protected:
     BattleCreature	selectedCreature;
 
     Land                forecastTarget;
-    int                 forecastSamples;
-    int                 forecastCaptureChance;
-    int                 forecastAttackerSurvival;
+    AdventureHints::BattlePreview forecastPreview;
 
     Texture 		townTowerWindsTexture;
     Point 		townTowerWindsPos;
@@ -144,9 +146,13 @@ protected:
     JsonTextInfo        forecastTitle;
     JsonTextInfo        forecastCapture;
     JsonTextInfo        forecastSurvival;
+    JsonTextInfo        forecastForces;
+    JsonTextInfo        forecastScope;
+    JsonTextInfo        cueLegend;
 
     virtual void	renderLabel(void) {}
     virtual bool	isAdventureMode(void) const { return false; }
+    virtual AdventureHints::DestinationCue mapCue(const LandInfo &) const;
 
     const Color &	getBaseStatColor(int, int) const;
 
@@ -176,6 +182,7 @@ public:
     void		renderWindow(void) override;
     virtual bool	isAllowMoveFlag(const LandInfo &) const;
     bool                isAllowLandClaim(const LandInfo &) const;
+    const Color &       mapCueColor(AdventureHints::DestinationCue) const;
     bool		isMyClan(const Clan &) const;
 };
 
@@ -309,6 +316,7 @@ protected:
 public:
     AdventurePartScreen(const Avatar &);
     bool                isAllowMoveFlag(const LandInfo &) const override;
+    AdventureHints::DestinationCue mapCue(const LandInfo &) const override;
 
 #ifdef BUILD_DEBUG
     bool                actionDebugCommand(const std::string &);

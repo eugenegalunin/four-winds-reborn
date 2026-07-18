@@ -2452,12 +2452,36 @@ msgstr ""
 msgid "Battle Forecast"
 msgstr ""
 
+#: src\adventurepart.cpp
+msgid "Battle Intel"
+msgstr ""
+
 #: src\adventurepart.cpp:604
 msgid "Capture: %1%"
 msgstr ""
 
 #: src\adventurepart.cpp:606
 msgid "Attackers remain: %1%"
+msgstr ""
+
+#: src\adventurepart.cpp
+msgid "Outcome hidden on Hard"
+msgstr ""
+
+#: src\adventurepart.cpp
+msgid "Known: %1 attackers / %2 visible guards"
+msgstr ""
+
+#: src\adventurepart.cpp
+msgid "Town loyalty: %1 - known forces only"
+msgstr ""
+
+#: src\adventurepart.cpp
+msgid "Blue: move  Orange: attack"
+msgstr ""
+
+#: src\adventurepart.cpp
+msgid "Yellow: claimable"
 msgstr ""
 
 #: src\adventurepart.cpp:849

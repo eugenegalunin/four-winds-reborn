@@ -229,14 +229,15 @@ void LandPolygon::renderWindow(void)
 	    // render animation flag
 	    if(animationFlag.isEnabled()) animationFlag.render(*this);
 
-	    if(win->isAllowLandClaim(landInfo))
+	    const AdventureHints::DestinationCue cue = win->mapCue(landInfo);
+	    if(cue != AdventureHints::DestinationCue::None)
 	    {
 		const Points & outline = poly.boundaryVertices();
 		for(auto it = outline.begin(); it != outline.end(); ++it)
 		{
 		    auto next = std::next(it);
 		    if(next == outline.end()) next = outline.begin();
-		    renderLine(Color::Yellow, *it - position(), *next - position());
+		    renderLine(win->mapCueColor(cue), *it - position(), *next - position());
 		}
 	    }
 	}
@@ -425,8 +426,7 @@ void AffectedSpellsIcon::setVisible(bool f)
 }
 
 MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("screen_adventurepart.json", win), ld(data),
-    selectedLand(Land(Land::TowerOf4Winds)), forecastSamples(0), forecastCaptureChance(0),
-    forecastAttackerSurvival(0), affectedSpells(jobject), bar1(*this), bar2(*this)
+    selectedLand(Land(Land::TowerOf4Winds)), affectedSpells(jobject), bar1(*this), bar2(*this)
 {
     townTowerWindsTexture = GameTheme::jsonSprite(jobject, "sprite:town_tower_winds");
     townTowerWindsPos = GameData::landInfo(Land::TowerOf4Winds).center - townTowerWindsTexture.size() / 2;
@@ -436,6 +436,9 @@ MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("
 
     statChangedUpColor = jobject.getString("color:stat_up");
     statChangedDownColor = jobject.getString("color:stat_down");
+    cueMoveColor = jobject.getString("color:cue_move");
+    cueAttackColor = jobject.getString("color:cue_attack");
+    cueClaimColor = jobject.getString("color:cue_claim");
 
     Point topClanPos = GameTheme::jsonPoint(jobject, "offset:topclan");
     Point botClanPos = GameTheme::jsonPoint(jobject, "offset:botclan");
@@ -451,7 +454,10 @@ MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("
         forecastTitle = GameTheme::jsonTextInfo(*forecast, "textinfo:title");
         forecastCapture = GameTheme::jsonTextInfo(*forecast, "textinfo:capture");
         forecastSurvival = GameTheme::jsonTextInfo(*forecast, "textinfo:survival");
+        forecastForces = GameTheme::jsonTextInfo(*forecast, "textinfo:forces");
+        forecastScope = GameTheme::jsonTextInfo(*forecast, "textinfo:scope");
     }
+    cueLegend = GameTheme::jsonTextInfo(jobject, "textinfo:cue_legend");
 
     // const Texture & tmp = GameTheme::texture(GameData::clanInfo(Clan::Red).button);
 
@@ -571,53 +577,40 @@ void MapScreenBase::renderLandInfo(const Land & land)
 void MapScreenBase::clearBattleForecast(void)
 {
     forecastTarget.reset();
-    forecastSamples = 0;
-    forecastCaptureChance = 0;
-    forecastAttackerSurvival = 0;
+    forecastPreview = AdventureHints::BattlePreview();
 }
 
 void MapScreenBase::updateBattleForecast(const Land & origin, const Land & target)
 {
     clearBattleForecast();
-    const AI::DifficultyRules & difficulty = AI::difficultyRules(GameData::aiDifficulty());
-    if(!difficulty.showPlayerBattleForecast) return;
-    if(!origin.isValid() || !target.isValid() || origin == target || target.isTowerWinds()) return;
-
-    const LocalPlayer & player = ld.myPlayer();
-    const Clan owner = GameData::landInfo(target).clan;
-    if(!owner.isValid() || owner == player.clan) return;
-
-    const BattleCreatures selected = player.army.partySelected(origin);
-    if(selected.empty()) return;
-
-    BattleParty attackers(player.clan, origin);
-    for(const BattleCreature* creature : selected)
-        attackers.join(*creature);
-    if(attackers.isEmpty()) return;
-
-    const RemotePlayer & defender = ld.playerOfClan(owner);
-    const BattleParty* defenders = defender.army.findPartyConst(target);
-    const AI::BehaviorProfile defenderProfile = defender.isAI() ?
-        AI::behaviorProfile(defender) : AI::BehaviorProfile::Balanced;
-    const int samples = difficulty.battleForecastSamples;
-    const AI::BattleForecast result = AI::forecastBattle(attackers, BattleTown(target), defenders,
-        AI::BehaviorProfile::Balanced, defenderProfile, samples);
-
-    forecastTarget = target;
-    forecastSamples = result.samples;
-    forecastCaptureChance = result.captureChance;
-    forecastAttackerSurvival = result.attackerSurvival;
+    forecastPreview = AdventureHints::battlePreview(ld, origin, target, GameData::aiDifficulty());
+    if(forecastPreview.available) forecastTarget = target;
 }
 
 void MapScreenBase::renderBattleForecast(void)
 {
-    if(!forecastTarget.isValid() || forecastSamples <= 0) return;
+    if(!forecastTarget.isValid() || !forecastPreview.available) return;
 
-    renderTextInfo(forecastTitle, _("Battle Forecast"));
-    renderTextInfo(forecastCapture,
-                   StringFormat(_("Capture: %1%")).arg(forecastCaptureChance));
-    renderTextInfo(forecastSurvival,
-                   StringFormat(_("Attackers remain: %1%")).arg(forecastAttackerSurvival));
+    renderTextInfo(forecastTitle, forecastPreview.showPercentages ?
+        _("Battle Forecast") : _("Battle Intel"));
+    if(forecastPreview.showPercentages)
+    {
+        renderTextInfo(forecastCapture,
+                       StringFormat(_("Capture: %1%")).arg(forecastPreview.captureChance));
+        renderTextInfo(forecastSurvival,
+                       StringFormat(_("Attackers remain: %1%")).arg(forecastPreview.attackerSurvival));
+    }
+    else
+    {
+        renderTextInfo(forecastCapture, _("Outcome hidden on Hard"));
+    }
+    renderTextInfo(forecastForces,
+                   StringFormat(_("Known: %1 attackers / %2 visible guards"))
+                       .arg(forecastPreview.attackerCount)
+                       .arg(forecastPreview.visibleDefenderCount));
+    renderTextInfo(forecastScope,
+                   StringFormat(_("Town loyalty: %1 - known forces only"))
+                       .arg(forecastPreview.townLoyalty));
 }
 
 void MapScreenBase::renderCreatureInfo(const BattleCreature & battle)
@@ -838,7 +831,24 @@ bool MapScreenBase::userEvent(int event, void* data)
 
 bool MapScreenBase::isAllowLandClaim(const LandInfo & info) const
 {
-    return isAdventureMode() && ld.yourTurn() && GameData::canClaimLand(ld.myPlayer(), info.id);
+    return isAdventureMode() && ld.yourTurn() && AdventureHints::canClaimObserved(ld, info.id);
+}
+
+AdventureHints::DestinationCue MapScreenBase::mapCue(const LandInfo & info) const
+{
+    return isAllowLandClaim(info) ? AdventureHints::DestinationCue::Claim :
+        AdventureHints::DestinationCue::None;
+}
+
+const Color & MapScreenBase::mapCueColor(AdventureHints::DestinationCue cue) const
+{
+    switch(cue)
+    {
+        case AdventureHints::DestinationCue::Move: return cueMoveColor;
+        case AdventureHints::DestinationCue::Attack: return cueAttackColor;
+        case AdventureHints::DestinationCue::Claim: return cueClaimColor;
+        default: return defaultColor;
+    }
 }
 
 /* ShowMapDialog */
@@ -1155,8 +1165,11 @@ AdventurePartScreen::AdventurePartScreen(const Avatar & ava) : MapScreenBase(Gam
 void AdventurePartScreen::renderLabel(void)
 {
     const FontRender & frs = GameTheme::fontRender(defaultFont);
-    renderText(frs, orderSource.isValid() ? _("Select destination") : _("Movement Phase"),
+    const bool choosingDestination = orderSource.isValid() || moveFlag.isVisible();
+    renderText(frs, choosingDestination ? _("Select destination") : _("Movement Phase"),
 	       defaultColor, viewMapPos, AlignCenter);
+    renderTextInfo(cueLegend, choosingDestination ?
+        _("Blue: move  Orange: attack") : _("Yellow: claimable"));
 }
 
 bool AdventurePartScreen::submitHumanAction(const ClientMessage & action)
@@ -1189,6 +1202,14 @@ void AdventurePartScreen::updateCommandButtons(void)
 bool AdventurePartScreen::isAllowMoveFlag(const LandInfo & info) const
 {
     return !orderSource.isValid() && MapScreenBase::isAllowMoveFlag(info);
+}
+
+AdventureHints::DestinationCue AdventurePartScreen::mapCue(const LandInfo & info) const
+{
+    const Land origin = orderSource.isValid() ? orderSource :
+        (moveFlag.isVisible() ? moveFlag.fromLand() : Land());
+    if(origin.isValid()) return AdventureHints::destinationCue(ld, origin, info.id);
+    return MapScreenBase::mapCue(info);
 }
 
 bool AdventurePartScreen::commitPendingOrders(void)
@@ -1291,7 +1312,7 @@ bool AdventurePartScreen::userEvent(int act, void* data)
     {
 	auto landInfo = static_cast<LandInfo*>(data);
 	// The first click selects the territory; a second click claims its deed.
-	requestClaim = selectedLand == landInfo->id && GameData::canClaimLand(ld.myPlayer(), landInfo->id);
+	requestClaim = selectedLand == landInfo->id && AdventureHints::canClaimObserved(ld, landInfo->id);
     }
 
     if(MapScreenBase::userEvent(act, data))

@@ -104,6 +104,7 @@ set(FOUR_WINDS_SOURCE
     src/aispell.cpp
     src/battle.cpp
     src/dialogs.cpp
+    src/adventurehints.cpp
     src/adventurepart.cpp
     src/battlesummarypart.cpp
     src/mahjongsummarypart.cpp

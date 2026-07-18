@@ -2452,6 +2452,10 @@ msgstr "%1 в %2"
 msgid "Battle Forecast"
 msgstr "Прогноз Боя"
 
+#: src\adventurepart.cpp
+msgid "Battle Intel"
+msgstr "Данные Разведки"
+
 #: src\adventurepart.cpp:604
 msgid "Capture: %1%"
 msgstr "Захват: %1%"
@@ -2459,6 +2463,26 @@ msgstr "Захват: %1%"
 #: src\adventurepart.cpp:606
 msgid "Attackers remain: %1%"
 msgstr "Выживет Атакующих: %1%"
+
+#: src\adventurepart.cpp
+msgid "Outcome hidden on Hard"
+msgstr "Исход скрыт на сложной"
+
+#: src\adventurepart.cpp
+msgid "Known: %1 attackers / %2 visible guards"
+msgstr "Известно: %1 атак. / %2 защитн."
+
+#: src\adventurepart.cpp
+msgid "Town loyalty: %1 - known forces only"
+msgstr "Верность земли: %1 · только видимые"
+
+#: src\adventurepart.cpp
+msgid "Blue: move  Orange: attack"
+msgstr "Голубой: ход  Оранжевый: атака"
+
+#: src\adventurepart.cpp
+msgid "Yellow: claimable"
+msgstr "Жёлтый: можно присоединить"
 
 #: src\adventurepart.cpp:849
 msgid "View Map"
