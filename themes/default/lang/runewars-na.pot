@@ -2943,3 +2943,107 @@ msgstr ""
 #: themes/default/json/gamedata/specials.json
 msgid "The ranger attack speciality"
 msgstr ""
+
+#: src/strings.cpp
+msgid "Action Rejected"
+msgstr ""
+
+#: src/strings.cpp
+msgid "That action is not available in the current phase."
+msgstr ""
+
+#: src/strings.cpp
+msgid "It is not your turn."
+msgstr ""
+
+#: src/strings.cpp
+msgid "That choice is no longer available."
+msgstr ""
+
+#: src/strings.cpp
+msgid "Silence prevents this action."
+msgstr ""
+
+#: src/strings.cpp
+msgid "Mana Fog prevents casting this turn."
+msgstr ""
+
+#: src/strings.cpp
+msgid "You have already summoned or cast a spell this turn."
+msgstr ""
+
+#: src/strings.cpp
+msgid "That Mahjong call is not legal for the current rune."
+msgstr ""
+
+#: src/strings.cpp
+msgid "That rune choice is no longer available."
+msgstr ""
+
+#: src/strings.cpp
+msgid "Select a valid territory."
+msgstr ""
+
+#: src/strings.cpp
+msgid "Select a valid target."
+msgstr ""
+
+#: src/strings.cpp
+msgid "The required runes are not available."
+msgstr ""
+
+#: src/strings.cpp
+msgid "This action requires %2 spell points; only %1 are available."
+msgstr ""
+
+#: src/strings.cpp
+msgid "There are not enough spell points for that action."
+msgstr ""
+
+#: src/strings.cpp
+msgid "This claim requires %2 claim points; only %1 are available."
+msgstr ""
+
+#: src/strings.cpp
+msgid "There are not enough claim points for that territory."
+msgstr ""
+
+#: src/strings.cpp
+msgid "Your army has no free summoning slot."
+msgstr ""
+
+#: src/strings.cpp
+msgid "That unique creature is already on the map."
+msgstr ""
+
+#: src/strings.cpp
+msgid "The destination party is full."
+msgstr ""
+
+#: src/strings.cpp
+msgid "The selected creature is no longer available."
+msgstr ""
+
+#: src/strings.cpp
+msgid "The selected creature cannot move to that territory."
+msgstr ""
+
+#: src/strings.cpp
+msgid "That territory cannot be claimed now."
+msgstr ""
+
+#: src/strings.cpp
+msgid "There are no Adventure orders to undo."
+msgstr ""
+
+#: src/strings.cpp
+msgid "There is no battle choice awaiting input."
+msgstr ""
+
+#: src/strings.cpp
+msgid "That battle choice is no longer legal."
+msgstr ""
+
+#: src/strings.cpp
+msgid "The game rejected that action."
+msgstr ""

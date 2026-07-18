@@ -318,6 +318,7 @@ MahjongPartScreen::MahjongPartScreen() : JsonWindow("screen_mahjongpart.json", n
     winSetPos = GameTheme::jsonSidesPositions(jobject, "winrules:positions");
     namesPos = GameTheme::jsonSidesPositions(jobject, "names:positions");
     fastLogText = GameTheme::jsonTextInfo(jobject, "textinfo:fastlog");
+    fastLogNormalColor = fastLogText.color;
 
     buttonPass = buttons.findIds("but_pass");
     buttonChao = buttons.findIds("but_chow");
@@ -698,8 +699,25 @@ void MahjongPartScreen::actionButtonLocalReady(void)
 {
     buttonLocalReady.setVisible(false);
 
-    GameData::client2Mahjong(myAvatar, ClientReady(), actions);
-    playerReady = true;
+    playerReady = submitHumanAction(ClientReady());
+}
+
+bool MahjongPartScreen::submitHumanAction(const ClientMessage & action)
+{
+    ActionRejection rejection;
+    if(GameData::client2Mahjong(myAvatar, action, actions, &rejection)) return true;
+
+    showActionRejection(rejection);
+    return false;
+}
+
+void MahjongPartScreen::showActionRejection(const ActionRejection & rejection)
+{
+    fastLogText.text = GameData::actionRejectionMessage(rejection);
+    fastLogText.color = Color::Red;
+    fastLogOwner = ld.myPlayer().wind;
+    gameLogs << fastLogText.text;
+    renderWindow();
 }
 
 void MahjongPartScreen::actionButtonLocalKong(void)
@@ -748,8 +766,8 @@ void MahjongPartScreen::actionButtonPass(int rule)
 
     if(rule == WinRule::Game)
     {
-	GameData::client2Mahjong(myAvatar, ClientSayGame(), actions);
-	GameData::client2Mahjong(myAvatar, ClientButtonGame(), actions);
+	if(submitHumanAction(ClientSayGame()))
+	    submitHumanAction(ClientButtonGame());
     }
     else
     if(rule == WinRule::Kong)
@@ -757,25 +775,25 @@ void MahjongPartScreen::actionButtonPass(int rule)
 
 	if(ld.yourTurn())
 	{
-	    GameData::client2Mahjong(myAvatar, ClientSayKong(2), actions);
-	    GameData::client2Mahjong(myAvatar, ClientButtonKong2(), actions);
+	    if(submitHumanAction(ClientSayKong(2)))
+		submitHumanAction(ClientButtonKong2());
 	}
 	else
 	{
-	    GameData::client2Mahjong(myAvatar, ClientSayKong(1), actions);
-	    GameData::client2Mahjong(myAvatar, ClientButtonKong1(), actions);
+	    if(submitHumanAction(ClientSayKong(1)))
+		submitHumanAction(ClientButtonKong1());
 	}
     }
     else
     if(rule == WinRule::Pung)
     {
-	GameData::client2Mahjong(myAvatar, ClientSayPung(), actions);
-	GameData::client2Mahjong(myAvatar, ClientButtonPung(), actions);
+	if(submitHumanAction(ClientSayPung()))
+	    submitHumanAction(ClientButtonPung());
     }
     else
     if(rule == WinRule::Chao)
     {
-	GameData::client2Mahjong(myAvatar, ClientSayChao(), actions);
+	if(!submitHumanAction(ClientSayChao())) return;
 	const Stones & chaoVariants = ld.myPlayer().stones.findChaoVariants(ld.dropStone);
 
 	if(chaoVariants.size())
@@ -788,7 +806,7 @@ void MahjongPartScreen::actionButtonPass(int rule)
 	    }
 	    else
 	    {
-		GameData::client2Mahjong(myAvatar, ClientChaoVariant(0), actions);
+		submitHumanAction(ClientChaoVariant(0));
 	    }
 
 	    renderWindow();
@@ -803,7 +821,7 @@ void MahjongPartScreen::actionButtonPass(int rule)
 
     if(sendPass)
     {
-	GameData::client2Mahjong(myAvatar, ClientButtonPass(), actions);
+	submitHumanAction(ClientButtonPass());
     }
 }
 
@@ -814,13 +832,15 @@ void MahjongPartScreen::actionDropSelected(void)
 
     // select chao mode
     if(0 <= variantSelected)
-	GameData::client2Mahjong(myAvatar, ClientChaoVariant(variantSelected), actions);
+	submitHumanAction(ClientChaoVariant(variantSelected));
     else
     if(0 <= stoneSelected)
     {
-	GameData::client2Mahjong(myAvatar, ClientDropIndex(stoneSelected), actions);
-	buttonPass->setClicked();
-	stoneSelected = -1;
+	if(submitHumanAction(ClientDropIndex(stoneSelected)))
+	{
+	    buttonPass->setClicked();
+	    stoneSelected = -1;
+	}
     }
 
     renderWindow();
@@ -904,8 +924,8 @@ void MahjongPartScreen::actionButtonShowCast(void)
 	    {
 		const Creature cr = castDialog.resultCreature();
 		ShowSummonCreatureDialog summonDialog(ld, cr, *this);
-		const Land & dst = summonDialog.exec() ? summonDialog.land() : Land(Land::None);
-		GameData::client2Mahjong(myAvatar, ClientSummonCreature(cr, dst), actions);
+		if(summonDialog.exec())
+		    submitHumanAction(ClientSummonCreature(cr, summonDialog.land()));
 	    }
 	    else
 	    {
@@ -915,7 +935,7 @@ void MahjongPartScreen::actionButtonShowCast(void)
 		if((spellInfo.target() == SpellTarget::AllPlayers) ||
 		   (spellInfo.target() == SpellTarget::MyPlayer))
 		{
-		    GameData::client2Mahjong(myAvatar, ClientCastSpell(sp), actions);
+		    submitHumanAction(ClientCastSpell(sp));
 		}
 		else
 		if(spellInfo.target() == SpellTarget::OtherPlayer)
@@ -926,7 +946,7 @@ void MahjongPartScreen::actionButtonShowCast(void)
 		    if(targetDialog.exec())
 		    {
 			auto avaid = static_cast<Avatar::avatar_t>(targetDialog.resultCode());
-			GameData::client2Mahjong(myAvatar, ClientCastSpell(sp, avaid), actions);
+			submitHumanAction(ClientCastSpell(sp, avaid));
 		    }
 
 		    animationTurn.setPause(false);
@@ -940,14 +960,16 @@ void MahjongPartScreen::actionButtonShowCast(void)
 			// Result 1 targets a land; creature and teleport targets carry a unit id.
 			int battleUnit = 1 == result ? -1 : castDialog.unit();
 
-			GameData::client2Mahjong(myAvatar, ClientCastSpell(sp, castDialog.land(), battleUnit), actions);
+			submitHumanAction(ClientCastSpell(sp, castDialog.land(), battleUnit));
 		    }
 		}
 	    }
 	}
 	else
 	{
-	    MessageBox(Application::name(), _("Now it is not your turn. Sorry..."), *this, false).exec();
+	    ActionRejection rejection;
+	    rejection.reason = ActionRejectReason::WrongTurn;
+	    showActionRejection(rejection);
 	}
     }
 
@@ -1557,6 +1579,7 @@ void MahjongPartScreen::tickEvent(u32 ms)
 	{
 	    auto action = actions.front();
 	    actions.pop_front();
+	    fastLogText.color = fastLogNormalColor;
 	    CrashReport::breadcrumb(std::string("Mahjong action type=")
 	        .append(String::number(action.type())).append(" payload=").append(action.toString()));
 
@@ -1700,7 +1723,7 @@ bool MahjongPartScreen::actionMahjongLuckChoice(const ActionMessage & v)
     }
 
     CrashReport::breadcrumb(std::string("Luck selection=").append(String::number(selected)));
-    if(!GameData::client2Mahjong(myAvatar, ClientLuckChoice(selected), actions))
+    if(!submitHumanAction(ClientLuckChoice(selected)))
 	ERROR("Luck draw selection was rejected: " << selected);
     return false;
 }

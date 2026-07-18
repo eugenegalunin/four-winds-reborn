@@ -578,10 +578,24 @@ void testActionReplay()
     const Avatar randomActor = randomPlayer->avatar;
     const JsonObject randomInitialState = GameData::authoritativeState();
     ActionList rejectedActions;
+    ActionRejection unknownRejection;
     const ClientMessage unknownAction(Action::Last + 1);
-    expect(!GameData::client2Mahjong(randomActor, unknownAction, rejectedActions) &&
+    expect(!GameData::client2Mahjong(randomActor, unknownAction, rejectedActions,
+                                     &unknownRejection) &&
+           unknownRejection.reason == ActionRejectReason::UnknownAction &&
+           std::string(GameData::actionRejectReasonName(unknownRejection.reason)) ==
+               "unknown_action" &&
+           !GameData::actionRejectionMessage(unknownRejection).empty() &&
            Replay::actionJournalSize() == 0,
-           "replay journal must exclude rejected and unknown client actions");
+           "unknown Mahjong actions must return a stable reason without entering the replay journal");
+    const ActionRejection claimPointsRejection{
+        ActionRejectReason::InsufficientClaimPoints, 1, 3
+    };
+    expect(std::string(GameData::actionRejectReasonName(claimPointsRejection.reason)) ==
+               "insufficient_claim_points" &&
+           GameData::actionRejectionMessage(claimPointsRejection).find("3") != std::string::npos &&
+           GameData::actionRejectionMessage(claimPointsRejection).find("1") != std::string::npos,
+           "claim-point rejections must remain distinct from spell-point failures");
     const ClientDropIndex randomDiscard(0);
     ActionList randomActions;
     expect(GameData::client2Mahjong(randomActor, randomDiscard, randomActions),
@@ -2471,11 +2485,13 @@ void testAdventureBattleSessionFlow()
 
     const std::string beforeInvalidChoice = GameData::authoritativeState().toString();
     ActionList rejected;
+    ActionRejection battleRejection;
     expect(!GameData::client2Adventure(attacker.avatar,
                                        ClientBattleChoice(9999, -1),
-                                       rejected) && rejected.empty() &&
+                                       rejected, &battleRejection) && rejected.empty() &&
+           battleRejection.reason == ActionRejectReason::InvalidBattleChoice &&
            GameData::authoritativeState().toString() == beforeInvalidChoice,
-           "Adventure must reject a forged battle actor without mutating state");
+           "Adventure must explain a forged battle actor without mutating state");
 
     ActionList meleeActions;
     expect(GameData::client2Adventure(attacker.avatar,
@@ -4274,6 +4290,14 @@ int main(int argc, char** argv)
     expect(GameData::initAdventure(), "Adventure phase must initialize");
     expect(GameData::adventure2Client(GameData::gamers.front().avatar, adventureActions),
            "Adventure turn must begin and create an undo snapshot");
+    ActionRejection wrongTurnRejection;
+    ActionList wrongTurnActions;
+    expect(!GameData::client2Adventure(GameData::gamers.back().avatar,
+                                       ClientAdventureUndo(), wrongTurnActions,
+                                       &wrongTurnRejection) &&
+           wrongTurnActions.empty() &&
+           wrongTurnRejection.reason == ActionRejectReason::WrongTurn,
+           "Adventure must expose a stable wrong-turn rejection without emitting actions");
     expect(GameData::client2Adventure(GameData::gamers.front().avatar,
                                       ClientLandClaim(Land::Zubrus), adventureActions),
            "Land Claim action must be accepted during the current turn");

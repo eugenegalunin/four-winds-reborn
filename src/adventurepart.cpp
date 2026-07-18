@@ -1148,6 +1148,21 @@ void AdventurePartScreen::renderLabel(void)
 	       defaultColor, viewMapPos, AlignCenter);
 }
 
+bool AdventurePartScreen::submitHumanAction(const ClientMessage & action)
+{
+    ActionRejection rejection;
+    if(GameData::client2Adventure(myAvatar, action, actions, &rejection)) return true;
+
+    showActionRejection(rejection);
+    return false;
+}
+
+void AdventurePartScreen::showActionRejection(const ActionRejection & rejection)
+{
+    MessageBox(_("Action Rejected"), GameData::actionRejectionMessage(rejection),
+               *this, false).exec();
+}
+
 void AdventurePartScreen::updateCommandButtons(void)
 {
     const bool hasSelected = selectedLand.isValid() &&
@@ -1172,9 +1187,7 @@ bool AdventurePartScreen::commitPendingOrders(void)
     bool accepted = true;
     for(const CreatureMoved & creatureMoved : history)
     {
-        if(!GameData::client2Adventure(myAvatar,
-                                      ClientUnitMoved(creatureMoved.first, creatureMoved.second),
-                                      actions))
+        if(!submitHumanAction(ClientUnitMoved(creatureMoved.first, creatureMoved.second)))
         {
             accepted = false;
             break;
@@ -1275,7 +1288,7 @@ bool AdventurePartScreen::userEvent(int act, void* data)
 	if(requestClaim)
 	{
 	    auto landInfo = static_cast<LandInfo*>(data);
-	    GameData::client2Adventure(myAvatar, ClientLandClaim(landInfo->id), actions);
+	    submitHumanAction(ClientLandClaim(landInfo->id));
 	}
 	updateCommandButtons();
 	return true;
@@ -1392,7 +1405,6 @@ void AdventurePartScreen::actionButtonMenu(void)
         SaveGameAs(gui, *this, [this]()
         {
             if(commitPendingOrders()) return true;
-            MessageBox(_("Order"), _("Unable to apply pending orders."), *this, false).exec();
             return false;
         });
         renderWindow();
@@ -1401,7 +1413,6 @@ void AdventurePartScreen::actionButtonMenu(void)
 
     if(!commitPendingOrders())
     {
-        MessageBox(_("Order"), _("Unable to apply pending orders."), *this, false).exec();
         renderWindow();
         return;
     }
@@ -1463,7 +1474,7 @@ void AdventurePartScreen::actionButtonInfo(void)
 void AdventurePartScreen::actionButtonUndo(void)
 {
     cancelOrderMode(false);
-    GameData::client2Adventure(myAvatar, ClientAdventureUndo(), actions);
+    if(!submitHumanAction(ClientAdventureUndo())) return;
     MapScreenBase::ld = GameData::toLocalData(myAvatar);
     const LandInfo & landInfo = GameData::landInfo(selectedLand);
 
@@ -1496,12 +1507,12 @@ void AdventurePartScreen::actionButtonDone(void)
     if(!commitPendingOrders())
     {
         if(buttonDone) buttonDone->setDisabled(false);
-        MessageBox(_("Order"), _("Unable to apply pending orders."), *this, false).exec();
         renderWindow();
         return;
     }
 
-    GameData::client2Adventure(myAvatar, ClientBattleReady(), actions);
+    if(!submitHumanAction(ClientBattleReady()) && buttonDone)
+        buttonDone->setDisabled(false);
 }
 
 void AdventurePartScreen::tickEvent(u32 ms)
@@ -1643,7 +1654,7 @@ bool AdventurePartScreen::actionAdventureBattleChoice(const ActionMessage & v)
     dialog.exec();
 
     const ClientBattleChoice choice(dialog.actor(), dialog.target(), dialog.autoResolve());
-    const bool accepted = GameData::client2Adventure(myAvatar, choice, actions);
+    const bool accepted = submitHumanAction(choice);
     if(!accepted)
 	ERROR("interactive battle choice was rejected");
 

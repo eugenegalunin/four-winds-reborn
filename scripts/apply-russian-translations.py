@@ -268,6 +268,47 @@ TRANSLATIONS: dict[str, str] = {
     "Select another friendly territory with a free party slot.":
         "Выберите другую дружественную землю со свободным местом в отряде.",
     "Now it is not your turn. Sorry...": "Сейчас не ваш ход...",
+    "Action Rejected": "Действие отклонено",
+    "That action is not available in the current phase.":
+        "Это действие недоступно в текущей фазе.",
+    "It is not your turn.": "Сейчас не ваш ход.",
+    "That choice is no longer available.": "Этот выбор больше недоступен.",
+    "Silence prevents this action.": "Тишина не позволяет выполнить это действие.",
+    "Mana Fog prevents casting this turn.":
+        "Дым Маны не позволяет колдовать в этот ход.",
+    "You have already summoned or cast a spell this turn.":
+        "В этот ход вы уже призвали существо или применили заклинание.",
+    "That Mahjong call is not legal for the current rune.":
+        "Этот вызов в Игре Рун нельзя сделать для текущей руны.",
+    "That rune choice is no longer available.":
+        "Эта руна больше недоступна для выбора.",
+    "Select a valid territory.": "Выберите подходящую землю.",
+    "Select a valid target.": "Выберите подходящую цель.",
+    "The required runes are not available.": "Не хватает требуемых рун.",
+    "This action requires %2 spell points; only %1 are available.":
+        "Для этого действия нужно %2 очков магии; доступно только %1.",
+    "There are not enough spell points for that action.":
+        "Для этого действия не хватает очков магии.",
+    "This claim requires %2 claim points; only %1 are available.":
+        "Для захвата нужно %2 очков захвата; доступно только %1.",
+    "There are not enough claim points for that territory.":
+        "Для захвата этой земли не хватает очков захвата.",
+    "Your army has no free summoning slot.":
+        "В вашей армии нет свободного места для призыва.",
+    "That unique creature is already on the map.":
+        "Это уникальное существо уже находится на карте.",
+    "The destination party is full.": "В целевом отряде нет свободного места.",
+    "The selected creature is no longer available.":
+        "Выбранное существо больше недоступно.",
+    "The selected creature cannot move to that territory.":
+        "Выбранное существо не может перейти на эту землю.",
+    "That territory cannot be claimed now.": "Сейчас эту землю нельзя присвоить.",
+    "There are no Adventure orders to undo.":
+        "Нет приказов фазы движения, которые можно отменить.",
+    "There is no battle choice awaiting input.":
+        "Сейчас нет ожидающего решения в бою.",
+    "That battle choice is no longer legal.": "Этот выбор в бою больше недоступен.",
+    "The game rejected that action.": "Игра отклонила это действие.",
     "Game Begins With %1": "Игра начинается с ветра %1",
     "%1 Call Game": "%1 объявляет Маджонг",
     "%1 Kongs The Last Discard": "%1 собирает Конг на сброшенной руне",

@@ -2953,3 +2953,107 @@ msgstr "Восстанавливает 2 Верности перед фазой 
 #: themes/default/json/gamedata/specials.json
 msgid "The ranger attack speciality"
 msgstr "Существо участвует в начальном стрелковом залпе."
+
+#: src/strings.cpp
+msgid "Action Rejected"
+msgstr "Действие отклонено"
+
+#: src/strings.cpp
+msgid "That action is not available in the current phase."
+msgstr "Это действие недоступно в текущей фазе."
+
+#: src/strings.cpp
+msgid "It is not your turn."
+msgstr "Сейчас не ваш ход."
+
+#: src/strings.cpp
+msgid "That choice is no longer available."
+msgstr "Этот выбор больше недоступен."
+
+#: src/strings.cpp
+msgid "Silence prevents this action."
+msgstr "Тишина не позволяет выполнить это действие."
+
+#: src/strings.cpp
+msgid "Mana Fog prevents casting this turn."
+msgstr "Дым Маны не позволяет колдовать в этот ход."
+
+#: src/strings.cpp
+msgid "You have already summoned or cast a spell this turn."
+msgstr "В этот ход вы уже призвали существо или применили заклинание."
+
+#: src/strings.cpp
+msgid "That Mahjong call is not legal for the current rune."
+msgstr "Этот вызов в Игре Рун нельзя сделать для текущей руны."
+
+#: src/strings.cpp
+msgid "That rune choice is no longer available."
+msgstr "Эта руна больше недоступна для выбора."
+
+#: src/strings.cpp
+msgid "Select a valid territory."
+msgstr "Выберите подходящую землю."
+
+#: src/strings.cpp
+msgid "Select a valid target."
+msgstr "Выберите подходящую цель."
+
+#: src/strings.cpp
+msgid "The required runes are not available."
+msgstr "Не хватает требуемых рун."
+
+#: src/strings.cpp
+msgid "This action requires %2 spell points; only %1 are available."
+msgstr "Для этого действия нужно %2 очков магии; доступно только %1."
+
+#: src/strings.cpp
+msgid "There are not enough spell points for that action."
+msgstr "Для этого действия не хватает очков магии."
+
+#: src/strings.cpp
+msgid "This claim requires %2 claim points; only %1 are available."
+msgstr "Для захвата нужно %2 очков захвата; доступно только %1."
+
+#: src/strings.cpp
+msgid "There are not enough claim points for that territory."
+msgstr "Для захвата этой земли не хватает очков захвата."
+
+#: src/strings.cpp
+msgid "Your army has no free summoning slot."
+msgstr "В вашей армии нет свободного места для призыва."
+
+#: src/strings.cpp
+msgid "That unique creature is already on the map."
+msgstr "Это уникальное существо уже находится на карте."
+
+#: src/strings.cpp
+msgid "The destination party is full."
+msgstr "В целевом отряде нет свободного места."
+
+#: src/strings.cpp
+msgid "The selected creature is no longer available."
+msgstr "Выбранное существо больше недоступно."
+
+#: src/strings.cpp
+msgid "The selected creature cannot move to that territory."
+msgstr "Выбранное существо не может перейти на эту землю."
+
+#: src/strings.cpp
+msgid "That territory cannot be claimed now."
+msgstr "Сейчас эту землю нельзя присвоить."
+
+#: src/strings.cpp
+msgid "There are no Adventure orders to undo."
+msgstr "Нет приказов фазы движения, которые можно отменить."
+
+#: src/strings.cpp
+msgid "There is no battle choice awaiting input."
+msgstr "Сейчас нет ожидающего решения в бою."
+
+#: src/strings.cpp
+msgid "That battle choice is no longer legal."
+msgstr "Этот выбор в бою больше недоступен."
+
+#: src/strings.cpp
+msgid "The game rejected that action."
+msgstr "Игра отклонила это действие."

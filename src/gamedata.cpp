@@ -48,6 +48,40 @@
 #define FOUR_WINDS_ENGINE_REVISION "unknown"
 #endif
 
+namespace
+{
+    thread_local ActionRejection* activeActionRejection = nullptr;
+
+    class ScopedActionRejection
+    {
+        ActionRejection* previous;
+
+    public:
+        explicit ScopedActionRejection(ActionRejection* current)
+            : previous(activeActionRejection)
+        {
+            activeActionRejection = current;
+            if(current) *current = ActionRejection();
+        }
+
+        ~ScopedActionRejection()
+        {
+            activeActionRejection = previous;
+        }
+    };
+
+    bool rejectAction(ActionRejectReason reason, int available = -1, int required = -1)
+    {
+        if(activeActionRejection && !activeActionRejection->isValid())
+        {
+            activeActionRejection->reason = reason;
+            activeActionRejection->available = available;
+            activeActionRejection->required = required;
+        }
+        return false;
+    }
+}
+
 std::string SpellInfo::effectDescription(void) const
 {
     switch(id())
@@ -142,6 +176,99 @@ namespace GameData
     LocalPlayer &	playerOfAvatar(const Avatar &);
     LocalPlayer &	playerOfWind(const Wind &);
     bool		clientLuckChoice(const Avatar &, const ClientMessage &, ActionList &);
+}
+
+const char* GameData::actionRejectReasonName(ActionRejectReason reason)
+{
+    switch(reason)
+    {
+        case ActionRejectReason::None: return "none";
+        case ActionRejectReason::UnknownAction: return "unknown_action";
+        case ActionRejectReason::WrongPhase: return "wrong_phase";
+        case ActionRejectReason::WrongTurn: return "wrong_turn";
+        case ActionRejectReason::StaleSelection: return "stale_selection";
+        case ActionRejectReason::Silenced: return "silenced";
+        case ActionRejectReason::ManaFog: return "mana_fog";
+        case ActionRejectReason::AlreadyCast: return "already_cast";
+        case ActionRejectReason::IllegalMahjongCall: return "illegal_mahjong_call";
+        case ActionRejectReason::InvalidRuneChoice: return "invalid_rune_choice";
+        case ActionRejectReason::InvalidLand: return "invalid_land";
+        case ActionRejectReason::InvalidTarget: return "invalid_target";
+        case ActionRejectReason::MissingRunes: return "missing_runes";
+        case ActionRejectReason::InsufficientPoints: return "insufficient_points";
+        case ActionRejectReason::InsufficientClaimPoints: return "insufficient_claim_points";
+        case ActionRejectReason::ArmyFull: return "army_full";
+        case ActionRejectReason::UniqueCreatureExists: return "unique_creature_exists";
+        case ActionRejectReason::PartyFull: return "party_full";
+        case ActionRejectReason::UnitNotFound: return "unit_not_found";
+        case ActionRejectReason::IllegalMovement: return "illegal_movement";
+        case ActionRejectReason::IllegalLandClaim: return "illegal_land_claim";
+        case ActionRejectReason::NothingToUndo: return "nothing_to_undo";
+        case ActionRejectReason::NoPendingBattle: return "no_pending_battle";
+        case ActionRejectReason::InvalidBattleChoice: return "invalid_battle_choice";
+    }
+    return "unknown_action";
+}
+
+std::string GameData::actionRejectionMessage(const ActionRejection & rejection)
+{
+    switch(rejection.reason)
+    {
+        case ActionRejectReason::WrongPhase:
+            return _("That action is not available in the current phase.");
+        case ActionRejectReason::WrongTurn:
+            return _("It is not your turn.");
+        case ActionRejectReason::StaleSelection:
+            return _("That choice is no longer available.");
+        case ActionRejectReason::Silenced:
+            return _("Silence prevents this action.");
+        case ActionRejectReason::ManaFog:
+            return _("Mana Fog prevents casting this turn.");
+        case ActionRejectReason::AlreadyCast:
+            return _("You have already summoned or cast a spell this turn.");
+        case ActionRejectReason::IllegalMahjongCall:
+            return _("That Mahjong call is not legal for the current rune.");
+        case ActionRejectReason::InvalidRuneChoice:
+            return _("That rune choice is no longer available.");
+        case ActionRejectReason::InvalidLand:
+            return _("Select a valid territory.");
+        case ActionRejectReason::InvalidTarget:
+            return _("Select a valid target.");
+        case ActionRejectReason::MissingRunes:
+            return _("The required runes are not available.");
+        case ActionRejectReason::InsufficientPoints:
+            if(0 <= rejection.available && 0 <= rejection.required)
+                return StringFormat(_("This action requires %2 spell points; only %1 are available."))
+                    .arg(rejection.available).arg(rejection.required);
+            return _("There are not enough spell points for that action.");
+        case ActionRejectReason::InsufficientClaimPoints:
+            if(0 <= rejection.available && 0 <= rejection.required)
+                return StringFormat(_("This claim requires %2 claim points; only %1 are available."))
+                    .arg(rejection.available).arg(rejection.required);
+            return _("There are not enough claim points for that territory.");
+        case ActionRejectReason::ArmyFull:
+            return _("Your army has no free summoning slot.");
+        case ActionRejectReason::UniqueCreatureExists:
+            return _("That unique creature is already on the map.");
+        case ActionRejectReason::PartyFull:
+            return _("The destination party is full.");
+        case ActionRejectReason::UnitNotFound:
+            return _("The selected creature is no longer available.");
+        case ActionRejectReason::IllegalMovement:
+            return _("The selected creature cannot move to that territory.");
+        case ActionRejectReason::IllegalLandClaim:
+            return _("That territory cannot be claimed now.");
+        case ActionRejectReason::NothingToUndo:
+            return _("There are no Adventure orders to undo.");
+        case ActionRejectReason::NoPendingBattle:
+            return _("There is no battle choice awaiting input.");
+        case ActionRejectReason::InvalidBattleChoice:
+            return _("That battle choice is no longer legal.");
+        case ActionRejectReason::None:
+        case ActionRejectReason::UnknownAction:
+            break;
+    }
+    return _("The game rejected that action.");
 }
 
 bool GameData::init(const JsonObject & jo)
@@ -1311,15 +1438,21 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 bool GameData::clientLuckChoice(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
 {
     LocalPlayer & client = playerOfAvatar(avatar);
-    if(client.wind != currentWind || client.isAI() || client.newStone.isValid() || !croupier.hasLuckDraw())
+    if(client.wind != currentWind)
+    {
+	ERROR("invalid luck choice outside current turn: " << client.toString());
+	return rejectAction(ActionRejectReason::WrongTurn);
+    }
+
+    if(client.isAI() || client.newStone.isValid() || !croupier.hasLuckDraw())
     {
 	ERROR("invalid luck choice: " << client.toString());
-	return false;
+	return rejectAction(ActionRejectReason::StaleSelection);
     }
 
     const auto choice = static_cast<const ClientLuckChoice &>(act);
     const Stone selected = croupier.resolveLuckDraw(choice.index());
-    if(!selected.isValid()) return false;
+    if(!selected.isValid()) return rejectAction(ActionRejectReason::InvalidRuneChoice);
 
     client.newStone = GameStone(selected, false);
     if(0 < stoneLastCount) stoneLastCount--;
@@ -1348,7 +1481,7 @@ bool GameData::clientSayGame(const Avatar & avatar, const ClientMessage & act, A
     if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::Silenced);
     }
 
     // need fill winResult
@@ -1362,7 +1495,7 @@ bool GameData::clientSayGame(const Avatar & avatar, const ClientMessage & act, A
     }
 
     ERROR("isWinMahjong: false");
-    return false;
+    return rejectAction(ActionRejectReason::IllegalMahjongCall);
 }
 
 bool GameData::clientSayChao(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
@@ -1374,7 +1507,7 @@ bool GameData::clientSayChao(const Avatar & avatar, const ClientMessage & act, A
     if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::Silenced);
     }
 
     if(client.isMahjongChao(currentWind, dropStone))
@@ -1385,7 +1518,7 @@ bool GameData::clientSayChao(const Avatar & avatar, const ClientMessage & act, A
     }
 
     ERROR("isMahjongChao: false");
-    return false;
+    return rejectAction(ActionRejectReason::IllegalMahjongCall);
 }
 
 bool GameData::clientSayPung(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
@@ -1397,7 +1530,7 @@ bool GameData::clientSayPung(const Avatar & avatar, const ClientMessage & act, A
     if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::Silenced);
     }
 
     if(client.isMahjongPung(currentWind, dropStone))
@@ -1408,7 +1541,7 @@ bool GameData::clientSayPung(const Avatar & avatar, const ClientMessage & act, A
     }
 
     ERROR("isMahjongPung: false");
-    return false;
+    return rejectAction(ActionRejectReason::IllegalMahjongCall);
 }
 
 bool GameData::clientSayKong(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
@@ -1421,7 +1554,7 @@ bool GameData::clientSayKong(const Avatar & avatar, const ClientMessage & act, A
     if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::Silenced);
     }
 
     if(1 == action.kongType() && client.isMahjongKong1(currentWind, dropStone))
@@ -1438,7 +1571,7 @@ bool GameData::clientSayKong(const Avatar & avatar, const ClientMessage & act, A
     }
 
     ERROR("isMahjongKong: false");
-    return false;
+    return rejectAction(ActionRejectReason::IllegalMahjongCall);
 }
 
 bool GameData::clientButtonGame(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
@@ -1451,7 +1584,8 @@ bool GameData::clientButtonGame(const Avatar & avatar, const ClientMessage & act
     if(!client.isWinMahjong(currentWind, roundWind, dropStone, &validatedResult))
     {
 	ERROR("invalid Mahjong Game claim: " << client.toString());
-	return false;
+	return rejectAction(client.isSilenced() ? ActionRejectReason::Silenced :
+	                    ActionRejectReason::IllegalMahjongCall);
     }
 
     winResult = validatedResult;
@@ -1508,11 +1642,9 @@ bool GameData::clientButtonPung(const Avatar & avatar, const ClientMessage & act
 
     DEBUG(client.toString());
 
-    if(client.isSilenced())
-    {
-	ERROR("player silence mode: " << client.name());
-	return false;
-    }
+    if(client.isSilenced()) return rejectAction(ActionRejectReason::Silenced);
+    if(!client.isMahjongPung(currentWind, dropStone))
+	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongPung(client.wind, dropStone));
     client.setMahjongPung(dropStone);
@@ -1529,6 +1661,10 @@ bool GameData::clientButtonKong1(const Avatar & avatar, const ClientMessage & ac
     LocalPlayer & client = playerOfAvatar(avatar);
 
     DEBUG(client.toString());
+
+    if(client.isSilenced()) return rejectAction(ActionRejectReason::Silenced);
+    if(!client.isMahjongKong1(currentWind, dropStone))
+	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongKong1(client.wind, dropStone));
     client.setMahjongKong1(dropStone);
@@ -1549,6 +1685,10 @@ bool GameData::clientButtonKong2(const Avatar & avatar, const ClientMessage & ac
 
     DEBUG(client.toString());
 
+    if(client.isSilenced()) return rejectAction(ActionRejectReason::Silenced);
+    if(!client.isMahjongKong2(currentWind))
+	return rejectAction(ActionRejectReason::IllegalMahjongCall);
+
     actions.push_back(MahjongKong2(client.wind));
     client.setMahjongKong2();
     actions.push_back(MahjongData(currentWind));
@@ -1563,6 +1703,12 @@ bool GameData::clientChaoVariant(const Avatar & avatar, const ClientMessage & ac
     auto ca = static_cast<const ClientChaoVariant &>(act);
 
     DEBUG(client.toString() << ", " << "variant: " << ca.chaoVariant());
+
+    if(client.isSilenced()) return rejectAction(ActionRejectReason::Silenced);
+    const Stones variants = client.stones.findChaoVariants(dropStone);
+    if(!client.isMahjongChao(currentWind, dropStone) ||
+       ca.chaoVariant() < 0 || variants.size() <= ca.chaoVariant())
+	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongChao(client.wind, dropStone));
     client.setMahjongChao(dropStone, ca.chaoVariant());
@@ -1582,11 +1728,17 @@ bool GameData::clientDropIndex(const Avatar & avatar, const ClientMessage & act,
 
     DEBUG(client.toString() << ", " << "index: " << ca.dropIndex() << ", " << "stones: " << client.stones.toString());
 
+    if(currentWind != client.wind) return rejectAction(ActionRejectReason::WrongTurn);
+
     if(dropStone.isValid())
     {
 	ERROR("drop stone: " << dropStone() << ", " << "(" << dropStone.toString() << ")");
-	return false;
+	return rejectAction(ActionRejectReason::StaleSelection);
     }
+
+    if(ca.dropIndex() < 0 || client.stones.size() < ca.dropIndex() ||
+       (client.stones.size() == ca.dropIndex() && !client.newStone.isValid()))
+	return rejectAction(ActionRejectReason::InvalidRuneChoice);
 
     dropStone = client.setMahjongDrop(ca.dropIndex());
     actions.push_back(MahjongDrop(currentWind, dropStone));
@@ -1609,7 +1761,7 @@ bool GameData::clientSummonCreature(const Avatar & avatar, const ClientMessage &
     if(currentWind != client.wind)
     {
 	ERROR("wind not current: " << client.wind.toString());
-	return false;
+	return rejectAction(ActionRejectReason::WrongTurn);
     }
 
     auto ca = static_cast<const ClientSummonCreature &>(act);
@@ -1617,25 +1769,25 @@ bool GameData::clientSummonCreature(const Avatar & avatar, const ClientMessage &
     if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::Silenced);
     }
 
     if(client.isAffectedSpell(Spell::ManaFog) && !ca.isForce())
     {
 	ERROR("player mana fog mode: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::ManaFog);
     }
 
     if(client.isCasted() && !ca.isForce())
     {
 	ERROR("player casted: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::AlreadyCast);
     }
 
     if(client.army.isMaximumSummoning())
     {
 	ERROR("player summmoning maximum: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::ArmyFull);
     }
 
     Creature creature = ca.creature();
@@ -1644,7 +1796,7 @@ bool GameData::clientSummonCreature(const Avatar & avatar, const ClientMessage &
     if(! land.isValid())
     {
 	ERROR("land invalid: " << land.toString());
-	return false;
+	return rejectAction(ActionRejectReason::InvalidLand);
     }
 
     const LandInfo & landInfo = GameData::landInfo(land);
@@ -1652,30 +1804,30 @@ bool GameData::clientSummonCreature(const Avatar & avatar, const ClientMessage &
     if(! landInfo.stat.power || (! land.isTowerWinds() && landInfo.clan != client.clan))
     {
 	ERROR("land incorrect: " << land.toString());
-	return false;
+	return rejectAction(ActionRejectReason::InvalidLand);
     }
 
     const CreatureInfo & creatureInfo = GameData::creatureInfo(creature);
     if(! client.stones.allowCast(creatureInfo.stones, client.newStone) && !ca.isForce())
     {
 	ERROR("player can not cast rule: " << creatureInfo.stones.toString());
-	return false;
+	return rejectAction(ActionRejectReason::MissingRunes);
     }
 
     if(creatureInfo.unique && GameData::findCreatureUnique(creature))
     {
 	ERROR("unique creature found on map, there can be only one!");
-	return false;
+	return rejectAction(ActionRejectReason::UniqueCreatureExists);
     }
 
     if(client.points < creatureInfo.cost && !ca.isForce())
     {
 	ERROR("points error: " << client.points << ", " << creatureInfo.cost);
-	return false;
+	return rejectAction(ActionRejectReason::InsufficientPoints, client.points, creatureInfo.cost);
     }
 
     if(! client.army.join(creature, land))
-	return false;
+	return rejectAction(ActionRejectReason::PartyFull);
 
     if(!ca.isForce())
     {
@@ -1698,7 +1850,7 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
     if(currentWind != client.wind)
     {
 	ERROR("wind not current: " << client.wind.toString());
-	return false;
+	return rejectAction(ActionRejectReason::WrongTurn);
     }
 
     auto ca = static_cast<const ClientCastSpell &>(act);
@@ -1706,19 +1858,19 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
     if(client.isSilenced())
     {
 	ERROR("player silence mode: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::Silenced);
     }
 
     if(client.isAffectedSpell(Spell::ManaFog) && !ca.isForce())
     {
 	ERROR("player mana fog mode: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::ManaFog);
     }
 
     if(client.isCasted() && !ca.isForce())
     {
 	ERROR("player already casted: " << client.name());
-	return false;
+	return rejectAction(ActionRejectReason::AlreadyCast);
     }
 
     Spell spell = ca.spell();
@@ -1733,13 +1885,14 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	}
 
 	ERROR("player can not cast spell: " << spell.toString());
-	return false;
+	return rejectAction(spellInfo.stones.size() ? ActionRejectReason::MissingRunes :
+	                    ActionRejectReason::InvalidTarget);
     }
 
     if(client.points < spellInfo.cost)
     {
 	ERROR("points error: " << client.points << ", " << spellInfo.cost);
-	return false;
+	return rejectAction(ActionRejectReason::InsufficientPoints, client.points, spellInfo.cost);
     }
 
     if(spellInfo.target() == SpellTarget::AllPlayers)
@@ -1768,7 +1921,7 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	if(! targetPlayer || target == client.avatar)
 	{
 	    ERROR("other player target invalid: " << target.toString());
-	    return false;
+	    return rejectAction(ActionRejectReason::InvalidTarget);
 	}
 
 	actions.push_back(MahjongCast(currentWind, spell, target));
@@ -1794,7 +1947,9 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	    if(! target || ! friendlyLand || ! client.army.teleportCreature(*target, land))
 	    {
 		ERROR("teleport target error" << ", " << "unit: " << String::hex(unit, 8) << ", " << "land: " << land.toString());
-		return false;
+		return rejectAction(!target ? ActionRejectReason::UnitNotFound :
+		                    (!friendlyLand ? ActionRejectReason::InvalidLand :
+		                                     ActionRejectReason::PartyFull));
 	    }
 
 	    targets << client.army.findBattleUnit(unit);
@@ -1820,7 +1975,7 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	    if(! allowed)
 	    {
 		ERROR("party spell target invalid" << ", " << "unit: " << String::hex(unit, 8) << ", " << "land: " << land.toString());
-		return false;
+		return rejectAction(ActionRejectReason::InvalidTarget);
 	    }
 
 	    targets << BattleTargets(party->toBattleCreatures());
@@ -1838,7 +1993,7 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	    if(! allowed)
 	    {
 		ERROR("unit spell target invalid" << ", " << "unit: " << String::hex(unit, 8) << ", " << "land: " << land.toString());
-		return false;
+		return rejectAction(bcr ? ActionRejectReason::InvalidTarget : ActionRejectReason::UnitNotFound);
 	    }
 
 	    targets.push_back(bcr);
@@ -1847,7 +2002,7 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
 	if(targets.empty())
 	{
 	    ERROR("spell has no valid targets: " << spell.toString());
-	    return false;
+	    return rejectAction(ActionRejectReason::InvalidTarget);
 	}
 
 	std::vector<int> resistence;
@@ -1900,8 +2055,10 @@ bool GameData::clientCastSpell(const Avatar & avatar, const ClientMessage & act,
     return true;
 }
 
-bool GameData::client2Mahjong(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
+bool GameData::client2Mahjong(const Avatar & avatar, const ClientMessage & act, ActionList & actions,
+                              ActionRejection* rejection)
 {
+    ScopedActionRejection rejectionScope(rejection);
     const std::size_t actionsBefore = actions.size();
     const bool recordAction = Replay::actionRecordingEnabled();
     const JsonObject beforeState = recordAction ? authoritativeState() : JsonObject();
@@ -1929,8 +2086,11 @@ bool GameData::client2Mahjong(const Avatar & avatar, const ClientMessage & act, 
 	case Action::ClientSummonCreature: accepted = clientSummonCreature(avatar, act, actions); break;
 	case Action::ClientCastSpell:	accepted = clientCastSpell(avatar, act, actions); break;
 
-	default: recognized = false; break;
+	default: recognized = false; rejectAction(ActionRejectReason::UnknownAction); break;
     }
+
+    if(recognized && !accepted && (!rejection || !rejection->isValid()))
+        rejectAction(ActionRejectReason::UnknownAction);
 
     if(recognized && accepted && recordAction)
         Replay::recordAcceptedAction(beforeState, avatar, act, authoritativeState());
@@ -1939,6 +2099,7 @@ bool GameData::client2Mahjong(const Avatar & avatar, const ClientMessage & act, 
         .append(avatar.toString()).append(" type=").append(String::number(act.type()))
         .append(" recognized=").append(recognized ? "true" : "false")
         .append(" accepted=").append(accepted ? "true" : "false")
+        .append(" rejection=").append(rejection ? actionRejectReasonName(rejection->reason) : "not_requested")
         .append(" emitted=").append(String::number(static_cast<int>(actions.size() - actionsBefore))));
     return accepted;
 }
@@ -2044,8 +2205,10 @@ bool GameData::adventure2Client(const Avatar & avatar, ActionList & actions)
     return true;
 }
 
-bool GameData::client2Adventure(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
+bool GameData::client2Adventure(const Avatar & avatar, const ClientMessage & act, ActionList & actions,
+                                ActionRejection* rejection)
 {
+    ScopedActionRejection rejectionScope(rejection);
     const std::size_t actionsBefore = actions.size();
     const bool recordAction = Replay::actionRecordingEnabled();
     const JsonObject beforeState = recordAction ? authoritativeState() : JsonObject();
@@ -2062,8 +2225,11 @@ bool GameData::client2Adventure(const Avatar & avatar, const ClientMessage & act
 	case Action::ClientAdventureUndo: accepted = clientAdventureUndo(avatar, act, actions); break;
 	case Action::ClientBattleReady:	accepted = clientBattleReady(avatar, act, actions); break;
 	case Action::ClientBattleChoice: accepted = clientBattleChoice(avatar, act, actions); break;
-	default: recognized = false; break;
+	default: recognized = false; rejectAction(ActionRejectReason::UnknownAction); break;
     }
+
+    if(recognized && !accepted && (!rejection || !rejection->isValid()))
+        rejectAction(ActionRejectReason::UnknownAction);
 
     if(recognized && accepted && recordAction)
         Replay::recordAcceptedAction(beforeState, avatar, act, authoritativeState());
@@ -2072,6 +2238,7 @@ bool GameData::client2Adventure(const Avatar & avatar, const ClientMessage & act
         .append(avatar.toString()).append(" type=").append(String::number(act.type()))
         .append(" recognized=").append(recognized ? "true" : "false")
         .append(" accepted=").append(accepted ? "true" : "false")
+        .append(" rejection=").append(rejection ? actionRejectReasonName(rejection->reason) : "not_requested")
         .append(" emitted=").append(String::number(static_cast<int>(actions.size() - actionsBefore))));
     return accepted;
 }
@@ -2081,10 +2248,16 @@ bool GameData::clientUnitMoved(const Avatar & avatar, const ClientMessage & act,
     LocalPlayer & client = playerOfAvatar(avatar);
     auto ca = static_cast<const ClientUnitMoved &>(act);
 
-    if(gamePart != Menu::AdventurePart || currentWind != client.wind || client.adventurePartDone())
+    if(gamePart != Menu::AdventurePart)
+    {
+	ERROR("adventure action outside Adventure phase: " << client.toString());
+	return rejectAction(ActionRejectReason::WrongPhase);
+    }
+
+    if(currentWind != client.wind || client.adventurePartDone())
     {
 	ERROR("adventure action outside current turn: " << client.toString());
-	return false;
+	return rejectAction(ActionRejectReason::WrongTurn);
     }
 
     Land land = ca.land();
@@ -2097,7 +2270,7 @@ bool GameData::clientUnitMoved(const Avatar & avatar, const ClientMessage & act,
     if(! bcr)
     {
         ERROR("unit not found: " << String::hex(unit, 8));
-        return false;
+        return rejectAction(ActionRejectReason::UnitNotFound);
     }
 
     if(!land.isValid())
@@ -2113,7 +2286,7 @@ bool GameData::clientUnitMoved(const Avatar & avatar, const ClientMessage & act,
 	return true;
     }
 
-    return false;
+    return rejectAction(ActionRejectReason::IllegalMovement);
 }
 
 bool GameData::canClaimLand(const RemotePlayer & player, const Land & land)
@@ -2155,23 +2328,31 @@ Lands GameData::claimableLands(const RemotePlayer & player)
 bool GameData::clientLandClaim(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
 {
     LocalPlayer & player = playerOfAvatar(avatar);
-    if(gamePart != Menu::AdventurePart || currentWind != player.wind || player.adventurePartDone())
+    if(gamePart != Menu::AdventurePart)
+    {
+	ERROR("land claim outside Adventure phase: " << player.toString());
+	return rejectAction(ActionRejectReason::WrongPhase);
+    }
+
+    if(currentWind != player.wind || player.adventurePartDone())
     {
 	ERROR("land claim outside current turn: " << player.toString());
-	return false;
+	return rejectAction(ActionRejectReason::WrongTurn);
     }
 
     const Land land = static_cast<const ClientLandClaim &>(act).land();
     if(!canClaimLand(player, land))
     {
 	ERROR("land claim rejected: " << land.toString());
-	return false;
+	return rejectAction(ActionRejectReason::IllegalLandClaim);
     }
 
     LandInfo & target = landsInfo[land()];
     const Clan previousOwner = target.clan;
     const int cost = target.stat.point;
-    if(!player.spendLandClaimPoints(previousOwner, cost)) return false;
+    if(!player.spendLandClaimPoints(previousOwner, cost))
+        return rejectAction(ActionRejectReason::InsufficientClaimPoints,
+                            player.landClaimPoints(previousOwner), cost);
 
     target.clan = player.clan;
     landClaimJournal.emplace_back(player.avatar, land, previousOwner, cost);
@@ -2182,16 +2363,22 @@ bool GameData::clientLandClaim(const Avatar & avatar, const ClientMessage & act,
 bool GameData::clientAdventureUndo(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
 {
     LocalPlayer & player = playerOfAvatar(avatar);
-    if(gamePart != Menu::AdventurePart || currentWind != player.wind || player.adventurePartDone())
+    if(gamePart != Menu::AdventurePart)
+    {
+	ERROR("adventure undo outside Adventure phase: " << player.toString());
+	return rejectAction(ActionRejectReason::WrongPhase);
+    }
+
+    if(currentWind != player.wind || player.adventurePartDone())
     {
 	ERROR("adventure undo outside current turn: " << player.toString());
-	return false;
+	return rejectAction(ActionRejectReason::WrongTurn);
     }
 
     if(adventureSnapshotPlayer != avatar)
     {
 	ERROR("adventure undo snapshot missing: " << player.toString());
-	return false;
+	return rejectAction(ActionRejectReason::NothingToUndo);
     }
 
     while(!landClaimJournal.empty() && landClaimJournal.back().player == avatar)
@@ -2215,10 +2402,16 @@ bool GameData::clientBattleReady(const Avatar & avatar, const ClientMessage & ac
 {
     LocalPlayer & player = playerOfAvatar(avatar);
 
-    if(gamePart != Menu::AdventurePart || currentWind != player.wind || player.adventurePartDone())
+    if(gamePart != Menu::AdventurePart)
+    {
+	ERROR("battle ready outside Adventure phase: " << player.toString());
+	return rejectAction(ActionRejectReason::WrongPhase);
+    }
+
+    if(currentWind != player.wind || player.adventurePartDone())
     {
 	ERROR("battle ready outside current turn: " << player.toString());
-	return false;
+	return rejectAction(ActionRejectReason::WrongTurn);
     }
 
     //auto ca = static_cast<const ClientBattleReady &>(act);
@@ -2277,7 +2470,7 @@ bool GameData::completePendingBattle(ActionList & actions)
     if(!attackers || (resolved.session.hasDefenders() && !defenders))
     {
 	ERROR("pending battle parties no longer match authoritative state");
-	return false;
+	return rejectAction(ActionRejectReason::StaleSelection);
     }
 
     *attackers = resolved.session.attackers();
@@ -2315,12 +2508,23 @@ bool GameData::completePendingBattle(ActionList & actions)
 bool GameData::clientBattleChoice(const Avatar & avatar, const ClientMessage & act, ActionList & actions)
 {
     LocalPlayer & player = playerOfAvatar(avatar);
-    if(gamePart != Menu::AdventurePart || currentWind != player.wind ||
-       !player.adventurePartDone() || !pendingBattle.isValid() ||
+    if(gamePart != Menu::AdventurePart)
+    {
+	ERROR("battle choice outside Adventure phase: " << player.toString());
+	return rejectAction(ActionRejectReason::WrongPhase);
+    }
+
+    if(currentWind != player.wind)
+    {
+	ERROR("battle choice outside current turn: " << player.toString());
+	return rejectAction(ActionRejectReason::WrongTurn);
+    }
+
+    if(!player.adventurePartDone() || !pendingBattle.isValid() ||
        pendingBattle.attacker != avatar || !pendingBattle.session.awaitsChoice())
     {
 	ERROR("battle choice outside pending combat: " << player.toString());
-	return false;
+	return rejectAction(ActionRejectReason::NoPendingBattle);
     }
 
     const ClientBattleChoice & choice = static_cast<const ClientBattleChoice &>(act);
@@ -2336,7 +2540,7 @@ bool GameData::clientBattleChoice(const Avatar & avatar, const ClientMessage & a
     {
 	ERROR("battle choice rejected: actor=" << choice.actor() <<
 	      ", target=" << choice.target() << ", auto=" << choice.autoResolve());
-	return false;
+	return rejectAction(ActionRejectReason::InvalidBattleChoice);
     }
 
     if(pendingBattle.session.isComplete())
