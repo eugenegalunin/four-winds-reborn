@@ -3,6 +3,7 @@ param(
     [switch]$Clean,
     [switch]$NoTests,
     [switch]$DebugBuild,
+    [switch]$ReleaseGui,
     [string]$MsysRoot = ""
 )
 
@@ -36,6 +37,7 @@ if ($InstallDeps) { $options += "--install-deps" }
 if ($Clean) { $options += "--clean" }
 if ($NoTests) { $options += "--no-tests" }
 if ($DebugBuild) { $options += "--debug" }
+if ($ReleaseGui) { $options += "--release-gui" }
 
 $command = "export PATH=/ucrt64/bin:/usr/bin:`$PATH; cd '$unixRepo' && ./scripts/build-windows-msys2.sh $($options -join ' ')"
 $previousMsystem = $env:MSYSTEM

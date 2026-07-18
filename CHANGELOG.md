@@ -13,6 +13,12 @@ Reborn work only; they do not claim authorship of inherited code or assets.
 
 ## [Unreleased]
 
+### Changed - Windows packaging
+
+- Tagged Windows releases now start as ordinary desktop applications without
+  opening a separate console window. Untagged development and Debug builds
+  keep the console so live engine diagnostics remain available.
+
 ### Fixed - UI
 
 - Replaced the legacy per-line scene widgets used by scrollable dialog text

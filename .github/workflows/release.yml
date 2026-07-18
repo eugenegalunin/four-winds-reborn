@@ -142,7 +142,11 @@ jobs:
 
       - name: Build and test Release
         shell: msys2 {0}
-        run: ./scripts/build-windows-msys2.sh --clean
+        run: ./scripts/build-windows-msys2.sh --clean --release-gui
+
+      - name: Verify player build has no console subsystem
+        shell: msys2 {0}
+        run: objdump -p dist/windows/four-winds-reborn.exe | grep -q "Windows GUI"
 
       - name: Package Windows Release
         shell: pwsh

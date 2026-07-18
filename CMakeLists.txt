@@ -65,6 +65,10 @@ if(NOT FOUR_WINDS_ENGINE_REVISION)
     set(FOUR_WINDS_ENGINE_REVISION "unknown")
 endif()
 
+option(FOUR_WINDS_WINDOWS_GUI
+    "Build the Windows executable without an attached console"
+    OFF)
+
 set(FOUR_WINDS_BUILD_DEFINITIONS
     FOUR_WINDS_VERSION="${PROJECT_VERSION}"
     FOUR_WINDS_BUILD_DATE="${FOUR_WINDS_BUILD_DATE}"
@@ -116,7 +120,8 @@ if(WIN32)
     target_link_libraries(four_winds_reborn dbghelp)
 endif()
 set_target_properties(four_winds_reborn PROPERTIES
-    OUTPUT_NAME four-winds-reborn)
+    OUTPUT_NAME four-winds-reborn
+    WIN32_EXECUTABLE ${FOUR_WINDS_WINDOWS_GUI})
 
 option(BUILD_TESTING "Build gameplay regression tests" OFF)
 include(CTest)

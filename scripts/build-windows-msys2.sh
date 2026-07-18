@@ -5,6 +5,7 @@ install_deps=0
 clean=0
 run_tests=1
 build_type=Release
+release_gui=0
 
 for option in "$@"; do
     case "$option" in
@@ -12,9 +13,15 @@ for option in "$@"; do
         --clean) clean=1 ;;
         --no-tests) run_tests=0 ;;
         --debug) build_type=Debug ;;
+        --release-gui) release_gui=1 ;;
         *) echo "Unknown option: $option" >&2; exit 2 ;;
     esac
 done
+
+if (( release_gui )) && [[ "$build_type" == "Debug" ]]; then
+    echo "--release-gui cannot be combined with --debug." >&2
+    exit 2
+fi
 
 if [[ "${MSYSTEM:-}" != "UCRT64" ]]; then
     echo "This script must run in the MSYS2 UCRT64 environment." >&2
@@ -63,7 +70,8 @@ if (( run_tests )); then testing=ON; fi
 
 cmake -S . -B "$build_dir" -G Ninja \
     -DCMAKE_BUILD_TYPE="$build_type" \
-    -DBUILD_TESTING="$testing"
+    -DBUILD_TESTING="$testing" \
+    -DFOUR_WINDS_WINDOWS_GUI="$release_gui"
 cmake --build "$build_dir" --parallel "${NUMBER_OF_PROCESSORS:-4}"
 
 if (( run_tests )); then

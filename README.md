@@ -55,7 +55,9 @@ Windows uses MSYS2 UCRT64/MinGW because the SDL engine is not an MSVC project:
 Install [MSYS2](https://www.msys2.org/) in `C:\msys64` first, or pass
 `-MsysRoot D:\path\to\msys64`. Later builds only need
 `.\scripts\build-windows.ps1`. Unix scripts accept `--clean`, `--debug` and
-`--no-tests`; PowerShell accepts `-Clean`, `-DebugBuild` and `-NoTests`.
+`--no-tests`; PowerShell accepts `-Clean`, `-DebugBuild` and `-NoTests`. Add
+`-ReleaseGui` only when checking a player-facing Windows package without the
+development console; the tagged release workflow enables it automatically.
 
 Close a packaged game launched from `dist/windows` before rebuilding it. The
 PowerShell wrapper detects a live packaged executable and stops before touching
