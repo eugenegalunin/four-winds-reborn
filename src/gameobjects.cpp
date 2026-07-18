@@ -4339,7 +4339,7 @@ int WinResults::totalScore(void) const
     DoubleBonusList list = bonusDoubles();
     for(auto it = list.begin(); it != list.end(); ++it) doubles += (*it).value();
 
-    int res = baseScore() * scoreMultiplier(doubles);
+    int res = totalPoints() * scoreMultiplier(doubles);
     if(res > 500) res = 500;
 
     return res;

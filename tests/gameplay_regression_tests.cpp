@@ -4151,6 +4151,42 @@ int main(int argc, char** argv)
     expect(WinResults::scoreMultiplier(4) == 16, "four doubles must use x16");
     expect(WinResults::scoreMultiplier(5) == 32, "five doubles must reach the limit tier");
 
+    WinRules pointRules;
+    pointRules << WinRule(WinRule::Pung, Stone(Stone::Skull1), false)
+               << WinRule(WinRule::Chao, Stone(Stone::Sword2), false)
+               << WinRule(WinRule::Chao, Stone(Stone::Number2), false)
+               << WinRule(WinRule::Chao, Stone(Stone::Skull6), false);
+    const WinResults pointHand(Wind::East, Wind::South, Wind::West, pointRules,
+                               WinRules(), Stone(Stone::Number5), Stone(Stone::Sword4));
+    expect(pointHand.totalPoints() == 24,
+           "a terminal Pung must add four points to the 20-point win base");
+    expect(pointHand.totalScore() == 24,
+           "Mahjong total score must include set and hand points without doubles");
+
+    WinRules doubledRules;
+    doubledRules << WinRule(WinRule::Pung, Stone(Stone::WindEast), false)
+                 << WinRule(WinRule::Chao, Stone(Stone::Sword2), false)
+                 << WinRule(WinRule::Chao, Stone(Stone::Number2), false)
+                 << WinRule(WinRule::Chao, Stone(Stone::Skull6), false);
+    const WinResults doubledHand(Wind::East, Wind::South, Wind::East, doubledRules,
+                                 WinRules(), Stone(Stone::Number5), Stone(Stone::Sword4));
+    expect(doubledHand.totalPoints() == 24,
+           "a lucky exposed Wind Pung must retain its four base points");
+    expect(doubledHand.totalScore() == 48,
+           "Mahjong doubles must multiply the complete accumulated point total");
+
+    WinRules concealedRules;
+    concealedRules << WinRule(WinRule::Pung, Stone(Stone::Skull1), true)
+                   << WinRule(WinRule::Pung, Stone(Stone::Sword1), true)
+                   << WinRule(WinRule::Pung, Stone(Stone::Number1), true)
+                   << WinRule(WinRule::Pung, Stone(Stone::WhiteDragon), true);
+    const WinResults limitHand(Wind::East, Wind::West, Wind::South, WinRules(),
+                               concealedRules, Stone(Stone::WindNorth), Stone(Stone::Sword4));
+    expect(limitHand.totalPoints() == 62,
+           "four concealed terminal or honor Pungs must include their point bonuses");
+    expect(limitHand.totalScore() == 500,
+           "a limit hand must remain capped at 500 after multiplying all points");
+
     BattleParty party(Clan::Red, Land::Maithaius);
     expect(party.join(creature(101, 4)), "first creature must join party");
     expect(party.movePoint() == 4, "empty party slots must not reduce movement");
