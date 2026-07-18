@@ -731,6 +731,7 @@ int runSettingsPersistenceSelfTest()
     Settings::setVoiceVolume(85);
     Settings::setSoundGuardianRules(true);
     Settings::setFullscreen(true);
+    Settings::setWindowScale(150);
     std::string error;
     if(Settings::language() != "ru" || !Settings::write(&error))
     {
@@ -745,10 +746,12 @@ int runSettingsPersistenceSelfTest()
     Settings::setVoiceVolume(100);
     Settings::setSoundGuardianRules(false);
     Settings::setFullscreen(false);
+    Settings::setWindowScale(100);
     if(!Settings::read() || Settings::language() != "ru" || Settings::gameSpeed() != "fast" ||
        !Settings::music() || Settings::musicVolume() != 35 ||
        !Settings::sound() || Settings::effectsVolume() != 60 || Settings::voiceVolume() != 85 ||
-       !Settings::soundGuardianRules() || !Settings::fullscreen())
+       !Settings::soundGuardianRules() || !Settings::fullscreen() ||
+       Settings::windowScale() != 150)
     {
         std::cerr << "FAIL: settings did not survive a read/write cycle\n";
         return 1;
@@ -761,6 +764,7 @@ int runSettingsPersistenceSelfTest()
        !saved.getBoolean("sound", false) || saved.getInteger("sound:volume", -1) != 60 ||
        saved.getInteger("voice:volume", -1) != 85 ||
        !saved.getBoolean("display:fullscreen", false) ||
+       saved.getInteger("display:window_scale", -1) != 150 ||
        !saved.getBoolean("sound:guardianrules", false))
     {
         std::cerr << "FAIL: settings.json contract is invalid\n";
@@ -773,7 +777,8 @@ int runSettingsPersistenceSelfTest()
     legacy.addBoolean("sound", false);
     if(!Systems::saveString2File(legacy.toString(), settingsFile) || !Settings::read() ||
        Settings::musicVolume() != 0 || Settings::effectsVolume() != 0 ||
-       Settings::voiceVolume() != 0 || Settings::music() || Settings::sound())
+       Settings::voiceVolume() != 0 || Settings::music() || Settings::sound() ||
+       Settings::windowScale() != 100)
     {
         std::cerr << "FAIL: legacy boolean audio settings are not load compatible\n";
         return 1;
@@ -782,9 +787,11 @@ int runSettingsPersistenceSelfTest()
     Settings::setMusicVolume(-5);
     Settings::setEffectsVolume(125);
     Settings::setVoiceVolume(50);
+    Settings::setWindowScale(189);
     if(Settings::musicVolume() != 0 || Settings::effectsVolume() != 100 ||
        Settings::voiceVolume() != 50 || Settings::mixerVolume(0) != 0 ||
-       Settings::mixerVolume(50) != 64 || Settings::mixerVolume(100) != 128)
+       Settings::mixerVolume(50) != 64 || Settings::mixerVolume(100) != 128 ||
+       Settings::windowScale() != 200)
     {
         std::cerr << "FAIL: audio volume normalization is invalid\n";
         return 1;

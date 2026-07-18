@@ -1558,6 +1558,10 @@ msgstr ""
 msgid "Display Mode"
 msgstr ""
 
+#: src\settingsmenu.cpp
+msgid "Window Size"
+msgstr ""
+
 #: src\settingsmenu.cpp:72
 msgid "Apply"
 msgstr ""
@@ -1652,6 +1656,10 @@ msgstr ""
 
 #: src\settingsmenu.cpp:202
 msgid "Could not switch display mode."
+msgstr ""
+
+#: src\settingsmenu.cpp
+msgid "Could not resize the game window."
 msgstr ""
 
 #: src\settingsmenu.cpp:219

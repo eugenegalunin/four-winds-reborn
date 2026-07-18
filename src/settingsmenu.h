@@ -20,6 +20,7 @@ class SettingsMenuScreen : public JsonWindow
         VoiceVolume,
         GuardianVoices,
         DisplayMode,
+        WindowSize,
         Apply,
         Back
     };
@@ -39,6 +40,8 @@ class SettingsMenuScreen : public JsonWindow
     int                voiceVolume;
     bool               guardianVoices;
     bool               fullscreen;
+    std::vector<int>   windowScales;
+    int                windowScale;
 
     Rect               leftPanel;
     Rect               rightPanel;
@@ -67,6 +70,7 @@ class SettingsMenuScreen : public JsonWindow
     bool               isVolumeEntry(EntryKind) const;
     int                volumeValue(EntryKind) const;
     void               setVolumeValue(EntryKind, int);
+    Size               windowSizeForScale(int) const;
     bool               adjustSelected(int);
     bool               activateSelected(void);
     bool               selectNext(int);

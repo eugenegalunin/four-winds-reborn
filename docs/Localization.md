@@ -20,7 +20,7 @@ The maintained sources are:
 - `themes/default/lang/ru.mo` — compiled runtime catalog;
 - `scripts/apply-russian-translations.py` — reproducible curated terminology.
 
-After the first post-v0.1.0 Settings update, 435 messages are translated and 68 are
+After the post-v0.1.0 Settings updates, 437 messages are translated and 68 are
 untranslated. Current menus, saves/recovery, gameplay controls, names, scores,
 creatures and spells are covered. The remainder is primarily long-form material
 for the future Encyclopedia and should be translated when that screen is built,

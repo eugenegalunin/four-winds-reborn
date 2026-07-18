@@ -1585,6 +1585,10 @@ msgstr "Голоса Стражей"
 msgid "Display Mode"
 msgstr "Режим Экрана"
 
+#: src\settingsmenu.cpp
+msgid "Window Size"
+msgstr "Размер Окна"
+
 #: src\settingsmenu.cpp:72
 msgid "Apply"
 msgstr "Применить"
@@ -1680,6 +1684,10 @@ msgstr "Настройки"
 #: src\settingsmenu.cpp:202
 msgid "Could not switch display mode."
 msgstr "Не удалось переключить режим экрана."
+
+#: src\settingsmenu.cpp
+msgid "Could not resize the game window."
+msgstr "Не удалось изменить размер окна игры."
 
 #: src\settingsmenu.cpp:219
 msgid "Could not save settings: %1"

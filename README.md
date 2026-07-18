@@ -108,11 +108,18 @@ or a left click.
 
 The main-menu Settings screen persists language, independent 0–100% music,
 effects and voice levels, classic Guardian calls, presentation speed and
-Windowed/Fullscreen display mode in the per-user `settings.json`. Volume bars
-accept a mouse position or Left/Right keyboard adjustment. Display and audio
-changes take effect when Apply is pressed without restarting; the game continues
-to render its original 1024x768 canvas in both display modes. Existing settings
-files with the older boolean music/sound keys remain compatible.
+Windowed/Fullscreen display mode in the per-user `settings.json`. Windowed mode
+offers 75%, 100%, 125%, 150%, 175% and 200% sizes when they fit the current
+desktop. Every size uses smooth 4:3 scaling of the fixed 1024x768 canvas, so the
+window and rendered image stay aligned without an internal black frame. Volume
+bars accept a
+mouse position or Left/Right keyboard adjustment. Display and audio changes take
+effect when Apply is pressed without restarting; the game always keeps its
+original 1024x768 logical canvas. Existing settings files with the older boolean
+music/sound keys remain compatible.
+
+Choice rows cycle forward with a left click and backward with a right click
+(secondary click on macOS); keyboard Left/Right navigation remains available.
 
 English uses the built-in source strings; Russian can be selected without
 restarting the game and uses the restored classic terminology. The original

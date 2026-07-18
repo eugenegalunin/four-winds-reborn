@@ -13,6 +13,23 @@ Reborn work only; they do not claim authorship of inherited code or assets.
 
 ## [Unreleased]
 
+### Added - Display scaling
+
+- Added selectable 75-200% smoothly scaled window sizes while keeping the
+  original 1024x768 logical game canvas unchanged.
+- Window-size choices apply without restarting and survive
+  Windowed/Fullscreen transitions.
+- Settings choice rows support left-click to advance and right-click to move
+  backward, using SDL's cross-platform secondary-click handling.
+
+### Fixed - Display scaling
+
+- Fixed runtime window resizing so it no longer replaces the logical canvas
+  with the physical window size or recreates the renderer and invalidates UI
+  textures.
+- Settings reads now start from stable defaults before applying theme and user
+  overrides, preventing stale in-memory values when a base config is absent.
+
 ### Added - Settings
 
 - Added independent 0–100% volume controls for music, sound effects and voices.

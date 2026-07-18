@@ -57,6 +57,8 @@ namespace Settings
     void                setSoundGuardianRules(bool);
     bool		fullscreen(void);
     void                setFullscreen(bool);
+    int                 windowScale(void);
+    void                setWindowScale(int);
     bool		accel(void);
 
     bool		storeCache(void);

@@ -214,8 +214,34 @@ bool GameTheme::init(const Application & app)
 
     VERBOSE("use theme: " << themeName << ", " << "author: " << themeAuthor << ", " << themeSize.toString());
 
-    Size displaySize = app.geometry.isEmpty() ? themeSize : app.geometry;
     bool displayFullScreen = app.fullscreen ? true : Settings::fullscreen();
+    Size displaySize = app.geometry;
+    if(displaySize.isEmpty())
+    {
+        int scale = Settings::windowScale();
+
+        if(!displayFullScreen)
+        {
+            const Size available = Display::usableBounds().toSize();
+
+            displaySize = Size(themeSize.w * scale / 100,
+                               themeSize.h * scale / 100);
+            while(75 < scale &&
+                  (available.w < displaySize.w || available.h < displaySize.h))
+            {
+                scale -= 25;
+                displaySize = Size(themeSize.w * scale / 100,
+                                   themeSize.h * scale / 100);
+            }
+
+            Settings::setWindowScale(scale);
+        }
+        else
+            displaySize = Size(themeSize.w * scale / 100,
+                               themeSize.h * scale / 100);
+    }
+
+    Display::setFixedRenderSize(true);
 
     const std::string title = app.name().append(", version: ").append(app.version());
     CrashReport::breadcrumb(std::string("Theme stage=display status=begin window=")

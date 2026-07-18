@@ -18,7 +18,7 @@ SettingsMenuScreen::SettingsMenuScreen() :
     musicVolume(Settings::musicVolume()), effectsVolume(Settings::effectsVolume()),
     voiceVolume(Settings::voiceVolume()),
     guardianVoices(Settings::soundGuardianRules()),
-    fullscreen(Settings::fullscreen())
+    fullscreen(Settings::fullscreen()), windowScale(Settings::windowScale())
 {
     leftPanel = JsonUnpack::rect(jobject, "panel:left", Rect(0, 0, 224, 768));
     rightPanel = JsonUnpack::rect(jobject, "panel:right", Rect(800, 0, 224, 768));
@@ -41,6 +41,20 @@ SettingsMenuScreen::SettingsMenuScreen() :
     buttonBorderColor = GameTheme::jsonColor(jobject, "color:button_border");
     buttonSelectedBorderColor = GameTheme::jsonColor(jobject, "color:button_selected_border");
 
+    const Size available = Display::usableBounds().toSize();
+    for(const int candidate : { 75, 100, 125, 150, 175, 200 })
+    {
+        const Size size = windowSizeForScale(candidate);
+        if(size.w <= available.w && size.h <= available.h)
+            windowScales.push_back(candidate);
+    }
+    if(windowScales.empty()) windowScales.push_back(75);
+    if(std::find(windowScales.begin(), windowScales.end(), windowScale) == windowScales.end())
+    {
+        windowScale = windowScales.front();
+        for(const int candidate : windowScales)
+            if(candidate <= Settings::windowScale()) windowScale = candidate;
+    }
     addEntry(Language);
     addEntry(GameSpeed);
     addEntry(MusicVolume);
@@ -48,6 +62,7 @@ SettingsMenuScreen::SettingsMenuScreen() :
     addEntry(VoiceVolume);
     addEntry(GuardianVoices);
     addEntry(DisplayMode);
+    addEntry(WindowSize);
     addEntry(Apply);
     addEntry(Back);
 
@@ -74,6 +89,7 @@ std::string SettingsMenuScreen::entryLabel(EntryKind kind) const
         case VoiceVolume: return _("Voices");
         case GuardianVoices: return _("Guardian Voices");
         case DisplayMode: return _("Display Mode");
+        case WindowSize: return _("Window Size");
         case Apply: return _("Apply");
         case Back: return _("Back");
     }
@@ -94,6 +110,11 @@ std::string SettingsMenuScreen::entryValue(EntryKind kind) const
         case VoiceVolume: return std::to_string(volumeValue(kind)).append("%");
         case GuardianVoices: return guardianVoices ? _("ON") : _("OFF");
         case DisplayMode: return fullscreen ? _("Fullscreen") : _("Windowed");
+        case WindowSize:
+        {
+            const Size size = windowSizeForScale(windowScale);
+            return std::to_string(size.w).append(" x ").append(std::to_string(size.h));
+        }
         default: break;
     }
     return std::string();
@@ -118,6 +139,12 @@ void SettingsMenuScreen::setVolumeValue(EntryKind kind, int value)
     if(kind == MusicVolume) musicVolume = value;
     else if(kind == EffectsVolume) effectsVolume = value;
     else if(kind == VoiceVolume) voiceVolume = value;
+}
+
+Size SettingsMenuScreen::windowSizeForScale(int value) const
+{
+    const Size logical = Display::size();
+    return Size(logical.w * value / 100, logical.h * value / 100);
 }
 
 void SettingsMenuScreen::renderWindow(void)
@@ -179,11 +206,12 @@ void SettingsMenuScreen::renderWindow(void)
         if(isVolumeEntry(entry.kind))
         {
             renderText(small, entryLabel(entry.kind), labelColor,
-                       Point(entry.area.x + 10, entry.area.y + 7));
+                       Point(entry.area.x + 10, entry.area.y + 4));
             renderText(small, value, isSelected ? titleColor : mutedColor,
-                       Point(entry.area.x + entry.area.w - 10, entry.area.y + 7), AlignRight);
+                       Point(entry.area.x + entry.area.w - 10, entry.area.y + 4), AlignRight);
 
-            const Rect track(entry.area.x + 12, entry.area.y + 34, entry.area.w - 24, 7);
+            const Rect track(entry.area.x + 12, entry.area.y + entry.area.h - 10,
+                             entry.area.w - 24, 6);
             renderColor(mutedColor, track);
             const int fillWidth = track.w * volumeValue(entry.kind) / 100;
             if(0 < fillWidth)
@@ -199,9 +227,9 @@ void SettingsMenuScreen::renderWindow(void)
         else
         {
             renderText(menu, entryLabel(entry.kind), labelColor,
-                       Point(entry.area.x + entry.area.w / 2, entry.area.y + 4), AlignCenter);
+                       Point(entry.area.x + entry.area.w / 2, entry.area.y + 1), AlignCenter);
             renderText(small, value, isSelected ? titleColor : mutedColor,
-                       Point(entry.area.x + entry.area.w / 2, entry.area.y + 34), AlignCenter);
+                       Point(entry.area.x + entry.area.w / 2, entry.area.y + 27), AlignCenter);
         }
     }
 
@@ -231,6 +259,16 @@ bool SettingsMenuScreen::adjustSelected(int direction)
         guardianVoices = !guardianVoices;
     else if(kind == DisplayMode)
         fullscreen = !fullscreen;
+    else if(kind == WindowSize)
+    {
+        auto it = std::find(windowScales.begin(), windowScales.end(), windowScale);
+        int index = it == windowScales.end() ? 0 :
+            static_cast<int>(std::distance(windowScales.begin(), it));
+        index = (index + (direction < 0 ? -1 : 1) +
+                 static_cast<int>(windowScales.size())) %
+                static_cast<int>(windowScales.size());
+        windowScale = windowScales[index];
+    }
     else
         return false;
 
@@ -251,14 +289,30 @@ bool SettingsMenuScreen::activateSelected(void)
         case EffectsVolume:
         case VoiceVolume:
         case GuardianVoices:
-        case DisplayMode: return adjustSelected(1);
+        case DisplayMode:
+        case WindowSize: return adjustSelected(1);
         case Apply:
         {
+            const bool previousFullscreen = Display::isFullscreenWindow();
+            const Size previousWindowSize = Display::device();
+
             if(Display::isFullscreenWindow() != fullscreen &&
                !Display::setFullscreenMode(fullscreen))
             {
                 fullscreen = Display::isFullscreenWindow();
                 MessageBox(_("Settings"), _("Could not switch display mode."),
+                           *this, false).exec();
+                renderWindow();
+                return true;
+            }
+
+            if(!fullscreen && !Display::resize(windowSizeForScale(windowScale)))
+            {
+                if(Display::isFullscreenWindow() != previousFullscreen)
+                    Display::setFullscreenMode(previousFullscreen);
+                if(!previousFullscreen) Display::resize(previousWindowSize);
+                fullscreen = Display::isFullscreenWindow();
+                MessageBox(_("Settings"), _("Could not resize the game window."),
                            *this, false).exec();
                 renderWindow();
                 return true;
@@ -271,6 +325,7 @@ bool SettingsMenuScreen::activateSelected(void)
             Settings::setVoiceVolume(voiceVolume);
             Settings::setSoundGuardianRules(guardianVoices);
             Settings::setFullscreen(fullscreen);
+            Settings::setWindowScale(windowScale);
 
             std::string error;
             if(!Settings::write(&error))
@@ -333,7 +388,7 @@ bool SettingsMenuScreen::keyPressEvent(const KeySym & key)
 
 bool SettingsMenuScreen::mouseClickEvent(const ButtonsEvent & coords)
 {
-    if(!coords.isButtonLeft()) return false;
+    if(!coords.isButtonLeft() && !coords.isButtonRight()) return false;
 
     for(size_t ii = 0; ii < entries.size(); ++ii)
     {
@@ -342,6 +397,8 @@ bool SettingsMenuScreen::mouseClickEvent(const ButtonsEvent & coords)
             selected = static_cast<int>(ii);
             if(isVolumeEntry(entries[ii].kind))
             {
+                if(!coords.isButtonLeft()) return true;
+
                 const Rect & area = entries[ii].area;
                 const int left = area.x + 12;
                 const int width = area.w - 24;
@@ -353,6 +410,19 @@ bool SettingsMenuScreen::mouseClickEvent(const ButtonsEvent & coords)
                 playSound("button");
                 renderWindow();
                 return true;
+            }
+
+            if(coords.isButtonRight())
+            {
+                switch(entries[ii].kind)
+                {
+                    case Language:
+                    case GameSpeed:
+                    case GuardianVoices:
+                    case DisplayMode:
+                    case WindowSize: return adjustSelected(-1);
+                    default: return false;
+                }
             }
             return activateSelected();
         }

@@ -7,5 +7,6 @@
     "sound:guardianrules": true,
     "game:speed": "classic",
     "display:accel": true,
-    "display:fullscreen": false
+    "display:fullscreen": false,
+    "display:window_scale": 100
 }

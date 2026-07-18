@@ -33,6 +33,7 @@ namespace
     int gameVoiceVolume = 100;
     bool gameAccel = true;
     bool gameFullscreen = false;
+    int gameWindowScale = 100;
     bool guardianRulesSound = true;
     std::string lang;
     std::string speed = "classic";
@@ -40,6 +41,12 @@ namespace
     int normalizedVolume(int value)
     {
 	return std::max(0, std::min(100, value));
+    }
+
+    int normalizedWindowScale(int value)
+    {
+        const int clamped = std::max(75, std::min(200, value));
+        return ((clamped + 12) / 25) * 25;
     }
 
     std::string normalizedLanguage(const std::string & value)
@@ -69,6 +76,16 @@ namespace
 
 bool Settings::read(void)
 {
+    gameMusicVolume = 100;
+    gameEffectsVolume = 100;
+    gameVoiceVolume = 100;
+    gameAccel = true;
+    gameFullscreen = false;
+    gameWindowScale = 100;
+    guardianRulesSound = true;
+    lang = normalizedLanguage(Systems::messageLocale(1));
+    speed = "classic";
+
     JsonObject jo = GameTheme::jsonResource("config.json").toObject();
 
     if(jo.isValid())
@@ -79,6 +96,7 @@ bool Settings::read(void)
 	if(!jo.getBoolean("music", true)) gameMusicVolume = 0;
 	if(!jo.getBoolean("sound", true)) gameEffectsVolume = gameVoiceVolume = 0;
 	gameFullscreen = jo.getBoolean("display:fullscreen", false);
+	gameWindowScale = normalizedWindowScale(jo.getInteger("display:window_scale", 100));
 	gameAccel = jo.getBoolean("display:accel", true);
 
 	guardianRulesSound = jo.getBoolean("sound:guardianrules", true);
@@ -99,6 +117,8 @@ bool Settings::read(void)
 	if(user.hasKey("sound") && !user.getBoolean("sound", true))
 	    gameEffectsVolume = gameVoiceVolume = 0;
 	gameFullscreen = user.getBoolean("display:fullscreen", gameFullscreen);
+	gameWindowScale = normalizedWindowScale(
+	    user.getInteger("display:window_scale", gameWindowScale));
 	guardianRulesSound = user.getBoolean("sound:guardianrules", guardianRulesSound);
 	lang = normalizedLanguage(user.getString("language", lang));
 	speed = normalizedGameSpeed(user.getString("game:speed", speed));
@@ -125,6 +145,7 @@ bool Settings::write(std::string* error)
     jo.addInteger("sound:volume", gameEffectsVolume);
     jo.addInteger("voice:volume", gameVoiceVolume);
     jo.addBoolean("display:fullscreen", gameFullscreen);
+    jo.addInteger("display:window_scale", gameWindowScale);
     jo.addBoolean("sound:guardianrules", guardianRulesSound);
     jo.addString("game:speed", speed);
 
@@ -187,6 +208,16 @@ bool Settings::accel(void)
 bool Settings::music(void)
 {
     return 0 < gameMusicVolume;
+}
+
+int Settings::windowScale(void)
+{
+    return gameWindowScale;
+}
+
+void Settings::setWindowScale(int value)
+{
+    gameWindowScale = normalizedWindowScale(value);
 }
 
 void Settings::setMusic(bool value)
