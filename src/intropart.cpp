@@ -90,8 +90,12 @@ void IntroScreen::startCurrentFrame(u32 ms)
     frameStarted = true;
 
 #ifndef SWE_DISABLE_AUDIO
-    if(Settings::sound() && ! frames[currentFrame].sound.empty())
+    if(0 < Settings::voiceVolume() && ! frames[currentFrame].sound.empty())
+    {
         narrationChannel = Sound::playChannel(GameTheme::sound(frames[currentFrame].sound));
+        if(0 <= narrationChannel)
+            Sound::volume(narrationChannel, Settings::mixerVolume(Settings::voiceVolume()));
+    }
 #endif
 
     setDirty(true);

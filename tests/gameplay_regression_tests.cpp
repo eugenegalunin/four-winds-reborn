@@ -726,8 +726,9 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("ru_RU");
     Settings::setGameSpeed("fast");
-    Settings::setMusic(false);
-    Settings::setSound(false);
+    Settings::setMusicVolume(35);
+    Settings::setEffectsVolume(60);
+    Settings::setVoiceVolume(85);
     Settings::setSoundGuardianRules(true);
     Settings::setFullscreen(true);
     std::string error;
@@ -739,13 +740,15 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("en");
     Settings::setGameSpeed("normal");
-    Settings::setMusic(true);
-    Settings::setSound(true);
+    Settings::setMusicVolume(100);
+    Settings::setEffectsVolume(100);
+    Settings::setVoiceVolume(100);
     Settings::setSoundGuardianRules(false);
     Settings::setFullscreen(false);
     if(!Settings::read() || Settings::language() != "ru" || Settings::gameSpeed() != "fast" ||
-       Settings::music() ||
-       Settings::sound() || !Settings::soundGuardianRules() || !Settings::fullscreen())
+       !Settings::music() || Settings::musicVolume() != 35 ||
+       !Settings::sound() || Settings::effectsVolume() != 60 || Settings::voiceVolume() != 85 ||
+       !Settings::soundGuardianRules() || !Settings::fullscreen())
     {
         std::cerr << "FAIL: settings did not survive a read/write cycle\n";
         return 1;
@@ -754,11 +757,36 @@ int runSettingsPersistenceSelfTest()
     const JsonObject saved = JsonContentFile(settingsFile).toObject();
     if(!saved.isValid() || saved.getString("language") != "ru" ||
        saved.getString("game:speed") != "fast" ||
-       saved.getBoolean("music", true) || saved.getBoolean("sound", true) ||
+       !saved.getBoolean("music", false) || saved.getInteger("music:volume", -1) != 35 ||
+       !saved.getBoolean("sound", false) || saved.getInteger("sound:volume", -1) != 60 ||
+       saved.getInteger("voice:volume", -1) != 85 ||
        !saved.getBoolean("display:fullscreen", false) ||
        !saved.getBoolean("sound:guardianrules", false))
     {
         std::cerr << "FAIL: settings.json contract is invalid\n";
+        return 1;
+    }
+
+    JsonObject legacy;
+    legacy.addString("language", "en");
+    legacy.addBoolean("music", false);
+    legacy.addBoolean("sound", false);
+    if(!Systems::saveString2File(legacy.toString(), settingsFile) || !Settings::read() ||
+       Settings::musicVolume() != 0 || Settings::effectsVolume() != 0 ||
+       Settings::voiceVolume() != 0 || Settings::music() || Settings::sound())
+    {
+        std::cerr << "FAIL: legacy boolean audio settings are not load compatible\n";
+        return 1;
+    }
+
+    Settings::setMusicVolume(-5);
+    Settings::setEffectsVolume(125);
+    Settings::setVoiceVolume(50);
+    if(Settings::musicVolume() != 0 || Settings::effectsVolume() != 100 ||
+       Settings::voiceVolume() != 50 || Settings::mixerVolume(0) != 0 ||
+       Settings::mixerVolume(50) != 64 || Settings::mixerVolume(100) != 128)
+    {
+        std::cerr << "FAIL: audio volume normalization is invalid\n";
         return 1;
     }
 
@@ -3748,6 +3776,15 @@ int main(int argc, char** argv)
                GameTheme::localizedSoundFile(*localizedSound, "ru_RU") == "voice_ru_1053.ogg",
                "sound resources must follow the selected English/Russian language");
     }
+    expect(GameTheme::isVoiceSound("orachi_chao") &&
+           GameTheme::isVoiceSound("creature01") &&
+           GameTheme::isVoiceSound("intro_ru_01") &&
+           GameTheme::isVoiceSound("round_east") &&
+           GameTheme::isVoiceSound("anim_game") &&
+           !GameTheme::isVoiceSound("button") &&
+           !GameTheme::isVoiceSound("spell1030") &&
+           !GameTheme::isVoiceSound("stone2"),
+           "voice and effect sound IDs must use separate volume groups");
 
     JsonContentFile imagesFile(std::string(FOUR_WINDS_SOURCE_DIR) +
         "/themes/default/json/gamedata/images.json");

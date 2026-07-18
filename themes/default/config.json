@@ -1,6 +1,9 @@
 {
     "music": true,
+    "music:volume": 100,
     "sound": true,
+    "sound:volume": 100,
+    "voice:volume": 100,
     "sound:guardianrules": true,
     "game:speed": "classic",
     "display:accel": true,

@@ -106,17 +106,20 @@ or a left click.
 
 ## Settings and Russian localization
 
-The main-menu Settings screen persists language, music, sound effects, classic
-Guardian calls, presentation speed and Windowed/Fullscreen display mode in the
-per-user `settings.json`. Display mode switches immediately when Apply is
-pressed; the game continues to render its original 1024x768 canvas in both
-modes. English uses the built-in source strings; Russian can be selected without
+The main-menu Settings screen persists language, independent 0–100% music,
+effects and voice levels, classic Guardian calls, presentation speed and
+Windowed/Fullscreen display mode in the per-user `settings.json`. Volume bars
+accept a mouse position or Left/Right keyboard adjustment. Display and audio
+changes take effect when Apply is pressed without restarting; the game continues
+to render its original 1024x768 canvas in both display modes. Existing settings
+files with the older boolean music/sound keys remain compatible.
+
+English uses the built-in source strings; Russian can be selected without
 restarting the game and uses the restored classic terminology. The original
-character, clan, creature and Mahjong call resources remain enabled with sound
-effects; Guardian animation calls have their own toggle. Proven localized
-avatar, creature, clan and round announcements now follow the selected
-English/Russian language as well; calls that were identical in both original
-editions remain shared.
+character, clan, creature and Mahjong call resources use the voice level;
+Guardian animation calls also retain their own toggle. Proven localized avatar,
+creature, clan and round announcements follow the selected English/Russian
+language, while calls identical in both original editions remain shared.
 
 Presentation speed has three profiles. `Classic` is the default and restores a
 more deliberate hand deal, rune draw/discard and combat presentation. `Normal`

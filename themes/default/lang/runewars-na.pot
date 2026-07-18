@@ -1546,6 +1546,10 @@ msgstr ""
 msgid "Sound Effects"
 msgstr ""
 
+#: src\settingsmenu.cpp:72
+msgid "Voices"
+msgstr ""
+
 #: src\settingsmenu.cpp:70
 msgid "Guardian Voices"
 msgstr ""
@@ -1636,6 +1640,10 @@ msgstr ""
 
 #: src\settingsmenu.cpp:167
 msgid "Changes apply immediately"
+msgstr ""
+
+#: src\settingsmenu.cpp:209
+msgid "LEFT / RIGHT TO ADJUST"
 msgstr ""
 
 #: src\settingsmenu.cpp:202 src\settingsmenu.cpp:218 src\mainmenu.cpp:42

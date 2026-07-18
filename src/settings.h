@@ -44,8 +44,15 @@ namespace Settings
     bool                write(std::string* error = nullptr);
     bool		music(void);
     void                setMusic(bool);
+    int                 musicVolume(void);
+    void                setMusicVolume(int);
     bool		sound(void);
     void                setSound(bool);
+    int                 effectsVolume(void);
+    void                setEffectsVolume(int);
+    int                 voiceVolume(void);
+    void                setVoiceVolume(int);
+    int                 mixerVolume(int);
     bool		soundGuardianRules(void);
     void                setSoundGuardianRules(bool);
     bool		fullscreen(void);

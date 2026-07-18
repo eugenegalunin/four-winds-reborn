@@ -347,6 +347,24 @@ const BinaryBuf & GameTheme::sound(const std::string & name)
     return readResource(localizedSoundFile((*it).second, Settings::language()));
 }
 
+bool GameTheme::isVoiceSound(const std::string & name)
+{
+    if(name == "begin" || name.rfind("creature", 0) == 0 ||
+       name.rfind("intro_en_", 0) == 0 || name.rfind("intro_ru_", 0) == 0 ||
+       name.rfind("round_", 0) == 0 || name.rfind("anim_", 0) == 0)
+        return true;
+
+    static const char* suffixes[] = { "_chao", "_game", "_kong", "_name", "_pung" };
+    for(const char* suffix : suffixes)
+    {
+        const std::string ending(suffix);
+        if(ending.size() <= name.size() &&
+           name.compare(name.size() - ending.size(), ending.size(), ending) == 0)
+            return true;
+    }
+    return false;
+}
+
 std::string GameTheme::localizedSoundFile(const FileInfo & info, const std::string & value)
 {
     const std::string language = String::toLower(value);

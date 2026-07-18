@@ -13,7 +13,7 @@
 
     "panel:left":  [ 0, 0, 224, 768 ],
     "panel:right": [ 800, 0, 224, 768 ],
-    "menu:area": [ 812, 184, 200, 450 ],
+    "menu:area": [ 812, 184, 200, 505 ],
     "menu:item_height": 50,
     "menu:item_gap": 6,
 

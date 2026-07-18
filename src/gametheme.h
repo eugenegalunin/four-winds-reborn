@@ -45,6 +45,7 @@ namespace GameTheme
 
     const BinaryBuf &	sound(const std::string &);
     const BinaryBuf &	music(const std::string &);
+    bool                isVoiceSound(const std::string &);
     std::string         localizedSoundFile(const FileInfo &, const std::string &);
     Texture		texture(const std::string &);
     Sprite		sprite(const std::string &);

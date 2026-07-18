@@ -13,6 +13,15 @@ Reborn work only; they do not claim authorship of inherited code or assets.
 
 ## [Unreleased]
 
+### Added - Settings
+
+- Added independent 0–100% volume controls for music, sound effects and voices.
+  The controls support mouse positioning plus Left/Right keyboard adjustment,
+  apply without restarting and persist in the per-user `settings.json`.
+- Kept load compatibility with existing boolean `music` and `sound` settings.
+  Voice calls, Guardian announcements and both narrated intros now follow the
+  voice level, while UI, rune, spell and battle sounds follow the effects level.
+
 ### Changed - Windows packaging
 
 - Tagged Windows releases now start as ordinary desktop applications without

@@ -1573,6 +1573,10 @@ msgstr "Музыка"
 msgid "Sound Effects"
 msgstr "Игровые Звуки"
 
+#: src\settingsmenu.cpp:72
+msgid "Voices"
+msgstr "Озвучка"
+
 #: src\settingsmenu.cpp:70
 msgid "Guardian Voices"
 msgstr "Голоса Стражей"
@@ -1664,6 +1668,10 @@ msgstr "НАСТРОЙКИ"
 #: src\settingsmenu.cpp:167
 msgid "Changes apply immediately"
 msgstr "Изменения применяются сразу"
+
+#: src\settingsmenu.cpp:209
+msgid "LEFT / RIGHT TO ADJUST"
+msgstr "← / → — ГРОМКОСТЬ"
 
 #: src\settingsmenu.cpp:202 src\settingsmenu.cpp:218 src\mainmenu.cpp:42
 msgid "Settings"

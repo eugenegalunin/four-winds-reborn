@@ -15,8 +15,9 @@ class SettingsMenuScreen : public JsonWindow
     {
         Language,
         GameSpeed,
-        MusicEnabled,
-        SoundEnabled,
+        MusicVolume,
+        EffectsVolume,
+        VoiceVolume,
         GuardianVoices,
         DisplayMode,
         Apply,
@@ -33,8 +34,9 @@ class SettingsMenuScreen : public JsonWindow
     int                selected;
     std::string        language;
     std::string        gameSpeed;
-    bool               music;
-    bool               sound;
+    int                musicVolume;
+    int                effectsVolume;
+    int                voiceVolume;
     bool               guardianVoices;
     bool               fullscreen;
 
@@ -62,6 +64,10 @@ class SettingsMenuScreen : public JsonWindow
     void               addEntry(EntryKind);
     std::string        entryLabel(EntryKind) const;
     std::string        entryValue(EntryKind) const;
+    bool               isVolumeEntry(EntryKind) const;
+    int                volumeValue(EntryKind) const;
+    void               setVolumeValue(EntryKind, int);
+    bool               adjustSelected(int);
     bool               activateSelected(void);
     bool               selectNext(int);
 
