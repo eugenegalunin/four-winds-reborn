@@ -20,19 +20,34 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <algorithm>
+
 #include "gametheme.h"
 #include "runewars.h"
 #include "settings.h"
 
 namespace
 {
-    bool gameMusic = true;
-    bool gameSound = true;
+    int gameMusicVolume = 100;
+    int gameEffectsVolume = 100;
+    int gameVoiceVolume = 100;
     bool gameAccel = true;
     bool gameFullscreen = false;
+    int gameWindowScale = 100;
     bool guardianRulesSound = true;
     std::string lang;
     std::string speed = "classic";
+
+    int normalizedVolume(int value)
+    {
+	return std::max(0, std::min(100, value));
+    }
+
+    int normalizedWindowScale(int value)
+    {
+        const int clamped = std::max(75, std::min(200, value));
+        return ((clamped + 12) / 25) * 25;
+    }
 
     std::string normalizedLanguage(const std::string & value)
     {
@@ -61,13 +76,27 @@ namespace
 
 bool Settings::read(void)
 {
+    gameMusicVolume = 100;
+    gameEffectsVolume = 100;
+    gameVoiceVolume = 100;
+    gameAccel = true;
+    gameFullscreen = false;
+    gameWindowScale = 100;
+    guardianRulesSound = true;
+    lang = normalizedLanguage(Systems::messageLocale(1));
+    speed = "classic";
+
     JsonObject jo = GameTheme::jsonResource("config.json").toObject();
 
     if(jo.isValid())
     {
-	gameMusic = jo.getBoolean("music", true);
-	gameSound = jo.getBoolean("sound", true);
+	gameMusicVolume = normalizedVolume(jo.getInteger("music:volume", 100));
+	gameEffectsVolume = normalizedVolume(jo.getInteger("sound:volume", 100));
+	gameVoiceVolume = normalizedVolume(jo.getInteger("voice:volume", 100));
+	if(!jo.getBoolean("music", true)) gameMusicVolume = 0;
+	if(!jo.getBoolean("sound", true)) gameEffectsVolume = gameVoiceVolume = 0;
 	gameFullscreen = jo.getBoolean("display:fullscreen", false);
+	gameWindowScale = normalizedWindowScale(jo.getInteger("display:window_scale", 100));
 	gameAccel = jo.getBoolean("display:accel", true);
 
 	guardianRulesSound = jo.getBoolean("sound:guardianrules", true);
@@ -78,9 +107,18 @@ bool Settings::read(void)
     JsonObject user = JsonContentFile(userSettingsFile()).toObject();
     if(user.isValid())
     {
-	gameMusic = user.getBoolean("music", gameMusic);
-	gameSound = user.getBoolean("sound", gameSound);
+	if(user.hasKey("music:volume"))
+	    gameMusicVolume = normalizedVolume(user.getInteger("music:volume", gameMusicVolume));
+	if(user.hasKey("sound:volume"))
+	    gameEffectsVolume = normalizedVolume(user.getInteger("sound:volume", gameEffectsVolume));
+	if(user.hasKey("voice:volume"))
+	    gameVoiceVolume = normalizedVolume(user.getInteger("voice:volume", gameVoiceVolume));
+	if(user.hasKey("music") && !user.getBoolean("music", true)) gameMusicVolume = 0;
+	if(user.hasKey("sound") && !user.getBoolean("sound", true))
+	    gameEffectsVolume = gameVoiceVolume = 0;
 	gameFullscreen = user.getBoolean("display:fullscreen", gameFullscreen);
+	gameWindowScale = normalizedWindowScale(
+	    user.getInteger("display:window_scale", gameWindowScale));
 	guardianRulesSound = user.getBoolean("sound:guardianrules", guardianRulesSound);
 	lang = normalizedLanguage(user.getString("language", lang));
 	speed = normalizedGameSpeed(user.getString("game:speed", speed));
@@ -101,9 +139,13 @@ bool Settings::write(std::string* error)
 
     JsonObject jo;
     jo.addString("language", lang);
-    jo.addBoolean("music", gameMusic);
-    jo.addBoolean("sound", gameSound);
+    jo.addBoolean("music", music());
+    jo.addInteger("music:volume", gameMusicVolume);
+    jo.addBoolean("sound", sound());
+    jo.addInteger("sound:volume", gameEffectsVolume);
+    jo.addInteger("voice:volume", gameVoiceVolume);
     jo.addBoolean("display:fullscreen", gameFullscreen);
+    jo.addInteger("display:window_scale", gameWindowScale);
     jo.addBoolean("sound:guardianrules", guardianRulesSound);
     jo.addString("game:speed", speed);
 
@@ -165,22 +207,67 @@ bool Settings::accel(void)
 
 bool Settings::music(void)
 {
-    return gameMusic;
+    return 0 < gameMusicVolume;
+}
+
+int Settings::windowScale(void)
+{
+    return gameWindowScale;
+}
+
+void Settings::setWindowScale(int value)
+{
+    gameWindowScale = normalizedWindowScale(value);
 }
 
 void Settings::setMusic(bool value)
 {
-    gameMusic = value;
+    gameMusicVolume = value ? 100 : 0;
+}
+
+int Settings::musicVolume(void)
+{
+    return gameMusicVolume;
+}
+
+void Settings::setMusicVolume(int value)
+{
+    gameMusicVolume = normalizedVolume(value);
 }
 
 bool Settings::sound(void)
 {
-    return gameSound;
+    return 0 < gameEffectsVolume || 0 < gameVoiceVolume;
 }
 
 void Settings::setSound(bool value)
 {
-    gameSound = value;
+    gameEffectsVolume = gameVoiceVolume = value ? 100 : 0;
+}
+
+int Settings::effectsVolume(void)
+{
+    return gameEffectsVolume;
+}
+
+void Settings::setEffectsVolume(int value)
+{
+    gameEffectsVolume = normalizedVolume(value);
+}
+
+int Settings::voiceVolume(void)
+{
+    return gameVoiceVolume;
+}
+
+void Settings::setVoiceVolume(int value)
+{
+    gameVoiceVolume = normalizedVolume(value);
+}
+
+int Settings::mixerVolume(int value)
+{
+    return (normalizedVolume(value) * 128 + 50) / 100;
 }
 
 bool Settings::soundGuardianRules(void)

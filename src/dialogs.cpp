@@ -91,46 +91,168 @@ bool DialogWindow::mouseClickEvent(const ButtonsEvent & coords)
 }
 
 /* TextAreaScroll */
-TextScroll::TextScroll(const JsonObject & jo, ListWidget & win) : ScrollBar(true, win)
+TextAreaScroll::TextAreaScroll(const JsonObject & jo, Window & win)
+    : Window(& win), contentWidth(0), firstLine(0), scrollWidth(10),
+      minimumCursorHeight(JsonUnpack::size(jo, "scroll:cursor:size", Size(8, 30)).h),
+      backgroundColor(JsonUnpack::color(jo, "color:background", Color::Gainsboro)),
+      colorRect(JsonUnpack::color(jo, "scroll:color:rect", Color::DarkSlateGray)),
+      colorFill(JsonUnpack::color(jo, "scroll:color:fill", Color::SlateGray)),
+      cursorRect(JsonUnpack::color(jo, "scroll:cursor:color:rect", Color::Lime)),
+      cursorFill(JsonUnpack::color(jo, "scroll:cursor:color:fill", Color::Gray))
 {
-    colorRect = JsonUnpack::color(jo, "scroll:color:rect", Color::DarkSlateGray);
-    colorFill = JsonUnpack::color(jo, "scroll:color:fill", Color::SlateGray);
-
-    Color cursRect = JsonUnpack::color(jo, "scroll:cursor:color:rect", Color::Lime);
-    Color cursFill = JsonUnpack::color(jo, "scroll:cursor:color:fill", Color::Gray);
-    Size curSize = JsonUnpack::size(jo, "scroll:cursor:size", Size(8, 30));
-
-    setTextureCursor(Display::renderRect(cursRect, cursFill, Size(8 /* scroll width harcode 10 pt, fixme below */, curSize.h)));
+    setModality(false);
 }
 
-Rect TextScroll::scrollArea(void) const
+int TextAreaScroll::totalTextHeight(void) const
 {
-    return rect() + Point(1, 1) - Size(2, 2);
+    int result = 0;
+    for(const TextLine & line : lines) result += line.height;
+    return result;
 }
 
-void TextScroll::renderWindow(void)
+int TextAreaScroll::lastFirstLine(void) const
 {
-    renderColor(colorFill, rect());
-    renderRect(colorRect, rect());
-    ScrollBar::renderWindow();
+    int result = static_cast<int>(lines.size());
+    int usedHeight = 0;
+
+    while(0 < result)
+    {
+	const int nextHeight = lines[result - 1].height;
+	if(usedHeight && height() < usedHeight + nextHeight) break;
+
+	usedHeight += nextHeight;
+	--result;
+    }
+
+    return result;
+}
+
+void TextAreaScroll::setFirstLine(int line)
+{
+    firstLine = std::max(0, std::min(line, lastFirstLine()));
+    setDirty(true);
+}
+
+void TextAreaScroll::appendLine(const FontRender & frs, const UCString & line, int halign)
+{
+    Texture texture;
+    if(line.length()) texture = Display::renderText(frs, line);
+
+    const int lineHeight = std::max(frs.lineSkipHeight(), texture.height());
+    int offsetX = 0;
+
+    if(halign == AlignRight)
+	offsetX = contentWidth - texture.width();
+    else if(halign == AlignCenter)
+	offsetX = (contentWidth - texture.width()) / 2;
+
+    lines.push_back(TextLine{texture, offsetX, std::max(1, lineHeight)});
 }
 
 void TextAreaScroll::setPositionSize(int px, int py, int sw, int sh)
 {
-    const int scrollWidth = 10;
-
     setPosition(px, py);
-    setSize(sw, sh);
+    contentWidth = sw;
+    setSize(sw + 2 + scrollWidth, sh);
     setVisible(true);
-
-    textScroll.setPosition(Point(sw + 2, 0));
-    textScroll.setSize(Size(scrollWidth, sh - 2));
-    textScroll.setVisible(true);
 }
 
-void TextAreaScroll::itemClicked(ListWidgetItem*, int buttons)
+void TextAreaScroll::clear(void)
 {
-    parent()->setVisible(false);
+    lines.clear();
+    firstLine = 0;
+    setDirty(true);
+}
+
+TextAreaScroll & TextAreaScroll::appendString(const FontRender & frs, const UnicodeString & str,
+					       const Color & color, int halign, bool wrap)
+{
+    return appendString(frs, UCString::parseUnicode(str, FBColors(color.toColorIndex())), halign, wrap);
+}
+
+TextAreaScroll & TextAreaScroll::appendString(const FontRender & frs, const UCString & str,
+					       int halign, bool wrap)
+{
+    if(wrap)
+    {
+	const UCStringList wrapped = frs.splitUCStringWidth(str, contentWidth);
+	for(const UCString & line : wrapped) appendLine(frs, line, halign);
+    }
+    else
+	appendLine(frs, str, halign);
+
+    setFirstLine(firstLine);
+    return *this;
+}
+
+bool TextAreaScroll::scrollUpEvent(void)
+{
+    if(firstLine <= 0) return false;
+    setFirstLine(firstLine - 1);
+    return true;
+}
+
+bool TextAreaScroll::scrollDownEvent(void)
+{
+    const int last = lastFirstLine();
+    if(last <= firstLine) return false;
+    setFirstLine(firstLine + 1);
+    return true;
+}
+
+bool TextAreaScroll::mouseClickEvent(const ButtonsEvent & coords)
+{
+    const Point local = coords.release().position() - position();
+
+    if(coords.isButtonLeft() && contentWidth + 1 <= local.x)
+    {
+	const int last = lastFirstLine();
+	if(0 < last && 1 < height())
+	    setFirstLine((std::max(0, std::min(local.y, height() - 1)) * last) / (height() - 1));
+	return true;
+    }
+
+    if(parent()) parent()->setVisible(false);
+    return true;
+}
+
+void TextAreaScroll::renderWindow(void)
+{
+    // Scrolling changes where every line is rendered, so erase the previous
+    // viewport before drawing the current rows.
+    renderColor(backgroundColor, Rect(Point(0, 0), size()));
+
+    int offsetY = 0;
+    for(int index = firstLine; index < static_cast<int>(lines.size()); ++index)
+    {
+	const TextLine & line = lines[index];
+	if(height() <= offsetY) break;
+
+	if(line.texture.isValid()) renderTexture(line.texture, Point(line.offsetX, offsetY));
+	offsetY += line.height;
+    }
+
+    const Rect scrollArea(Point(contentWidth + 2, 0), Size(scrollWidth, height()));
+    renderColor(colorFill, scrollArea);
+    renderRect(colorRect, scrollArea);
+
+    const int totalHeight = totalTextHeight();
+    const int trackHeight = std::max(1, height() - 2);
+    const int last = lastFirstLine();
+    int cursorHeight = trackHeight;
+    int cursorY = 1;
+
+    if(height() < totalHeight)
+    {
+	cursorHeight = std::max(minimumCursorHeight, (trackHeight * height()) / totalHeight);
+	cursorHeight = std::min(cursorHeight, trackHeight);
+	if(0 < last)
+	    cursorY += ((trackHeight - cursorHeight) * firstLine) / last;
+    }
+
+    const Rect cursor(Point(contentWidth + 3, cursorY), Size(std::max(1, scrollWidth - 2), cursorHeight));
+    renderColor(cursorFill, cursor);
+    renderRect(cursorRect, cursor);
 }
 
 /* CreatureInfoDialog */

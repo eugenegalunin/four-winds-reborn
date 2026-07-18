@@ -578,10 +578,24 @@ void testActionReplay()
     const Avatar randomActor = randomPlayer->avatar;
     const JsonObject randomInitialState = GameData::authoritativeState();
     ActionList rejectedActions;
+    ActionRejection unknownRejection;
     const ClientMessage unknownAction(Action::Last + 1);
-    expect(!GameData::client2Mahjong(randomActor, unknownAction, rejectedActions) &&
+    expect(!GameData::client2Mahjong(randomActor, unknownAction, rejectedActions,
+                                     &unknownRejection) &&
+           unknownRejection.reason == ActionRejectReason::UnknownAction &&
+           std::string(GameData::actionRejectReasonName(unknownRejection.reason)) ==
+               "unknown_action" &&
+           !GameData::actionRejectionMessage(unknownRejection).empty() &&
            Replay::actionJournalSize() == 0,
-           "replay journal must exclude rejected and unknown client actions");
+           "unknown Mahjong actions must return a stable reason without entering the replay journal");
+    const ActionRejection claimPointsRejection{
+        ActionRejectReason::InsufficientClaimPoints, 1, 3
+    };
+    expect(std::string(GameData::actionRejectReasonName(claimPointsRejection.reason)) ==
+               "insufficient_claim_points" &&
+           GameData::actionRejectionMessage(claimPointsRejection).find("3") != std::string::npos &&
+           GameData::actionRejectionMessage(claimPointsRejection).find("1") != std::string::npos,
+           "claim-point rejections must remain distinct from spell-point failures");
     const ClientDropIndex randomDiscard(0);
     ActionList randomActions;
     expect(GameData::client2Mahjong(randomActor, randomDiscard, randomActions),
@@ -726,10 +740,12 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("ru_RU");
     Settings::setGameSpeed("fast");
-    Settings::setMusic(false);
-    Settings::setSound(false);
+    Settings::setMusicVolume(35);
+    Settings::setEffectsVolume(60);
+    Settings::setVoiceVolume(85);
     Settings::setSoundGuardianRules(true);
     Settings::setFullscreen(true);
+    Settings::setWindowScale(150);
     std::string error;
     if(Settings::language() != "ru" || !Settings::write(&error))
     {
@@ -739,13 +755,17 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("en");
     Settings::setGameSpeed("normal");
-    Settings::setMusic(true);
-    Settings::setSound(true);
+    Settings::setMusicVolume(100);
+    Settings::setEffectsVolume(100);
+    Settings::setVoiceVolume(100);
     Settings::setSoundGuardianRules(false);
     Settings::setFullscreen(false);
+    Settings::setWindowScale(100);
     if(!Settings::read() || Settings::language() != "ru" || Settings::gameSpeed() != "fast" ||
-       Settings::music() ||
-       Settings::sound() || !Settings::soundGuardianRules() || !Settings::fullscreen())
+       !Settings::music() || Settings::musicVolume() != 35 ||
+       !Settings::sound() || Settings::effectsVolume() != 60 || Settings::voiceVolume() != 85 ||
+       !Settings::soundGuardianRules() || !Settings::fullscreen() ||
+       Settings::windowScale() != 150)
     {
         std::cerr << "FAIL: settings did not survive a read/write cycle\n";
         return 1;
@@ -754,11 +774,40 @@ int runSettingsPersistenceSelfTest()
     const JsonObject saved = JsonContentFile(settingsFile).toObject();
     if(!saved.isValid() || saved.getString("language") != "ru" ||
        saved.getString("game:speed") != "fast" ||
-       saved.getBoolean("music", true) || saved.getBoolean("sound", true) ||
+       !saved.getBoolean("music", false) || saved.getInteger("music:volume", -1) != 35 ||
+       !saved.getBoolean("sound", false) || saved.getInteger("sound:volume", -1) != 60 ||
+       saved.getInteger("voice:volume", -1) != 85 ||
        !saved.getBoolean("display:fullscreen", false) ||
+       saved.getInteger("display:window_scale", -1) != 150 ||
        !saved.getBoolean("sound:guardianrules", false))
     {
         std::cerr << "FAIL: settings.json contract is invalid\n";
+        return 1;
+    }
+
+    JsonObject legacy;
+    legacy.addString("language", "en");
+    legacy.addBoolean("music", false);
+    legacy.addBoolean("sound", false);
+    if(!Systems::saveString2File(legacy.toString(), settingsFile) || !Settings::read() ||
+       Settings::musicVolume() != 0 || Settings::effectsVolume() != 0 ||
+       Settings::voiceVolume() != 0 || Settings::music() || Settings::sound() ||
+       Settings::windowScale() != 100)
+    {
+        std::cerr << "FAIL: legacy boolean audio settings are not load compatible\n";
+        return 1;
+    }
+
+    Settings::setMusicVolume(-5);
+    Settings::setEffectsVolume(125);
+    Settings::setVoiceVolume(50);
+    Settings::setWindowScale(189);
+    if(Settings::musicVolume() != 0 || Settings::effectsVolume() != 100 ||
+       Settings::voiceVolume() != 50 || Settings::mixerVolume(0) != 0 ||
+       Settings::mixerVolume(50) != 64 || Settings::mixerVolume(100) != 128 ||
+       Settings::windowScale() != 200)
+    {
+        std::cerr << "FAIL: audio volume normalization is invalid\n";
         return 1;
     }
 
@@ -2436,11 +2485,13 @@ void testAdventureBattleSessionFlow()
 
     const std::string beforeInvalidChoice = GameData::authoritativeState().toString();
     ActionList rejected;
+    ActionRejection battleRejection;
     expect(!GameData::client2Adventure(attacker.avatar,
                                        ClientBattleChoice(9999, -1),
-                                       rejected) && rejected.empty() &&
+                                       rejected, &battleRejection) && rejected.empty() &&
+           battleRejection.reason == ActionRejectReason::InvalidBattleChoice &&
            GameData::authoritativeState().toString() == beforeInvalidChoice,
-           "Adventure must reject a forged battle actor without mutating state");
+           "Adventure must explain a forged battle actor without mutating state");
 
     ActionList meleeActions;
     expect(GameData::client2Adventure(attacker.avatar,
@@ -2755,25 +2806,40 @@ int runWindowsCrashReportSelfTest(const char* executable)
     CloseHandle(process.hThread);
     CloseHandle(process.hProcess);
 
+    constexpr int captureAttemptsMaximum = 40;
+    constexpr DWORD captureRetryDelayMs = 50;
     bool dumpFound = false;
-    for(const auto & entry : std::filesystem::directory_iterator(directory, error))
-    {
-        if(entry.path().extension() == ".dmp" && entry.file_size(error) > 0)
-            dumpFound = true;
-    }
-
+    bool reportValid = false;
+    int captureAttempts = 0;
     std::string report;
-    const bool reportValid = Systems::readFile2String(
-        (directory / "crash-report.log").string(), report) &&
-        report.find("[FATAL WINDOWS EXCEPTION]") != std::string::npos &&
-        report.find("code=0xC0000005") != std::string::npos &&
-        report.find("status=written") != std::string::npos;
+    for(; captureAttempts < captureAttemptsMaximum; ++captureAttempts)
+    {
+        dumpFound = false;
+        error.clear();
+        for(const auto & entry : std::filesystem::directory_iterator(directory, error))
+        {
+            if(entry.path().extension() == ".dmp" && entry.file_size(error) > 0)
+                dumpFound = true;
+        }
+
+        report.clear();
+        reportValid = Systems::readFile2String(
+            (directory / "crash-report.log").string(), report) &&
+            report.find("[FATAL WINDOWS EXCEPTION]") != std::string::npos &&
+            report.find("code=0xC0000005") != std::string::npos &&
+            report.find("status=written") != std::string::npos;
+
+        if(dumpFound && reportValid) break;
+        if(captureAttempts + 1 < captureAttemptsMaximum) Sleep(captureRetryDelayMs);
+    }
 
     if(waitResult != WAIT_OBJECT_0 || exitCode == 0 || !dumpFound || !reportValid)
     {
         std::cerr << "FAIL: Windows native crash capture is incomplete"
                   << ", wait=" << waitResult << ", exit=" << exitCode
-                  << ", dump=" << dumpFound << ", report=" << reportValid << '\n';
+                  << ", dump=" << dumpFound << ", report=" << reportValid
+                  << ", attempts=" << std::min(captureAttempts + 1, captureAttemptsMaximum)
+                  << ", report_bytes=" << report.size() << '\n';
         return 1;
     }
 
@@ -3748,6 +3814,15 @@ int main(int argc, char** argv)
                GameTheme::localizedSoundFile(*localizedSound, "ru_RU") == "voice_ru_1053.ogg",
                "sound resources must follow the selected English/Russian language");
     }
+    expect(GameTheme::isVoiceSound("orachi_chao") &&
+           GameTheme::isVoiceSound("creature01") &&
+           GameTheme::isVoiceSound("intro_ru_01") &&
+           GameTheme::isVoiceSound("round_east") &&
+           GameTheme::isVoiceSound("anim_game") &&
+           !GameTheme::isVoiceSound("button") &&
+           !GameTheme::isVoiceSound("spell1030") &&
+           !GameTheme::isVoiceSound("stone2"),
+           "voice and effect sound IDs must use separate volume groups");
 
     JsonContentFile imagesFile(std::string(FOUR_WINDS_SOURCE_DIR) +
         "/themes/default/json/gamedata/images.json");
@@ -4076,6 +4151,42 @@ int main(int argc, char** argv)
     expect(WinResults::scoreMultiplier(4) == 16, "four doubles must use x16");
     expect(WinResults::scoreMultiplier(5) == 32, "five doubles must reach the limit tier");
 
+    WinRules pointRules;
+    pointRules << WinRule(WinRule::Pung, Stone(Stone::Skull1), false)
+               << WinRule(WinRule::Chao, Stone(Stone::Sword2), false)
+               << WinRule(WinRule::Chao, Stone(Stone::Number2), false)
+               << WinRule(WinRule::Chao, Stone(Stone::Skull6), false);
+    const WinResults pointHand(Wind::East, Wind::South, Wind::West, pointRules,
+                               WinRules(), Stone(Stone::Number5), Stone(Stone::Sword4));
+    expect(pointHand.totalPoints() == 24,
+           "a terminal Pung must add four points to the 20-point win base");
+    expect(pointHand.totalScore() == 24,
+           "Mahjong total score must include set and hand points without doubles");
+
+    WinRules doubledRules;
+    doubledRules << WinRule(WinRule::Pung, Stone(Stone::WindEast), false)
+                 << WinRule(WinRule::Chao, Stone(Stone::Sword2), false)
+                 << WinRule(WinRule::Chao, Stone(Stone::Number2), false)
+                 << WinRule(WinRule::Chao, Stone(Stone::Skull6), false);
+    const WinResults doubledHand(Wind::East, Wind::South, Wind::East, doubledRules,
+                                 WinRules(), Stone(Stone::Number5), Stone(Stone::Sword4));
+    expect(doubledHand.totalPoints() == 24,
+           "a lucky exposed Wind Pung must retain its four base points");
+    expect(doubledHand.totalScore() == 48,
+           "Mahjong doubles must multiply the complete accumulated point total");
+
+    WinRules concealedRules;
+    concealedRules << WinRule(WinRule::Pung, Stone(Stone::Skull1), true)
+                   << WinRule(WinRule::Pung, Stone(Stone::Sword1), true)
+                   << WinRule(WinRule::Pung, Stone(Stone::Number1), true)
+                   << WinRule(WinRule::Pung, Stone(Stone::WhiteDragon), true);
+    const WinResults limitHand(Wind::East, Wind::West, Wind::South, WinRules(),
+                               concealedRules, Stone(Stone::WindNorth), Stone(Stone::Sword4));
+    expect(limitHand.totalPoints() == 62,
+           "four concealed terminal or honor Pungs must include their point bonuses");
+    expect(limitHand.totalScore() == 500,
+           "a limit hand must remain capped at 500 after multiplying all points");
+
     BattleParty party(Clan::Red, Land::Maithaius);
     expect(party.join(creature(101, 4)), "first creature must join party");
     expect(party.movePoint() == 4, "empty party slots must not reduce movement");
@@ -4230,6 +4341,14 @@ int main(int argc, char** argv)
     expect(GameData::initAdventure(), "Adventure phase must initialize");
     expect(GameData::adventure2Client(GameData::gamers.front().avatar, adventureActions),
            "Adventure turn must begin and create an undo snapshot");
+    ActionRejection wrongTurnRejection;
+    ActionList wrongTurnActions;
+    expect(!GameData::client2Adventure(GameData::gamers.back().avatar,
+                                       ClientAdventureUndo(), wrongTurnActions,
+                                       &wrongTurnRejection) &&
+           wrongTurnActions.empty() &&
+           wrongTurnRejection.reason == ActionRejectReason::WrongTurn,
+           "Adventure must expose a stable wrong-turn rejection without emitting actions");
     expect(GameData::client2Adventure(GameData::gamers.front().avatar,
                                       ClientLandClaim(Land::Zubrus), adventureActions),
            "Land Claim action must be accepted during the current turn");

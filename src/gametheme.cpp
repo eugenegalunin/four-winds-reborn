@@ -214,8 +214,34 @@ bool GameTheme::init(const Application & app)
 
     VERBOSE("use theme: " << themeName << ", " << "author: " << themeAuthor << ", " << themeSize.toString());
 
-    Size displaySize = app.geometry.isEmpty() ? themeSize : app.geometry;
     bool displayFullScreen = app.fullscreen ? true : Settings::fullscreen();
+    Size displaySize = app.geometry;
+    if(displaySize.isEmpty())
+    {
+        int scale = Settings::windowScale();
+
+        if(!displayFullScreen)
+        {
+            const Size available = Display::usableBounds().toSize();
+
+            displaySize = Size(themeSize.w * scale / 100,
+                               themeSize.h * scale / 100);
+            while(75 < scale &&
+                  (available.w < displaySize.w || available.h < displaySize.h))
+            {
+                scale -= 25;
+                displaySize = Size(themeSize.w * scale / 100,
+                                   themeSize.h * scale / 100);
+            }
+
+            Settings::setWindowScale(scale);
+        }
+        else
+            displaySize = Size(themeSize.w * scale / 100,
+                               themeSize.h * scale / 100);
+    }
+
+    Display::setFixedRenderSize(true);
 
     const std::string title = app.name().append(", version: ").append(app.version());
     CrashReport::breadcrumb(std::string("Theme stage=display status=begin window=")
@@ -345,6 +371,24 @@ const BinaryBuf & GameTheme::sound(const std::string & name)
         return readResource("");
 
     return readResource(localizedSoundFile((*it).second, Settings::language()));
+}
+
+bool GameTheme::isVoiceSound(const std::string & name)
+{
+    if(name == "begin" || name.rfind("creature", 0) == 0 ||
+       name.rfind("intro_en_", 0) == 0 || name.rfind("intro_ru_", 0) == 0 ||
+       name.rfind("round_", 0) == 0 || name.rfind("anim_", 0) == 0)
+        return true;
+
+    static const char* suffixes[] = { "_chao", "_game", "_kong", "_name", "_pung" };
+    for(const char* suffix : suffixes)
+    {
+        const std::string ending(suffix);
+        if(ending.size() <= name.size() &&
+           name.compare(name.size() - ending.size(), ending.size(), ending) == 0)
+            return true;
+    }
+    return false;
 }
 
 std::string GameTheme::localizedSoundFile(const FileInfo & info, const std::string & value)

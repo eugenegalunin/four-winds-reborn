@@ -50,7 +50,8 @@ namespace Menu
         GameLoadPart = 9,
         MainMenu = 10,
         LoadRecovery = 11,
-        SettingsMenu = 12
+        SettingsMenu = 12,
+        Encyclopedia = 13
     };
 }
 
@@ -262,6 +263,43 @@ struct ActionList : std::list<ActionMessage>
 {
 };
 
+enum class ActionRejectReason
+{
+    None,
+    UnknownAction,
+    WrongPhase,
+    WrongTurn,
+    StaleSelection,
+    Silenced,
+    ManaFog,
+    AlreadyCast,
+    IllegalMahjongCall,
+    InvalidRuneChoice,
+    InvalidLand,
+    InvalidTarget,
+    MissingRunes,
+    InsufficientPoints,
+    InsufficientClaimPoints,
+    ArmyFull,
+    UniqueCreatureExists,
+    PartyFull,
+    UnitNotFound,
+    IllegalMovement,
+    IllegalLandClaim,
+    NothingToUndo,
+    NoPendingBattle,
+    InvalidBattleChoice
+};
+
+struct ActionRejection
+{
+    ActionRejectReason reason = ActionRejectReason::None;
+    int available = -1;
+    int required = -1;
+
+    bool isValid(void) const { return reason != ActionRejectReason::None; }
+};
+
 namespace GameData
 {
     bool			init(const JsonObject &);
@@ -287,11 +325,15 @@ namespace GameData
 
     bool			initMahjong(void);
     bool			mahjong2Client(const Avatar &, ActionList &);
-    bool			client2Mahjong(const Avatar &, const ClientMessage &, ActionList &);
+    bool			client2Mahjong(const Avatar &, const ClientMessage &, ActionList &,
+                                       ActionRejection* rejection = nullptr);
 
     bool			initAdventure(void);
     bool			adventure2Client(const Avatar &, ActionList &);
-    bool			client2Adventure(const Avatar &, const ClientMessage &, ActionList &);
+    bool			client2Adventure(const Avatar &, const ClientMessage &, ActionList &,
+                                         ActionRejection* rejection = nullptr);
+    const char*                 actionRejectReasonName(ActionRejectReason);
+    std::string                 actionRejectionMessage(const ActionRejection &);
     bool                        canClaimLand(const RemotePlayer &, const Land &);
     Lands                       claimableLands(const RemotePlayer &);
 

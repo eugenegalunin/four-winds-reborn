@@ -11,6 +11,95 @@ so that commit, rather than GitHub fork metadata, is the comparison baseline.
 The project retains the original credits and license. Entries below describe
 Reborn work only; they do not claim authorship of inherited code or assets.
 
+## [Unreleased]
+
+## [0.2.0] - 2026-07-18
+
+This release completes the stable post-`v0.1.0` player-facing slice before the
+next measured Easy/Normal/Hard behavior pass.
+
+### Added - Encyclopedia
+
+- Added a bilingual, data-driven in-game Encyclopedia covering the chronicle,
+  factions, wizards, creatures, spells, classic rules and a practical game
+  guide, with archived official Arcanium material preserved in context.
+- Added a six-part Rune Game guide explaining the winning hand,
+  Chow/Pung/Kong calls, winds and deals, spell-point economy, hand scoring and
+  final campaign victory.
+- Creature and spell entries now show their actual rune formulas as tile
+  images alongside their spell-point cost.
+- Added keyboard, mouse-wheel, Page Up/Page Down and secondary-click navigation
+  for long lists and articles.
+
+### Added - Action feedback
+
+- Rejected human actions now show a localized reason for wrong turns and
+  phases, illegal Rune Game calls, unavailable spells or summons, invalid
+  targets, insufficient points, full parties and armies, illegal map orders and
+  invalid battle choices.
+- Expected AI candidate failures, replays and headless simulations remain
+  silent and deterministic.
+
+### Fixed - Rune Game scoring
+
+- Restored the original 1998 final-hand formula: all base, set, pair and hand
+  points are accumulated before doubles are applied, with the classic 500-point
+  cap. The behavior was verified directly against the original executable and
+  is covered by exact-value regression fixtures.
+
+### Added - Display scaling
+
+- Added selectable 75-200% smoothly scaled window sizes while keeping the
+  original 1024x768 logical game canvas unchanged.
+- Window-size choices apply without restarting and survive
+  Windowed/Fullscreen transitions.
+- Settings choice rows support left-click to advance and right-click to move
+  backward, using SDL's cross-platform secondary-click handling.
+
+### Fixed - Display scaling
+
+- Fixed runtime window resizing so it no longer replaces the logical canvas
+  with the physical window size or recreates the renderer and invalidates UI
+  textures.
+- Settings reads now start from stable defaults before applying theme and user
+  overrides, preventing stale in-memory values when a base config is absent.
+
+### Added - Settings
+
+- Added independent 0–100% volume controls for music, sound effects and voices.
+  The controls support mouse positioning plus Left/Right keyboard adjustment,
+  apply without restarting and persist in the per-user `settings.json`.
+- Kept load compatibility with existing boolean `music` and `sound` settings.
+  Voice calls, Guardian announcements and both narrated intros now follow the
+  voice level, while UI, rune, spell and battle sounds follow the effects level.
+
+### Changed - Windows packaging
+
+- Tagged Windows releases now start as ordinary desktop applications without
+  opening a separate console window. Untagged development and Debug builds
+  keep the console so live engine diagnostics remain available.
+
+### Fixed - UI
+
+- Replaced the legacy per-line scene widgets used by scrollable dialog text
+  with a self-contained wrapped-text renderer. Repeatedly opening creature,
+  spell or avatar information no longer revives stale rows from earlier
+  dialogs or stacks descriptions on top of one another.
+- Reserved every wrapped row from the font's line metrics, preventing a
+  missing or undersized rendered texture from collapsing subsequent rows.
+- Cleared the scrollable text surface before every redraw. Moving through a long
+  description can no longer leave glyphs from the previous scroll position
+  underneath the current lines.
+- Fixed SWE's transparent render-target initialization. Full texture clears
+  now temporarily disable alpha blending, preventing newly allocated text
+  textures from inheriting fragments of previously freed GPU content.
+
+### Testing
+
+- Kept the Windows native crash-report regression strict while allowing for
+  delayed filesystem visibility of a report already written by the crashed
+  child process.
+
 ## [0.1.0] - 2026-07-17
 
 First SemVer release candidate. This is the cumulative player-facing release

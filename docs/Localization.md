@@ -20,11 +20,14 @@ The maintained sources are:
 - `themes/default/lang/ru.mo` — compiled runtime catalog;
 - `scripts/apply-russian-translations.py` — reproducible curated terminology.
 
-At the v0.1.0 release-candidate stage, 433 messages are translated and 68 are
-untranslated. Current menus, saves/recovery, gameplay controls, names, scores,
-creatures and spells are covered. The remainder is primarily long-form material
-for the future Encyclopedia and should be translated when that screen is built,
-with layout review rather than speculative bulk text.
+Current menus, saves/recovery, gameplay controls, names, scores, creatures and
+spells are covered. The Encyclopedia stores its preserved archive articles in
+reviewed English and Russian form, while biographies and descriptions are read
+from the installed theme and translated through gettext. Theme validation now
+requires an exact Russian runtime translation for every non-empty wizard,
+creature, spell, speciality and ability description, including its original
+tabs, line breaks and colour markup. This prevents a catalog entry that looks
+translated in source form from silently falling back to English in the game.
 
 ## Original localized button art
 

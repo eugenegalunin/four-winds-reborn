@@ -27,6 +27,23 @@
 #include "dialogs.h"
 #include "jsongui.h"
 
+#ifndef SWE_DISABLE_AUDIO
+namespace
+{
+    int playConfiguredSound(const std::string & name)
+    {
+        if(name.empty()) return -1;
+        const int volume = GameTheme::isVoiceSound(name) ?
+            Settings::voiceVolume() : Settings::effectsVolume();
+        if(volume <= 0) return -1;
+
+        const int channel = Sound::playChannel(GameTheme::sound(name));
+        if(0 <= channel) Sound::volume(channel, Settings::mixerVolume(volume));
+        return channel;
+    }
+}
+#endif
+
 IconToolTip::IconToolTip(const Texture & tx, const std::string & str, Window & win)
     : WindowToolTipIcon(& win)
 {
@@ -210,7 +227,7 @@ void SpritesAnimation::next(void)
 #ifndef SWE_DISABLE_AUDIO
 	if(0 == index && Settings::sound() && sound.size())
 	{
-	    Sound::play(GameTheme::sound(sound));
+	    playConfiguredSound(sound);
 	}
 #endif
 
@@ -506,10 +523,7 @@ void JsonWindow::cursorReset(void)
 void JsonWindow::playSound(const std::string & name)
 {
 #ifndef SWE_DISABLE_AUDIO
-    if(Settings::sound() && name.size())
-    {
-        Sound::play(GameTheme::sound(name));
-    }
+    if(Settings::sound() && name.size()) playConfiguredSound(name);
 #endif
 }
 
@@ -528,6 +542,7 @@ void JsonWindow::playMusic(const std::string & name)
         auto & buf = GameTheme::music(name);
         if(! Music::isPlaying(buf.crc32b()))
             Music::play(buf);
+        Music::volume(Settings::mixerVolume(Settings::musicVolume()));
     }
 #endif
 }

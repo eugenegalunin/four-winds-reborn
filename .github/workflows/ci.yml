@@ -149,6 +149,10 @@ jobs:
           fi
           ./scripts/build-windows-msys2.sh "${args[@]}"
 
+      - name: Verify development build keeps its console subsystem
+        shell: msys2 {0}
+        run: objdump -p dist/windows/four-winds-reborn.exe | grep -q "Windows CUI"
+
       - name: Retain CTest logs
         if: always()
         uses: actions/upload-artifact@v7

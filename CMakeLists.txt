@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(FourWindsReborn VERSION 0.1.0)
+project(FourWindsReborn VERSION 0.2.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -65,6 +65,10 @@ if(NOT FOUR_WINDS_ENGINE_REVISION)
     set(FOUR_WINDS_ENGINE_REVISION "unknown")
 endif()
 
+option(FOUR_WINDS_WINDOWS_GUI
+    "Build the Windows executable without an attached console"
+    OFF)
+
 set(FOUR_WINDS_BUILD_DEFINITIONS
     FOUR_WINDS_VERSION="${PROJECT_VERSION}"
     FOUR_WINDS_BUILD_DATE="${FOUR_WINDS_BUILD_DATE}"
@@ -85,6 +89,7 @@ set(FOUR_WINDS_SOURCE
     src/runewars.cpp
     src/intropart.cpp
     src/mainmenu.cpp
+    src/encyclopedia.cpp
     src/settingsmenu.cpp
     src/loadrecovery.cpp
     src/gametheme.cpp
@@ -116,7 +121,8 @@ if(WIN32)
     target_link_libraries(four_winds_reborn dbghelp)
 endif()
 set_target_properties(four_winds_reborn PROPERTIES
-    OUTPUT_NAME four-winds-reborn)
+    OUTPUT_NAME four-winds-reborn
+    WIN32_EXECUTABLE ${FOUR_WINDS_WINDOWS_GUI})
 
 option(BUILD_TESTING "Build gameplay regression tests" OFF)
 include(CTest)

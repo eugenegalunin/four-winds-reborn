@@ -131,6 +131,7 @@ class MahjongPartScreen : public JsonWindow
     IconToolTip		iconAffectedScry;
 
     JsonTextInfo        fastLogText;
+    Color               fastLogNormalColor;
     Wind		fastLogOwner;
 
     JsonButton*		buttonPass;
@@ -150,6 +151,8 @@ class MahjongPartScreen : public JsonWindow
     TickTrigger		tt;
 
     void		actionButtonLocalReady(void);
+    bool                submitHumanAction(const ClientMessage &);
+    void                showActionRejection(const ActionRejection &);
     void		actionButtonLocalKong(void);
     void		actionButtonLocalGame(void);
     void		actionOutOfTime(void);

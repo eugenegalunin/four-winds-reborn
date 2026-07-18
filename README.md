@@ -55,7 +55,9 @@ Windows uses MSYS2 UCRT64/MinGW because the SDL engine is not an MSVC project:
 Install [MSYS2](https://www.msys2.org/) in `C:\msys64` first, or pass
 `-MsysRoot D:\path\to\msys64`. Later builds only need
 `.\scripts\build-windows.ps1`. Unix scripts accept `--clean`, `--debug` and
-`--no-tests`; PowerShell accepts `-Clean`, `-DebugBuild` and `-NoTests`.
+`--no-tests`; PowerShell accepts `-Clean`, `-DebugBuild` and `-NoTests`. Add
+`-ReleaseGui` only when checking a player-facing Windows package without the
+development console; the tagged release workflow enables it automatically.
 
 Close a packaged game launched from `dist/windows` before rebuilding it. The
 PowerShell wrapper detects a live packaged executable and stops before touching
@@ -104,17 +106,27 @@ or a left click.
 
 ## Settings and Russian localization
 
-The main-menu Settings screen persists language, music, sound effects, classic
-Guardian calls, presentation speed and Windowed/Fullscreen display mode in the
-per-user `settings.json`. Display mode switches immediately when Apply is
-pressed; the game continues to render its original 1024x768 canvas in both
-modes. English uses the built-in source strings; Russian can be selected without
+The main-menu Settings screen persists language, independent 0–100% music,
+effects and voice levels, classic Guardian calls, presentation speed and
+Windowed/Fullscreen display mode in the per-user `settings.json`. Windowed mode
+offers 75%, 100%, 125%, 150%, 175% and 200% sizes when they fit the current
+desktop. Every size uses smooth 4:3 scaling of the fixed 1024x768 canvas, so the
+window and rendered image stay aligned without an internal black frame. Volume
+bars accept a
+mouse position or Left/Right keyboard adjustment. Display and audio changes take
+effect when Apply is pressed without restarting; the game always keeps its
+original 1024x768 logical canvas. Existing settings files with the older boolean
+music/sound keys remain compatible.
+
+Choice rows cycle forward with a left click and backward with a right click
+(secondary click on macOS); keyboard Left/Right navigation remains available.
+
+English uses the built-in source strings; Russian can be selected without
 restarting the game and uses the restored classic terminology. The original
-character, clan, creature and Mahjong call resources remain enabled with sound
-effects; Guardian animation calls have their own toggle. Proven localized
-avatar, creature, clan and round announcements now follow the selected
-English/Russian language as well; calls that were identical in both original
-editions remain shared.
+character, clan, creature and Mahjong call resources use the voice level;
+Guardian animation calls also retain their own toggle. Proven localized avatar,
+creature, clan and round announcements follow the selected English/Russian
+language, while calls identical in both original editions remain shared.
 
 Presentation speed has three profiles. `Classic` is the default and restores a
 more deliberate hand deal, rune draw/discard and combat presentation. `Normal`

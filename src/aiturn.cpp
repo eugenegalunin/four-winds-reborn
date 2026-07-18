@@ -28,6 +28,7 @@
 #include "aiadventure.h"
 #include "aispell.h"
 #include "aistrategy.h"
+#include "gamedata.h"
 #include "gameplayrng.h"
 
 namespace GameData
@@ -41,7 +42,6 @@ namespace GameData
     LocalPlayer &	playerOfAvatar(const Avatar &);
     LocalPlayer &	playerOfClan(const Clan &);
     LocalPlayer &	playerOfWind(const Wind &);
-    bool		client2Mahjong(const Avatar &, const ClientMessage &, ActionList &);
 }
 
 bool AI::mahjongTurn(const Wind & currentWind, const Avatar & avatar, const VecStones & trash,

@@ -38,7 +38,7 @@ MainMenuScreen::MainMenuScreen(bool saveExists, bool saveValid, bool recoveryExi
     const bool loadAvailable = saveExists || recoveryExists;
     addEntry(_("Load Game"), loadAvailable ? "" : _("NO SAVES"),
              Menu::LoadRecovery, loadAvailable);
-    addEntry(_("Encyclopedia"), _("PLANNED"), Menu::GameExit, false);
+    addEntry(_("Encyclopedia"), "", Menu::Encyclopedia, true);
     addEntry(_("Settings"), "", Menu::SettingsMenu, true);
     addEntry(_("Multiplayer"), _("PLANNED"), Menu::GameExit, false);
     addEntry(_("Quit"), "", Menu::GameExit, true);
