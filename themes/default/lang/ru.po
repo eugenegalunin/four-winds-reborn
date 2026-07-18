@@ -2583,6 +2583,10 @@ msgid "No fixed rune formula"
 msgstr "Нет фиксированной формулы рун"
 
 #: src\encyclopedia.cpp
+msgid "Rune formula:"
+msgstr "Формула рун:"
+
+#: src\encyclopedia.cpp
 msgid "Skull Realm"
 msgstr "Царство Черепов"
 

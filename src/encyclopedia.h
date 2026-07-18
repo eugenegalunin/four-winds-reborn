@@ -76,6 +76,9 @@ class EncyclopediaScreen : public JsonWindow
     bool                  scrollFocusedPane(int);
     int                   articleHeaderHeight(const Entry*) const;
     int                   articleVisualHeight(const Entry*) const;
+    Stones                articleRunes(const Entry*) const;
+    int                   articleRuneHeight(const Entry*) const;
+    int                   renderRuneFormula(const Entry*, int, const FontRender &);
     void                  renderBattleGuideDiagram(int, const FontRender &, const FontRender &);
     bool                  activateSelection(void);
     int                   visibleCategoryRows(void) const;

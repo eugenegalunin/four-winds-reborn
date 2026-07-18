@@ -356,10 +356,75 @@ int EncyclopediaScreen::articleVisualHeight(const Entry* entry) const
 {
     if(! entry) return 0;
     if(entry->id == "battle_guide") return 204;
-    if(entry->image.empty()) return 0;
 
-    const Texture & image = GameTheme::texture(entry->image);
-    return image.isValid() ? image.height() + 18 : 0;
+    int height = 0;
+    if(! entry->image.empty())
+    {
+        const Texture & image = GameTheme::texture(entry->image);
+        if(image.isValid()) height += image.height() + 18;
+    }
+
+    return height + articleRuneHeight(entry);
+}
+
+Stones EncyclopediaScreen::articleRunes(const Entry* entry) const
+{
+    if(! entry) return Stones();
+    if(entry->kind == CreatureEntry)
+        return GameData::creatureInfo(entry->creature).stones;
+    if(entry->kind == SpellEntry)
+        return GameData::spellInfo(entry->spell).stones;
+    return Stones();
+}
+
+int EncyclopediaScreen::articleRuneHeight(const Entry* entry) const
+{
+    if(! entry || (entry->kind != CreatureEntry && entry->kind != SpellEntry)) return 0;
+
+    const FontRender & small = GameTheme::fontRender(smallFont);
+    const Stones runes = articleRunes(entry);
+    int runeHeight = small.lineSkipHeight();
+    for(const Stone & rune : runes)
+    {
+        const Texture & image = GameTheme::texture(GameData::stoneInfo(rune).large);
+        if(image.isValid()) runeHeight = std::max(runeHeight, image.height());
+    }
+    return small.lineSkipHeight() + 6 + runeHeight + 16;
+}
+
+int EncyclopediaScreen::renderRuneFormula(const Entry* entry, int top, const FontRender & small)
+{
+    const int height = articleRuneHeight(entry);
+    if(height <= 0) return 0;
+
+    const Stones runes = articleRunes(entry);
+    const int center = contentArea.x + contentArea.w / 2;
+    renderText(small, _("Rune formula:"), mutedColor, Point(center, top), AlignCenter);
+    top += small.lineSkipHeight() + 6;
+
+    if(runes.empty())
+    {
+        renderText(small, _("No fixed rune formula"), textColor, Point(center, top), AlignCenter);
+        return height;
+    }
+
+    int totalWidth = 0;
+    for(const Stone & rune : runes)
+    {
+        const Texture & image = GameTheme::texture(GameData::stoneInfo(rune).large);
+        if(image.isValid()) totalWidth += image.width() + 4;
+    }
+    if(0 < totalWidth) totalWidth -= 4;
+
+    int x = center - totalWidth / 2;
+    for(const Stone & rune : runes)
+    {
+        const Texture & image = GameTheme::texture(GameData::stoneInfo(rune).large);
+        if(! image.isValid()) continue;
+        renderTexture(image, Point(x, top));
+        x += image.width() + 4;
+    }
+    return height;
 }
 
 void EncyclopediaScreen::renderBattleGuideDiagram(int top, const FontRender & body,
@@ -649,6 +714,7 @@ void EncyclopediaScreen::renderWindow(void)
                 textTop += image.height() + 18;
             }
         }
+        textTop += renderRuneFormula(entry, textTop, small);
 
         const int lineHeight = body.lineSkipHeight();
         const int rows = std::max(1, (contentArea.y + contentArea.h - 20 - textTop) / lineHeight);

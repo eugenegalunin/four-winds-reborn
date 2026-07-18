@@ -176,14 +176,14 @@
                     "subtitle_ru": "Партия рун, магия, карта — и новый круг",
                     "source_url": "docs/Manual.txt:1.2",
                     "body_en": [
-                        "A campaign alternates between the Rune Game and the strategic map. At the table you build a winning hand, earn spell points from charged runes, cast spells and summon creatures. When the hand ends, every wizard receives a map turn.",
+                        "A campaign alternates between the Rune Game and the strategic map. At the table you build a winning hand, earn and spend spell points, cast spells and summon creatures. When the hand ends, every wizard receives a map turn.",
                         "On the map you claim undefended neighbouring land, move parties and attack enemy territories. A party can contain up to three creatures. Battles begin automatically when a party finishes its move in hostile land.",
-                        "The goal is to control as much of the Isle as possible and lead the final score. Rune victories matter twice: they score directly and provide the magic and claim points that fuel the campaign."
+                        "The goal is to control as much of the Isle as possible and lead the final score. Actions at the rune table build your magic economy, while winning hands provide the land-claim points that fuel expansion."
                     ],
                     "body_ru": [
-                        "Кампания чередует Игру Рун и стратегическую карту. За столом вы собираете победную руку, получаете очки магии от заряженных рун, применяете заклинания и призываете существ. После завершения руки каждый колдун получает ход на карте.",
+                        "Кампания чередует Игру Рун и стратегическую карту. За столом вы собираете победную руку, зарабатываете и тратите очки магии, применяете заклинания и призываете существ. После завершения руки каждый колдун получает ход на карте.",
                         "На карте можно присваивать незащищённые соседние земли, перемещать отряды и атаковать вражеские территории. В одном отряде помещается до трёх существ. Бой начинается автоматически, когда отряд заканчивает движение на чужой земле.",
-                        "Цель — контролировать как можно больше Острова и выйти вперёд по итоговым очкам. Победы в Игре Рун важны вдвойне: они сами приносят очки и дают магию и очки захвата для развития кампании."
+                        "Цель — контролировать как можно больше Острова и выйти вперёд по итоговым очкам. Действия за столом развивают магическую экономику, а победные руки дают очки захвата земель для расширения владений."
                     ]
                 },
                 {
@@ -240,6 +240,121 @@
                         "В ручном бою жёлтая рамка отмечает доступных атакующих, красная — допустимые цели, а синяя — рекомендацию боевого ИИ. Сначала выберите лидера атаки; во время стрельбы и ближнего боя выбирайте действующее существо и его цель.",
                         "Enter принимает текущую рекомендацию. Автобой или Escape передаёт все оставшиеся решения боевому ИИ. Оба пути используют одни и те же правила: ручное управление меняет выбор действий, но не формулы урона.",
                         "Воспроизведение боя можно приостановить и переключить между скоростью 1x, 2x и 4x. На Easy и Normal прогноз карты оценивает вероятность захвата и число выживших; на Hard прогноз скрыт."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "rune_game",
+            "title_en": "Rune Game",
+            "title_ru": "Игра Рун",
+            "entries": [
+                {
+                    "id": "rune_game_goal",
+                    "title_en": "Runes and the Winning Hand",
+                    "title_ru": "Руны и победная рука",
+                    "subtitle_en": "The 13-rune Hong Kong mahjong foundation",
+                    "subtitle_ru": "Основа гонконгского маджонга с рукой из 13 рун",
+                    "source_url": "docs/Manual.txt:2.1.1-2.1.3",
+                    "body_en": [
+                        "The wall contains four copies of 34 different runes: three numbered suits—Skulls, Swords and Magic Numbers—and seven honors: four Winds and three Dragons. Ones and nines are terminals; runes two through eight are simples.",
+                        "Every wizard starts a hand with 13 runes. A normal turn draws one rune and discards one. A winning hand contains four sets and one pair. A set is a Chow (three consecutive runes of one suit), a Pung (three identical runes), or a Kong (four identical runes).",
+                        "You may declare Game with a rune you draw yourself or with another wizard's active discard. Exposed sets stay visible and their runes can no longer be rearranged or used as spell components; concealed runes remain flexible until the hand is completed."
+                    ],
+                    "body_ru": [
+                        "Стена содержит по четыре экземпляра 34 разных рун: три числовые масти — Черепа, Мечи и Магические Числа — и семь старших рун: четыре Ветра и три Дракона. Единицы и девятки называются крайними, а руны от двух до восьми — простыми.",
+                        "Каждый колдун начинает раздачу с 13 рунами. Обычный ход состоит из добора одной руны и сброса одной. Победная рука содержит четыре набора и одну пару. Набором считается Чау — три последовательные руны одной масти, Панг — три одинаковые руны, или Конг — четыре одинаковые руны.",
+                        "Объявить Игру можно на самостоятельно взятой руне или на активном сбросе другого колдуна. Открытые наборы видны всем, а их руны уже нельзя перестроить или использовать как компоненты заклинаний; скрытые руны остаются свободными до завершения руки."
+                    ]
+                },
+                {
+                    "id": "rune_game_calls",
+                    "title_en": "Chow, Pung and Kong",
+                    "title_ru": "Чау, Панг и Конг",
+                    "subtitle_en": "Claiming discards and changing turn order",
+                    "subtitle_ru": "Перехват сброса и изменение очереди хода",
+                    "source_url": "docs/Manual.txt:2.1.3",
+                    "body_en": [
+                        "Chow completes a three-rune sequence and may claim only the discard of the player immediately before you in turn order. Pung uses two matching runes from your hand to claim the same discard from any opponent. Kong uses three matching runes to claim the fourth, or may be declared after drawing the fourth rune or upgrading an exposed Pung.",
+                        "After Chow or Pung, the caller immediately discards and play continues from that wizard. Kong also takes the turn but first receives a replacement rune so the hand is not left short.",
+                        "Competing calls use the classic priority: Game, Kong, Pung, then Chow. Pass declines the current opportunity; it does not discard a rune from your hand."
+                    ],
+                    "body_ru": [
+                        "Чау завершает последовательность из трёх рун и может забрать только сброс игрока, который ходил непосредственно перед вами. Для Панга нужны две одинаковые руны в руке, после чего можно забрать такую же руну у любого соперника. Конг использует три одинаковые руны для перехвата четвёртой; его также можно объявить после добора четвёртой руны или превратить в него уже открытый Панг.",
+                        "После Чау или Панга объявивший их колдун сразу сбрасывает руну, и очередь продолжается от него. Конг тоже перехватывает ход, но сначала даёт дополнительный добор, чтобы рука не стала короче.",
+                        "Если один сброс вызывает несколько заявок, действует классический приоритет: Игра, Конг, Панг, затем Чау. Пас отказывается от текущей возможности, но не сбрасывает руну из вашей руки."
+                    ]
+                },
+                {
+                    "id": "rune_game_winds",
+                    "title_en": "Winds, Deals and Match Length",
+                    "title_ru": "Ветра, раздачи и длина партии",
+                    "subtitle_en": "Four prevailing winds, four deals each",
+                    "subtitle_ru": "Четыре господствующих ветра по четыре раздачи",
+                    "source_url": "docs/Manual.txt:2.1.2; src/gamedata.cpp",
+                    "body_en": [
+                        "East is the dealer and acts first in a hand. The other seats are South, West and North. Your seat wind is lucky for you; the prevailing wind shown in the centre of the compass is lucky for every wizard.",
+                        "A complete Rune War contains four prevailing-wind rounds—East, South, West and North. Each round contains four deals, rotating the seat winds after every hand, for 16 hands in all. A wall exhausted without a winner is a draw and still advances the campaign.",
+                        "Every completed hand is followed by one strategic map phase in East, South, West, North order. After the fourth deal of the North round, the campaign proceeds to the final score."
+                    ],
+                    "body_ru": [
+                        "Восток является сдающим и ходит первым в раздаче. Остальные места называются Юг, Запад и Север. Ветер вашего места считается счастливым для вас, а господствующий ветер в центре компаса — счастливым для всех колдунов.",
+                        "Полная Война Рун состоит из четырёх кругов господствующего ветра: Востока, Юга, Запада и Севера. В каждом круге проходят четыре раздачи со сменой ветров мест после каждой руки — всего 16 раздач. Если стена закончилась без победителя, фиксируется ничья, но кампания всё равно продолжается.",
+                        "После каждой завершённой руки следует одна фаза стратегической карты в порядке Восток, Юг, Запад, Север. После четвёртой раздачи круга Севера игра переходит к итоговому подсчёту."
+                    ]
+                },
+                {
+                    "id": "rune_game_magic",
+                    "title_en": "Spell Points and Rune Magic",
+                    "title_ru": "Очки магии и сила рун",
+                    "subtitle_en": "How magic is earned and spent in Reborn",
+                    "subtitle_ru": "Как магия зарабатывается и тратится в Reborn",
+                    "source_url": "docs/Manual.txt:3.2.1; themes/default/index.json",
+                    "body_en": [
+                        "Every wizard begins the campaign with 250 spell points. In the current Reborn rules, discarding earns 10 points; exposing a Chow, Pung or Kong earns 20, 30 or 40; winning earns another 50 plus the same set rewards for the combinations that remained concealed in the hand.",
+                        "Spell points are persistent currency, not the score of a mahjong hand. Summoning a creature or casting a spell spends the listed amount. You must also hold the exact charged runes shown by its formula; using them as components depletes their magic, although the physical runes remain in your hand.",
+                        "The spell menu highlights only actions that are currently legal. A creature also needs a controlled summoning circle or the Tower and room in your army; a spell may additionally require a valid target. Unspent spell points form one of the five final-score categories."
+                    ],
+                    "body_ru": [
+                        "Каждый колдун начинает кампанию с 250 очками магии. В действующих правилах Reborn сброс приносит 10 очков; открытие Чау, Панга или Конга — 20, 30 или 40; победа добавляет ещё 50 и такие же награды за наборы, которые до конца оставались скрытыми в руке.",
+                        "Очки магии — постоянная валюта, а не счёт маджонговской руки. Призыв существа или применение заклинания тратит указанную сумму. Кроме того, в руке должны находиться точные заряженные руны из формулы; использование как компонентов истощает их магию, хотя сами руны остаются в руке.",
+                        "Меню заклинаний подсвечивает только доступные сейчас действия. Для существа также нужны контролируемый круг призыва или Башня и свободное место в армии; заклинанию может понадобиться допустимая цель. Неизрасходованные очки магии образуют одну из пяти категорий итогового счёта."
+                    ]
+                },
+                {
+                    "id": "rune_game_scoring",
+                    "title_en": "Scoring a Winning Hand",
+                    "title_ru": "Подсчёт победной руки",
+                    "subtitle_en": "Points, doubles, the 500-point limit and payments",
+                    "subtitle_ru": "Очки, удвоения, предел 500 и выплаты",
+                    "source_url": "docs/Manual.txt:2.1.4",
+                    "body_en": [
+                        "Classic scoring starts at 20 points for winning. Exposed and concealed Pungs and Kongs add different values; lucky pairs, a fully concealed hand, a one-chance wait and self-draw can add more. Chows normally add no base points. The summary screen lists every recognized set and hand bonus.",
+                        "Doubles reward patterns such as lucky sets, all Pungs, one suit, all simples, winds and dragons. The classic formula multiplies the accumulated points by 2 for each double and limits a hand to 500 points. Limit patterns such as Big Four Winds or Three Big Dragons reach that ceiling directly.",
+                        "The winning score is then paid as land-claim points. Dealer self-draw receives x2 from each opponent; dealer from a discard receives x6 from the discarder. A non-dealer self-draw receives x2 from East and x1 from the others; a non-dealer winning from a discard receives x4 from the discarder. These claim points are later spent to take undefended enemy land."
+                    ],
+                    "body_ru": [
+                        "Классический подсчёт начинается с 20 очков за победу. Открытые и скрытые Панги и Конги имеют разную цену; счастливые пары, полностью скрытая рука, ожидание единственной руны и самостоятельный добор могут добавить очки. Чау обычно не даёт базовых очков. Итоговый экран перечисляет каждый распознанный набор и бонус руки.",
+                        "Удвоения выдаются за счастливые наборы, руку из Пангов, одну масть, только простые руны, комбинации Ветров и Драконов и другие узоры. Классическая формула умножает накопленные очки на два за каждое удвоение и ограничивает руку 500 очками. Предельные комбинации вроде Больших Четырёх Ветров или Трёх Больших Драконов сразу достигают этого потолка.",
+                        "Победный счёт выплачивается очками захвата земель. Если сдающий выиграл на своём доборе, каждый соперник платит x2; если на чужом сбросе, сбросивший платит x6. Обычный игрок при самостоятельном доборе получает x2 от Востока и x1 от остальных; при победе на сбросе — x4 от сбросившего. Затем эти очки тратятся на захват незащищённых вражеских земель."
+                    ]
+                },
+                {
+                    "id": "rune_game_victory",
+                    "title_en": "Winning the Rune War",
+                    "title_ru": "Победа в Войне Рун",
+                    "subtitle_en": "Five strategic categories decide the final rank",
+                    "subtitle_ru": "Итоговый ранг определяют пять стратегических категорий",
+                    "source_url": "docs/MatchScoring.md",
+                    "body_en": [
+                        "After 16 hands, every wizard is compared in five categories: total value of owned territories, number of summoning circles, summon cost of surviving creatures, unspent spell points, and unspent land-claim points against opposing clans.",
+                        "Each category is ranked separately. With four players, first through fourth receive 4, 3, 2 and 1 standing points; ties share a rank and skip the following place. The five standing awards are added, and the highest Total Score wins the Rune War.",
+                        "This means no single raw number dominates the campaign. Land, infrastructure, surviving armies, saved magic and unused claim power all matter, so spending every resource for a short-term gain can cost a category at the end."
+                    ],
+                    "body_ru": [
+                        "После 16 раздач колдуны сравниваются в пяти категориях: суммарная ценность своих территорий, число кругов призыва, стоимость выживших существ, неизрасходованные очки магии и неизрасходованные очки захвата против чужих кланов.",
+                        "Каждая категория ранжируется отдельно. При четырёх игроках места с первого по четвёртое дают 4, 3, 2 и 1 зачётное очко; при ничьей игроки делят место, а следующее пропускается. Пять наград складываются, и колдун с наибольшим Общим Счётом побеждает в Войне Рун.",
+                        "Поэтому одно большое число не может решить всю кампанию. Земли, инфраструктура, уцелевшая армия, сохранённая магия и запас права на захват одинаково важны, а трата всех ресурсов ради краткой выгоды может стоить итоговой категории."
                     ]
                 }
             ]
