@@ -4,7 +4,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Four Winds Reborn 0.1.0\n"
+"Project-Id-Version: Four Winds Reborn 0.2.0\n"
 "Report-Msgid-Bugs-To: https://github.com/jaskes/four-winds-reborn/issues\n"
 "POT-Creation-Date: 2026-07-17 03:02+0300\n"
 "PO-Revision-Date: 2026-07-17 01:45+0300\n"

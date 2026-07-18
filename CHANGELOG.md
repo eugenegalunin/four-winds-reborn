@@ -13,6 +13,40 @@ Reborn work only; they do not claim authorship of inherited code or assets.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-18
+
+This release completes the stable post-`v0.1.0` player-facing slice before the
+next measured Easy/Normal/Hard behavior pass.
+
+### Added - Encyclopedia
+
+- Added a bilingual, data-driven in-game Encyclopedia covering the chronicle,
+  factions, wizards, creatures, spells, classic rules and a practical game
+  guide, with archived official Arcanium material preserved in context.
+- Added a six-part Rune Game guide explaining the winning hand,
+  Chow/Pung/Kong calls, winds and deals, spell-point economy, hand scoring and
+  final campaign victory.
+- Creature and spell entries now show their actual rune formulas as tile
+  images alongside their spell-point cost.
+- Added keyboard, mouse-wheel, Page Up/Page Down and secondary-click navigation
+  for long lists and articles.
+
+### Added - Action feedback
+
+- Rejected human actions now show a localized reason for wrong turns and
+  phases, illegal Rune Game calls, unavailable spells or summons, invalid
+  targets, insufficient points, full parties and armies, illegal map orders and
+  invalid battle choices.
+- Expected AI candidate failures, replays and headless simulations remain
+  silent and deterministic.
+
+### Fixed - Rune Game scoring
+
+- Restored the original 1998 final-hand formula: all base, set, pair and hand
+  points are accumulated before doubles are applied, with the classic 500-point
+  cap. The behavior was verified directly against the original executable and
+  is covered by exact-value regression fixtures.
+
 ### Added - Display scaling
 
 - Added selectable 75-200% smoothly scaled window sizes while keeping the
@@ -59,6 +93,12 @@ Reborn work only; they do not claim authorship of inherited code or assets.
 - Fixed SWE's transparent render-target initialization. Full texture clears
   now temporarily disable alpha blending, preventing newly allocated text
   textures from inheriting fragments of previously freed GPU content.
+
+### Testing
+
+- Kept the Windows native crash-report regression strict while allowing for
+  delayed filesystem visibility of a report already written by the crashed
+  child process.
 
 ## [0.1.0] - 2026-07-17
 
