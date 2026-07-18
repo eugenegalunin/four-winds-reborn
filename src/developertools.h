@@ -15,6 +15,8 @@ namespace DeveloperTools
         Cancel,
         ToggleAutoplay,
         FinishPhase,
+        NextAdventure,
+        BattleFixture,
         FinishRound,
         FinishGame
     };

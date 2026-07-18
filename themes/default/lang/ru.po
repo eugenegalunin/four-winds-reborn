@@ -3095,6 +3095,22 @@ msgid "Skip presentation and stop at the next summary"
 msgstr "Пропустить анимации и остановиться на следующей сводке"
 
 #: src/developertools.cpp
+msgid "Next Adventure Phase"
+msgstr "Следующая фаза карты"
+
+#: src/developertools.cpp
+msgid "Stop at the beginning of the next map phase"
+msgstr "Остановиться в начале следующей фазы карты"
+
+#: src/developertools.cpp
+msgid "Battle Test Scenario"
+msgstr "Тестовый бой"
+
+#: src/developertools.cpp
+msgid "Create balanced armies and stop at manual combat"
+msgstr "Создать равные армии и остановиться перед ручным боем"
+
+#: src/developertools.cpp
 msgid "Finish Current Round"
 msgstr "Завершить текущий раунд"
 

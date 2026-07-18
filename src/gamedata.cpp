@@ -2757,3 +2757,76 @@ bool GameData::adventureBattleAction(const Avatar & avatar, ActionList & actions
 
     return true;
 }
+
+#ifdef BUILD_DEBUG
+bool GameData::initDeveloperBattleFixture(const Avatar & avatar, ActionList & actions,
+                                          std::string* error)
+{
+    const auto fail = [error](const char* message)
+    {
+        if(error) *error = message;
+        return false;
+    };
+
+    auto human = std::find_if(gamers.begin(), gamers.end(), [&avatar](const LocalPlayer & player)
+    {
+        return player.avatar == avatar;
+    });
+    if(human == gamers.end()) return fail("developer battle fixture could not find the human player");
+
+    auto defender = std::find_if(gamers.begin(), gamers.end(), [&human](const LocalPlayer & player)
+    {
+        return player.avatar != human->avatar && player.clan != human->clan;
+    });
+    if(defender == gamers.end()) return fail("developer battle fixture could not find an opponent");
+
+    for(LocalPlayer & player : gamers) player.army.clear();
+
+    const Land battlefield(Land::Baliphon);
+    landsInfo[battlefield()].clan = defender->clan;
+
+    BattleParty attackers(human->clan, battlefield);
+    if(!attackers.join(BattleCreature(human->clan, Creature::AdventureParty,
+                                      nextBattleUnitId())) ||
+       !attackers.join(BattleCreature(human->clan, Creature::GreatCarol,
+                                      nextBattleUnitId())) ||
+       !attackers.join(BattleCreature(human->clan, Creature::FireElemental,
+                                      nextBattleUnitId())))
+        return fail("developer battle fixture could not create the attacking party");
+
+    BattleParty defenders(defender->clan, battlefield);
+    if(!defenders.join(BattleCreature(defender->clan, Creature::Durlock,
+                                      nextBattleUnitId())) ||
+       !defenders.join(BattleCreature(defender->clan, Creature::StoneGolem,
+                                      nextBattleUnitId())))
+        return fail("developer battle fixture could not create the defending party");
+
+    human->army.push_back(attackers);
+    defender->army.push_back(defenders);
+    human->setAI(false);
+    defender->setAI(true);
+
+    if(!initAdventure()) return fail("developer battle fixture could not initialize Adventure");
+    currentWind = human->wind;
+    human->setAdventurePartDone();
+    developerAutoplayAvatar = Avatar();
+    assistedByDeveloper = true;
+    actions.clear();
+
+    if(!adventure2Client(human->avatar, actions))
+        return fail("developer battle fixture could not start combat");
+
+    const bool hasChoice = std::any_of(actions.begin(), actions.end(), [](const ActionMessage & action)
+    {
+        return action.type() == Action::AdventureBattleChoice;
+    });
+    if(!pendingBattle.isValid() || pendingBattle.attacker != human->avatar || !hasChoice)
+        return fail("developer battle fixture did not reach a manual combat choice");
+
+    CrashReport::breadcrumb(std::string("Developer battle fixture attacker=")
+        .append(human->avatar.toString()).append(" defender=")
+        .append(defender->avatar.toString()).append(" land=")
+        .append(battlefield.toString()));
+    return true;
+}
+#endif

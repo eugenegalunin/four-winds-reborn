@@ -1,5 +1,5 @@
 {
-    "size": [ 660, 620 ],
+    "size": [ 660, 640 ],
     "font": "dejavus18",
     "width:border": 1,
     "color:background": "#0b0b0b",
@@ -7,12 +7,14 @@
     "color:header": "#ead7a4",
     "color:text": "#d9c9a7",
 
-    "entry:autoplay": [ 40, 88, 580, 68 ],
-    "entry:phase": [ 40, 166, 580, 68 ],
-    "entry:round": [ 40, 244, 580, 68 ],
-    "entry:game": [ 40, 322, 580, 68 ],
-    "entry:copy": [ 40, 400, 580, 68 ],
-    "entry:cancel": [ 40, 478, 580, 58 ],
+    "entry:autoplay": [ 40, 82, 580, 58 ],
+    "entry:phase": [ 40, 148, 580, 58 ],
+    "entry:adventure": [ 40, 214, 580, 58 ],
+    "entry:battle": [ 40, 280, 580, 58 ],
+    "entry:round": [ 40, 346, 580, 58 ],
+    "entry:game": [ 40, 412, 580, 58 ],
+    "entry:copy": [ 40, 478, 580, 58 ],
+    "entry:cancel": [ 40, 544, 580, 48 ],
 
     "font:title": "dejavus26",
     "font:entry": "dejavus20",

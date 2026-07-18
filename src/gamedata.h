@@ -349,6 +349,8 @@ namespace GameData
 #ifdef BUILD_DEBUG
     bool                        developerAutoplay(const Avatar &);
     void                        setDeveloperAutoplay(const Avatar &, bool);
+    bool                        initDeveloperBattleFixture(const Avatar &, ActionList &,
+                                                           std::string* error = nullptr);
 #endif
 
     bool			saveGame(const JsonObject &);

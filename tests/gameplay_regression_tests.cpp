@@ -751,6 +751,40 @@ void testDeveloperFastForward()
     expect(roundResult.success && roundResult.menu == Menu::MahjongPart &&
            0 < roundResult.ticks,
            "developer fast-forward must recognize the next Rune Game as a completed round");
+
+    GameplayRng::seed(UINT64_C(0x15d15f));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer Adventure fast-forward fixture must initialize Mahjong");
+    const DeveloperTools::FastForwardResult adventureResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::NextAdventure, human);
+    expect(adventureResult.success && adventureResult.menu == Menu::AdventurePart &&
+           0 < adventureResult.ticks,
+           "developer fast-forward must stop at the beginning of the next Adventure phase");
+
+    const DeveloperTools::FastForwardResult battleResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::BattleFixture, human);
+    expect(battleResult.success && battleResult.menu == Menu::AdventurePart &&
+           GameData::authoritativeState().getObject("battleSession") != nullptr &&
+           GameData::currentPerson().avatar == human &&
+           !GameData::developerAutoplay(human),
+           "developer battle fixture must stop on the human seat's normal battle choice");
+
+    ActionList cleanup;
+    expect(GameData::client2Adventure(human,
+                                      ClientBattleChoice(-1, -1, true), cleanup),
+           "developer battle fixture must remain resolvable by the normal battle action");
+
+    GameplayRng::seed(UINT64_C(0x15d160));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer battle fixture from Mahjong must initialize the Rune Game");
+    const DeveloperTools::FastForwardResult directBattleResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::BattleFixture, human);
+    expect(directBattleResult.success && directBattleResult.menu == Menu::AdventurePart &&
+           GameData::authoritativeState().getObject("battleSession") != nullptr &&
+           GameData::currentPerson().avatar == human,
+           "developer battle fixture must open manual combat directly from the Rune Game");
 }
 #endif
 

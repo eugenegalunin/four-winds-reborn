@@ -153,6 +153,14 @@ public:
             JsonUnpack::rect(jobject, "entry:phase"),
             DeveloperTools::Command::FinishPhase });
         entries.push_back(DeveloperEntry{
+            _("Next Adventure Phase"), _("Stop at the beginning of the next map phase"),
+            JsonUnpack::rect(jobject, "entry:adventure"),
+            DeveloperTools::Command::NextAdventure });
+        entries.push_back(DeveloperEntry{
+            _("Battle Test Scenario"), _("Create balanced armies and stop at manual combat"),
+            JsonUnpack::rect(jobject, "entry:battle"),
+            DeveloperTools::Command::BattleFixture });
+        entries.push_back(DeveloperEntry{
             _("Finish Current Round"), _("Run legal turns and stop at the next Rune Game"),
             JsonUnpack::rect(jobject, "entry:round"),
             DeveloperTools::Command::FinishRound });
@@ -309,10 +317,26 @@ DeveloperTools::FastForwardResult DeveloperTools::fastForward(Command command,
 {
     FastForwardResult result;
     result.menu = GameData::loadedGamePart();
-    if(command != Command::FinishPhase && command != Command::FinishRound &&
+    if(command != Command::FinishPhase && command != Command::NextAdventure &&
+       command != Command::BattleFixture && command != Command::FinishRound &&
        command != Command::FinishGame)
     {
         result.error = "no fast-forward target selected";
+        return result;
+    }
+
+    if(command == Command::BattleFixture)
+    {
+        const JsonObject initialState = GameData::authoritativeState();
+        ActionList emitted;
+        result.success = GameData::initDeveloperBattleFixture(avatar, emitted, &result.error);
+        if(!result.success)
+        {
+            GameData::restoreState(initialState);
+            if(result.error.empty()) result.error = "unable to create developer battle fixture";
+        }
+        result.menu = GameData::loadedGamePart();
+        result.ticks = result.success ? 1 : 0;
         return result;
     }
 
@@ -343,6 +367,11 @@ DeveloperTools::FastForwardResult DeveloperTools::fastForward(Command command,
         {
             ok = enterAdventure();
             if(!ok) result.error = "unable to initialize Adventure";
+            if(ok && command == Command::NextAdventure)
+            {
+                reachedTarget = true;
+                break;
+            }
             continue;
         }
 
