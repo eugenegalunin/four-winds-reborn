@@ -36,10 +36,18 @@ namespace AI
     SpellCastPlan       chooseSpellCast(const LocalPlayer &, const Spells &);
     SpellCastPlan       chooseSpellCast(const LocalPlayer &, const Spells &, BehaviorProfile);
     SpellCastPlan       chooseSpellCast(const LocalPlayer &, const Spells &, BehaviorProfile,
+                                        Difficulty);
+    SpellCastPlan       chooseSpellCast(const LocalPlayer &, const Spells &, BehaviorProfile,
                                         const Spells & futureSpells);
+    SpellCastPlan       chooseSpellCast(const LocalPlayer &, const Spells &, BehaviorProfile,
+                                        Difficulty, const Spells & futureSpells);
     SpellCastPlan       chooseSpellCast(const LocalData &, const Spells &, BehaviorProfile);
     SpellCastPlan       chooseSpellCast(const LocalData &, const Spells &, BehaviorProfile,
+                                        Difficulty);
+    SpellCastPlan       chooseSpellCast(const LocalData &, const Spells &, BehaviorProfile,
                                         const Spells & futureSpells);
+    SpellCastPlan       chooseSpellCast(const LocalData &, const Spells &, BehaviorProfile,
+                                        Difficulty, const Spells & futureSpells);
     bool                shouldCastBeforeSummon(const SpellCastPlan &);
 
     ClientCastSpell     spellCastCommand(const SpellCastStep &);

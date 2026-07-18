@@ -47,12 +47,13 @@ namespace
 
     AI::BattleForecast forecastLandBattle(const BattleParty & attackers, const Land & land,
                                           AI::BehaviorProfile attackersProfile,
-                                          AI::BehaviorProfile defendersProfile)
+                                          AI::BehaviorProfile defendersProfile,
+                                          AI::Difficulty difficulty)
     {
         const BattleTown town(land);
         return AI::forecastBattle(attackers, town, defendingParty(land), attackersProfile,
                                   defendersProfile,
-                                  AI::difficultyRules(GameData::aiDifficulty()).battleForecastSamples);
+                                  AI::difficultyRules(difficulty).battleForecastSamples);
     }
 
     int friendlyBorders(const Land & land, const Clan & clan)
@@ -90,12 +91,14 @@ namespace
 
     int targetScore(const RemotePlayer & player, const Land & land,
                     const Lands & path, const AI::BehaviorRules & rules,
-                    int defenseStrength, const AI::BattleForecast & forecast)
+                    AI::BehaviorProfile profile, AI::Difficulty difficulty, int defenseStrength,
+                    const AI::BattleForecast & forecast)
     {
         const LandInfo & info = GameData::landInfo(land);
         const BattleParty* defenders = defendingParty(land);
         const bool defended = defenders && !defenders->isEmpty();
-        const bool winnable = forecast.captureChance >= rules.minimumBattleWinChance;
+        const bool winnable = forecast.captureChance >=
+            AI::minimumBattleWinChance(profile, difficulty);
         const bool threatensClan = 0 < friendlyBorders(land, player.clan);
 
         return info.stat.point * rules.targetValueWeight / 100 -
@@ -111,7 +114,8 @@ namespace
     }
 
     Land chooseDestination(const RemotePlayer & player, const BattleParty & party, const Land & target,
-                           AI::BehaviorProfile profile, AI::BattleForecast* immediateForecast)
+                           AI::BehaviorProfile profile, AI::Difficulty difficulty,
+                           AI::BattleForecast* immediateForecast)
     {
         if(immediateForecast) *immediateForecast = AI::BattleForecast();
         const AI::BehaviorRules & rules = AI::behaviorRules(profile);
@@ -143,8 +147,9 @@ namespace
             if(destinationOwner.isValid() && destinationOwner != player.clan)
             {
                 forecast = forecastLandBattle(party, destination, profile,
-                                              defendingProfile(destination));
-                if(forecast.captureChance < rules.minimumBattleWinChance) continue;
+                                              defendingProfile(destination), difficulty);
+                if(forecast.captureChance < AI::minimumBattleWinChance(profile, difficulty))
+                    continue;
             }
 
             normalDestination = destination;
@@ -272,13 +277,26 @@ AI::AdventureClaimPlan AI::chooseAdventureClaim(const RemotePlayer & player, Beh
 AI::AdventureMovePlan AI::chooseAdventureMove(const RemotePlayer & player, const BattleParty & party,
                                               BehaviorProfile profile)
 {
+    return chooseAdventureMove(player, party, profile, GameData::aiDifficulty());
+}
+
+AI::AdventureMovePlan AI::chooseAdventureMove(const RemotePlayer & player, const BattleParty & party,
+                                              BehaviorProfile profile, Difficulty difficulty)
+{
     Lands targets;
     for(auto landId : lands_all) targets.push_back(Land(landId));
-    return chooseAdventureMove(player, party, profile, targets);
+    return chooseAdventureMove(player, party, profile, difficulty, targets);
 }
 
 AI::AdventureMovePlan AI::chooseAdventureMove(const RemotePlayer & player, const BattleParty & party,
                                               BehaviorProfile profile, const Lands & targets)
+{
+    return chooseAdventureMove(player, party, profile, GameData::aiDifficulty(), targets);
+}
+
+AI::AdventureMovePlan AI::chooseAdventureMove(const RemotePlayer & player, const BattleParty & party,
+                                              BehaviorProfile profile, Difficulty difficulty,
+                                              const Lands & targets)
 {
     AdventureMovePlan best;
     const BehaviorRules & rules = behaviorRules(profile);
@@ -296,13 +314,14 @@ AI::AdventureMovePlan AI::chooseAdventureMove(const RemotePlayer & player, const
 
         const int defenseStrength = defendingStrength(land);
         BattleForecast immediateForecast;
-        const Land destination = chooseDestination(player, party, land, profile, &immediateForecast);
+        const Land destination = chooseDestination(player, party, land, profile, difficulty,
+                                                   &immediateForecast);
         if(!destination.isValid()) continue;
 
         const bool engagesEnemy = GameData::landInfo(destination).clan.isValid() &&
                                   GameData::landInfo(destination).clan != player.clan;
         BattleForecast forecast = engagesEnemy ? immediateForecast :
-            forecastLandBattle(party, land, profile, defendingProfile(land));
+            forecastLandBattle(party, land, profile, defendingProfile(land), difficulty);
         if(!forecast.isValid()) continue;
 
         AdventureMovePlan candidate;
@@ -313,7 +332,8 @@ AI::AdventureMovePlan AI::chooseAdventureMove(const RemotePlayer & player, const
         candidate.captureChance = forecast.captureChance;
         candidate.attackerSurvival = forecast.attackerSurvival;
         candidate.engagesEnemy = engagesEnemy;
-        candidate.score = targetScore(player, land, path, rules, defenseStrength, forecast);
+        candidate.score = targetScore(player, land, path, rules, profile, difficulty,
+                                      defenseStrength, forecast);
 
         if(!best.isValid() || candidate.score > best.score ||
            (candidate.score == best.score && candidate.target() < best.target()))
@@ -324,6 +344,13 @@ AI::AdventureMovePlan AI::chooseAdventureMove(const RemotePlayer & player, const
 
 std::vector<AI::AdventureThreat> AI::predictAdventureThreats(const RemotePlayer & player,
                                                              BehaviorProfile profile)
+{
+    return predictAdventureThreats(player, profile, GameData::aiDifficulty());
+}
+
+std::vector<AI::AdventureThreat> AI::predictAdventureThreats(const RemotePlayer & player,
+                                                             BehaviorProfile profile,
+                                                             Difficulty difficulty)
 {
     std::vector<AdventureThreat> result;
     const BehaviorRules & rules = behaviorRules(profile);
@@ -357,7 +384,7 @@ std::vector<AI::AdventureThreat> AI::predictAdventureThreats(const RemotePlayer 
                 const int strength = combatStrength(enemyParty.toBaseStatSummary());
                 threat.enemyStrength += strength;
                 const BattleForecast forecast = forecastLandBattle(enemyParty, land, enemyProfile,
-                                                                   profile);
+                                                                   profile, difficulty);
                 const bool moreDangerous = forecast.captureChance > threat.captureChance ||
                     (forecast.captureChance == threat.captureChance &&
                      forecast.attackerSurvival > threat.attackerSurvival) ||
@@ -374,8 +401,8 @@ std::vector<AI::AdventureThreat> AI::predictAdventureThreats(const RemotePlayer 
             }
         }
 
-        if(!threat.enemyStrength ||
-           threat.captureChance < rules.minimumThreatCaptureChance)
+        if(!threat.enemyStrength || threat.captureChance <
+           minimumThreatCaptureChance(profile, difficulty))
             continue;
 
         const LandInfo & info = GameData::landInfo(land);
@@ -399,18 +426,24 @@ std::vector<AI::AdventureThreat> AI::predictAdventureThreats(const RemotePlayer 
 
 AI::AdventureTurnPlan AI::chooseAdventureTurn(const RemotePlayer & player, BehaviorProfile profile)
 {
+    return chooseAdventureTurn(player, profile, GameData::aiDifficulty());
+}
+
+AI::AdventureTurnPlan AI::chooseAdventureTurn(const RemotePlayer & player, BehaviorProfile profile,
+                                              Difficulty difficulty)
+{
     AdventureTurnPlan plan;
     plan.profile = profile;
-    plan.threats = predictAdventureThreats(player, profile);
+    plan.threats = predictAdventureThreats(player, profile, difficulty);
 
     const BehaviorRules & rules = behaviorRules(profile);
-    const int partiesPerTarget = maximumPartiesPerTarget(profile, GameData::aiDifficulty());
+    const int partiesPerTarget = maximumPartiesPerTarget(profile, difficulty);
     std::vector<PartyCandidate> parties;
     for(const BattleParty & party : player.army)
         if(!party.isEmpty()) parties.emplace_back(party);
 
     const int reserveLimit = std::min<int>(parties.size(),
-        (static_cast<int>(parties.size()) * rules.defensiveReservePercent + 99) / 100);
+        (static_cast<int>(parties.size()) * defensiveReservePercent(profile, difficulty) + 99) / 100);
     std::map<int, int> plannedArrivals;
 
     for(const AdventureThreat & threat : plan.threats)
@@ -493,7 +526,7 @@ AI::AdventureTurnPlan AI::chooseAdventureTurn(const RemotePlayer & player, Behav
         AdventureMovePlan move;
         while(!targets.empty())
         {
-            move = chooseAdventureMove(player, *candidate.party, profile, targets);
+            move = chooseAdventureMove(player, *candidate.party, profile, difficulty, targets);
             if(!move.isValid()) break;
 
             const int occupied = friendlyPartySize(player, move.destination) +

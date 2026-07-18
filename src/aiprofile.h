@@ -90,6 +90,15 @@ namespace AI
         int strategicGoalLimit;
         int strategicDrawHorizon;
         int strategicBranchLimit;
+        int offensiveSpellPenalty;
+        int manaReserveAdjustment;
+        int runeValuePercent;
+        int minimumBattleWinChanceAdjustment;
+        int minimumThreatCaptureChanceAdjustment;
+        int defensiveReserveAdjustment;
+        int battleOverkillPenaltyPercent;
+        int nearBestScorePercent;
+        int nearBestDecisionPeriod;
         bool showPlayerBattleForecast;
     };
 
@@ -100,6 +109,13 @@ namespace AI
     const DifficultyRules & difficultyRules(Difficulty);
     int                     spellPlanningHorizon(BehaviorProfile, Difficulty);
     int                     maximumPartiesPerTarget(BehaviorProfile, Difficulty);
+    int                     manaReserve(BehaviorProfile, Difficulty);
+    int                     minimumBattleWinChance(BehaviorProfile, Difficulty);
+    int                     minimumThreatCaptureChance(BehaviorProfile, Difficulty);
+    int                     defensiveReservePercent(BehaviorProfile, Difficulty);
+    int                     battleOverkillPenalty(BehaviorProfile, Difficulty);
+    bool                    preferNearBestChoice(Difficulty, int bestScore,
+                                                 int alternativeScore, int decisionKey);
     const char*             behaviorProfileName(BehaviorProfile);
     bool                    behaviorProfileFromString(const std::string &, BehaviorProfile &);
     BehaviorProfile         behaviorProfileFromString(const std::string &);

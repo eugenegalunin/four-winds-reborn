@@ -478,16 +478,29 @@ namespace
         }
     }
 
-    int profileScore(const AI::SpellCastStep & step, AI::BehaviorProfile profile, int availablePoints)
+    bool isOffensiveSpell(const SpellInfo & info)
+    {
+        const int target = info.target();
+        return spellRole(info) == SpellRole::Damage ||
+               target == SpellTarget::Enemy ||
+               target == (SpellTarget::Enemy | SpellTarget::Party) ||
+               target == SpellTarget::OtherPlayer || target == SpellTarget::AllPlayers;
+    }
+
+    int profileScore(const AI::SpellCastStep & step, AI::BehaviorProfile profile,
+                     AI::Difficulty difficulty, int availablePoints)
     {
         const AI::BehaviorRules & rules = AI::behaviorRules(profile);
         const SpellInfo & info = GameData::spellInfo(step.spell);
         int score = step.score * roleWeight(rules, spellRole(info)) / 100;
         score -= info.cost * rules.spellCostPenalty / 100;
+        if(isOffensiveSpell(info))
+            score -= AI::difficultyRules(difficulty).offensiveSpellPenalty;
 
         const int pointsAfterCast = availablePoints - info.cost;
-        if(pointsAfterCast < rules.manaReserve && step.score < 150)
-            score -= (rules.manaReserve - pointsAfterCast) * rules.reservePenalty / 100;
+        const int reserve = AI::manaReserve(profile, difficulty);
+        if(pointsAfterCast < reserve && step.score < 150)
+            score -= (reserve - pointsAfterCast) * rules.reservePenalty / 100;
 
         return score;
     }
@@ -602,11 +615,11 @@ namespace
     }
 
     void projectFollowUps(AI::SpellCastPlan & plan, const LocalPlayer & player,
-                          const SpellCandidates & futureCandidates, const PlayerView & players)
+                          const SpellCandidates & futureCandidates, const PlayerView & players,
+                          AI::Difficulty difficulty)
     {
         const AI::BehaviorRules & rules = AI::behaviorRules(plan.profile);
-        const int planningHorizon = AI::spellPlanningHorizon(plan.profile,
-                                                              GameData::aiDifficulty());
+        const int planningHorizon = AI::spellPlanningHorizon(plan.profile, difficulty);
         if(planningHorizon <= 1 || plan.spell() == Spell::ManaFog) return;
 
         AI::SpellCastStep root = plan;
@@ -631,7 +644,8 @@ namespace
                 if(synergy <= 0) continue;
 
                 AI::SpellCastStep scored = candidate;
-                const int weighted = profileScore(candidate, plan.profile, availablePoints);
+                const int weighted = profileScore(candidate, plan.profile, difficulty,
+                                                  availablePoints);
                 const int combined = weighted + synergy * rules.comboWeight / 100;
                 scored.score = std::max(0, combined) * discount / 100;
                 if(!scored.isValid()) continue;
@@ -673,30 +687,46 @@ namespace
 
     AI::SpellCastPlan chooseSpellCastFromView(const LocalPlayer & player, const Spells & spells,
                                               AI::BehaviorProfile profile,
+                                              AI::Difficulty difficulty,
                                               const Spells & futureSpells,
                                               const PlayerView & players)
     {
-        AI::SpellCastPlan best;
-        best.profile = profile;
+        AI::SpellCastPlan empty;
+        empty.profile = profile;
         if(player.isCasted() || player.isSilenced() || player.isAffectedSpell(Spell::ManaFog))
-            return best;
+            return empty;
 
         const AI::BehaviorRules & rules = AI::behaviorRules(profile);
         const SpellCandidates candidates = generateCandidates(player, spells, players);
         const SpellCandidates futureCandidates = generateCandidates(player, futureSpells, players);
+        std::vector<AI::SpellCastPlan> plans;
 
         for(const AI::SpellCastStep & step : candidates)
         {
             AI::SpellCastPlan candidate(step);
             candidate.profile = profile;
-            candidate.immediateScore = profileScore(step, profile, player.points);
-            projectFollowUps(candidate, player, futureCandidates, players);
+            candidate.immediateScore = profileScore(step, profile, difficulty, player.points);
+            projectFollowUps(candidate, player, futureCandidates, players, difficulty);
             candidate.score = candidate.immediateScore + candidate.futureScore;
 
             if(candidate.score < rules.minimumSpellScore) continue;
-            if(!best.isValid() || betterPlan(candidate, best)) best = candidate;
+            plans.push_back(candidate);
         }
-        return best;
+
+        if(plans.empty()) return empty;
+        std::sort(plans.begin(), plans.end(), [](const AI::SpellCastPlan & left,
+                                                 const AI::SpellCastPlan & right)
+        {
+            return betterPlan(left, right);
+        });
+
+        const int decisionKey = player.avatar() * 97 + player.points * 7 +
+            static_cast<int>(player.stones.size()) * 13 +
+            static_cast<int>(player.army.size()) * 17;
+        if(1 < plans.size() && AI::preferNearBestChoice(
+               difficulty, plans[0].score, plans[1].score, decisionKey))
+            return plans[1];
+        return plans.front();
     }
 }
 
@@ -738,26 +768,55 @@ AI::SpellCastPlan AI::chooseSpellCast(const LocalPlayer & player, const Spells &
 AI::SpellCastPlan AI::chooseSpellCast(const LocalPlayer & player, const Spells & spells,
                                       BehaviorProfile profile)
 {
-    return chooseSpellCast(player, spells, profile, knownSpellCasts(player));
+    return chooseSpellCast(player, spells, profile, GameData::aiDifficulty(),
+                           knownSpellCasts(player));
+}
+
+AI::SpellCastPlan AI::chooseSpellCast(const LocalPlayer & player, const Spells & spells,
+                                      BehaviorProfile profile, Difficulty difficulty)
+{
+    return chooseSpellCast(player, spells, profile, difficulty, knownSpellCasts(player));
 }
 
 AI::SpellCastPlan AI::chooseSpellCast(const LocalPlayer & player, const Spells & spells,
                                       BehaviorProfile profile, const Spells & futureSpells)
 {
-    return chooseSpellCastFromView(player, spells, profile, futureSpells,
+    return chooseSpellCast(player, spells, profile, GameData::aiDifficulty(), futureSpells);
+}
+
+AI::SpellCastPlan AI::chooseSpellCast(const LocalPlayer & player, const Spells & spells,
+                                      BehaviorProfile profile, Difficulty difficulty,
+                                      const Spells & futureSpells)
+{
+    return chooseSpellCastFromView(player, spells, profile, difficulty, futureSpells,
                                    authoritativePlayerView());
 }
 
 AI::SpellCastPlan AI::chooseSpellCast(const LocalData & local, const Spells & spells,
                                       BehaviorProfile profile)
 {
-    return chooseSpellCast(local, spells, profile, knownSpellCasts(local.myPlayer()));
+    return chooseSpellCast(local, spells, profile, GameData::aiDifficulty(),
+                           knownSpellCasts(local.myPlayer()));
+}
+
+AI::SpellCastPlan AI::chooseSpellCast(const LocalData & local, const Spells & spells,
+                                      BehaviorProfile profile, Difficulty difficulty)
+{
+    return chooseSpellCast(local, spells, profile, difficulty,
+                           knownSpellCasts(local.myPlayer()));
 }
 
 AI::SpellCastPlan AI::chooseSpellCast(const LocalData & local, const Spells & spells,
                                       BehaviorProfile profile, const Spells & futureSpells)
 {
-    return chooseSpellCastFromView(local.myPlayer(), spells, profile, futureSpells,
+    return chooseSpellCast(local, spells, profile, GameData::aiDifficulty(), futureSpells);
+}
+
+AI::SpellCastPlan AI::chooseSpellCast(const LocalData & local, const Spells & spells,
+                                      BehaviorProfile profile, Difficulty difficulty,
+                                      const Spells & futureSpells)
+{
+    return chooseSpellCastFromView(local.myPlayer(), spells, profile, difficulty, futureSpells,
                                    observerPlayerView(local));
 }
 

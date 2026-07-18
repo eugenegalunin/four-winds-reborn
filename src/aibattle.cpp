@@ -44,7 +44,7 @@ namespace
 
     int targetScore(const BattleUnit & attacker, const BattleCreature & target,
                     AI::BattleAttackMode mode, const AI::BehaviorRules & rules,
-                    int remainingLoyalty, int modifier)
+                    int overkillPenalty, int remainingLoyalty, int modifier)
     {
         if(remainingLoyalty <= 0) return std::numeric_limits<int>::min();
         if(mode == AI::BattleAttackMode::Ranged &&
@@ -60,7 +60,7 @@ namespace
                     threat * rules.battleThreatWeight / 100 +
                     specialityValue(target) * rules.battleSpecialWeight / 100 +
                     wounded * 20 - target.defense() * 5 -
-                    overkill * rules.battleOverkillPenalty;
+                    overkill * overkillPenalty;
 
         if(mode == AI::BattleAttackMode::Melee &&
            target.haveSpeciality(Speciality::FireShield))
@@ -76,6 +76,8 @@ namespace
                                                       int modifier = 0)
     {
         const AI::BehaviorRules & rules = AI::behaviorRules(profile);
+        const int overkillPenalty = AI::battleOverkillPenalty(profile,
+                                                               GameData::aiDifficulty());
         std::vector<const BattleCreature*> result;
         for(const BattleCreature* target : targets.toBattleCreatures())
         {
@@ -85,7 +87,8 @@ namespace
                                 projection->second : target->loyalty();
             const int targetModifier = modifier -
                 (mode == AI::BattleAttackMode::Melee ? Battle::mergeDefenseBonus(targets, *target) : 0);
-            if(targetScore(attacker, *target, mode, rules, loyalty, targetModifier) !=
+            if(targetScore(attacker, *target, mode, rules, overkillPenalty,
+                           loyalty, targetModifier) !=
                std::numeric_limits<int>::min())
                 result.push_back(target);
         }
@@ -99,8 +102,10 @@ namespace
                 (mode == AI::BattleAttackMode::Melee ? Battle::mergeDefenseBonus(targets, *left) : 0);
             const int rightModifier = modifier -
                 (mode == AI::BattleAttackMode::Melee ? Battle::mergeDefenseBonus(targets, *right) : 0);
-            const int leftScore = targetScore(attacker, *left, mode, rules, leftLoyalty, leftModifier);
-            const int rightScore = targetScore(attacker, *right, mode, rules, rightLoyalty, rightModifier);
+            const int leftScore = targetScore(attacker, *left, mode, rules, overkillPenalty,
+                                              leftLoyalty, leftModifier);
+            const int rightScore = targetScore(attacker, *right, mode, rules, overkillPenalty,
+                                               rightLoyalty, rightModifier);
             return leftScore == rightScore ? left->battleUnit() < right->battleUnit() :
                                              leftScore > rightScore;
         });
@@ -129,7 +134,8 @@ namespace
         }
         plan.score = AI::battleInitiativeScore(attacker, AI::BattleAttackMode::Melee, profile) +
                      targetScore(attacker, *targets.front(), AI::BattleAttackMode::Melee,
-                                 AI::behaviorRules(profile), targets.front()->loyalty(),
+                                 AI::behaviorRules(profile), AI::battleOverkillPenalty(
+                                     profile, GameData::aiDifficulty()), targets.front()->loyalty(),
                                  modifier - Battle::mergeDefenseBonus(enemies, *targets.front()));
         return plan;
     }
@@ -275,7 +281,8 @@ AI::BattleRoundPlan AI::chooseRangedBattlePlan(const BattleParty & shooters,
         attack.attacker = shooter->battleUnit();
         attack.targets.push_back(target->battleUnit());
         attack.score = targetScore(*shooter, *target, BattleAttackMode::Ranged,
-                                   behaviorRules(profile),
+                                   behaviorRules(profile), battleOverkillPenalty(
+                                       profile, GameData::aiDifficulty()),
                                    projectedLoyalty[target->battleUnit()], 0);
         plan.attacks.push_back(attack);
         projectedLoyalty[target->battleUnit()] -=

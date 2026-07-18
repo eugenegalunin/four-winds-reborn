@@ -172,20 +172,36 @@ screen. Clicking the `AI Level` panel cycles through `Easy`, `Normal` and
 `Hard`. The selected value belongs to that game and is stored in the save;
 older saves without the field load as `Normal`.
 
-Difficulty does not modify creature statistics, town statistics, rune income
-or random rolls. It changes the AI planning budget:
+Difficulty does not modify creature or town statistics, rune or spell-point
+income, legal actions, random rolls or the information available to an AI. It
+changes only bounded decision quality around an unchanged `Normal` reference:
 
 - `Easy` runs 8 battle samples, looks only at the immediate spell cast and
-  limits coordinated attacks to one party per target.
-- `Normal` runs 16 battle samples and uses each behavior profile's normal spell
-  horizon and army coordination.
+  limits coordinated attacks to one party per target. It preserves goal runes
+  less strongly, keeps a smaller ordinary spell-point and defensive reserve,
+  waits for clearer map threats and accepts riskier attacks. Routine offensive
+  casts receive a penalty, while lethal casts remain available. On a stable
+  subset of turns it
+  may choose the second plan only when that plan scores at least 88 percent of
+  the best one; this bounded mistake is deterministic rather than favorable or
+  hostile RNG.
+- `Normal` runs 16 battle samples and retains the established behavior
+  profile's spell horizon, rune valuation, army coordination, threat response,
+  battle thresholds and exact best-plan selection.
 - `Hard` runs 48 battle samples, extends spell projection by one step (up to
-  four casts), lets a profile coordinate one additional party per target and
-  hides the player's map battle forecast.
+  four casts), retains wider strategic goal and action beams and lets a profile
+  coordinate one additional party per target. It values future goal runes more,
+  keeps a larger ordinary spell-point reserve, responds to weaker visible map
+  threats, keeps a larger defensive reserve, requires a safer forecast before
+  attacking and penalizes wasted battle damage more heavily. It also hides the
+  player's map battle forecast.
 
 Behavior profiles and difficulty remain independent. An aggressive wizard on
-`Easy` still behaves aggressively, but plans less deeply; on `Hard` it keeps
-the same doctrine and evaluates it more thoroughly.
+`Easy` still prefers pressure, but does not spend an ordinary attack spell every
+time it can; on `Hard` it keeps the same doctrine and evaluates it more
+thoroughly. Hard receives no bonus resources, favorable rolls or access to
+another player's hidden runes and invisible units through the difficulty
+policy.
 
 On `Easy` and `Normal`, select movable creatures on one of your territories and
 hover an enemy territory during the movement phase. The right panel shows
@@ -194,8 +210,8 @@ party. The preview uses the same battle resolver and the current difficulty's
 sample budget, runs on copies and never consumes the live game RNG. It also uses
 the player's filtered `LocalData`, so invisible enemies are not disclosed by the
 preview. The same forecast remains visible while dragging the party flag. On
-`Hard` the panel receives no forecast data; the AI still uses its full private
-48-sample evaluation when planning its own actions.
+`Hard` the panel receives no forecast data; AI players still use their
+48-sample decision budget when planning their own actions.
 
 ## Spellcasting AI
 

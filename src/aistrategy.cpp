@@ -432,7 +432,7 @@ int AI::StrategicIntent::runeValue(const Stone & stone) const
                                            std::max(1, static_cast<int>(goal.required.size())));
         value += goalWeight * rankWeight / std::max(1, static_cast<int>(runeGoals.size()));
     }
-    return value;
+    return value * difficultyRules(difficulty).runeValuePercent / 100;
 }
 
 std::string AI::StrategicIntent::trace(void) const
@@ -591,7 +591,7 @@ AI::TurnPlan AI::chooseStrategicTurnPlan(const AIObservation & observation,
         Spells oneSpell;
         oneSpell.push_back(spell);
         const SpellCastPlan spellPlan = chooseSpellCast(
-            observation.state(), oneSpell, profile, futureSpells);
+            observation.state(), oneSpell, profile, difficulty, futureSpells);
         if(!spellPlan.isValid()) continue;
 
         TurnBranch branch;
@@ -611,5 +611,13 @@ AI::TurnPlan AI::chooseStrategicTurnPlan(const AIObservation & observation,
     const int branchLimit = difficultyRules(difficulty).strategicBranchLimit;
     if(static_cast<int>(plan.branches.size()) > branchLimit)
         plan.branches.resize(branchLimit);
+
+    const LocalPlayer & player = observation.player();
+    const int decisionKey = player.avatar() * 97 + player.points * 7 +
+        static_cast<int>(player.stones.size()) * 13 +
+        static_cast<int>(player.army.size()) * 17;
+    if(1 < plan.branches.size() && preferNearBestChoice(
+           difficulty, plan.branches[0].score, plan.branches[1].score, decisionKey))
+        std::swap(plan.branches[0], plan.branches[1]);
     return plan;
 }

@@ -214,9 +214,13 @@ Forcing one common doctrine across the same fixtures confirms that the profile
 axis materially changes play. Economic averaged 8.17 summons and 31.81 casts per
 player; Control averaged 4.76 summons and 40.87 casts. Aggressive finished with
 only 0.24 surviving units per player on average, while Economic finished with
-2.33. Difficulty also acts as a computation budget: mean emitted actions rose
-from 3,699.81 on Easy to 3,824.90 on Normal and 3,948.96 on Hard, while mean total
-scores remained close (13.775, 13.866 and 13.756).
+2.33. In this historical baseline, difficulty acted primarily as a computation
+budget: mean emitted actions rose from 3,699.81 on Easy to 3,824.90 on Normal
+and 3,948.96 on Hard, while mean total scores remained close (13.775, 13.866 and
+13.756). This matrix predates the deliberately distinct Easy/Normal/Hard
+decision policies introduced in 15.6C. Keep it as a reproducible historical
+record; validate the newer policy in a fresh controlled matrix instead of
+silently overwriting these results.
 
 Seat rotation is working as a control. Across the native fixtures the four wind
 rank-one rates ranged from 21.88% to 31.25%, much smaller than the observed

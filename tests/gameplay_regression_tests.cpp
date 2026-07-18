@@ -214,6 +214,39 @@ void testDifficultyRules()
            AI::difficultyRules(AI::Difficulty::Normal).strategicBranchLimit == 6 &&
            AI::difficultyRules(AI::Difficulty::Hard).strategicBranchLimit == 10,
            "higher AI difficulty must retain a wider strategic action beam");
+    expect(AI::difficultyRules(AI::Difficulty::Easy).offensiveSpellPenalty > 0 &&
+           AI::difficultyRules(AI::Difficulty::Normal).offensiveSpellPenalty == 0 &&
+           AI::difficultyRules(AI::Difficulty::Hard).offensiveSpellPenalty == 0,
+           "Easy alone must explicitly restrain non-essential offensive spell pressure");
+    expect(AI::difficultyRules(AI::Difficulty::Easy).runeValuePercent < 100 &&
+           AI::difficultyRules(AI::Difficulty::Normal).runeValuePercent == 100 &&
+           100 < AI::difficultyRules(AI::Difficulty::Hard).runeValuePercent,
+           "difficulty must scale future-rune conservation around an unchanged Normal baseline");
+    expect(AI::manaReserve(AI::BehaviorProfile::Balanced, AI::Difficulty::Easy) <
+               AI::manaReserve(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) &&
+           AI::manaReserve(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) <
+               AI::manaReserve(AI::BehaviorProfile::Balanced, AI::Difficulty::Hard),
+           "Hard must preserve more spell points than Normal and Easy on ordinary casts");
+    expect(AI::minimumBattleWinChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Easy) <
+               AI::minimumBattleWinChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) &&
+           AI::minimumBattleWinChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) <
+               AI::minimumBattleWinChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Hard),
+           "Hard must demand safer public battle forecasts while Easy accepts more doubtful attacks");
+    expect(AI::minimumThreatCaptureChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Hard) <
+               AI::minimumThreatCaptureChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) &&
+           AI::minimumThreatCaptureChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) <
+               AI::minimumThreatCaptureChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Easy),
+           "Hard must react to weaker visible threats while Easy waits for clearer danger");
+    expect(AI::defensiveReservePercent(AI::BehaviorProfile::Balanced, AI::Difficulty::Easy) <
+               AI::defensiveReservePercent(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) &&
+           AI::defensiveReservePercent(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) <
+               AI::defensiveReservePercent(AI::BehaviorProfile::Balanced, AI::Difficulty::Hard),
+           "difficulty must make whole-turn defensive coordination deliberately distinct");
+    expect(AI::preferNearBestChoice(AI::Difficulty::Easy, 100, 90, 6) &&
+           !AI::preferNearBestChoice(AI::Difficulty::Easy, 100, 70, 6) &&
+           !AI::preferNearBestChoice(AI::Difficulty::Easy, 100, 90, 7) &&
+           !AI::preferNearBestChoice(AI::Difficulty::Normal, 100, 99, 6),
+           "Easy mistakes must be deterministic, occasional and bounded to near-best choices");
 
     GameData::setAIDifficulty(AI::Difficulty::Hard);
     expect(GameData::toJsonObject(JsonObject()).getString("ai:difficulty") == "hard",
@@ -295,6 +328,16 @@ void testStrategicRunePlanning()
     expect(!baseline.runeGoals.empty() &&
            baseline.runeValue(Stone(Stone::Skull1)) > baseline.runeValue(Stone(Stone::Number2)),
            "strategic Rune AI must value a held summon rune above an unrelated rune");
+
+    AI::StrategicIntent easyConservation = baseline;
+    easyConservation.difficulty = AI::Difficulty::Easy;
+    AI::StrategicIntent hardConservation = baseline;
+    hardConservation.difficulty = AI::Difficulty::Hard;
+    expect(easyConservation.runeValue(Stone(Stone::Skull1)) <
+               baseline.runeValue(Stone(Stone::Skull1)) &&
+           baseline.runeValue(Stone(Stone::Skull1)) <
+               hardConservation.runeValue(Stone(Stone::Skull1)),
+           "Hard must conserve an observer-visible goal rune more strongly than Normal and Easy");
 
     const int drop = AI::mahjongSelect(orachi.stones, VecStones(), WinRules(), baseline);
     expect(0 <= drop && drop < static_cast<int>(orachi.stones.size()) &&
@@ -1643,8 +1686,13 @@ void testSpellCastingAI()
         caster, damageOrControl, AI::BehaviorProfile::Aggressive, noFuture);
     const AI::SpellCastPlan controlChoice = AI::chooseSpellCast(
         caster, damageOrControl, AI::BehaviorProfile::Control, noFuture);
+    const AI::SpellCastPlan easyLethalChoice = AI::chooseSpellCast(
+        caster, damageOrControl, AI::BehaviorProfile::Aggressive,
+        AI::Difficulty::Easy, noFuture);
     expect(aggressiveChoice.spell == Spell(Spell::LightningBolt),
            "aggressive spell AI must prefer lethal damage over player control");
+    expect(easyLethalChoice.spell == Spell(Spell::LightningBolt),
+           "Easy must still take an available lethal spell instead of suppressing all aggression");
     expect(controlChoice.spell == Spell(Spell::Silence),
            "control spell AI must prefer Silence over the same damage option");
     expect(AI::shouldCastBeforeSummon(aggressiveChoice) && AI::shouldCastBeforeSummon(controlChoice),
@@ -1714,6 +1762,15 @@ void testSpellCastingAI()
            "aggressive spell AI must prefer pressure over rune economy");
     expect(economicChoice.spell == Spell(Spell::DrawNumber),
            "economic spell AI must prefer rune economy over non-lethal damage");
+    const AI::SpellCastPlan easyPressureChoice = AI::chooseSpellCast(
+        caster, damageOrRune, AI::BehaviorProfile::Aggressive,
+        AI::Difficulty::Easy, noFuture);
+    const AI::SpellCastPlan normalPressureChoice = AI::chooseSpellCast(
+        caster, damageOrRune, AI::BehaviorProfile::Aggressive,
+        AI::Difficulty::Normal, noFuture);
+    expect(easyPressureChoice.spell == Spell(Spell::DrawNumber) &&
+           normalPressureChoice.spell == Spell(Spell::LightningBolt),
+           "Easy must conserve a routine non-lethal Lightning Bolt while Normal keeps reference pressure");
     expect(!AI::shouldCastBeforeSummon(economicChoice),
            "an ordinary economic spell must not delay a legal summon");
     LocalData ordinaryEconomicState = GameData::toLocalData(caster.avatar);
@@ -2115,6 +2172,25 @@ void testBattleAI()
     expect(meleeTargets.findBattleUnitConst(371)->loyalty() == 1 &&
            meleeTargets.findBattleUnitConst(372)->loyalty() == 8,
            "Battle AI melee planning must not mutate its targets");
+
+    BattleParty overkillTarget(Clan::Yellow, Land::Baliphon);
+    expect(overkillTarget.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                               373, 0, 0, 0, 1)),
+           "difficulty overkill fixture must join");
+    GameData::setAIDifficulty(AI::Difficulty::Easy);
+    const AI::BattleAttackPlan easyOverkill = AI::chooseMeleeBattlePlan(
+        meleeActor, overkillTarget, AI::BehaviorProfile::Balanced);
+    GameData::setAIDifficulty(AI::Difficulty::Normal);
+    const AI::BattleAttackPlan normalOverkill = AI::chooseMeleeBattlePlan(
+        meleeActor, overkillTarget, AI::BehaviorProfile::Balanced);
+    GameData::setAIDifficulty(AI::Difficulty::Hard);
+    const AI::BattleAttackPlan hardOverkill = AI::chooseMeleeBattlePlan(
+        meleeActor, overkillTarget, AI::BehaviorProfile::Balanced);
+    GameData::setAIDifficulty(AI::Difficulty::Normal);
+    expect(easyOverkill.isValid() && normalOverkill.isValid() && hardOverkill.isValid() &&
+           hardOverkill.score < normalOverkill.score &&
+           normalOverkill.score < easyOverkill.score,
+           "Hard must penalize wasted battle damage more strongly than Normal and Easy");
 }
 
 void testInteractiveBattleSession()

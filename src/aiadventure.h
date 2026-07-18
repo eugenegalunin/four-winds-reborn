@@ -74,9 +74,16 @@ namespace AI
     AdventureClaimPlan chooseAdventureClaim(const RemotePlayer &, BehaviorProfile);
     AdventureMovePlan  chooseAdventureMove(const RemotePlayer &, const BattleParty &, BehaviorProfile);
     AdventureMovePlan  chooseAdventureMove(const RemotePlayer &, const BattleParty &, BehaviorProfile,
+                                           Difficulty);
+    AdventureMovePlan  chooseAdventureMove(const RemotePlayer &, const BattleParty &, BehaviorProfile,
                                            const Lands & targets);
+    AdventureMovePlan  chooseAdventureMove(const RemotePlayer &, const BattleParty &, BehaviorProfile,
+                                           Difficulty, const Lands & targets);
     std::vector<AdventureThreat> predictAdventureThreats(const RemotePlayer &, BehaviorProfile);
+    std::vector<AdventureThreat> predictAdventureThreats(const RemotePlayer &, BehaviorProfile,
+                                                         Difficulty);
     AdventureTurnPlan chooseAdventureTurn(const RemotePlayer &, BehaviorProfile);
+    AdventureTurnPlan chooseAdventureTurn(const RemotePlayer &, BehaviorProfile, Difficulty);
 }
 
 #endif

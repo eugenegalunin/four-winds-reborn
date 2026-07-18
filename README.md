@@ -19,8 +19,6 @@ On Windows, unpack the archive and launch `four-winds-reborn.exe`.
 
 ## Roadmap
 
-- Make Easy, Normal and Hard play deliberately differently, then validate the
-  result over deterministic match cohorts.
 - Add development tools for AI takeover, fast-forwarding and reproducible
   near-end scenarios so long games can be tested quickly.
 - Improve battle explanations, training and replay viewing while incrementally
@@ -62,8 +60,9 @@ On Windows, unpack the archive and launch `four-winds-reborn.exe`.
 - Independent music, effects and voice volume controls, plus Classic, Normal
   and Fast presentation speeds.
 - Restored story intro and separate menu, faction, map and summary music.
-- Easy, Normal and Hard AI, distinct wizard behavior profiles and improved
-  Mahjong, spell, summon, map and battle decisions.
+- Deliberately distinct Easy, Normal and Hard AI without resource or RNG cheats,
+  plus wizard behavior profiles and improved Mahjong, spell, summon, map and
+  battle decisions.
 - Manual tactical battles with legal target selection, AI recommendations and
   optional automatic resolution.
 - A bilingual Encyclopedia covering lore, factions, wizards, creatures, spells,

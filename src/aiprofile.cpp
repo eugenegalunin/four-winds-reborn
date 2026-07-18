@@ -78,9 +78,20 @@ namespace
 
 const AI::DifficultyRules & AI::difficultyRules(Difficulty difficulty)
 {
-    static const DifficultyRules easy{ 8, 0, 1, -1, 2, 2, 3, true };
-    static const DifficultyRules normal{ 16, 0, 3, 0, 4, 4, 6, true };
-    static const DifficultyRules hard{ 48, 1, 4, 1, 6, 6, 10, false };
+    // Difficulty is a decision-quality policy, never an economy or statistics bonus.
+    // Normal intentionally preserves the established reference behaviour.
+    static const DifficultyRules easy{
+        8, 0, 1, -1, 2, 2, 3,
+        55, -20, 75, -10, 15, -15, 60, 88, 3, true
+    };
+    static const DifficultyRules normal{
+        16, 0, 3, 0, 4, 4, 6,
+        0, 0, 100, 0, 0, 0, 100, 100, 0, true
+    };
+    static const DifficultyRules hard{
+        48, 1, 4, 1, 6, 6, 10,
+        0, 25, 125, 10, -15, 10, 160, 100, 0, false
+    };
 
     switch(difficulty)
     {
@@ -138,6 +149,51 @@ int AI::maximumPartiesPerTarget(BehaviorProfile profile, Difficulty difficulty)
 {
     return std::clamp(behaviorRules(profile).maxPartiesPerTarget +
                       difficultyRules(difficulty).partyCoordinationAdjustment, 1, 3);
+}
+
+int AI::manaReserve(BehaviorProfile profile, Difficulty difficulty)
+{
+    return std::max(0, behaviorRules(profile).manaReserve +
+                       difficultyRules(difficulty).manaReserveAdjustment);
+}
+
+int AI::minimumBattleWinChance(BehaviorProfile profile, Difficulty difficulty)
+{
+    return std::clamp(behaviorRules(profile).minimumBattleWinChance +
+                      difficultyRules(difficulty).minimumBattleWinChanceAdjustment, 0, 100);
+}
+
+int AI::minimumThreatCaptureChance(BehaviorProfile profile, Difficulty difficulty)
+{
+    return std::clamp(behaviorRules(profile).minimumThreatCaptureChance +
+                      difficultyRules(difficulty).minimumThreatCaptureChanceAdjustment, 0, 100);
+}
+
+int AI::defensiveReservePercent(BehaviorProfile profile, Difficulty difficulty)
+{
+    return std::clamp(behaviorRules(profile).defensiveReservePercent +
+                      difficultyRules(difficulty).defensiveReserveAdjustment, 0, 100);
+}
+
+int AI::battleOverkillPenalty(BehaviorProfile profile, Difficulty difficulty)
+{
+    return behaviorRules(profile).battleOverkillPenalty *
+           difficultyRules(difficulty).battleOverkillPenaltyPercent / 100;
+}
+
+bool AI::preferNearBestChoice(Difficulty difficulty, int bestScore,
+                              int alternativeScore, int decisionKey)
+{
+    const DifficultyRules & rules = difficultyRules(difficulty);
+    if(rules.nearBestDecisionPeriod <= 0 || bestScore <= 0 || alternativeScore <= 0)
+        return false;
+
+    const unsigned int stableKey = static_cast<unsigned int>(decisionKey);
+    if(stableKey % static_cast<unsigned int>(rules.nearBestDecisionPeriod) != 0)
+        return false;
+
+    return static_cast<long long>(alternativeScore) * 100 >=
+           static_cast<long long>(bestScore) * rules.nearBestScorePercent;
 }
 
 const AI::BehaviorRules & AI::behaviorRules(BehaviorProfile profile)
