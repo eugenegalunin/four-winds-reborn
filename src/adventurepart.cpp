@@ -273,16 +273,23 @@ void LandPolygon::renderWindow(void)
     }
 }
 
-PartyCreaturesBar::PartyCreaturesBar(Window & win) : Window(&win), party(nullptr)
+PartyCreaturesBar::PartyCreaturesBar(Window & win) : Window(&win)
 {
     resetState(FlagModality);
     setVisible(false);
+}
+
+BattleParty* PartyCreaturesBar::currentParty(void) const
+{
+    if(!clan.isValid() || !land.isValid()) return nullptr;
+    return GameData::getBattleArmy(clan).findParty(land);
 }
 
 bool PartyCreaturesBar::mouseClickEvent(const ButtonsEvent & be)
 {
     const int offset = 5;
     const Texture & icon = GameTheme::texture(GameData::clanInfo(clan).button);
+    BattleParty* party = currentParty();
 
     // click clan icon
     if(be.isClick(Rect(Point(0, 0), icon.size())))
@@ -330,6 +337,7 @@ bool PartyCreaturesBar::mouseClickEvent(const ButtonsEvent & be)
 void PartyCreaturesBar::renderWindow(void)
 {
     const int offset = 5;
+    const BattleParty* party = currentParty();
 
     // clan icon
     if(clan.isValid())
@@ -367,10 +375,10 @@ void PartyCreaturesBar::renderWindow(void)
     }
 }
 
-void PartyCreaturesBar::setParty(const Clan & cl, BattleParty* bp)
+void PartyCreaturesBar::setParty(const Clan & cl, const Land & value)
 {
     clan = cl;
-    party = bp;
+    land = value;
     renderWindow();
     setVisible(true);
 }
@@ -721,8 +729,8 @@ bool MapScreenBase::userEvent(int event, void* data)
 			Clan clan1 = Clan(GameData::myPerson().clan);
 			Clan clan2 = clan1.next();
 
-			bar1.setParty(clan1, GameData::getBattleArmy(clan1).findParty(selectedLand));
-			bar2.setParty(clan2, GameData::getBattleArmy(clan2).findParty(selectedLand));
+			bar1.setParty(clan1, selectedLand);
+			bar2.setParty(clan2, selectedLand);
 
 			selectedClan = GameData::myPerson().clan;
 		    }
@@ -730,7 +738,7 @@ bool MapScreenBase::userEvent(int event, void* data)
 		    {
 			selectedClan = landInfo->clan;
 
-			bar1.setParty(selectedClan, GameData::getBattleArmy(selectedClan).findParty(selectedLand));
+			bar1.setParty(selectedClan, selectedLand);
 			bar2.reset();
 		    }
 		    renderWindow();
@@ -764,8 +772,8 @@ bool MapScreenBase::userEvent(int event, void* data)
 		    clan2 = selectedClan.next();
 		}
 
-		bar1.setParty(clan1, GameData::getBattleArmy(clan1).findParty(selectedLand));
-		bar2.setParty(clan2, GameData::getBattleArmy(clan2).findParty(selectedLand));
+		bar1.setParty(clan1, selectedLand);
+		bar2.setParty(clan2, selectedLand);
 
 		renderWindow();
 		return true;

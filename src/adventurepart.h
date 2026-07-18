@@ -71,7 +71,9 @@ public:
 class PartyCreaturesBar : public Window
 {
     Clan		clan;
-    BattleParty*	party;
+    Land		land;
+
+    BattleParty*	currentParty(void) const;
 
 protected:
     bool		mouseClickEvent(const ButtonsEvent &) override;
@@ -80,8 +82,8 @@ public:
     PartyCreaturesBar(Window &);
 
     void        	renderWindow(void) override;
-    void		setParty(const Clan &, BattleParty*);
-    void		reset(void) { clan = Clan(); party = nullptr; }
+    void		setParty(const Clan &, const Land &);
+    void		reset(void) { clan = Clan(); land = Land(); }
 
     const Clan &	currentClan(void) const { return clan; }
 };
