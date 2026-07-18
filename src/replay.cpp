@@ -236,6 +236,7 @@ JsonObject Replay::actionJournal(const JsonObject & checkpointState)
     result.addString("aiBehaviorProfile", forcedProfile ?
         AI::behaviorProfileName(AI::behaviorProfileOverride()) : "native");
     result.addInteger("actionCount", static_cast<int>(journalSteps.size()));
+    result.addBoolean("developerAssisted", GameData::developerAssisted());
 
     const std::string checkpointHash = Recovery::stateHash(checkpointState);
     result.addString("checkpointStateHash", checkpointHash);

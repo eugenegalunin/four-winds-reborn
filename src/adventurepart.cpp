@@ -32,6 +32,9 @@
 #include "adventurepart.h"
 #include "crashreport.h"
 #include "swe/swe_music.h"
+#ifdef BUILD_DEBUG
+#include "developertools.h"
+#endif
 
 namespace
 {
@@ -1749,6 +1752,11 @@ bool AdventurePartScreen::actionAdventureEnd(const ActionMessage & v)
 
     DEBUG("goto next screen");
 
+#ifdef BUILD_DEBUG
+    // A visible AI takeover is intentionally scoped to one complete phase.
+    GameData::setDeveloperAutoplay(myAvatar, false);
+#endif
+
     // AdventureEnd is the stable boundary of a complete Mahjong/adventure
     // round. Keep Continue current without exposing diagnostic checkpoints as
     // ordinary player saves.
@@ -1774,6 +1782,31 @@ bool AdventurePartScreen::keyPressEvent(const KeySym & ks)
     }
 
 #ifdef BUILD_DEBUG
+    if(ks.keycode() == SWE::Key::F9)
+    {
+        const DeveloperTools::Command command = DeveloperTools::showPanel(*this, myAvatar);
+        if(command == DeveloperTools::Command::ToggleAutoplay)
+        {
+            GameData::setDeveloperAutoplay(myAvatar,
+                !GameData::developerAutoplay(myAvatar));
+            return true;
+        }
+        if(command != DeveloperTools::Command::Cancel)
+        {
+            const DeveloperTools::FastForwardResult result =
+                DeveloperTools::fastForward(command, myAvatar);
+            if(!result.success)
+            {
+                MessageTop(_("Developer Tools"), result.error, *this);
+                return true;
+            }
+            setResultCode(result.menu);
+            setVisible(false);
+            return true;
+        }
+        return true;
+    }
+
     if(ks.keycode() == SWE::Key::BACKQUOTE)
     {
         pushEventAction(AdventureTurnShowConsole, this, nullptr);

@@ -84,6 +84,7 @@ set(FOUR_WINDS_SOURCE
     src/savegames.cpp
     src/replay.cpp
     src/simulation.cpp
+    src/developertools.cpp
     src/strings.cpp
     src/gamedata.cpp
     src/runewars.cpp

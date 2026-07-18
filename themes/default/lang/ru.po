@@ -3061,3 +3061,67 @@ msgstr "Этот выбор в бою больше недоступен."
 #: src/strings.cpp
 msgid "The game rejected that action."
 msgstr "Игра отклонила это действие."
+
+#: src/developertools.cpp
+msgid "RNG state copied to clipboard"
+msgstr "Состояние ГСЧ скопировано в буфер обмена"
+
+#: src/developertools.cpp
+msgid "Unable to copy RNG state"
+msgstr "Не удалось скопировать состояние ГСЧ"
+
+#: src/developertools.cpp
+msgid "Return Human Control"
+msgstr "Вернуть управление"
+
+#: src/developertools.cpp
+msgid "Control returns immediately at this safe input boundary"
+msgstr "Управление вернётся сразу на этой безопасной границе"
+
+#: src/developertools.cpp
+msgid "Let AI Control My Seat"
+msgstr "Передать моё место ИИ"
+
+#: src/developertools.cpp
+msgid "Observer-safe AI uses only legal player actions until the phase ends"
+msgstr "Обычный ИИ играет только легальными действиями до конца фазы"
+
+#: src/developertools.cpp
+msgid "Finish Current Phase"
+msgstr "Завершить текущую фазу"
+
+#: src/developertools.cpp
+msgid "Skip presentation and stop at the next summary"
+msgstr "Пропустить анимации и остановиться на следующей сводке"
+
+#: src/developertools.cpp
+msgid "Finish Current Round"
+msgstr "Завершить текущий раунд"
+
+#: src/developertools.cpp
+msgid "Run legal turns and stop at the next Rune Game"
+msgstr "Доиграть легально и остановиться на следующей Игре Рун"
+
+#: src/developertools.cpp
+msgid "Finish Game"
+msgstr "Завершить партию"
+
+#: src/developertools.cpp
+msgid "Run legal turns until the final score screen"
+msgstr "Доиграть легально до итогового экрана"
+
+#: src/developertools.cpp
+msgid "Copy RNG State"
+msgstr "Копировать состояние ГСЧ"
+
+#: src/developertools.cpp
+msgid "Copy the original seed, current state and draw count"
+msgstr "Скопировать исходный seed, текущее состояние и счётчик"
+
+#: src/developertools.cpp
+msgid "DEVELOPER TOOLS"
+msgstr "ИНСТРУМЕНТЫ РАЗРАБОТЧИКА"
+
+#: src/adventurepart.cpp src/mahjongpart.cpp
+msgid "Developer Tools"
+msgstr "Инструменты разработчика"

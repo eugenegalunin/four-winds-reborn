@@ -3047,3 +3047,67 @@ msgstr ""
 #: src/strings.cpp
 msgid "The game rejected that action."
 msgstr ""
+
+#: src/developertools.cpp
+msgid "RNG state copied to clipboard"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Unable to copy RNG state"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Return Human Control"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Control returns immediately at this safe input boundary"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Let AI Control My Seat"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Observer-safe AI uses only legal player actions until the phase ends"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Finish Current Phase"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Skip presentation and stop at the next summary"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Finish Current Round"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Run legal turns and stop at the next Rune Game"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Finish Game"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Run legal turns until the final score screen"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Copy RNG State"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Copy the original seed, current state and draw count"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "DEVELOPER TOOLS"
+msgstr ""
+
+#: src/adventurepart.cpp src/mahjongpart.cpp
+msgid "Developer Tools"
+msgstr ""

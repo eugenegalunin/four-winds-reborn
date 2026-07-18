@@ -11,6 +11,7 @@ constexpr std::uint64_t DefaultSeed = UINT64_C(0x4d595df4d0f33173);
 constexpr std::uint64_t Multiplier = UINT64_C(2685821657736338717);
 
 std::uint64_t generatorState = DefaultSeed;
+std::uint64_t generatorSeed = DefaultSeed;
 std::uint64_t generatorDraws = 0;
 
 std::uint64_t parseUnsigned(const std::string & value, bool* valid)
@@ -41,7 +42,8 @@ std::uint64_t next(void)
 
 void GameplayRng::seed(std::uint64_t value)
 {
-    generatorState = value ? value : DefaultSeed;
+    generatorSeed = value ? value : DefaultSeed;
+    generatorState = generatorSeed;
     generatorDraws = 0;
 }
 
@@ -80,6 +82,11 @@ std::uint64_t GameplayRng::state(void)
     return generatorState;
 }
 
+std::uint64_t GameplayRng::initialSeed(void)
+{
+    return generatorSeed;
+}
+
 std::uint64_t GameplayRng::draws(void)
 {
     return generatorDraws;
@@ -105,6 +112,7 @@ SWE::JsonObject GameplayRng::toJsonObject(void)
 {
     SWE::JsonObject result;
     result.addString("algorithm", Algorithm);
+    result.addString("seed", std::to_string(generatorSeed));
     result.addString("state", std::to_string(generatorState));
     result.addString("draws", std::to_string(generatorDraws));
     return result;
@@ -116,10 +124,16 @@ bool GameplayRng::fromJsonObject(const SWE::JsonObject & value)
 
     bool stateValid = false;
     bool drawsValid = false;
+    bool seedValid = false;
     const std::uint64_t restoredState = parseUnsigned(value.getString("state"), &stateValid);
     const std::uint64_t restoredDraws = parseUnsigned(value.getString("draws"), &drawsValid);
-    if(!stateValid || !drawsValid || !restoredState) return false;
+    const std::string encodedSeed = value.getString("seed");
+    const std::uint64_t restoredSeed = encodedSeed.empty() ? restoredState :
+        parseUnsigned(encodedSeed, &seedValid);
+    if(encodedSeed.empty()) seedValid = stateValid;
+    if(!stateValid || !drawsValid || !seedValid || !restoredState || !restoredSeed) return false;
 
+    generatorSeed = restoredSeed;
     generatorState = restoredState;
     generatorDraws = restoredDraws;
     return true;

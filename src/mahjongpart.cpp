@@ -31,6 +31,9 @@
 #include "actions.h"
 #include "crashreport.h"
 #include "mahjongpart.h"
+#ifdef BUILD_DEBUG
+#include "developertools.h"
+#endif
 
 StoneSprite::StoneSprite(const Stone & v, int size, const Point & pos) : Stone(v)
 {
@@ -587,6 +590,30 @@ bool MahjongPartScreen::keyPressEvent(const KeySym & key)
 #ifdef BUILD_DEBUG
 	case Key::F5:		return actionEventDebug1();
 	case Key::F6:		return actionEventDebug2();
+	case Key::F9:
+	{
+	    const DeveloperTools::Command command = DeveloperTools::showPanel(*this, myAvatar);
+	    if(command == DeveloperTools::Command::ToggleAutoplay)
+	    {
+		GameData::setDeveloperAutoplay(myAvatar,
+		    !GameData::developerAutoplay(myAvatar));
+		return true;
+	    }
+	    if(command != DeveloperTools::Command::Cancel)
+	    {
+		const DeveloperTools::FastForwardResult result =
+		    DeveloperTools::fastForward(command, myAvatar);
+		if(!result.success)
+		{
+		    MessageTop(_("Developer Tools"), result.error, *this);
+		    return true;
+		}
+		setResultCode(result.menu);
+		setVisible(false);
+		return true;
+	    }
+	    return true;
+	}
 #endif
 
 #ifdef ANDROID
@@ -1737,6 +1764,11 @@ bool MahjongPartScreen::actionMahjongEnd(const ActionMessage & v)
     // the last local turn.  Leaving it active can emit a stale timeout while
     // the end-of-round presentation is running.
     animationTurn.setEnabled(false);
+
+#ifdef BUILD_DEBUG
+    // A visible AI takeover is intentionally scoped to one complete phase.
+    GameData::setDeveloperAutoplay(myAvatar, false);
+#endif
 
 #ifndef SWE_DISABLE_AUDIO
     playSoundWait();

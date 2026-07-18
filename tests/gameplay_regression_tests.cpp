@@ -16,6 +16,9 @@
 #include "avatar_balance_tests.h"
 #include "battle.h"
 #include "crashreport.h"
+#ifdef BUILD_DEBUG
+#include "developertools.h"
+#endif
 #include "gameplayrng.h"
 #include "gametheme.h"
 #include "intropart.h"
@@ -700,7 +703,8 @@ void testGameplayRngState()
         GameplayRng::uniform(0, 1000000),
         GameplayRng::uniform(0, 1000000)
     };
-    expect(actual == expected && GameplayRng::draws() == 4,
+    expect(actual == expected && GameplayRng::draws() == 4 &&
+           GameplayRng::initialSeed() == UINT64_C(0xfedcba987654321),
            "restored gameplay RNG must reproduce values and draw count");
 
     std::vector<int> firstShuffle = { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -713,10 +717,46 @@ void testGameplayRngState()
            "gameplay RNG shuffle must be deterministic for a fixed seed");
 }
 
+#ifdef BUILD_DEBUG
+void testDeveloperFastForward()
+{
+    GameplayRng::seed(UINT64_C(0x15d15d));
+    const Avatar human(Avatar::Nucrus);
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer fast-forward fixture must initialize Mahjong");
+
+    const DeveloperTools::FastForwardResult result =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinishPhase, human);
+    expect(result.success && result.menu == Menu::MahjongSummaryPart && 0 < result.ticks,
+           "developer fast-forward must legally reach the next Mahjong summary");
+    expect(GameData::developerAssisted() && !GameData::developerAutoplay(human),
+           "developer fast-forward must mark the session and return human control");
+
+    const JsonObject assistedState = GameData::authoritativeState();
+    expect(assistedState.getBoolean("developerAssisted") &&
+           GameData::restoreState(assistedState) && GameData::developerAssisted(),
+           "developer-assisted state must remain marked across save restoration");
+    const JsonObject replay = Replay::actionJournal(GameData::authoritativeState());
+    expect(replay.getBoolean("developerAssisted"),
+           "developer-assisted replay metadata must be explicit");
+
+    GameplayRng::seed(UINT64_C(0x15d15e));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer round fast-forward fixture must initialize Mahjong");
+    const DeveloperTools::FastForwardResult roundResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinishRound, human);
+    expect(roundResult.success && roundResult.menu == Menu::MahjongPart &&
+           0 < roundResult.ticks,
+           "developer fast-forward must recognize the next Rune Game as a completed round");
+}
+#endif
+
 int runFixedSeedReplaySelfTest()
 {
     constexpr uint64_t seed = UINT64_C(0x123456789abcdef);
-    constexpr const char* expectedHash = "8020dff30d3f1571";
+    constexpr const char* expectedHash = "3b5df0ad83ed7d45";
 
     GameplayRng::seed(seed);
     GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
@@ -4063,6 +4103,9 @@ int main(int argc, char** argv)
     testBattleSessionSpecialities();
     testAdventureBattleSessionFlow();
     testGameplayRngState();
+#ifdef BUILD_DEBUG
+    testDeveloperFastForward();
+#endif
     testActionReplay();
     testMatchScoreContract();
     testTournamentContract();

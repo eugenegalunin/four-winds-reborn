@@ -343,6 +343,13 @@ namespace GameData
 
     AI::Difficulty              aiDifficulty(void);
     void                        setAIDifficulty(AI::Difficulty);
+    bool                        usesAI(const Person &);
+    bool                        developerAssisted(void);
+
+#ifdef BUILD_DEBUG
+    bool                        developerAutoplay(const Avatar &);
+    void                        setDeveloperAutoplay(const Avatar &, bool);
+#endif
 
     bool			saveGame(const JsonObject &);
     bool                        saveNamedGame(const JsonObject &, const std::string &,

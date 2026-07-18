@@ -145,7 +145,7 @@ void AI::mahjongOtherPass(const Wind & currentWind, ActionList & actions, const 
     {
 	LocalPlayer & playerAI = GameData::playerOfWind(id);
 
-	if(id == currentWind() || id == skip() || ! playerAI.isAI())
+	if(id == currentWind() || id == skip() || !GameData::usesAI(playerAI))
 		continue;
 
 	actions.push_back(MahjongPass(id));
@@ -278,7 +278,7 @@ bool AI::mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWin
 
 	LocalPlayer & playerAI = GameData::playerOfWind(id);
 
-	if(playerAI.isAI() &&
+	if(GameData::usesAI(playerAI) &&
 	    playerAI.isWinMahjong(currentWind, roundWind, dropStone, & winResult))
 	{
 	    if(sayOnly)
@@ -296,7 +296,7 @@ bool AI::mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWin
 		continue;
 
 	    LocalPlayer & playerAI = GameData::playerOfWind(id);
-	    if(!playerAI.isAI()) continue;
+	    if(!GameData::usesAI(playerAI)) continue;
 
 	    const StrategicIntent intent = chooseStrategicIntent(
 		observePlayer(playerAI.avatar), behaviorProfile(playerAI), GameData::aiDifficulty());

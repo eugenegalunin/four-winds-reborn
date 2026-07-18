@@ -15,6 +15,7 @@ namespace GameplayRng
 
     void seed(std::uint64_t value);
     void seedFromEntropy(void);
+    std::uint64_t initialSeed(void);
     std::uint64_t state(void);
     std::uint64_t draws(void);
     int uniform(int minimum, int maximum);

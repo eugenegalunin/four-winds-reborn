@@ -489,6 +489,10 @@ namespace GameData
     int					gamePart = 0;
     int					battleUnitId = 1;
     AI::Difficulty                      difficulty = AI::Difficulty::Normal;
+    bool                                assistedByDeveloper = false;
+#ifdef BUILD_DEBUG
+    Avatar                              developerAutoplayAvatar;
+#endif
     JsonObject				stateGUI;
 
     struct LandClaimRecord
@@ -665,6 +669,36 @@ void GameData::setAIDifficulty(AI::Difficulty value)
     difficulty = value;
 }
 
+bool GameData::usesAI(const Person & player)
+{
+#ifdef BUILD_DEBUG
+    return player.isAI() || (developerAutoplayAvatar.isValid() &&
+                             player.avatar == developerAutoplayAvatar);
+#else
+    return player.isAI();
+#endif
+}
+
+bool GameData::developerAssisted(void)
+{
+    return assistedByDeveloper;
+}
+
+#ifdef BUILD_DEBUG
+bool GameData::developerAutoplay(const Avatar & avatar)
+{
+    return developerAutoplayAvatar.isValid() && developerAutoplayAvatar == avatar;
+}
+
+void GameData::setDeveloperAutoplay(const Avatar & avatar, bool enabled)
+{
+    developerAutoplayAvatar = enabled ? avatar : Avatar();
+    if(enabled) assistedByDeveloper = true;
+    CrashReport::breadcrumb(std::string("Developer autoplay avatar=")
+        .append(enabled ? avatar.toString() : "none"));
+}
+#endif
+
 JsonObject GameData::toJsonObject(const JsonObject & gui)
 {
     JsonObject jo;
@@ -680,6 +714,7 @@ JsonObject GameData::toJsonObject(const JsonObject & gui)
     jo.addInteger("gamepart", gamePart);
     jo.addInteger("nextBattleUnitId", battleUnitId);
     jo.addString("ai:difficulty", AI::difficultyName(difficulty));
+    jo.addBoolean("developerAssisted", assistedByDeveloper);
     jo.addObject("gameplayRng", GameplayRng::toJsonObject());
 
     jo.addObject("myperson", person.toJsonObject());
@@ -778,6 +813,10 @@ bool GameData::fromJsonObject(const JsonObject & jo)
     gamePart = jo.getInteger("gamepart");
     battleUnitId = jo.getInteger("nextBattleUnitId");
     difficulty = AI::difficultyFromString(jo.getString("ai:difficulty", "normal"));
+    assistedByDeveloper = jo.getBoolean("developerAssisted", false);
+#ifdef BUILD_DEBUG
+    developerAutoplayAvatar = Avatar();
+#endif
 
     const JsonObject* jo2 = nullptr;
 
@@ -1159,6 +1198,10 @@ void GameData::initPersons(const Person & cur)
     partWind = Wind(Wind::None);
     currentWind = Wind(Wind::None);
     pendingBattle = PendingBattle();
+    assistedByDeveloper = false;
+#ifdef BUILD_DEBUG
+    developerAutoplayAvatar = Avatar();
+#endif
 }
 
 bool GameData::initPersons(const Persons & configured)
@@ -1203,6 +1246,10 @@ bool GameData::initPersons(const Persons & configured)
     skipNewTurn = false;
     gamePart = 0;
     battleUnitId = 1;
+    assistedByDeveloper = false;
+#ifdef BUILD_DEBUG
+    developerAutoplayAvatar = Avatar();
+#endif
     stateGUI.clear();
     landClaimJournal.clear();
     adventureSnapshotPlayer = Avatar();
@@ -1330,9 +1377,39 @@ LocalPlayer & GameData::playerOfWind(const Wind & wind)
 bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 {
     LocalPlayer & current = playerOfWind(currentWind);
+    const auto runAutomatedTurn = [&](bool showGame, bool showKong)
+    {
+	const WinRules & left = playerOfWind(prevWindCompass(currentWind)).rules;
+	const WinRules & right = playerOfWind(nextWindCompass(currentWind)).rules;
+	const WinRules & top = playerOfWind(oppositeWindCompass(currentWind)).rules;
+	return AI::mahjongTurn(currentWind, current.avatar, croupier.trash,
+	                       left, right, top, showGame, showKong, actions);
+    };
 
     if(croupier.hasLuckDraw())
     {
+	if(GameData::usesAI(current))
+	{
+	    WinRules other;
+	    const WinRules & left = playerOfWind(prevWindCompass(currentWind)).rules;
+	    const WinRules & right = playerOfWind(nextWindCompass(currentWind)).rules;
+	    const WinRules & top = playerOfWind(oppositeWindCompass(currentWind)).rules;
+	    other.reserve(left.size() + right.size() + top.size());
+	    other.insert(other.end(), left.begin(), left.end());
+	    other.insert(other.end(), right.begin(), right.end());
+	    other.insert(other.end(), top.begin(), top.end());
+
+	    const AI::StrategicIntent intent = AI::chooseStrategicIntent(
+	        AI::observePlayer(current.avatar), AI::behaviorProfile(current), aiDifficulty());
+	    const int selected = AI::mahjongLuckChoice(current.stones, croupier.luckChoices(),
+	                                                  croupier.trash, other, intent);
+	    current.newStone = GameStone(croupier.resolveLuckDraw(selected), false);
+	    if(0 < stoneLastCount) --stoneLastCount;
+	    return runAutomatedTurn(
+	        current.isWinMahjong(currentWind, roundWind, dropStone, &winResult),
+	        current.isMahjongKong2(currentWind));
+	}
+
 	if(current.avatar == avatar)
 	{
 	    actions.push_back(MahjongLuckChoice(currentWind, croupier.luckChoices()));
@@ -1343,6 +1420,11 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 
     if(current.newStone.isValid() || skipNewTurn)
     {
+	if(GameData::usesAI(current))
+	    return runAutomatedTurn(
+	        current.isWinMahjong(currentWind, roundWind, dropStone, &winResult),
+	        current.isMahjongKong2(currentWind));
+
 	//DEBUG("wind: " << currentWind.toString() << ", " << "person: " << current.name() << ", " <<
 	//	"new stone: " << current.newStone() << ", " << "wait action");
 	return false;
@@ -1353,7 +1435,7 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 	if(skipRepeatSay)
 	{
 	    const bool allAI = std::all_of(gamers.begin(), gamers.end(),
-	        [](const LocalPlayer & player){ return player.isAI(); });
+	        [](const LocalPlayer & player){ return GameData::usesAI(player); });
 	    return allAI ? client2Mahjong(current.avatar, ClientButtonPass(), actions) : false;
 	}
 
@@ -1386,7 +1468,7 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
     {
 	if(luckDraw)
 	{
-	    if(!current.isAI())
+	    if(!GameData::usesAI(current))
 	    {
 		actions.push_back(MahjongLuckChoice(currentWind, croupier.luckChoices()));
 		return true;
@@ -1418,13 +1500,9 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 	skipNewTurn = true;
     }
 
-    if(current.isAI())
+    if(GameData::usesAI(current))
     {
-	const WinRules & left = playerOfWind(prevWindCompass(currentWind)).rules;
-	const WinRules & right = playerOfWind(nextWindCompass(currentWind)).rules;
-	const WinRules & top = playerOfWind(oppositeWindCompass(currentWind)).rules;
-
-	AI::mahjongTurn(currentWind, current.avatar, croupier.trash, left, right, top, showGame2, showKong2, actions);
+	runAutomatedTurn(showGame2, showKong2);
     }
     else
     {
@@ -1444,7 +1522,7 @@ bool GameData::clientLuckChoice(const Avatar & avatar, const ClientMessage & act
 	return rejectAction(ActionRejectReason::WrongTurn);
     }
 
-    if(client.isAI() || client.newStone.isValid() || !croupier.hasLuckDraw())
+    if(GameData::usesAI(client) || client.newStone.isValid() || !croupier.hasLuckDraw())
     {
 	ERROR("invalid luck choice: " << client.toString());
 	return rejectAction(ActionRejectReason::StaleSelection);
@@ -1623,8 +1701,8 @@ bool GameData::clientButtonPass(const Avatar & avatar, const ClientMessage & act
 	return true;
 
 	const bool allAI = std::all_of(gamers.begin(), gamers.end(),
-	    [](const LocalPlayer & player){ return player.isAI(); });
-	if(!client.isAI() || allAI)
+	    [](const LocalPlayer & player){ return GameData::usesAI(player); });
+	if(!GameData::usesAI(client) || allAI)
 	{
 	    currentWind.shift();
 	    croupier.put(dropStone);
@@ -2186,7 +2264,7 @@ bool GameData::adventure2Client(const Avatar & avatar, ActionList & actions)
 	    landClaimJournal.clear();
 	}
 
-	if(player.isAI())
+	if(GameData::usesAI(player))
 	{
 	    actions.push_back(AdventureTurn(currentWind));
 	    AI::adventureMove(player, actions);
@@ -2603,12 +2681,12 @@ bool GameData::adventureBattleAction(const Avatar & avatar, ActionList & actions
 
             // AI avatars resolve automatically. Human attackers choose the first
             // melee actor/target, after which the same resolver completes combat.
-            const AI::BehaviorProfile attackersProfile = player.isAI() ?
+            const AI::BehaviorProfile attackersProfile = GameData::usesAI(player) ?
                 AI::behaviorProfile(player) : AI::BehaviorProfile::Balanced;
-            const AI::BehaviorProfile defendersProfile = other.isAI() ?
+            const AI::BehaviorProfile defendersProfile = GameData::usesAI(other) ?
                 AI::behaviorProfile(other) : AI::BehaviorProfile::Balanced;
 
-            if(!player.isAI())
+            if(!GameData::usesAI(player))
             {
 		pendingBattle.attacker = player.avatar;
 		pendingBattle.defender = other.avatar;

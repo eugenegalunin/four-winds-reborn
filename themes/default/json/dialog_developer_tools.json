@@ -1,0 +1,25 @@
+{
+    "size": [ 660, 620 ],
+    "font": "dejavus18",
+    "width:border": 1,
+    "color:background": "#0b0b0b",
+    "color:border": "#a88b4d",
+    "color:header": "#ead7a4",
+    "color:text": "#d9c9a7",
+
+    "entry:autoplay": [ 40, 88, 580, 68 ],
+    "entry:phase": [ 40, 166, 580, 68 ],
+    "entry:round": [ 40, 244, 580, 68 ],
+    "entry:game": [ 40, 322, 580, 68 ],
+    "entry:copy": [ 40, 400, 580, 68 ],
+    "entry:cancel": [ 40, 478, 580, 58 ],
+
+    "font:title": "dejavus26",
+    "font:entry": "dejavus20",
+    "font:small": "dejavus14",
+    "color:item": "#11100e",
+    "color:item_selected": "#2b2115",
+    "color:item_border": "#4c4130",
+    "color:selected_border": "#d0aa5d",
+    "color:muted": "#857b69"
+}
