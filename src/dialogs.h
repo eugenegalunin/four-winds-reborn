@@ -24,6 +24,7 @@
 #define _RWNA_DIALOGS_
 
 #include <functional>
+#include <vector>
 
 #include "gamedata.h"
 
@@ -55,27 +56,49 @@ public:
     ~DialogWindow() {}
 };
 
-class TextScroll : public ScrollBar
+class TextAreaScroll : public Window
 {
+    struct TextLine
+    {
+	Texture		texture;
+	int		offsetX;
+	int		height;
+    };
+
+    std::vector<TextLine>	lines;
+    int			contentWidth;
+    int			firstLine;
+    int			scrollWidth;
+    int			minimumCursorHeight;
+
+	Color			backgroundColor;
     Color		colorRect;
     Color		colorFill;
+    Color		cursorRect;
+    Color		cursorFill;
+
+    int			lastFirstLine(void) const;
+    int			totalTextHeight(void) const;
+    void			appendLine(const FontRender &, const UCString &, int);
+    void			setFirstLine(int);
+
+protected:
+    bool		scrollUpEvent(void) override;
+    bool		scrollDownEvent(void) override;
+    bool		mouseClickEvent(const ButtonsEvent &) override;
 
 public:
-    TextScroll(const JsonObject &, ListWidget &);
-
-    Rect		scrollArea(void) const override;
-    void		renderWindow(void) override;
-};
-
-class TextAreaScroll : public TextArea
-{
-    TextScroll		textScroll;
-
-public:
-    TextAreaScroll(const JsonObject & jo, Window & win) : TextArea(& win), textScroll(jo, *this) {}
+    TextAreaScroll(const JsonObject &, Window &);
 
     void		setPositionSize(int, int, int, int);
-    void		itemClicked(ListWidgetItem*, int buttons) override;
+    void		clear(void);
+
+    TextAreaScroll &	appendString(const FontRender &, const UnicodeString &, const Color &,
+				     int halign = AlignLeft, bool wrap = false);
+    TextAreaScroll &	appendString(const FontRender &, const UCString &,
+				     int halign = AlignLeft, bool wrap = false);
+
+    void		renderWindow(void) override;
 };
 
 class CreatureInfoDialog : public DialogWindow

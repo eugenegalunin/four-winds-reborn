@@ -11,6 +11,23 @@ so that commit, rather than GitHub fork metadata, is the comparison baseline.
 The project retains the original credits and license. Entries below describe
 Reborn work only; they do not claim authorship of inherited code or assets.
 
+## [Unreleased]
+
+### Fixed - UI
+
+- Replaced the legacy per-line scene widgets used by scrollable dialog text
+  with a self-contained wrapped-text renderer. Repeatedly opening creature,
+  spell or avatar information no longer revives stale rows from earlier
+  dialogs or stacks descriptions on top of one another.
+- Reserved every wrapped row from the font's line metrics, preventing a
+  missing or undersized rendered texture from collapsing subsequent rows.
+- Cleared the scrollable text surface before every redraw. Moving through a long
+  description can no longer leave glyphs from the previous scroll position
+  underneath the current lines.
+- Fixed SWE's transparent render-target initialization. Full texture clears
+  now temporarily disable alpha blending, preventing newly allocated text
+  textures from inheriting fragments of previously freed GPU content.
+
 ## [0.1.0] - 2026-07-17
 
 First SemVer release candidate. This is the cumulative player-facing release
