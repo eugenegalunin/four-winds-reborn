@@ -785,6 +785,41 @@ void testDeveloperFastForward()
            GameData::authoritativeState().getObject("battleSession") != nullptr &&
            GameData::currentPerson().avatar == human,
            "developer battle fixture must open manual combat directly from the Rune Game");
+
+    GameplayRng::seed(UINT64_C(0x15d161));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer final Rune fixture must initialize a base game");
+    const DeveloperTools::FastForwardResult finalRuneResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinalRuneFixture, human);
+    const JsonObject finalRuneState = GameData::authoritativeState();
+    std::string finalRuneValidationError;
+    expect(finalRuneResult.success && finalRuneResult.menu == Menu::MahjongPart &&
+           finalRuneState.getString("wind:round") == "north" &&
+           finalRuneState.getString("wind:part") == "north" &&
+           finalRuneState.getBoolean("developerAssisted") &&
+           Recovery::validateSaveState(finalRuneState, &finalRuneValidationError),
+           "developer final Rune fixture must deal a valid last hand");
+
+    GameplayRng::seed(UINT64_C(0x15d162));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer final Adventure fixture must initialize a base game");
+    const DeveloperTools::FastForwardResult finalAdventureResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinalAdventureFixture, human);
+    const JsonObject finalAdventureState = GameData::authoritativeState();
+    std::string finalAdventureValidationError;
+    expect(finalAdventureResult.success && finalAdventureResult.menu == Menu::AdventurePart &&
+           finalAdventureState.getString("wind:round") == "north" &&
+           finalAdventureState.getString("wind:part") == "north" &&
+           Recovery::validateSaveState(finalAdventureState, &finalAdventureValidationError),
+           "developer final Adventure fixture must open a valid last map phase");
+
+    const DeveloperTools::FastForwardResult finalScoreResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinishGame, human);
+    expect(finalScoreResult.success && finalScoreResult.menu == Menu::GameSummaryPart &&
+           0 < finalScoreResult.ticks,
+           "developer final Adventure fixture must legally reach final scoring");
 }
 #endif
 

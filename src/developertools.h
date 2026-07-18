@@ -17,6 +17,8 @@ namespace DeveloperTools
         FinishPhase,
         NextAdventure,
         BattleFixture,
+        FinalRuneFixture,
+        FinalAdventureFixture,
         FinishRound,
         FinishGame
     };

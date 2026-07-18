@@ -161,6 +161,14 @@ public:
             JsonUnpack::rect(jobject, "entry:battle"),
             DeveloperTools::Command::BattleFixture });
         entries.push_back(DeveloperEntry{
+            _("Final Rune Game"), _("Deal the last hand of the North round"),
+            JsonUnpack::rect(jobject, "entry:final_rune"),
+            DeveloperTools::Command::FinalRuneFixture });
+        entries.push_back(DeveloperEntry{
+            _("Final Adventure Phase"), _("Open the last map phase before final scoring"),
+            JsonUnpack::rect(jobject, "entry:final_adventure"),
+            DeveloperTools::Command::FinalAdventureFixture });
+        entries.push_back(DeveloperEntry{
             _("Finish Current Round"), _("Run legal turns and stop at the next Rune Game"),
             JsonUnpack::rect(jobject, "entry:round"),
             DeveloperTools::Command::FinishRound });
@@ -318,7 +326,8 @@ DeveloperTools::FastForwardResult DeveloperTools::fastForward(Command command,
     FastForwardResult result;
     result.menu = GameData::loadedGamePart();
     if(command != Command::FinishPhase && command != Command::NextAdventure &&
-       command != Command::BattleFixture && command != Command::FinishRound &&
+       command != Command::BattleFixture && command != Command::FinalRuneFixture &&
+       command != Command::FinalAdventureFixture && command != Command::FinishRound &&
        command != Command::FinishGame)
     {
         result.error = "no fast-forward target selected";
@@ -334,6 +343,22 @@ DeveloperTools::FastForwardResult DeveloperTools::fastForward(Command command,
         {
             GameData::restoreState(initialState);
             if(result.error.empty()) result.error = "unable to create developer battle fixture";
+        }
+        result.menu = GameData::loadedGamePart();
+        result.ticks = result.success ? 1 : 0;
+        return result;
+    }
+
+    if(command == Command::FinalRuneFixture || command == Command::FinalAdventureFixture)
+    {
+        const JsonObject initialState = GameData::authoritativeState();
+        result.success = command == Command::FinalRuneFixture ?
+            GameData::initDeveloperFinalRuneFixture(avatar, &result.error) :
+            GameData::initDeveloperFinalAdventureFixture(avatar, &result.error);
+        if(!result.success)
+        {
+            GameData::restoreState(initialState);
+            if(result.error.empty()) result.error = "unable to create developer near-end fixture";
         }
         result.menu = GameData::loadedGamePart();
         result.ticks = result.success ? 1 : 0;

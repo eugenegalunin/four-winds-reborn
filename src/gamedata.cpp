@@ -2829,4 +2829,59 @@ bool GameData::initDeveloperBattleFixture(const Avatar & avatar, ActionList & ac
         .append(battlefield.toString()));
     return true;
 }
+
+namespace
+{
+bool prepareDeveloperNearEndFixture(const Avatar & avatar, bool adventure,
+                                    std::string* error)
+{
+    const auto fail = [error](const char* message)
+    {
+        if(error) *error = message;
+        return false;
+    };
+
+    auto human = std::find_if(GameData::gamers.begin(), GameData::gamers.end(),
+        [&avatar](const LocalPlayer & player)
+        {
+            return player.avatar == avatar;
+        });
+    if(human == GameData::gamers.end())
+        return fail("developer near-end fixture could not find the human player");
+
+    human->setAI(false);
+    GameData::roundWind = Wind(Wind::North);
+    GameData::partWind = Wind(adventure ? Wind::North : Wind::West);
+
+    const bool initialized = adventure ? GameData::initAdventure() : GameData::initMahjong();
+    if(!initialized)
+        return fail(adventure ? "developer fixture could not initialize final Adventure" :
+                                "developer fixture could not initialize final Rune Game");
+
+    GameData::developerAutoplayAvatar = Avatar();
+    GameData::assistedByDeveloper = true;
+
+    std::string validationError;
+    if(!Recovery::validateSaveState(GameData::authoritativeState(), &validationError))
+    {
+        if(error) *error = std::string("developer near-end fixture is invalid: ") + validationError;
+        return false;
+    }
+
+    CrashReport::breadcrumb(std::string("Developer near-end fixture phase=")
+        .append(adventure ? "final_adventure" : "final_rune")
+        .append(" avatar=").append(avatar.toString()));
+    return true;
+}
+}
+
+bool GameData::initDeveloperFinalRuneFixture(const Avatar & avatar, std::string* error)
+{
+    return prepareDeveloperNearEndFixture(avatar, false, error);
+}
+
+bool GameData::initDeveloperFinalAdventureFixture(const Avatar & avatar, std::string* error)
+{
+    return prepareDeveloperNearEndFixture(avatar, true, error);
+}
 #endif

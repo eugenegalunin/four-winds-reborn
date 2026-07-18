@@ -351,6 +351,10 @@ namespace GameData
     void                        setDeveloperAutoplay(const Avatar &, bool);
     bool                        initDeveloperBattleFixture(const Avatar &, ActionList &,
                                                            std::string* error = nullptr);
+    bool                        initDeveloperFinalRuneFixture(const Avatar &,
+                                                              std::string* error = nullptr);
+    bool                        initDeveloperFinalAdventureFixture(const Avatar &,
+                                                                   std::string* error = nullptr);
 #endif
 
     bool			saveGame(const JsonObject &);

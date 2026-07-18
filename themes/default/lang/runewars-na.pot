@@ -3097,6 +3097,22 @@ msgid "Create balanced armies and stop at manual combat"
 msgstr ""
 
 #: src/developertools.cpp
+msgid "Final Rune Game"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Deal the last hand of the North round"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Final Adventure Phase"
+msgstr ""
+
+#: src/developertools.cpp
+msgid "Open the last map phase before final scoring"
+msgstr ""
+
+#: src/developertools.cpp
 msgid "Finish Current Round"
 msgstr ""
 
