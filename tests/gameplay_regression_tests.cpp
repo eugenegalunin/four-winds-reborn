@@ -21,6 +21,7 @@
 #endif
 #include "gameplayrng.h"
 #include "gametheme.h"
+#include "gamesummarypart.h"
 #include "intropart.h"
 #include "recovery.h"
 #include "replay.h"
@@ -3094,6 +3095,22 @@ int runCapturedLightningRepro(const char* savePath)
     return 0;
 }
 
+void testGameSummaryInputGuard()
+{
+    using namespace GameSummaryInput;
+
+    expect(!blocksScorePageDone(0, 1000),
+           "score-page input guard must be inactive until the summary is opened");
+    expect(blocksScorePageDone(1000, 1000),
+           "score-page input guard must block the transition event itself");
+    expect(blocksScorePageDone(1000, 1000 + ScorePageGuardMilliseconds - 1),
+           "score-page input guard must remain active through its final millisecond");
+    expect(!blocksScorePageDone(1000, 1000 + ScorePageGuardMilliseconds),
+           "score-page input guard must release normal input at the boundary");
+    expect(!blocksScorePageDone(1000, 999),
+           "score-page input guard must tolerate a non-monotonic test timestamp");
+}
+
 void testMatchScoreContract()
 {
     std::vector<MatchScore::PlayerInput> inputs(4);
@@ -3121,8 +3138,15 @@ void testMatchScoreContract()
     expect(scores[0].finalRank == 1 && scores[1].finalRank == 2 &&
            scores[2].finalRank == 2 && scores[3].finalRank == 4,
            "final ties must retain shared competition rank");
+    expect(MatchScore::winnerIndices(scores) == std::vector<std::size_t>({ 0 }),
+           "winner selection must return the sole first-place player");
     expect(scores[3].categories[MatchScore::index(MatchScore::Category::SpellPoints)].score == 0,
            "negative resource values must not reduce canonical score");
+
+    inputs[1].scores = inputs[0].scores;
+    const MatchScore::Results tiedScores = MatchScore::calculate(inputs);
+    expect(MatchScore::winnerIndices(tiedScores) == std::vector<std::size_t>({ 0, 1 }),
+           "winner selection must preserve every tied first-place player");
 }
 
 void configureSimulationBonuses()
@@ -4107,6 +4131,7 @@ int main(int argc, char** argv)
     testDeveloperFastForward();
 #endif
     testActionReplay();
+    testGameSummaryInputGuard();
     testMatchScoreContract();
     testTournamentContract();
 

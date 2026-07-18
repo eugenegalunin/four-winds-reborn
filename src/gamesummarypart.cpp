@@ -21,6 +21,8 @@
  ***************************************************************************/
 
 #include <algorithm>
+#include <chrono>
+#include <string>
 
 #include "settings.h"
 #include "actions.h"
@@ -28,7 +30,19 @@
 #include "gamesummarypart.h"
 #include "matchscore.h"
 
-GameSummaryScreen::GameSummaryScreen() : JsonWindow("screen_game_summary.json", nullptr)
+namespace
+{
+    std::uint64_t monotonicMilliseconds(void)
+    {
+        using namespace std::chrono;
+        return static_cast<std::uint64_t>(duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count());
+    }
+}
+
+GameSummaryScreen::GameSummaryScreen() : JsonWindow("screen_game_summary.json", nullptr),
+    buttonNext(nullptr), scores(MatchScore::current()),
+    winners(MatchScore::winnerIndices(scores)), winnerPage(0), page(Page::Victory),
+    scoresOpenedAtMilliseconds(0)
 {
     labels.push_back(GameTheme::jsonTextInfo(jobject, "textinfo:category"));
     labels.back().text = _("Category");
@@ -82,8 +96,6 @@ GameSummaryScreen::GameSummaryScreen() : JsonWindow("screen_game_summary.json", 
         "textinfo:rank1", "textinfo:rank2", "textinfo:rank3", "textinfo:rank4"
     };
     const std::array<int, MatchScore::CategoryCount> rowY = { 286, 320, 374, 410, 446 };
-    const MatchScore::Results scores = MatchScore::current();
-
     for(std::size_t playerIndex = 0;
         playerIndex < scores.size() && playerIndex < scoreKeys.size(); ++playerIndex)
     {
@@ -96,6 +108,8 @@ GameSummaryScreen::GameSummaryScreen() : JsonWindow("screen_game_summary.json", 
         playerName.position.y = 215;
         playerName.font = "dejavus22";
         playerName.text = player.person.name();
+        if(player.finalRank == 1)
+            playerName.color = GameTheme::jsonColor(jobject, "color:winner");
         values.push_back(playerName);
 
         for(std::size_t category = 0; category < MatchScore::CategoryCount; ++category)
@@ -117,25 +131,183 @@ GameSummaryScreen::GameSummaryScreen() : JsonWindow("screen_game_summary.json", 
         totalValue.position.y = 638;
         totalValue.font = "dejavus26";
         totalValue.text = String::number(player.totalScore);
-        values.push_back(totalValue);
 
         JsonTextInfo finalRank = rankTemplate;
         finalRank.position.y = 638;
         finalRank.font = "dejavus26";
         finalRank.text = String::number(player.finalRank);
+        if(player.finalRank == 1)
+        {
+            totalValue.color = GameTheme::jsonColor(jobject, "color:winner");
+            finalRank.color = GameTheme::jsonColor(jobject, "color:winner");
+        }
+        values.push_back(totalValue);
         values.push_back(finalRank);
+    }
+
+    summaryTitle = GameTheme::jsonTextInfo(jobject, "textinfo:summary_title");
+    summaryTitle.text = winners.size() > 1 ? _("JOINT VICTORY") : _("VICTORY");
+    summaryWinners = GameTheme::jsonTextInfo(jobject, "textinfo:summary_winners");
+    summaryWinners.text = winnerNames();
+    if(winners.size() > 2)
+        summaryWinners.font = "dejavus20";
+    summaryDetails = GameTheme::jsonTextInfo(jobject, "textinfo:summary_details");
+    if(!winners.empty() && winners.front() < scores.size())
+        summaryDetails.text = StringFormat(_("Final score: %1")).arg(scores[winners.front()].totalScore);
+    summaryPortraitArea = GameTheme::jsonRect(jobject, "area:summary_portraits");
+    summaryWinnerArea = GameTheme::jsonRect(jobject, "area:summary_winner");
+
+    victoryPanel = GameTheme::jsonRect(jobject, "area:victory_panel");
+    victoryPanelColor = GameTheme::jsonColor(jobject, "color:victory_panel");
+    victoryPanelColor.setA(jobject.getInteger("alpha:victory_panel", 224));
+    victoryBorderColor = GameTheme::jsonColor(jobject, "color:victory_border");
+    victoryTitle = GameTheme::jsonTextInfo(jobject, "textinfo:victory_title");
+    victoryName = GameTheme::jsonTextInfo(jobject, "textinfo:victory_name");
+    victoryDetails = GameTheme::jsonTextInfo(jobject, "textinfo:victory_details");
+    victoryWinners = GameTheme::jsonTextInfo(jobject, "textinfo:victory_winners");
+    victoryHint = GameTheme::jsonTextInfo(jobject, "textinfo:victory_hint");
+
+    if(!winners.empty())
+    {
+        const int portraitGap = 8;
+        const int portraitCount = static_cast<int>(std::min<std::size_t>(winners.size(), 4));
+        const int portraitSize = std::min(summaryPortraitArea.h - 12,
+            (summaryPortraitArea.w - portraitGap * (portraitCount + 1)) / portraitCount);
+
+        for(int index = 0; index < portraitCount; ++index)
+        {
+            const std::size_t winnerIndex = winners[index];
+            if(winnerIndex >= scores.size()) continue;
+            const AvatarInfo & avatarInfo = GameData::avatarInfo(scores[winnerIndex].person.avatar);
+            const Texture & portrait = GameTheme::texture(avatarInfo.portrait);
+            if(portrait.isValid())
+                summaryPortraits.emplace_back(Texture::scale(portrait,
+                    Size(portraitSize, portraitSize), true));
+        }
     }
 
     buttonNext = buttons.findIds("but_done");
     if(buttonNext)
         buttonNext->setAction(Action::ButtonDone);
 
+    if(winners.empty())
+        page = Page::Scores;
+    else
+        updateVictoryPage();
+
+    buttons.setVisible(page == Page::Scores);
+
     setVisible(true);
+}
+
+std::string GameSummaryScreen::winnerNames(void) const
+{
+    std::string names;
+    for(const std::size_t index : winners)
+    {
+        if(index >= scores.size()) continue;
+        if(!names.empty()) names += ", ";
+        names += scores[index].person.name();
+    }
+    return names;
+}
+
+void GameSummaryScreen::updateVictoryPage(void)
+{
+    if(winnerPage >= winners.size() || winners[winnerPage] >= scores.size())
+    {
+        page = Page::Scores;
+        buttons.setVisible(true);
+        return;
+    }
+
+    const MatchScore::PlayerResult & winner = scores[winners[winnerPage]];
+    const int gloatIndex = winner.person.avatar.id() - Avatar::Orachi;
+    if(gloatIndex < 0 || 8 < gloatIndex)
+    {
+        page = Page::Scores;
+        buttons.setVisible(true);
+        return;
+    }
+
+    victoryArt = GameTheme::texture("gloat" + std::to_string(gloatIndex));
+    if(!victoryArt.isValid())
+    {
+        page = Page::Scores;
+        buttons.setVisible(true);
+        return;
+    }
+    victoryTitle.text = winners.size() > 1 ? _("JOINT VICTORY") : _("VICTORY");
+    victoryName.text = winner.person.name();
+    victoryDetails.text = StringFormat(_("Final score: %1")).arg(winner.totalScore);
+    victoryWinners.text = winners.size() > 1 ?
+        StringFormat(_("Winners: %1")).arg(winnerNames()) : std::string();
+    victoryHint.text = winnerPage + 1 < winners.size() ?
+        _("CLICK / ENTER: NEXT WINNER") : _("CLICK / ENTER: DETAILED SCORES");
+}
+
+void GameSummaryScreen::advanceVictoryPage(void)
+{
+    if(page != Page::Victory) return;
+
+    if(winnerPage + 1 < winners.size())
+    {
+        ++winnerPage;
+        updateVictoryPage();
+    }
+    else
+    {
+        page = Page::Scores;
+        scoresOpenedAtMilliseconds = monotonicMilliseconds();
+        buttons.setVisible(true);
+    }
+
+    renderWindow();
 }
 
 void GameSummaryScreen::renderWindow(void)
 {
+    if(page == Page::Victory)
+    {
+        renderTexture(victoryArt);
+        renderColor(victoryPanelColor, victoryPanel);
+        renderRect(victoryBorderColor, victoryPanel);
+        renderTextInfo(victoryTitle);
+        renderTextInfo(victoryName);
+        renderTextInfo(victoryDetails);
+        if(!victoryWinners.text.empty()) renderTextInfo(victoryWinners);
+        renderTextInfo(victoryHint);
+        return;
+    }
+
     JsonWindow::renderWindow();
+
+    if(!winners.empty())
+    {
+        renderColor(victoryPanelColor, summaryPortraitArea);
+        renderRect(victoryBorderColor, summaryPortraitArea);
+        renderColor(victoryPanelColor, summaryWinnerArea);
+        renderRect(victoryBorderColor, summaryWinnerArea);
+
+        const int portraitGap = 8;
+        int portraitsWidth = 0;
+        for(const Texture & portrait : summaryPortraits)
+            portraitsWidth += portrait.width();
+        if(1 < summaryPortraits.size())
+            portraitsWidth += portraitGap * (static_cast<int>(summaryPortraits.size()) - 1);
+
+        int portraitX = summaryPortraitArea.x + (summaryPortraitArea.w - portraitsWidth) / 2;
+        for(const Texture & portrait : summaryPortraits)
+        {
+            const int portraitY = summaryPortraitArea.y + (summaryPortraitArea.h - portrait.height()) / 2;
+            renderTexture(portrait, Point(portraitX, portraitY));
+            portraitX += portrait.width() + portraitGap;
+        }
+
+        renderTextInfo(summaryTitle);
+        renderTextInfo(summaryWinners);
+        renderTextInfo(summaryDetails);
+    }
 
     for(auto & label : labels)
 	renderTextInfo(label);
@@ -148,7 +320,13 @@ bool GameSummaryScreen::keyPressEvent(const KeySym & key)
 {
     switch(key.keycode())
     {
+        case Key::RETURN:
         case Key::SPACE:
+            if(page == Page::Victory)
+            {
+                advanceVictoryPage();
+                return true;
+            }
             pushEventAction(Action::ButtonDone, this, nullptr);
             return true;
 
@@ -158,11 +336,25 @@ bool GameSummaryScreen::keyPressEvent(const KeySym & key)
     return false;
 }
 
+bool GameSummaryScreen::mouseClickEvent(const ButtonsEvent & event)
+{
+    if(page != Page::Victory || !event.isButtonLeft()) return false;
+    advanceVictoryPage();
+    return true;
+}
+
 bool GameSummaryScreen::userEvent(int act, void* data)
 {
     switch(act)
     {
         case Action::ButtonDone:
+            // A mouse-up that advances the victory page may also reach the newly
+            // revealed Done button during the same event dispatch.  Do not let
+            // that transition click immediately close the detailed scores.
+            if(page == Page::Scores && GameSummaryInput::blocksScorePageDone(
+                scoresOpenedAtMilliseconds, monotonicMilliseconds()))
+                break;
+
             setResultCode(Menu::MainMenu);
             setVisible(false);
             break;

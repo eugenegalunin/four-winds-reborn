@@ -3125,3 +3125,27 @@ msgstr "ИНСТРУМЕНТЫ РАЗРАБОТЧИКА"
 #: src/adventurepart.cpp src/mahjongpart.cpp
 msgid "Developer Tools"
 msgstr "Инструменты разработчика"
+
+#: src/gamesummarypart.cpp
+msgid "VICTORY"
+msgstr "ПОБЕДА"
+
+#: src/gamesummarypart.cpp
+msgid "JOINT VICTORY"
+msgstr "СОВМЕСТНАЯ ПОБЕДА"
+
+#: src/gamesummarypart.cpp
+msgid "Final score: %1"
+msgstr "Итоговый счёт: %1"
+
+#: src/gamesummarypart.cpp
+msgid "Winners: %1"
+msgstr "Победители: %1"
+
+#: src/gamesummarypart.cpp
+msgid "CLICK / ENTER: NEXT WINNER"
+msgstr "КЛИК / ENTER: СЛЕДУЮЩИЙ ПОБЕДИТЕЛЬ"
+
+#: src/gamesummarypart.cpp
+msgid "CLICK / ENTER: DETAILED SCORES"
+msgstr "КЛИК / ENTER: ПОДРОБНЫЙ СЧЁТ"

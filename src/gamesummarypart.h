@@ -23,16 +23,61 @@
 #ifndef _RWNA_GAMESUMMARYPART_
 #define _RWNA_GAMESUMMARYPART_
 
+#include <cstdint>
+
 #include "gamedata.h"
+#include "matchscore.h"
+
+namespace GameSummaryInput
+{
+    constexpr std::uint64_t ScorePageGuardMilliseconds = 350;
+
+    inline bool blocksScorePageDone(std::uint64_t openedAt, std::uint64_t now)
+    {
+        return openedAt != 0 && openedAt <= now &&
+               now - openedAt < ScorePageGuardMilliseconds;
+    }
+}
 
 class GameSummaryScreen : public JsonWindow
 {
+    enum class Page
+    {
+        Victory,
+        Scores
+    };
+
     std::list<JsonTextInfo> labels;
     std::list<JsonTextInfo> values;
     JsonButton*         buttonNext;
+    MatchScore::Results scores;
+    std::vector<std::size_t> winners;
+    std::size_t         winnerPage;
+    Page                page;
+    std::uint64_t       scoresOpenedAtMilliseconds;
+    Texture             victoryArt;
+    Rect                victoryPanel;
+    Color               victoryPanelColor;
+    Color               victoryBorderColor;
+    JsonTextInfo        victoryTitle;
+    JsonTextInfo        victoryName;
+    JsonTextInfo        victoryDetails;
+    JsonTextInfo        victoryWinners;
+    JsonTextInfo        victoryHint;
+    Rect                summaryPortraitArea;
+    Rect                summaryWinnerArea;
+    std::vector<Texture> summaryPortraits;
+    JsonTextInfo        summaryTitle;
+    JsonTextInfo        summaryWinners;
+    JsonTextInfo        summaryDetails;
+
+    void                updateVictoryPage(void);
+    void                advanceVictoryPage(void);
+    std::string         winnerNames(void) const;
 
 protected:
-    bool		keyPressEvent(const KeySym &) override;
+    bool                keyPressEvent(const KeySym &) override;
+    bool                mouseClickEvent(const ButtonsEvent &) override;
     bool		userEvent(int, void*) override;
 
 public:

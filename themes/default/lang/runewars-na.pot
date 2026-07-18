@@ -3111,3 +3111,27 @@ msgstr ""
 #: src/adventurepart.cpp src/mahjongpart.cpp
 msgid "Developer Tools"
 msgstr ""
+
+#: src/gamesummarypart.cpp
+msgid "VICTORY"
+msgstr ""
+
+#: src/gamesummarypart.cpp
+msgid "JOINT VICTORY"
+msgstr ""
+
+#: src/gamesummarypart.cpp
+msgid "Final score: %1"
+msgstr ""
+
+#: src/gamesummarypart.cpp
+msgid "Winners: %1"
+msgstr ""
+
+#: src/gamesummarypart.cpp
+msgid "CLICK / ENTER: NEXT WINNER"
+msgstr ""
+
+#: src/gamesummarypart.cpp
+msgid "CLICK / ENTER: DETAILED SCORES"
+msgstr ""

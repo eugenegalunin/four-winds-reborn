@@ -99,3 +99,15 @@ MatchScore::Results MatchScore::current(void)
 
     return calculate(inputs);
 }
+
+std::vector<std::size_t> MatchScore::winnerIndices(const Results & results)
+{
+    std::vector<std::size_t> winners;
+    for(std::size_t index = 0; index < results.size(); ++index)
+    {
+        if(results[index].finalRank == 1)
+            winners.push_back(index);
+    }
+
+    return winners;
+}

@@ -52,6 +52,7 @@ namespace MatchScore
     PlayerInput observe(const RemotePlayer &);
     Results calculate(const std::vector<PlayerInput> &);
     Results current(void);
+    std::vector<std::size_t> winnerIndices(const Results &);
 }
 
 #endif
