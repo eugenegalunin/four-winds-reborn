@@ -2806,25 +2806,40 @@ int runWindowsCrashReportSelfTest(const char* executable)
     CloseHandle(process.hThread);
     CloseHandle(process.hProcess);
 
+    constexpr int captureAttemptsMaximum = 40;
+    constexpr DWORD captureRetryDelayMs = 50;
     bool dumpFound = false;
-    for(const auto & entry : std::filesystem::directory_iterator(directory, error))
-    {
-        if(entry.path().extension() == ".dmp" && entry.file_size(error) > 0)
-            dumpFound = true;
-    }
-
+    bool reportValid = false;
+    int captureAttempts = 0;
     std::string report;
-    const bool reportValid = Systems::readFile2String(
-        (directory / "crash-report.log").string(), report) &&
-        report.find("[FATAL WINDOWS EXCEPTION]") != std::string::npos &&
-        report.find("code=0xC0000005") != std::string::npos &&
-        report.find("status=written") != std::string::npos;
+    for(; captureAttempts < captureAttemptsMaximum; ++captureAttempts)
+    {
+        dumpFound = false;
+        error.clear();
+        for(const auto & entry : std::filesystem::directory_iterator(directory, error))
+        {
+            if(entry.path().extension() == ".dmp" && entry.file_size(error) > 0)
+                dumpFound = true;
+        }
+
+        report.clear();
+        reportValid = Systems::readFile2String(
+            (directory / "crash-report.log").string(), report) &&
+            report.find("[FATAL WINDOWS EXCEPTION]") != std::string::npos &&
+            report.find("code=0xC0000005") != std::string::npos &&
+            report.find("status=written") != std::string::npos;
+
+        if(dumpFound && reportValid) break;
+        if(captureAttempts + 1 < captureAttemptsMaximum) Sleep(captureRetryDelayMs);
+    }
 
     if(waitResult != WAIT_OBJECT_0 || exitCode == 0 || !dumpFound || !reportValid)
     {
         std::cerr << "FAIL: Windows native crash capture is incomplete"
                   << ", wait=" << waitResult << ", exit=" << exitCode
-                  << ", dump=" << dumpFound << ", report=" << reportValid << '\n';
+                  << ", dump=" << dumpFound << ", report=" << reportValid
+                  << ", attempts=" << std::min(captureAttempts + 1, captureAttemptsMaximum)
+                  << ", report_bytes=" << report.size() << '\n';
         return 1;
     }
 
