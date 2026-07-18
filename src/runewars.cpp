@@ -30,6 +30,7 @@
 #include "intropart.h"
 #include "mainmenu.h"
 #include "settingsmenu.h"
+#include "encyclopedia.h"
 #include "loadrecovery.h"
 #include "recovery.h"
 #include "savegames.h"
@@ -160,6 +161,7 @@ const char* menuName(int menu)
         case Menu::GameLoadPart: return "GameLoad";
         case Menu::LoadRecovery: return "LoadRecovery";
         case Menu::SettingsMenu: return "Settings";
+        case Menu::Encyclopedia: return "Encyclopedia";
         default: return "Unknown";
     }
 }
@@ -436,6 +438,10 @@ bool RuneWarsClient::exec(void)
 		    }
 		}
 	    }
+	    break;
+
+	    case Menu::Encyclopedia:
+		menu = EncyclopediaScreen().exec();
 	    break;
 
 	    case Menu::SelectPerson:

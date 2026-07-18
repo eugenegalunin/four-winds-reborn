@@ -89,6 +89,7 @@ set(FOUR_WINDS_SOURCE
     src/runewars.cpp
     src/intropart.cpp
     src/mainmenu.cpp
+    src/encyclopedia.cpp
     src/settingsmenu.cpp
     src/loadrecovery.cpp
     src/gametheme.cpp

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gettext
 import json
 import sys
 from collections import Counter, defaultdict
@@ -224,11 +225,87 @@ class ThemeValidator:
         elif value < minimum:
             self.error(path, f"{record_id}.{field} must be at least {minimum}, got {value}")
 
+    def validate_encyclopedia(self, theme: Path) -> None:
+        path = theme / "json" / "encyclopedia.json"
+        encoded = self.document(path, dict)
+        if encoded is None:
+            return
+
+        source = encoded.get("source")
+        if not isinstance(source, dict) or not source.get("url"):
+            self.error(path, "source provenance must include a URL")
+
+        categories = encoded.get("categories")
+        if not isinstance(categories, list) or not categories:
+            self.error(path, "categories must be a non-empty array")
+            return
+
+        category_ids: list[str] = []
+        entry_ids: defaultdict[str, set[str]] = defaultdict(set)
+        article_count = 0
+        for category_no, category in enumerate(categories):
+            where = f"categories[{category_no}]"
+            if not isinstance(category, dict):
+                self.error(path, f"{where} must be an object")
+                continue
+            category_id = category.get("id")
+            if not isinstance(category_id, str) or not category_id:
+                self.error(path, f"{where} has no id")
+            else:
+                category_ids.append(category_id)
+            for field in ("title_en", "title_ru"):
+                if not isinstance(category.get(field), str) or not category[field].strip():
+                    self.error(path, f"{where}.{field} must be non-empty")
+            if "show_in_game" in category and not isinstance(category["show_in_game"], bool):
+                self.error(path, f"{where}.show_in_game must be true or false")
+
+            entries = category.get("entries")
+            if not isinstance(entries, list) or not entries:
+                self.error(path, f"{where}.entries must be a non-empty array")
+                continue
+            article_count += len(entries)
+            for entry_no, entry in enumerate(entries):
+                entry_where = f"{where}.entries[{entry_no}]"
+                if not isinstance(entry, dict):
+                    self.error(path, f"{entry_where} must be an object")
+                    continue
+                entry_id = entry.get("id")
+                if entry_id is not None:
+                    if not isinstance(entry_id, str) or not entry_id:
+                        self.error(path, f"{entry_where}.id must be a non-empty string")
+                    elif isinstance(category_id, str):
+                        entry_ids[category_id].add(entry_id)
+                for field in ("title_en", "title_ru", "subtitle_en", "subtitle_ru", "source_url"):
+                    if not isinstance(entry.get(field), str) or not entry[field].strip():
+                        self.error(path, f"{entry_where}.{field} must be non-empty")
+                for field in ("body_en", "body_ru"):
+                    paragraphs = entry.get(field)
+                    if not isinstance(paragraphs, list) or not paragraphs or not all(
+                        isinstance(paragraph, str) and paragraph.strip() for paragraph in paragraphs
+                    ):
+                        self.error(path, f"{entry_where}.{field} must contain non-empty paragraphs")
+
+        duplicates = sorted(name for name, count in Counter(category_ids).items() if count > 1)
+        if duplicates:
+            self.error(path, f"duplicate encyclopedia category ids: {', '.join(duplicates)}")
+        required = {"chronicle", "clans", "guide", "rules", "legacy"}
+        missing = sorted(required.difference(category_ids))
+        if missing:
+            self.error(path, f"missing encyclopedia categories: {', '.join(missing)}")
+        if article_count < 15:
+            self.error(path, "encyclopedia archive corpus is unexpectedly incomplete")
+        required_guides = {"campaign_flow", "creature_stats", "battle_guide", "battle_controls"}
+        missing_guides = sorted(required_guides.difference(entry_ids["guide"]))
+        if missing_guides:
+            self.error(path, f"missing player guide articles: {', '.join(missing_guides)}")
+
     def validate_theme(self, theme: Path) -> None:
         index_path = theme / "index.json"
         index = self.document(index_path, dict)
         if index is None:
             return
+
+        self.validate_encyclopedia(theme)
 
         data_root = theme / "json" / "gamedata"
         paths = {name: data_root / f"{name}.json" for name in {
@@ -420,6 +497,25 @@ class ThemeValidator:
                 self.error(creature_path, f"{speciality} grantor '{grantors[0]}' must be a unique creature")
 
         if theme.name == "default":
+            russian_catalog_path = theme / "lang" / "ru.mo"
+            try:
+                with russian_catalog_path.open("rb") as source:
+                    russian_catalog = gettext.GNUTranslations(source)
+            except (OSError, UnicodeError) as error:
+                self.error(russian_catalog_path, f"cannot load Russian gettext catalog: {error}")
+                russian_catalog = None
+
+            if russian_catalog is not None:
+                for table_name in ("avatars", "creatures", "spells", "specials", "abilities"):
+                    table_path = paths[table_name]
+                    for record_id, record in tables[table_name].items():
+                        description = record.get("description")
+                        if isinstance(description, str) and description and russian_catalog.gettext(description) == description:
+                            self.error(
+                                table_path,
+                                f"{record_id}.description has no exact Russian runtime translation",
+                            )
+
             intro_path = theme / "json" / "screen_intro.json"
             intro = self.document(intro_path, dict)
             if intro is not None:

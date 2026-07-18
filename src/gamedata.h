@@ -50,7 +50,8 @@ namespace Menu
         GameLoadPart = 9,
         MainMenu = 10,
         LoadRecovery = 11,
-        SettingsMenu = 12
+        SettingsMenu = 12,
+        Encyclopedia = 13
     };
 }
 
