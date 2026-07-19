@@ -26,6 +26,7 @@
 #include "gamedata.h"
 #include "gametheme.h"
 #include "dialogs.h"
+#include "battlechoicedialog.h"
 #include "actions.h"
 #include "aibattle.h"
 #include "aiprofile.h"

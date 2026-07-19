@@ -103,6 +103,8 @@ set(FOUR_WINDS_SOURCE
     src/aibattle.cpp
     src/aispell.cpp
     src/battle.cpp
+    src/battleuitext.cpp
+    src/battlechoicedialog.cpp
     src/dialogs.cpp
     src/adventurehints.cpp
     src/adventurepart.cpp
