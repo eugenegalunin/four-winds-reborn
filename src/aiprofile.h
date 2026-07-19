@@ -7,9 +7,11 @@ namespace AI
 {
     enum class Difficulty
     {
+        Training,
         Easy,
         Normal,
-        Hard
+        Hard,
+        Unfair
     };
 
     enum class BehaviorProfile
@@ -100,11 +102,18 @@ namespace AI
         int nearBestScorePercent;
         int nearBestDecisionPeriod;
         bool showPlayerBattleForecast;
+        bool supportSpellsOnly;
+        bool allowLandClaims;
+        bool allowEnemyLandMoves;
+        int initialAiSpellPointBonus;
+        int mahjongPartAiSpellPointBonus;
+        int mahjongPartAiLandClaimBonus;
     };
 
     const char*             difficultyName(Difficulty);
     bool                    difficultyFromString(const std::string &, Difficulty &);
     Difficulty              difficultyFromString(const std::string &);
+    Difficulty              previousDifficulty(Difficulty);
     Difficulty              nextDifficulty(Difficulty);
     const DifficultyRules & difficultyRules(Difficulty);
     int                     spellPlanningHorizon(BehaviorProfile, Difficulty);

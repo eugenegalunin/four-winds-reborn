@@ -603,7 +603,7 @@ void MapScreenBase::renderBattleForecast(void)
     }
     else
     {
-        renderTextInfo(forecastCapture, _("Outcome hidden on Hard"));
+        renderTextInfo(forecastCapture, _("Outcome hidden at this difficulty"));
     }
     renderTextInfo(forecastForces,
 			   StringFormat(_("Known: %1 atk. / %2 guards"))

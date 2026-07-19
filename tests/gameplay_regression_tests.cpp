@@ -172,6 +172,9 @@ void testDifficultyRules()
     AI::BehaviorProfile parsedProfile = AI::BehaviorProfile::Balanced;
     expect(AI::difficultyFromString("EASY") == AI::Difficulty::Easy,
            "AI difficulty parsing must be case insensitive");
+    expect(AI::difficultyFromString("training") == AI::Difficulty::Training &&
+           AI::difficultyFromString("UNFAIR") == AI::Difficulty::Unfair,
+           "teaching and deliberately asymmetric difficulty names must round-trip");
     expect(AI::difficultyFromString("hard", parsedDifficulty) &&
            parsedDifficulty == AI::Difficulty::Hard &&
            !AI::difficultyFromString("impossible", parsedDifficulty),
@@ -189,19 +192,27 @@ void testDifficultyRules()
     AI::clearBehaviorProfileOverride();
     expect(!AI::behaviorProfileOverrideEnabled(),
            "behavior-profile override must return to native avatar doctrine");
-    expect(AI::nextDifficulty(AI::Difficulty::Easy) == AI::Difficulty::Normal &&
+    expect(AI::nextDifficulty(AI::Difficulty::Training) == AI::Difficulty::Easy &&
+           AI::nextDifficulty(AI::Difficulty::Easy) == AI::Difficulty::Normal &&
            AI::nextDifficulty(AI::Difficulty::Normal) == AI::Difficulty::Hard &&
-           AI::nextDifficulty(AI::Difficulty::Hard) == AI::Difficulty::Easy,
-           "AI difficulty selector must cycle Easy, Normal, Hard");
+           AI::nextDifficulty(AI::Difficulty::Hard) == AI::Difficulty::Unfair &&
+           AI::nextDifficulty(AI::Difficulty::Unfair) == AI::Difficulty::Training &&
+           AI::previousDifficulty(AI::Difficulty::Training) == AI::Difficulty::Unfair &&
+           AI::previousDifficulty(AI::Difficulty::Normal) == AI::Difficulty::Easy,
+           "AI difficulty selector must cycle both ways through all five levels");
 
-    expect(AI::difficultyRules(AI::Difficulty::Easy).battleForecastSamples == 8 &&
+    expect(AI::difficultyRules(AI::Difficulty::Training).battleForecastSamples == 4 &&
+           AI::difficultyRules(AI::Difficulty::Easy).battleForecastSamples == 8 &&
            AI::difficultyRules(AI::Difficulty::Normal).battleForecastSamples == 16 &&
-           AI::difficultyRules(AI::Difficulty::Hard).battleForecastSamples == 48,
+           AI::difficultyRules(AI::Difficulty::Hard).battleForecastSamples == 48 &&
+           AI::difficultyRules(AI::Difficulty::Unfair).battleForecastSamples == 128,
            "higher AI difficulty must spend more work on battle forecasts");
-    expect(AI::difficultyRules(AI::Difficulty::Easy).showPlayerBattleForecast &&
+    expect(AI::difficultyRules(AI::Difficulty::Training).showPlayerBattleForecast &&
+           AI::difficultyRules(AI::Difficulty::Easy).showPlayerBattleForecast &&
            AI::difficultyRules(AI::Difficulty::Normal).showPlayerBattleForecast &&
-           !AI::difficultyRules(AI::Difficulty::Hard).showPlayerBattleForecast,
-           "Hard must hide the player's map battle forecast without reducing the AI budget");
+           !AI::difficultyRules(AI::Difficulty::Hard).showPlayerBattleForecast &&
+           !AI::difficultyRules(AI::Difficulty::Unfair).showPlayerBattleForecast,
+           "Hard and Unfair must hide map outcome percentages without reducing AI budgets");
     expect(AI::spellPlanningHorizon(AI::BehaviorProfile::Control, AI::Difficulty::Easy) == 1 &&
            AI::spellPlanningHorizon(AI::BehaviorProfile::Control, AI::Difficulty::Normal) == 3 &&
            AI::spellPlanningHorizon(AI::BehaviorProfile::Control, AI::Difficulty::Hard) == 4,
@@ -253,8 +264,19 @@ void testDifficultyRules()
            !AI::preferNearBestChoice(AI::Difficulty::Normal, 100, 99, 6),
            "Easy mistakes must be deterministic, occasional and bounded to near-best choices");
 
-    GameData::setAIDifficulty(AI::Difficulty::Hard);
-    expect(GameData::toJsonObject(JsonObject()).getString("ai:difficulty") == "hard",
+    const AI::DifficultyRules & training = AI::difficultyRules(AI::Difficulty::Training);
+    const AI::DifficultyRules & unfair = AI::difficultyRules(AI::Difficulty::Unfair);
+    expect(training.supportSpellsOnly && !training.allowLandClaims &&
+           !training.allowEnemyLandMoves && training.initialAiSpellPointBonus == 0,
+           "Training must heal and defend without hostile spells, claims or invasions");
+    expect(!unfair.supportSpellsOnly && unfair.allowLandClaims && unfair.allowEnemyLandMoves &&
+           unfair.initialAiSpellPointBonus == 500 &&
+           unfair.mahjongPartAiSpellPointBonus == 125 &&
+           unfair.mahjongPartAiLandClaimBonus == 100,
+           "Unfair must expose its explicit starting and recurring economy handicap");
+
+    GameData::setAIDifficulty(AI::Difficulty::Unfair);
+    expect(GameData::toJsonObject(JsonObject()).getString("ai:difficulty") == "unfair",
            "save data must persist the selected AI difficulty");
     GameData::setAIDifficulty(AI::Difficulty::Normal);
 }
@@ -894,6 +916,7 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("ru_RU");
     Settings::setGameSpeed("fast");
+    Settings::setAIDifficulty(AI::Difficulty::Unfair);
     Settings::setMusicVolume(35);
     Settings::setEffectsVolume(60);
     Settings::setVoiceVolume(85);
@@ -909,6 +932,7 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("en");
     Settings::setGameSpeed("normal");
+    Settings::setAIDifficulty(AI::Difficulty::Easy);
     Settings::setMusicVolume(100);
     Settings::setEffectsVolume(100);
     Settings::setVoiceVolume(100);
@@ -916,6 +940,7 @@ int runSettingsPersistenceSelfTest()
     Settings::setFullscreen(false);
     Settings::setWindowScale(100);
     if(!Settings::read() || Settings::language() != "ru" || Settings::gameSpeed() != "fast" ||
+       Settings::aiDifficulty() != AI::Difficulty::Unfair ||
        !Settings::music() || Settings::musicVolume() != 35 ||
        !Settings::sound() || Settings::effectsVolume() != 60 || Settings::voiceVolume() != 85 ||
        !Settings::soundGuardianRules() || !Settings::fullscreen() ||
@@ -928,6 +953,7 @@ int runSettingsPersistenceSelfTest()
     const JsonObject saved = JsonContentFile(settingsFile).toObject();
     if(!saved.isValid() || saved.getString("language") != "ru" ||
        saved.getString("game:speed") != "fast" ||
+       saved.getString("ai:difficulty") != "unfair" ||
        !saved.getBoolean("music", false) || saved.getInteger("music:volume", -1) != 35 ||
        !saved.getBoolean("sound", false) || saved.getInteger("sound:volume", -1) != 60 ||
        saved.getInteger("voice:volume", -1) != 85 ||
@@ -946,7 +972,8 @@ int runSettingsPersistenceSelfTest()
     if(!Systems::saveString2File(legacy.toString(), settingsFile) || !Settings::read() ||
        Settings::musicVolume() != 0 || Settings::effectsVolume() != 0 ||
        Settings::voiceVolume() != 0 || Settings::music() || Settings::sound() ||
-       Settings::windowScale() != 100)
+       Settings::windowScale() != 100 ||
+       Settings::aiDifficulty() != AI::Difficulty::Normal)
     {
         std::cerr << "FAIL: legacy boolean audio settings are not load compatible\n";
         return 1;
@@ -1748,6 +1775,17 @@ void testSpellCastingAI()
     expect(healing.spell == Spell(Spell::Healing) && healing.unit == 270 && healing.land == Land(Land::Corzen),
            "spell AI must heal a wounded friendly creature");
 
+    const Spells noFuture;
+    const AI::SpellCastPlan trainingSupport = AI::chooseSpellCast(
+        caster, spellSet({ Spell::Healing, Spell::LightningBolt }),
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Training, noFuture);
+    expect(trainingSupport.spell == Spell(Spell::Healing) && trainingSupport.unit == 270,
+           "Training AI must choose healing even when a lethal hostile spell is available");
+    expect(!AI::chooseSpellCast(caster, spellSet({ Spell::LightningBolt }),
+                                AI::BehaviorProfile::Aggressive,
+                                AI::Difficulty::Training, noFuture).isValid(),
+           "Training AI must reject every offensive-only spell plan");
+
     const AI::SpellCastPlan lightning = chooseOnly(caster, Spell::LightningBolt);
     expect(lightning.spell == Spell(Spell::LightningBolt) && lightning.unit == 280 &&
            lightning.land == Land(Land::Zubrus),
@@ -1792,7 +1830,6 @@ void testSpellCastingAI()
            "spell AI plan must convert to the correct player-target command");
 
     const Spells damageOrControl = spellSet({ Spell::LightningBolt, Spell::Silence });
-    const Spells noFuture;
     const AI::SpellCastPlan aggressiveChoice = AI::chooseSpellCast(
         caster, damageOrControl, AI::BehaviorProfile::Aggressive, noFuture);
     const AI::SpellCastPlan controlChoice = AI::chooseSpellCast(
@@ -1969,6 +2006,9 @@ void testAdventureProfiles()
         AI::chooseAdventureClaim(player, AI::BehaviorProfile::Economic);
     const AI::AdventureClaimPlan balancedClaim =
         AI::chooseAdventureClaim(player, AI::BehaviorProfile::Balanced);
+    expect(!AI::chooseAdventureClaim(player, AI::BehaviorProfile::Aggressive,
+                                     AI::Difficulty::Training).isValid(),
+           "Training AI must never claim enemy territory");
     expect(aggressiveClaim.land == Land(Land::Corimar),
            "aggressive Adventure AI must claim the highest-pressure frontier");
     expect(economicClaim.land == Land(Land::Sunspot),
@@ -1993,6 +2033,9 @@ void testAdventureProfiles()
         AI::chooseAdventureMove(player, party, AI::BehaviorProfile::Aggressive, nearbyTargets);
     const AI::AdventureMovePlan economicMove =
         AI::chooseAdventureMove(player, party, AI::BehaviorProfile::Economic, nearbyTargets);
+    expect(!AI::chooseAdventureMove(player, party, AI::BehaviorProfile::Aggressive,
+                                    AI::Difficulty::Training, nearbyTargets).isValid(),
+           "Training AI must never plan a move into enemy territory");
     expect(aggressiveMove.target == Land(Land::Kern) &&
            aggressiveMove.destination == Land(Land::Kern) && aggressiveMove.engagesEnemy,
            "aggressive Adventure AI must accept a calculated attack on a defended land");
@@ -2108,6 +2151,15 @@ void testAdventureCoordination()
         AI::chooseAdventureTurn(player, AI::BehaviorProfile::Aggressive);
     expect(aggressivePlan.reservedParties == 0,
            "aggressive Adventure AI must keep all parties available when no serious threat exists");
+
+    const AI::AdventureTurnPlan trainingPlan = AI::chooseAdventureTurn(
+        player, AI::BehaviorProfile::Aggressive, AI::Difficulty::Training);
+    expect(std::all_of(trainingPlan.orders.begin(), trainingPlan.orders.end(),
+                       [&](const AI::AdventurePartyOrder & order)
+    {
+        return !order.isMove() ||
+               GameData::landInfo(order.move.destination).clan == player.clan;
+    }), "Training whole-turn planning must contain only holds and friendly reinforcements");
 
     std::map<int, int> arrivals;
     std::map<int, int> targetAssignments;
@@ -2297,11 +2349,16 @@ void testBattleAI()
     GameData::setAIDifficulty(AI::Difficulty::Hard);
     const AI::BattleAttackPlan hardOverkill = AI::chooseMeleeBattlePlan(
         meleeActor, overkillTarget, AI::BehaviorProfile::Balanced);
+    GameData::setAIDifficulty(AI::Difficulty::Unfair);
+    const AI::BattleAttackPlan unfairOverkill = AI::chooseMeleeBattlePlan(
+        meleeActor, overkillTarget, AI::BehaviorProfile::Balanced);
     GameData::setAIDifficulty(AI::Difficulty::Normal);
     expect(easyOverkill.isValid() && normalOverkill.isValid() && hardOverkill.isValid() &&
+           unfairOverkill.isValid() &&
+           unfairOverkill.score < hardOverkill.score &&
            hardOverkill.score < normalOverkill.score &&
            normalOverkill.score < easyOverkill.score,
-           "Hard must penalize wasted battle damage more strongly than Normal and Easy");
+           "Unfair must penalize wasted battle damage more strongly than Hard, Normal and Easy");
 }
 
 void testAdventureHints()
@@ -2381,6 +2438,10 @@ void testAdventureHints()
     expect(hard.available && !hard.showPercentages && hard.samples == 0 &&
            hard.attackerCount == 1 && hard.visibleDefenderCount == 0,
            "Hard must expose known forces without leaking outcome percentages");
+    const AdventureHints::BattlePreview unfair = AdventureHints::battlePreview(
+        hiddenView, Land::Corzen, Land::Zubrus, AI::Difficulty::Unfair);
+    expect(unfair.available && !unfair.showPercentages && unfair.samples == 0,
+           "Unfair must hide outcome percentages under the same observer-safe contract as Hard");
 
     GameplayRng::seed(0x156EULL);
     const std::uint64_t stateBefore = GameplayRng::state();
@@ -3725,7 +3786,7 @@ bool applyBalanceScenario(Tournament::Config & config, const char* difficulty,
 {
     if(difficulty && !AI::difficultyFromString(difficulty, config.difficulty))
     {
-        std::cerr << "difficulty must be easy, normal or hard\n";
+        std::cerr << "difficulty must be training, easy, normal, hard or unfair\n";
         return false;
     }
 

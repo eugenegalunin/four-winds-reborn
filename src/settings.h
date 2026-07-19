@@ -25,6 +25,11 @@
 
 #include <string>
 
+namespace AI
+{
+    enum class Difficulty;
+}
+
 #define FORMAT_VERSION_20200321	20200321
 #define FORMAT_VERSION_CURRENT	FORMAT_VERSION_20200321
 #define FORMAT_VERSION_LAST	FORMAT_VERSION_20200321
@@ -38,6 +43,8 @@ namespace Settings
     void                setLanguage(const std::string &);
     std::string         gameSpeed(void);
     void                setGameSpeed(const std::string &);
+    AI::Difficulty      aiDifficulty(void);
+    void                setAIDifficulty(AI::Difficulty);
     int                 presentationDelay(int);
 
     bool		read(void);

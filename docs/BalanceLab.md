@@ -20,6 +20,13 @@ the lifetime of that match and is restored before the child exits. Forced cells
 therefore measure how the same roster and fixtures respond to one doctrine;
 they are not mixed-profile head-to-head games.
 
+The runner accepts all five player-facing difficulties. `Training` is useful as
+a non-aggression and support-spell invariant test. `Unfair` exercises the
+largest decision budgets and the explicit AI economy handicap. Because a lab
+match controls all four players, every participant in an `Unfair` cell receives
+the same handicap; such a cell proves stability and compares avatars, but is
+not a direct measurement of the advantage over a human player.
+
 For more flexible rosters, every legal one-avatar-per-clan bijection is combined
 with the four seat rotations. Unsupported avatar/clan combinations are never
 invented. The schedule rejects duplicate avatars, duplicate seeds and rosters
@@ -123,6 +130,14 @@ cells and 60 isolated matches; all eight published seeds produce 480 matches:
 ```powershell
 .\scripts\run-balance-matrix.ps1
 .\scripts\run-balance-matrix.ps1 -SeedCount 8 -OutputDirectory diagnostics\balance-matrix-full
+```
+
+The default matrix intentionally keeps the three honest competitive levels.
+Include the policy extremes explicitly when validating a difficulty change;
+with one seed the five-level native matrix is 5 cells and 20 isolated matches:
+
+```powershell
+.\scripts\run-balance-matrix.ps1 -Profiles Native -Difficulties Training,Easy,Normal,Hard,Unfair -OutputDirectory diagnostics\difficulty-smoke
 ```
 
 A focused matrix can select subsets without changing its report contract:

@@ -60,9 +60,10 @@ On Windows, unpack the archive and launch `four-winds-reborn.exe`.
 - Independent music, effects and voice volume controls, plus Classic, Normal
   and Fast presentation speeds.
 - Restored story intro and separate menu, faction, map and summary music.
-- Deliberately distinct Easy, Normal and Hard AI without resource or RNG cheats,
-  plus wizard behavior profiles and improved Mahjong, spell, summon, map and
-  battle decisions.
+- Five deliberately distinct AI levels, selected in Settings for new games:
+  peaceful Training, honest Easy, Normal and Hard, and an openly unfair
+  economy-boosted challenge. No level receives favorable RNG or access to
+  hidden information.
 - Manual tactical battles with legal target selection, AI recommendations and
   optional automatic resolution.
 - A bilingual Encyclopedia covering lore, factions, wizards, creatures, spells,

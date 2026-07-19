@@ -72,6 +72,7 @@ namespace AI
     };
 
     AdventureClaimPlan chooseAdventureClaim(const RemotePlayer &, BehaviorProfile);
+    AdventureClaimPlan chooseAdventureClaim(const RemotePlayer &, BehaviorProfile, Difficulty);
     AdventureMovePlan  chooseAdventureMove(const RemotePlayer &, const BattleParty &, BehaviorProfile);
     AdventureMovePlan  chooseAdventureMove(const RemotePlayer &, const BattleParty &, BehaviorProfile,
                                            Difficulty);

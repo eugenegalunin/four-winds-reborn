@@ -495,6 +495,31 @@ namespace GameData
 #endif
     JsonObject				stateGUI;
 
+    void grantAiDifficultyIncome(bool initial)
+    {
+        const AI::DifficultyRules & rules = AI::difficultyRules(difficulty);
+        const int spellPoints = initial ? rules.initialAiSpellPointBonus :
+                                          rules.mahjongPartAiSpellPointBonus;
+
+        for(LocalPlayer & player : gamers)
+        {
+            // Developer autoplay still represents the human seat. Only actual AI
+            // opponents receive the deliberately asymmetric Unfair economy.
+            if(!player.isAI()) continue;
+
+            player.points += spellPoints;
+            if(!initial && rules.mahjongPartAiLandClaimBonus > 0)
+            {
+                for(const auto clanId : clans_all)
+                {
+                    const Clan clan(clanId);
+                    if(clan != player.clan)
+                        player.addLandClaimPoints(clan, rules.mahjongPartAiLandClaimBonus);
+                }
+            }
+        }
+    }
+
     struct LandClaimRecord
     {
 	Avatar player;
@@ -1192,6 +1217,7 @@ void GameData::initPersons(const Person & cur)
     Replay::clearActionJournal();
     Persons persons(cur);
     gamers.setPersons(persons);
+    grantAiDifficultyIncome(true);
 
     person = cur;
     roundWind = Wind(Wind::None);
@@ -1233,6 +1259,7 @@ bool GameData::initPersons(const Persons & configured)
 
     Replay::clearActionJournal();
     gamers.setPersons(persons);
+    grantAiDifficultyIncome(true);
     person = persons.front();
     roundWind = Wind(Wind::None);
     partWind = Wind(Wind::None);
@@ -1314,6 +1341,8 @@ bool GameData::initMahjong(void)
     winResult = WinResults();
 
     battleHistory.clear();
+
+    grantAiDifficultyIncome(false);
 
     VERBOSE("wind round: " << roundWind.toString());
     VERBOSE("wind part: " << partWind.toString());

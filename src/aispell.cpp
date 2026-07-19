@@ -700,13 +700,29 @@ namespace
         const SpellCandidates candidates = generateCandidates(player, spells, players);
         const SpellCandidates futureCandidates = generateCandidates(player, futureSpells, players);
         std::vector<AI::SpellCastPlan> plans;
+        const bool supportOnly = AI::difficultyRules(difficulty).supportSpellsOnly;
 
         for(const AI::SpellCastStep & step : candidates)
         {
+            if(supportOnly && step.spell != Spell(Spell::Healing)) continue;
+
             AI::SpellCastPlan candidate(step);
             candidate.profile = profile;
             candidate.immediateScore = profileScore(step, profile, difficulty, player.points);
-            projectFollowUps(candidate, player, futureCandidates, players, difficulty);
+            if(supportOnly)
+            {
+                SpellCandidates healingOnly;
+                std::copy_if(futureCandidates.begin(), futureCandidates.end(),
+                             std::back_inserter(healingOnly), [](const AI::SpellCastStep & future)
+                {
+                    return future.spell == Spell(Spell::Healing);
+                });
+                projectFollowUps(candidate, player, healingOnly, players, difficulty);
+            }
+            else
+            {
+                projectFollowUps(candidate, player, futureCandidates, players, difficulty);
+            }
             candidate.score = candidate.immediateScore + candidate.futureScore;
 
             if(candidate.score < rules.minimumSpellScore) continue;

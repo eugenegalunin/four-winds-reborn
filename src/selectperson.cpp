@@ -73,8 +73,7 @@ Clans RevertClans(const Clans & allowClans)
 }
 
 SelectPersonScreen::SelectPersonScreen() : JsonWindow("screen_selectperson.json", nullptr),
-    buttonOk(nullptr), buttonClose(nullptr), selectedAvatar(Avatar::Random),
-    difficulty(GameData::aiDifficulty())
+    buttonOk(nullptr), buttonClose(nullptr), selectedAvatar(Avatar::Random)
 {
     buttonOk = buttons.findIds("but_ok");
     buttonClose = buttons.findIds("but_close");
@@ -148,16 +147,6 @@ SelectPersonScreen::SelectPersonScreen() : JsonWindow("screen_selectperson.json"
 	    abilityText = GameTheme::jsonTextInfo(*value);
     }
 
-    jo = jobject.getObject("ai:difficulty");
-    if(jo)
-    {
-        difficultyArea = JsonUnpack::rect(*jo, "area");
-        difficultyValue = GameTheme::jsonTextInfo(*jo, "textinfo:value");
-        difficultyBackground = GameTheme::jsonColor(*jo, "color:background");
-        difficultyBorder = GameTheme::jsonColor(*jo, "color:border");
-        difficultyInnerBorder = GameTheme::jsonColor(*jo, "color:inner_border");
-    }
-
     const JsonArray* ja = nullptr;
 
     ja = jobject.getArray("area:clans");
@@ -196,38 +185,6 @@ SelectPersonScreen::SelectPersonScreen() : JsonWindow("screen_selectperson.json"
 void SelectPersonScreen::renderWindow(void)
 {
     JsonWindow::renderWindow();
-
-    if(difficultyArea.w && difficultyArea.h)
-    {
-        renderRect(difficultyBackground, difficultyArea);
-        renderLine(difficultyBorder, difficultyArea.toPoint(),
-                   Point(difficultyArea.x + difficultyArea.w - 1, difficultyArea.y));
-        renderLine(difficultyBorder, Point(difficultyArea.x, difficultyArea.y + difficultyArea.h - 1),
-                   Point(difficultyArea.x + difficultyArea.w - 1,
-                         difficultyArea.y + difficultyArea.h - 1));
-        renderLine(difficultyBorder, difficultyArea.toPoint(),
-                   Point(difficultyArea.x, difficultyArea.y + difficultyArea.h - 1));
-        renderLine(difficultyBorder,
-                   Point(difficultyArea.x + difficultyArea.w - 1, difficultyArea.y),
-                   Point(difficultyArea.x + difficultyArea.w - 1,
-                         difficultyArea.y + difficultyArea.h - 1));
-
-        const Rect inner(difficultyArea.x + 3, difficultyArea.y + 3,
-                         difficultyArea.w - 6, difficultyArea.h - 6);
-        renderLine(difficultyInnerBorder, inner.toPoint(),
-                   Point(inner.x + inner.w - 1, inner.y));
-        renderLine(difficultyInnerBorder, Point(inner.x, inner.y + inner.h - 1),
-                   Point(inner.x + inner.w - 1, inner.y + inner.h - 1));
-        renderLine(difficultyInnerBorder, inner.toPoint(),
-                   Point(inner.x, inner.y + inner.h - 1));
-        renderLine(difficultyInnerBorder, Point(inner.x + inner.w - 1, inner.y),
-                   Point(inner.x + inner.w - 1, inner.y + inner.h - 1));
-
-        const char* value = _("Normal");
-        if(difficulty == AI::Difficulty::Easy) value = _("Easy");
-        else if(difficulty == AI::Difficulty::Hard) value = _("Hard");
-        renderTextInfo(difficultyValue, value);
-    }
 
     if(selectedAvatar.isValid())
     {
@@ -347,14 +304,6 @@ void SelectPersonScreen::renderWindow(void)
 
 bool SelectPersonScreen::mouseClickEvent(const ButtonsEvent & coords)
 {
-
-    if(difficultyArea.w && coords.isClick(difficultyArea))
-    {
-        difficulty = AI::nextDifficulty(difficulty);
-        playSound("button");
-        renderWindow();
-        return true;
-    }
 
     if(actionClickPersons(coords))
     {

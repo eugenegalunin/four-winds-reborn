@@ -255,7 +255,15 @@ namespace
 
 AI::AdventureClaimPlan AI::chooseAdventureClaim(const RemotePlayer & player, BehaviorProfile profile)
 {
+    return chooseAdventureClaim(player, profile, GameData::aiDifficulty());
+}
+
+AI::AdventureClaimPlan AI::chooseAdventureClaim(const RemotePlayer & player, BehaviorProfile profile,
+                                                Difficulty difficulty)
+{
     AdventureClaimPlan best;
+    if(!difficultyRules(difficulty).allowLandClaims) return best;
+
     const BehaviorRules & rules = behaviorRules(profile);
 
     for(const Land & land : GameData::claimableLands(player))
@@ -299,6 +307,8 @@ AI::AdventureMovePlan AI::chooseAdventureMove(const RemotePlayer & player, const
                                               const Lands & targets)
 {
     AdventureMovePlan best;
+    if(!difficultyRules(difficulty).allowEnemyLandMoves) return best;
+
     const BehaviorRules & rules = behaviorRules(profile);
     const int attackStrength = combatStrength(party.toBaseStatSummary());
 
@@ -507,6 +517,19 @@ AI::AdventureTurnPlan AI::chooseAdventureTurn(const RemotePlayer & player, Behav
         candidate.assigned = true;
         plan.orders.push_back(order);
         plan.reservedParties++;
+    }
+
+    // Training players defend threatened friendly territory, but never turn the
+    // remaining parties into an invasion force.
+    if(!difficultyRules(difficulty).allowEnemyLandMoves)
+    {
+        for(PartyCandidate & candidate : parties)
+        {
+            if(candidate.assigned) continue;
+            plan.orders.push_back(partyOrder(candidate));
+            candidate.assigned = true;
+        }
+        return plan;
     }
 
     std::map<int, int> targetAssignments;

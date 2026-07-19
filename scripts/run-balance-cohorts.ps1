@@ -2,7 +2,7 @@ param(
     [ValidateRange(1, 8)]
     [int]$SeedCount = 1,
     [string]$OutputDirectory = "diagnostics\balance-cohorts",
-    [ValidateSet("Easy", "Normal", "Hard")]
+    [ValidateSet("Training", "Easy", "Normal", "Hard", "Unfair")]
     [string]$Difficulty = "Normal",
     [ValidateSet("Balanced", "Aggressive", "Economic", "Control")]
     [string]$BehaviorProfile = "Balanced",

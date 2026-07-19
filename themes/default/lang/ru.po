@@ -1912,6 +1912,14 @@ msgstr "Автосохранение"
 msgid "Difficulty"
 msgstr "Сложность"
 
+#: src\selectperson.cpp
+msgid "Training"
+msgstr "Тренировка"
+
+#: src\selectperson.cpp
+msgid "Unfair"
+msgstr "Нечестно"
+
 #: src\loadrecovery.cpp:108 src\loadrecovery.cpp:127 src\loadrecovery.cpp:151
 msgid "INVALID"
 msgstr "ПОВРЕЖДЕНО"
@@ -2485,8 +2493,8 @@ msgid "Attackers remain: %1%"
 msgstr "Выживут: %1%"
 
 #: src\adventurepart.cpp
-msgid "Outcome hidden on Hard"
-msgstr "Исход скрыт на сложной"
+msgid "Outcome hidden at this difficulty"
+msgstr "На этой сложности прогноз скрыт"
 
 #: src\adventurepart.cpp
 msgid "Known: %1 atk. / %2 guards"
@@ -3225,3 +3233,39 @@ msgstr "КЛИК / ENTER: СЛЕДУЮЩИЙ ПОБЕДИТЕЛЬ"
 #: src/gamesummarypart.cpp
 msgid "CLICK / ENTER: DETAILED SCORES"
 msgstr "КЛИК / ENTER: ПОДРОБНЫЙ СЧЁТ"
+
+#: src/settingsmenu.cpp
+msgid "AI Difficulty"
+msgstr "Сложность ИИ"
+
+#: src/settingsmenu.cpp
+msgid "AI DIFFICULTY"
+msgstr "СЛОЖНОСТЬ ИИ"
+
+#: src/settingsmenu.cpp
+msgid "AI defends and heals, but does not invade or use offensive spells."
+msgstr "ИИ защищается и лечит, но не вторгается и не применяет атакующие заклинания."
+
+#: src/settingsmenu.cpp
+msgid "Forgiving opponents use simpler plans and conserve fewer runes."
+msgstr "Щадящие соперники строят более простые планы и меньше берегут руны."
+
+#: src/settingsmenu.cpp
+msgid "The intended fair challenge with the complete AI toolset."
+msgstr "Задуманная честная сложность с полным набором возможностей ИИ."
+
+#: src/settingsmenu.cpp
+msgid "Deeper planning and stronger coordination. Battle forecasts are hidden."
+msgstr "Более глубокие планы и сильная координация. Прогнозы боя скрыты."
+
+#: src/settingsmenu.cpp
+msgid "Brutal AI with explicit economy bonuses. No hidden information or rigged luck."
+msgstr "Жестокий ИИ с открытыми бонусами экономики. Без тайных знаний и подкрученной удачи."
+
+#: src/settingsmenu.cpp
+msgid "FOR NEW GAMES"
+msgstr "ДЛЯ НОВЫХ ИГР"
+
+#: src/settingsmenu.cpp
+msgid "Saved games are unchanged."
+msgstr "Сохранения не изменяются."

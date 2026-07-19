@@ -6,15 +6,58 @@
 
 #include "swe/swe_music.h"
 
+#include "aiprofile.h"
 #include "gametheme.h"
 #include "dialogs.h"
 #include "runewars.h"
 #include "settings.h"
 #include "settingsmenu.h"
 
+namespace
+{
+    const char* difficultyLabel(AI::Difficulty difficulty)
+    {
+        switch(difficulty)
+        {
+            case AI::Difficulty::Training: return _("Training");
+            case AI::Difficulty::Easy: return _("Easy");
+            case AI::Difficulty::Hard: return _("Hard");
+            case AI::Difficulty::Unfair: return _("Unfair");
+            default: return _("Normal");
+        }
+    }
+
+    const char* difficultyDescription(AI::Difficulty difficulty)
+    {
+        switch(difficulty)
+        {
+            case AI::Difficulty::Training:
+                return _("AI defends and heals, but does not invade or use offensive spells.");
+            case AI::Difficulty::Easy:
+                return _("Forgiving opponents use simpler plans and conserve fewer runes.");
+            case AI::Difficulty::Hard:
+                return _("Deeper planning and stronger coordination. Battle forecasts are hidden.");
+            case AI::Difficulty::Unfair:
+                return _("Brutal AI with explicit economy bonuses. No hidden information or rigged luck.");
+            default:
+                return _("The intended fair challenge with the complete AI toolset.");
+        }
+    }
+
+    Texture scaledDifficultyPortrait(const char* id, const Size & size)
+    {
+        Texture scaled = Display::createTexture(size);
+        const Texture & source = GameTheme::texture(id);
+        if(source.isValid())
+            Display::renderTexture(source, source.rect(), scaled, scaled.rect());
+        return scaled;
+    }
+}
+
 SettingsMenuScreen::SettingsMenuScreen() :
     JsonWindow("screen_settings.json", nullptr), selected(0),
     language(Settings::language()), gameSpeed(Settings::gameSpeed()),
+    aiDifficulty(Settings::aiDifficulty()),
     musicVolume(Settings::musicVolume()), effectsVolume(Settings::effectsVolume()),
     voiceVolume(Settings::voiceVolume()),
     guardianVoices(Settings::soundGuardianRules()),
@@ -23,6 +66,9 @@ SettingsMenuScreen::SettingsMenuScreen() :
     leftPanel = JsonUnpack::rect(jobject, "panel:left", Rect(0, 0, 224, 768));
     rightPanel = JsonUnpack::rect(jobject, "panel:right", Rect(800, 0, 224, 768));
     menuArea = JsonUnpack::rect(jobject, "menu:area", Rect(812, 196, 200, 440));
+    difficultyArea = JsonUnpack::rect(jobject, "difficulty:area", Rect(14, 88, 196, 530));
+    difficultyPortraitArea = JsonUnpack::rect(
+        jobject, "difficulty:portrait", Rect(34, 132, 156, 156));
     itemHeight = jobject.getInteger("menu:item_height", 54);
     itemGap = jobject.getInteger("menu:item_gap", 8);
 
@@ -41,6 +87,11 @@ SettingsMenuScreen::SettingsMenuScreen() :
     buttonBorderColor = GameTheme::jsonColor(jobject, "color:button_border");
     buttonSelectedBorderColor = GameTheme::jsonColor(jobject, "color:button_selected_border");
 
+    for(const char* id : { "difficulty_training", "difficulty_easy", "difficulty_normal",
+                          "difficulty_hard", "difficulty_unfair" })
+        difficultyPortraits.emplace_back(
+            scaledDifficultyPortrait(id, difficultyPortraitArea.toSize()));
+
     const Size available = Display::usableBounds().toSize();
     for(const int candidate : { 75, 100, 125, 150, 175, 200 })
     {
@@ -55,6 +106,7 @@ SettingsMenuScreen::SettingsMenuScreen() :
         for(const int candidate : windowScales)
             if(candidate <= Settings::windowScale()) windowScale = candidate;
     }
+    addEntry(AIDifficulty);
     addEntry(Language);
     addEntry(GameSpeed);
     addEntry(MusicVolume);
@@ -73,7 +125,15 @@ SettingsMenuScreen::SettingsMenuScreen() :
 
 void SettingsMenuScreen::addEntry(EntryKind kind)
 {
-    const int index = static_cast<int>(entries.size());
+    if(kind == AIDifficulty)
+    {
+        entries.push_back(Entry{ kind, difficultyArea });
+        return;
+    }
+
+    int index = 0;
+    for(const Entry & entry : entries)
+        if(entry.kind != AIDifficulty) ++index;
     const int posy = menuArea.y + index * (itemHeight + itemGap);
     entries.push_back(Entry{ kind, Rect(menuArea.x, posy, menuArea.w, itemHeight) });
 }
@@ -82,6 +142,7 @@ std::string SettingsMenuScreen::entryLabel(EntryKind kind) const
 {
     switch(kind)
     {
+        case AIDifficulty: return _("AI Difficulty");
         case Language: return _("Language");
         case GameSpeed: return _("Game Speed");
         case MusicVolume: return _("Music");
@@ -100,6 +161,7 @@ std::string SettingsMenuScreen::entryValue(EntryKind kind) const
 {
     switch(kind)
     {
+        case AIDifficulty: return difficultyLabel(aiDifficulty);
         case Language: return language == "ru" ? _("Russian") : _("English");
         case GameSpeed:
             if(gameSpeed == "classic") return _("Classic");
@@ -164,23 +226,67 @@ void SettingsMenuScreen::renderWindow(void)
 
     const FontRender & title = GameTheme::fontRender(titleFont);
     const FontRender & menu = GameTheme::fontRender(menuFont);
+    const FontRender & difficultyName = GameTheme::fontRender("dejavus18");
     const FontRender & small = GameTheme::fontRender(smallFont);
     const FontRender & footer = GameTheme::fontRender("dejavus12");
     const int leftCenter = leftPanel.x + leftPanel.w / 2;
     const int rightCenter = rightPanel.x + rightPanel.w / 2;
 
-    renderText(small, _("THE RUNE WAR"), dividerColor, Point(leftCenter, 42), AlignCenter);
-    renderText(title, _("FOUR"), titleColor, Point(leftCenter, 78), AlignCenter);
-    renderText(title, _("WINDS"), titleColor, Point(leftCenter, 124), AlignCenter);
-    renderText(title, _("REBORN"), titleColor, Point(leftCenter, 170), AlignCenter);
-    renderLine(panelBorderColor, Point(34, 229), Point(190, 229));
-    renderText(small, _("OLD RUNES,"), textColor, Point(leftCenter, 239), AlignCenter);
-    renderText(small, _("A NEW WAR"), textColor, Point(leftCenter, 258), AlignCenter);
+    const bool difficultySelected = !entries.empty() &&
+        entries[selected].kind == AIDifficulty;
+    renderColor(difficultySelected ? buttonSelectedColor : buttonColor, difficultyArea);
+    renderRect(difficultySelected ? buttonSelectedBorderColor : buttonBorderColor,
+               difficultyArea);
+    if(difficultySelected)
+        renderLine(buttonSelectedBorderColor,
+                   Point(difficultyArea.x + 3, difficultyArea.y + 3),
+                   Point(difficultyArea.x + 3,
+                         difficultyArea.y + difficultyArea.h - 4));
 
-    renderText(footer, _("COMMUNITY RESTORATION"), mutedColor,
-               Point(leftCenter, height() - 55), AlignCenter);
-    renderText(footer, _("OF THE ORIGINAL GAME"), mutedColor,
-               Point(leftCenter, height() - 36), AlignCenter);
+    renderText(small, _("AI DIFFICULTY"), panelBorderColor,
+               Point(leftCenter, difficultyArea.y + 17), AlignCenter);
+    renderLine(panelBorderColor, Point(difficultyArea.x + 18, difficultyArea.y + 43),
+               Point(difficultyArea.x + difficultyArea.w - 18,
+                     difficultyArea.y + 43));
+
+    const int portraitIndex = static_cast<int>(aiDifficulty);
+    renderColor(Color::Black, difficultyPortraitArea);
+    renderRect(panelBorderColor, difficultyPortraitArea);
+    if(0 <= portraitIndex && portraitIndex < static_cast<int>(difficultyPortraits.size()) &&
+       difficultyPortraits[portraitIndex].isValid())
+        renderTexture(difficultyPortraits[portraitIndex], difficultyPortraitArea.toPoint());
+
+    const int selectorY = difficultyPortraitArea.y + difficultyPortraitArea.h + 30;
+    renderText(difficultyName, "<", difficultySelected ? titleColor : textColor,
+               Point(difficultyArea.x + 25, selectorY), AlignCenter, AlignCenter);
+    renderText(difficultyName, difficultyLabel(aiDifficulty), titleColor,
+               Point(leftCenter, selectorY), AlignCenter, AlignCenter);
+    renderText(difficultyName, ">", difficultySelected ? titleColor : textColor,
+               Point(difficultyArea.x + difficultyArea.w - 25, selectorY),
+               AlignCenter, AlignCenter);
+
+    int descriptionY = selectorY + 39;
+    const int descriptionWidth = difficultyArea.w - 28;
+    for(const std::string & line : small.splitStringWidth(
+            difficultyDescription(aiDifficulty), descriptionWidth))
+    {
+        renderText(small, line, textColor, Point(leftCenter, descriptionY), AlignCenter);
+        descriptionY += small.lineSkipHeight();
+    }
+
+    renderLine(dividerColor,
+               Point(difficultyArea.x + 18, difficultyArea.y + difficultyArea.h - 82),
+               Point(difficultyArea.x + difficultyArea.w - 18,
+                     difficultyArea.y + difficultyArea.h - 82));
+    renderText(small, _("FOR NEW GAMES"), panelBorderColor,
+               Point(leftCenter, difficultyArea.y + difficultyArea.h - 66), AlignCenter);
+    int saveNoteY = difficultyArea.y + difficultyArea.h - 47;
+    for(const std::string & line : footer.splitStringWidth(
+            _("Saved games are unchanged."), difficultyArea.w - 28))
+    {
+        renderText(footer, line, mutedColor, Point(leftCenter, saveNoteY), AlignCenter);
+        saveNoteY += footer.lineSkipHeight();
+    }
 
     renderText(small, _("SETTINGS"), panelBorderColor, Point(rightCenter, 139), AlignCenter);
     renderLine(panelBorderColor, Point(rightPanel.x + 28, 164),
@@ -189,6 +295,7 @@ void SettingsMenuScreen::renderWindow(void)
     for(size_t ii = 0; ii < entries.size(); ++ii)
     {
         const Entry & entry = entries[ii];
+        if(entry.kind == AIDifficulty) continue;
         const bool isSelected = static_cast<int>(ii) == selected;
         const Color fill = isSelected ? buttonSelectedColor : buttonColor;
         const Color border = isSelected ? buttonSelectedBorderColor : buttonBorderColor;
@@ -242,7 +349,10 @@ bool SettingsMenuScreen::adjustSelected(int direction)
     if(selected < 0 || static_cast<size_t>(selected) >= entries.size()) return false;
     const EntryKind kind = entries[selected].kind;
 
-    if(isVolumeEntry(kind))
+    if(kind == AIDifficulty)
+        aiDifficulty = direction < 0 ? AI::previousDifficulty(aiDifficulty) :
+                                      AI::nextDifficulty(aiDifficulty);
+    else if(isVolumeEntry(kind))
         setVolumeValue(kind, volumeValue(kind) + (direction < 0 ? -10 : 10));
     else if(kind == Language)
         language = language == "ru" ? "en" : "ru";
@@ -284,6 +394,7 @@ bool SettingsMenuScreen::activateSelected(void)
     switch(entries[selected].kind)
     {
         case Language:
+        case AIDifficulty:
         case GameSpeed:
         case MusicVolume:
         case EffectsVolume:
@@ -320,6 +431,7 @@ bool SettingsMenuScreen::activateSelected(void)
 
             Settings::setLanguage(language);
             Settings::setGameSpeed(gameSpeed);
+            Settings::setAIDifficulty(aiDifficulty);
             Settings::setMusicVolume(musicVolume);
             Settings::setEffectsVolume(effectsVolume);
             Settings::setVoiceVolume(voiceVolume);
@@ -395,6 +507,12 @@ bool SettingsMenuScreen::mouseClickEvent(const ButtonsEvent & coords)
         if(coords.isClick(entries[ii].area))
         {
             selected = static_cast<int>(ii);
+            if(entries[ii].kind == AIDifficulty)
+            {
+                const int localX = coords.release().position().x - entries[ii].area.x;
+                return adjustSelected(coords.isButtonRight() ||
+                                      localX < entries[ii].area.w / 2 ? -1 : 1);
+            }
             if(isVolumeEntry(entries[ii].kind))
             {
                 if(!coords.isButtonLeft()) return true;
@@ -417,6 +535,7 @@ bool SettingsMenuScreen::mouseClickEvent(const ButtonsEvent & coords)
                 switch(entries[ii].kind)
                 {
                     case Language:
+                    case AIDifficulty:
                     case GameSpeed:
                     case GuardianVoices:
                     case DisplayMode:

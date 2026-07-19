@@ -353,7 +353,6 @@ bool RuneWarsClient::exec(void)
     std::string pendingLoadFile = savefile;
     bool promoteRecovery = false;
     Person selectedPerson;
-    AI::Difficulty selectedDifficulty = AI::Difficulty::Normal;
 
 #ifdef BUILD_DEBUG
     if(part)
@@ -453,12 +452,14 @@ bool RuneWarsClient::exec(void)
 		    .append(GameplayRng::Algorithm)
 		    .append(" state=").append(std::to_string(GameplayRng::state())));
 		selectedPerson = fixedEmptyPerson(scr.selectedPerson());
-		selectedDifficulty = scr.selectedDifficulty();
 	    }
 	    break;
 
 	    case Menu::ShowPlayers:
-		GameData::setAIDifficulty(selectedDifficulty);
+		// Settings stores the default for future games. Once initialization
+		// completes, the selected value lives in the save and is not changed
+		// by later edits to settings.json.
+		GameData::setAIDifficulty(Settings::aiDifficulty());
 		GameData::initPersons(selectedPerson);
 		menu = ShowPlayersScreen().exec();
 	    break;

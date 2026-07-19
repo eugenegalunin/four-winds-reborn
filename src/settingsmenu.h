@@ -13,6 +13,7 @@ class SettingsMenuScreen : public JsonWindow
 {
     enum EntryKind
     {
+        AIDifficulty,
         Language,
         GameSpeed,
         MusicVolume,
@@ -35,6 +36,7 @@ class SettingsMenuScreen : public JsonWindow
     int                selected;
     std::string        language;
     std::string        gameSpeed;
+    AI::Difficulty     aiDifficulty;
     int                musicVolume;
     int                effectsVolume;
     int                voiceVolume;
@@ -46,6 +48,9 @@ class SettingsMenuScreen : public JsonWindow
     Rect               leftPanel;
     Rect               rightPanel;
     Rect               menuArea;
+    Rect               difficultyArea;
+    Rect               difficultyPortraitArea;
+    std::vector<Texture> difficultyPortraits;
     int                itemHeight;
     int                itemGap;
 

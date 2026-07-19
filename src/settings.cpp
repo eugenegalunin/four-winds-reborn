@@ -22,6 +22,7 @@
 
 #include <algorithm>
 
+#include "aiprofile.h"
 #include "gametheme.h"
 #include "runewars.h"
 #include "settings.h"
@@ -37,6 +38,7 @@ namespace
     bool guardianRulesSound = true;
     std::string lang;
     std::string speed = "classic";
+    AI::Difficulty defaultAiDifficulty = AI::Difficulty::Normal;
 
     int normalizedVolume(int value)
     {
@@ -85,6 +87,7 @@ bool Settings::read(void)
     guardianRulesSound = true;
     lang = normalizedLanguage(Systems::messageLocale(1));
     speed = "classic";
+    defaultAiDifficulty = AI::Difficulty::Normal;
 
     JsonObject jo = GameTheme::jsonResource("config.json").toObject();
 
@@ -102,6 +105,8 @@ bool Settings::read(void)
 	guardianRulesSound = jo.getBoolean("sound:guardianrules", true);
 	lang = normalizedLanguage(jo.getString("language", Systems::messageLocale(1)));
 	speed = normalizedGameSpeed(jo.getString("game:speed", "classic"));
+	defaultAiDifficulty = AI::difficultyFromString(
+	    jo.getString("ai:difficulty", AI::difficultyName(defaultAiDifficulty)));
     }
 
     JsonObject user = JsonContentFile(userSettingsFile()).toObject();
@@ -122,6 +127,8 @@ bool Settings::read(void)
 	guardianRulesSound = user.getBoolean("sound:guardianrules", guardianRulesSound);
 	lang = normalizedLanguage(user.getString("language", lang));
 	speed = normalizedGameSpeed(user.getString("game:speed", speed));
+	defaultAiDifficulty = AI::difficultyFromString(
+	    user.getString("ai:difficulty", AI::difficultyName(defaultAiDifficulty)));
     }
 
     return true;
@@ -148,6 +155,7 @@ bool Settings::write(std::string* error)
     jo.addInteger("display:window_scale", gameWindowScale);
     jo.addBoolean("sound:guardianrules", guardianRulesSound);
     jo.addString("game:speed", speed);
+    jo.addString("ai:difficulty", AI::difficultyName(defaultAiDifficulty));
 
     if(!Systems::saveString2File(jo.toString(), file))
     {
@@ -177,6 +185,16 @@ std::string Settings::gameSpeed(void)
 void Settings::setGameSpeed(const std::string & value)
 {
     speed = normalizedGameSpeed(value);
+}
+
+AI::Difficulty Settings::aiDifficulty(void)
+{
+    return defaultAiDifficulty;
+}
+
+void Settings::setAIDifficulty(AI::Difficulty value)
+{
+    defaultAiDifficulty = value;
 }
 
 int Settings::presentationDelay(int milliseconds)

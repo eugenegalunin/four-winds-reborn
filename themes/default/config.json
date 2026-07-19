@@ -6,6 +6,7 @@
     "voice:volume": 100,
     "sound:guardianrules": true,
     "game:speed": "classic",
+    "ai:difficulty": "normal",
     "display:accel": true,
     "display:fullscreen": false,
     "display:window_scale": 100

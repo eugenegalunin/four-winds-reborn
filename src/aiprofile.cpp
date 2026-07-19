@@ -78,25 +78,42 @@ namespace
 
 const AI::DifficultyRules & AI::difficultyRules(Difficulty difficulty)
 {
-    // Difficulty is a decision-quality policy, never an economy or statistics bonus.
-    // Normal intentionally preserves the established reference behaviour.
+    // Normal intentionally preserves the established reference behaviour. Training
+    // is a non-aggressive teaching policy. Unfair is the one deliberately asymmetric
+    // mode: it receives explicit economy bonuses, but never hidden information or
+    // favourable random rolls.
+    static const DifficultyRules training{
+        4, 0, 1, -1, 1, 1, 2,
+        0, -30, 60, -15, 25, -25, 50, 82, 2, true,
+        true, false, false, 0, 0, 0
+    };
     static const DifficultyRules easy{
         8, 0, 1, -1, 2, 2, 3,
-        55, -20, 75, -10, 15, -15, 60, 88, 3, true
+        55, -20, 75, -10, 15, -15, 60, 88, 3, true,
+        false, true, true, 0, 0, 0
     };
     static const DifficultyRules normal{
         16, 0, 3, 0, 4, 4, 6,
-        0, 0, 100, 0, 0, 0, 100, 100, 0, true
+        0, 0, 100, 0, 0, 0, 100, 100, 0, true,
+        false, true, true, 0, 0, 0
     };
     static const DifficultyRules hard{
         48, 1, 4, 1, 6, 6, 10,
-        0, 25, 125, 10, -15, 10, 160, 100, 0, false
+        0, 25, 125, 10, -15, 10, 160, 100, 0, false,
+        false, true, true, 0, 0, 0
+    };
+    static const DifficultyRules unfair{
+        128, 2, 6, 2, 10, 10, 20,
+        -35, 50, 160, -15, -25, 20, 220, 100, 0, false,
+        false, true, true, 500, 125, 100
     };
 
     switch(difficulty)
     {
+        case Difficulty::Training: return training;
         case Difficulty::Easy: return easy;
         case Difficulty::Hard: return hard;
+        case Difficulty::Unfair: return unfair;
         default: return normal;
     }
 }
@@ -105,8 +122,10 @@ const char* AI::difficultyName(Difficulty difficulty)
 {
     switch(difficulty)
     {
+        case Difficulty::Training: return "training";
         case Difficulty::Easy: return "easy";
         case Difficulty::Hard: return "hard";
+        case Difficulty::Unfair: return "unfair";
         default: return "normal";
     }
 }
@@ -121,9 +140,11 @@ AI::Difficulty AI::difficultyFromString(const std::string & value)
 bool AI::difficultyFromString(const std::string & value, Difficulty & result)
 {
     const std::string difficulty = lowercase(value);
-    if(difficulty == "easy") result = Difficulty::Easy;
+    if(difficulty == "training") result = Difficulty::Training;
+    else if(difficulty == "easy") result = Difficulty::Easy;
     else if(difficulty == "normal") result = Difficulty::Normal;
     else if(difficulty == "hard") result = Difficulty::Hard;
+    else if(difficulty == "unfair") result = Difficulty::Unfair;
     else return false;
     return true;
 }
@@ -132,9 +153,11 @@ AI::Difficulty AI::nextDifficulty(Difficulty difficulty)
 {
     switch(difficulty)
     {
+        case Difficulty::Training: return Difficulty::Easy;
         case Difficulty::Easy: return Difficulty::Normal;
         case Difficulty::Normal: return Difficulty::Hard;
-        default: return Difficulty::Easy;
+        case Difficulty::Hard: return Difficulty::Unfair;
+        default: return Difficulty::Training;
     }
 }
 
@@ -149,6 +172,18 @@ int AI::maximumPartiesPerTarget(BehaviorProfile profile, Difficulty difficulty)
 {
     return std::clamp(behaviorRules(profile).maxPartiesPerTarget +
                       difficultyRules(difficulty).partyCoordinationAdjustment, 1, 3);
+}
+
+AI::Difficulty AI::previousDifficulty(Difficulty difficulty)
+{
+    switch(difficulty)
+    {
+        case Difficulty::Training: return Difficulty::Unfair;
+        case Difficulty::Easy: return Difficulty::Training;
+        case Difficulty::Normal: return Difficulty::Easy;
+        case Difficulty::Hard: return Difficulty::Normal;
+        default: return Difficulty::Hard;
+    }
 }
 
 int AI::manaReserve(BehaviorProfile profile, Difficulty difficulty)
