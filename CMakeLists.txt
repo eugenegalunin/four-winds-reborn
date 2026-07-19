@@ -95,6 +95,7 @@ set(FOUR_WINDS_SOURCE
     src/loadrecovery.cpp
     src/gametheme.cpp
     src/gameobjects.cpp
+    src/battlestate.cpp
     src/settings.cpp
     src/aiturn.cpp
     src/aiprofile.cpp
