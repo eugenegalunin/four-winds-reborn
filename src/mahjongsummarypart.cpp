@@ -103,9 +103,11 @@ MahjongSummaryPartScreen::MahjongSummaryPartScreen() : JsonWindow("screen_mahjon
 	const Avatar & winAvatar = ld.playerOfWind(winWind).avatar;
 	const std::string & winAvatarName = GameData::avatarInfo(winAvatar).name;
 	const std::string & winWindName = GameData::windInfo(winWind).name;
-	const std::string drawnName = _("Drawn");
 
-	labels.back().text = StringFormat(_("%1 (%2) wins from %3")).arg(winAvatarName).arg(winWindName).arg(selfDrawnHand ? drawnName : dealAvatarName);
+	if(selfDrawnHand)
+	    labels.back().text = StringFormat(_("%1 (%2) wins by self-draw")).arg(winAvatarName).arg(winWindName);
+	else
+	    labels.back().text = StringFormat(_("%1 (%2) wins from %3")).arg(winAvatarName).arg(winWindName).arg(dealAvatarName);
     }
 
     const RemotePlayer & remoteEast = ld.playerOfWind(Wind::East);

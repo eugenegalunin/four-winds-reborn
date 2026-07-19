@@ -33,6 +33,9 @@ BattleSummaryScreen::BattleSummaryScreen() : JsonWindow("screen_battle_summary.j
     defaultColor = GameTheme::jsonColor(jobject, "default:color");
     defaultFont = jobject.getString("default:font");
     areaFont = jobject.getString("area:font");
+    clanCompactFont = jobject.getString("clan:font_compact", defaultFont);
+    clanTinyFont = jobject.getString("clan:font_tiny", clanCompactFont);
+    clanTextWidth = jobject.getInteger("clan:text_width", 112);
 
     spriteAttack = GameTheme::jsonSprite(jobject, "sprite:attack");
     spriteAvatarIcon = GameTheme::jsonSprite(jobject, "sprite:avatar_icon");
@@ -86,8 +89,13 @@ void BattleSummaryScreen::renderPlayerSection(const RemotePlayer & player, const
 
     // render avatar name
     renderText(frs, player.name(), defaultColor, pos + offsetAvatarText, AlignLeft);
-    // render clan name
-    renderText(frs, clanInfo.name, defaultColor, pos + offsetClanText, AlignLeft);
+    // Keep long localized colour names inside each player quadrant.
+    const FontRender* clanFont = & frs;
+    if(clanFont->stringSize(clanInfo.name).w > clanTextWidth)
+	clanFont = & GameTheme::fontRender(clanCompactFont);
+    if(clanFont->stringSize(clanInfo.name).w > clanTextWidth)
+	clanFont = & GameTheme::fontRender(clanTinyFont);
+    renderText(*clanFont, clanInfo.name, defaultColor, pos + offsetClanText, AlignLeft);
     // render texts
     renderText(frs2, _("Combat Summary"), defaultColor, pos + offsetTextCombat, AlignLeft);
     renderText(frs2, _("Winner is"), defaultColor, pos + offsetTextWinners, AlignRight);

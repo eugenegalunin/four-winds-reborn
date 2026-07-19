@@ -105,6 +105,19 @@ namespace Battle
         bool hasDefenders(void) const { return defendersPresent; }
         Phase phase(void) const { return currentPhase; }
         const char* phaseName(void) const;
+        int choiceNumber(void) const
+        {
+            if(currentPhase == Phase::OpeningLeader) return 1;
+            if(currentPhase == Phase::AttackerRangedChoice)
+                return static_cast<int>(rangedChoiceActors.size()) + 1;
+            if(currentPhase == Phase::AttackerChoice) return round;
+            return 0;
+        }
+        int choiceCount(void) const
+        {
+            return currentPhase == Phase::AttackerRangedChoice ?
+                static_cast<int>(rangedActors.size()) : 0;
+        }
 
         std::vector<int> legalActors(void) const;
         std::vector<int> legalTargets(int attacker) const;

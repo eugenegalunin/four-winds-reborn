@@ -115,10 +115,10 @@
 
     "battle:forecast": {
         "textinfo:title": { "position": [ 898, 420 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" },
-        "textinfo:capture": { "position": [ 898, 448 ], "font": "dejavus16", "color": "OrangeRed", "align": "center" },
-        "textinfo:survival": { "position": [ 898, 472 ], "font": "dejavus16", "color": "#efe4ae", "align": "center" },
-        "textinfo:forces": { "position": [ 898, 498 ], "font": "dejavus12", "color": "#efe4ae", "align": "center" },
-        "textinfo:scope": { "position": [ 898, 518 ], "font": "dejavus12", "color": "#c8b77a", "align": "center" }
+        "textinfo:capture": { "position": [ 800, 448 ], "font": "dejavus16", "color": "OrangeRed", "align": "left" },
+        "textinfo:survival": { "position": [ 800, 472 ], "font": "dejavus16", "color": "#efe4ae", "align": "left" },
+        "textinfo:forces": { "position": [ 800, 494 ], "font": "dejavus12", "color": "#efe4ae", "align": "left" },
+        "textinfo:scope": { "position": [ 800, 512 ], "font": "dejavus12", "color": "#c8b77a", "align": "left" }
     },
 
     "sprite:town_tower_winds": { "id": "town0", "type": "file", "file": "map.png", "crop": [984, 918, 24, 50], "colorkey": "#ffd2d2" },

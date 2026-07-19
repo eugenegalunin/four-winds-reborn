@@ -2,6 +2,7 @@
     { "id": "tooltips", "file": "dejavuserif.ttf", "size": "14", "blend": "blended" },
     { "id": "dejavus12", "file": "dejavuserif.ttf", "size": "12", "blend": "blended" },
     { "id": "dejavus14", "file": "dejavuserif.ttf", "size": "14", "blend": "blended" },
+    { "id": "dejavus16", "file": "dejavuserif.ttf", "size": "16", "blend": "blended" },
     { "id": "dejavus18", "file": "dejavuserif.ttf", "size": "18", "blend": "blended" },
     { "id": "dejavus22", "file": "dejavuserif.ttf", "size": "22", "blend": "blended" },
     { "id": "dejavus26", "file": "dejavuserif.ttf", "size": "26", "blend": "blended" },

@@ -2531,7 +2531,8 @@ bool GameData::emitPendingBattleChoice(ActionList & actions)
     actions.push_back(AdventureBattleChoice(currentWind, pendingBattle.choiceLegend(),
 	                                     pendingBattle.session.phaseName(),
 	                                     pendingBattle.session.strikes(), actors, targets,
-	                                     recommended));
+	                                     recommended, pendingBattle.session.choiceNumber(),
+	                                     pendingBattle.session.choiceCount()));
     return true;
 }
 

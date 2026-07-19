@@ -115,14 +115,26 @@ SelectPersonScreen::SelectPersonScreen() : JsonWindow("screen_selectperson.json"
         personClans = GameTheme::jsonTextInfo(*jo, "textinfo:clans");
         spellText = GameTheme::jsonTextInfo(*jo, "textinfo:spell");
 
+        personClanCompact = personClan;
+        personClanTiny = personClan;
+        personClansCompact = personClans;
+        personClansTiny = personClans;
         supplementalSpells = personClans;
         specialAbilities = personClans;
 	spellTextCompact = spellText;
 	spellTextTiny = spellText;
 	abilityText = personClans;
 
-	// Optional compact styles keep localized long names inside the two-column
-	// spell list while preserving the original size for short labels/themes.
+	// Optional compact styles keep localized long names inside fixed-width
+	// labels while preserving the original size for short labels/themes.
+	if(const JsonValue* value = jo->getValue("textinfo:clan_compact"))
+	    personClanCompact = GameTheme::jsonTextInfo(*value);
+	if(const JsonValue* value = jo->getValue("textinfo:clan_tiny"))
+	    personClanTiny = GameTheme::jsonTextInfo(*value);
+	if(const JsonValue* value = jo->getValue("textinfo:clans_compact"))
+	    personClansCompact = GameTheme::jsonTextInfo(*value);
+	if(const JsonValue* value = jo->getValue("textinfo:clans_tiny"))
+	    personClansTiny = GameTheme::jsonTextInfo(*value);
 	if(const JsonValue* value = jo->getValue("textinfo:spell_compact"))
 	    spellTextCompact = GameTheme::jsonTextInfo(*value);
 	if(const JsonValue* value = jo->getValue("textinfo:spell_tiny"))
@@ -226,8 +238,22 @@ void SelectPersonScreen::renderWindow(void)
 	renderTextInfo(personName1, avatarInfo.name);
 	renderTextInfo(personName2, avatarInfo.name);
 	renderTextInfo(personDescription, avatarInfo.dignity);
-	renderTextInfo(personClans, avatarInfo.toStringClans());
-	renderTextInfo(personClan, selectedClan.isValid() ? GameData::clanInfo(selectedClan).name : _("Random"));
+	const std::string clans = avatarInfo.toStringClans();
+	const int clansWidth = std::max(1, width() - personClans.position.x - 8);
+	const JsonTextInfo* fittedClans = & personClans;
+	if(GameTheme::fontRender(fittedClans->font).stringSize(clans).w > clansWidth)
+	    fittedClans = & personClansCompact;
+	if(GameTheme::fontRender(fittedClans->font).stringSize(clans).w > clansWidth)
+	    fittedClans = & personClansTiny;
+	renderTextInfo(*fittedClans, clans);
+	const std::string clanName = selectedClan.isValid() ? GameData::clanInfo(selectedClan).name : _("Random");
+	const int clanNameWidth = std::max(1, width() - personClan.position.x - 8);
+	const JsonTextInfo* fittedClan = & personClan;
+	if(GameTheme::fontRender(fittedClan->font).stringSize(clanName).w > clanNameWidth)
+	    fittedClan = & personClanCompact;
+	if(GameTheme::fontRender(fittedClan->font).stringSize(clanName).w > clanNameWidth)
+	    fittedClan = & personClanTiny;
+	renderTextInfo(*fittedClan, clanName);
 
 	// creatures
 	Point drawPos = creaturesPos;
@@ -415,10 +441,15 @@ bool SelectPersonScreen::actionClickPersons(const ButtonsEvent & coords)
     for(; ita != avatarsIcon.end(); ++ita)
 	if(coords.isClick((*ita).area())) break;
 
-    if(ita == avatarsIcon.end() ||
-	    (*ita).isDisabled()) return false;
+    if(ita == avatarsIcon.end()) return false;
 
     const Avatar & clickedAvatar = (*ita).toAvatar();
+
+    // A clan filter must not turn otherwise valid portraits into dead ends.
+    // Choosing one means that the player wants to change the wizard, so
+    // release the incompatible clan first.
+    if((*ita).isDisabled())
+	clearClanSelection();
 
     if(selectedAvatar == clickedAvatar)
 	return true;
@@ -430,14 +461,10 @@ bool SelectPersonScreen::actionClickPersons(const ButtonsEvent & coords)
     (*ita).setSelected(true);
 
     selectedAvatar = clickedAvatar;
-    const AvatarInfo & avatarInfo = GameData::avatarInfo(selectedAvatar);
-
-    // reset clans
-    for(auto & icon : clansIcon)
-	icon.setDisabled(false);
 
     creaturesIcon.clear();
     spellsIcon.clear();
+    refreshSelectionFilters();
 
     if(selectedAvatar() == Avatar::Random)
     {
@@ -446,16 +473,6 @@ bool SelectPersonScreen::actionClickPersons(const ButtonsEvent & coords)
     }
     else
     {
-	// set disabled clans
-	auto disabledClans = RevertClans(avatarInfo.clans);
-
-	for(auto & icon : clansIcon)
-	{
-	    if(std::any_of(disabledClans.begin(), disabledClans.end(), [&](const Clan & clan){ return clan == icon.toClan(); }))
-		icon.setDisabled(true);
-	}
-
-	//
 	playSound(selectedAvatar.toString().append("_name"));
     }
 
@@ -469,13 +486,22 @@ bool SelectPersonScreen::actionClickClans(const ButtonsEvent & coords)
     for(; itc != clansIcon.end(); ++itc)
 	if(coords.isClick((*itc).area())) break;
 
-    if(itc == clansIcon.end() ||
-	(*itc).isDisabled()) return false;
+    if(itc == clansIcon.end()) return false;
 
     const Clan & clickedClan = (*itc).toClan();
 
-    if(selectedClan == clickedClan)
-	return true;
+    // Repeating a clan click or right-clicking any clan releases the filter.
+    if(coords.isButtonRight() || selectedClan == clickedClan)
+	{
+	    clearClanSelection();
+	    playSound("button");
+	    return true;
+	}
+
+    // Clicking a clan disabled by the current wizard is an explicit request
+    // to change allegiance. Fall back to Random and honour that request.
+    if((*itc).isDisabled())
+	selectRandomAvatar();
 
     // reset selected
     for(auto & icon : clansIcon)
@@ -484,21 +510,57 @@ bool SelectPersonScreen::actionClickClans(const ButtonsEvent & coords)
     (*itc).setSelected(true);
 
     selectedClan = clickedClan;
-
-    // set disabled avatars
-    for(auto & icon : avatarsIcon)
-	icon.setDisabled(false);
-
-    auto disabledAvatars = RevertPersons(GameData::avatarsOfClan(selectedClan));
-
-    for(auto & icon : avatarsIcon)
-    {
-        if(disabledAvatars.end() != std::find(disabledAvatars.begin(), disabledAvatars.end(), icon.toAvatar()))
-	    icon.setDisabled(true);
-    }
+    refreshSelectionFilters();
 
     //
     playSound(selectedClan.toString().append("_name"));
 
     return true;
+}
+
+void SelectPersonScreen::refreshSelectionFilters(void)
+{
+    for(auto & icon : avatarsIcon)
+	icon.setDisabled(false);
+    for(auto & icon : clansIcon)
+	icon.setDisabled(false);
+
+    if(selectedAvatar.isValid() && selectedAvatar() != Avatar::Random)
+    {
+	const AvatarInfo & avatarInfo = GameData::avatarInfo(selectedAvatar);
+	const Clans disabledClans = RevertClans(avatarInfo.clans);
+	for(auto & icon : clansIcon)
+	    if(std::find(disabledClans.begin(), disabledClans.end(), icon.toClan()) != disabledClans.end())
+		icon.setDisabled(true);
+    }
+
+    if(selectedClan.isValid())
+    {
+	const Avatars disabledAvatars = RevertPersons(GameData::avatarsOfClan(selectedClan));
+	for(auto & icon : avatarsIcon)
+	    if(std::find(disabledAvatars.begin(), disabledAvatars.end(), icon.toAvatar()) != disabledAvatars.end())
+		icon.setDisabled(true);
+    }
+}
+
+void SelectPersonScreen::clearClanSelection(void)
+{
+    selectedClan.reset();
+    for(auto & icon : clansIcon)
+	icon.setSelected(false);
+    refreshSelectionFilters();
+}
+
+void SelectPersonScreen::selectRandomAvatar(void)
+{
+    selectedAvatar = Avatar(Avatar::Random);
+    for(auto & icon : avatarsIcon)
+    {
+	icon.setSelected(icon.toAvatar() == selectedAvatar);
+	icon.setDisabled(false);
+    }
+
+    creaturesIcon.clear();
+    spellsIcon.clear();
+    refreshSelectionFilters();
 }

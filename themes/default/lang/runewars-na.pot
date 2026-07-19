@@ -1779,6 +1779,10 @@ msgid "Drawn"
 msgstr ""
 
 #: src\mahjongsummarypart.cpp:108
+msgid "%1 (%2) wins by self-draw"
+msgstr ""
+
+#: src\mahjongsummarypart.cpp:110
 msgid "%1 (%2) wins from %3"
 msgstr ""
 
@@ -2364,8 +2368,24 @@ msgstr ""
 msgid "Missile assignment"
 msgstr ""
 
+#: src\dialogs.cpp
+msgid "Missile assignment %1/%2"
+msgstr ""
+
 #: src\dialogs.cpp:1296
 msgid "Melee round"
+msgstr ""
+
+#: src\dialogs.cpp
+msgid "Melee action"
+msgstr ""
+
+#: src\dialogs.cpp
+msgid "Melee action %1"
+msgstr ""
+
+#: src\dialogs.cpp
+msgid "Choice accepted"
 msgstr ""
 
 #: src\dialogs.cpp:1461 src\dialogs.cpp:1634
@@ -2469,11 +2489,11 @@ msgid "Outcome hidden on Hard"
 msgstr ""
 
 #: src\adventurepart.cpp
-msgid "Known: %1 attackers / %2 visible guards"
+msgid "Known: %1 atk. / %2 guards"
 msgstr ""
 
 #: src\adventurepart.cpp
-msgid "Town loyalty: %1 - known forces only"
+msgid "Land: %1 - visible forces only"
 msgstr ""
 
 #: src\adventurepart.cpp

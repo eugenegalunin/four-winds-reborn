@@ -2752,7 +2752,8 @@ void testAdventureBattleSessionFlow()
 
     const AdventureBattleChoice choice =
         static_cast<const AdventureBattleChoice &>(actions.back());
-    expect(choice.phase() == "opening_leader" && choice.recommendedActor() == 410 &&
+    expect(choice.phase() == "opening_leader" && choice.choiceNumber() == 1 &&
+           choice.choiceCount() == 0 && choice.recommendedActor() == 410 &&
            choice.recommendedTarget() == -1 && choice.targets().empty(),
            "Adventure battle choice must expose a target-free opening leader phase");
     const JsonObject pendingState = GameData::authoritativeState();
@@ -2779,7 +2780,8 @@ void testAdventureBattleSessionFlow()
            "a legal opening leader must emit the next Adventure battle phase");
     const AdventureBattleChoice meleeChoice =
         static_cast<const AdventureBattleChoice &>(meleeActions.back());
-    expect(meleeChoice.phase() == "attacker_melee" &&
+    expect(meleeChoice.phase() == "attacker_melee" && meleeChoice.choiceNumber() == 1 &&
+           meleeChoice.choiceCount() == 0 &&
            meleeChoice.recommendedTarget() == 420,
            "Adventure must expose the stable recommended target for manual melee");
 
@@ -2792,7 +2794,7 @@ void testAdventureBattleSessionFlow()
            "a nonlethal manual attack must emit the next battle decision");
     const AdventureBattleChoice continuedChoice =
         static_cast<const AdventureBattleChoice &>(continued.back());
-    expect(!continuedChoice.strikes().empty(),
+    expect(continuedChoice.choiceNumber() == 2 && !continuedChoice.strikes().empty(),
            "each later battle decision must carry its authoritative event timeline");
 
     ActionList resolved;

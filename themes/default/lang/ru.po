@@ -1779,8 +1779,12 @@ msgid "Drawn"
 msgstr "Сам Выбрал"
 
 #: src\mahjongsummarypart.cpp:108
+msgid "%1 (%2) wins by self-draw"
+msgstr "%1 (%2) побеждает самостоятельным добором"
+
+#: src\mahjongsummarypart.cpp:110
 msgid "%1 (%2) wins from %3"
-msgstr "%1 (%2) побеждает благодаря %3"
+msgstr "%1 (%2) побеждает на сбросе %3"
 
 #: src\mahjongsummarypart.cpp:219
 msgid "Base Score:"
@@ -2364,9 +2368,25 @@ msgstr "Первый Боец"
 msgid "Missile assignment"
 msgstr "Выбор Стрелков"
 
+#: src\dialogs.cpp
+msgid "Missile assignment %1/%2"
+msgstr "Назначение стрелков %1/%2"
+
 #: src\dialogs.cpp:1296
 msgid "Melee round"
 msgstr "Рукопашный Раунд"
+
+#: src\dialogs.cpp
+msgid "Melee action"
+msgstr "Ближний бой"
+
+#: src\dialogs.cpp
+msgid "Melee action %1"
+msgstr "Ближний бой — действие %1"
+
+#: src\dialogs.cpp
+msgid "Choice accepted"
+msgstr "Выбор принят"
 
 #: src\dialogs.cpp:1461 src\dialogs.cpp:1634
 msgid "Phase: "
@@ -2462,19 +2482,19 @@ msgstr "Захват: %1%"
 
 #: src\adventurepart.cpp:606
 msgid "Attackers remain: %1%"
-msgstr "Выживет Атакующих: %1%"
+msgstr "Выживут: %1%"
 
 #: src\adventurepart.cpp
 msgid "Outcome hidden on Hard"
 msgstr "Исход скрыт на сложной"
 
 #: src\adventurepart.cpp
-msgid "Known: %1 attackers / %2 visible guards"
+msgid "Known: %1 atk. / %2 guards"
 msgstr "Известно: %1 атак. / %2 защитн."
 
 #: src\adventurepart.cpp
-msgid "Town loyalty: %1 - known forces only"
-msgstr "Верность земли: %1 · только видимые"
+msgid "Land: %1 - visible forces only"
+msgstr "Земля: %1 · только видимые"
 
 #: src\adventurepart.cpp
 msgid "Blue: move  Orange: attack"

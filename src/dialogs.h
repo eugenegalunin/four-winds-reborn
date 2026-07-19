@@ -440,19 +440,27 @@ class BattleChoiceDialog : public DialogWindow
     int                 recommendedTarget;
     int                 selectedActor;
     int                 selectedTarget;
+    int                 choiceNumber;
+    int                 choiceCount;
     bool                resolveAutomatically;
+    bool                acceptedFlashVisible;
+    u32                 acceptedFlashStarted;
+    u32                 acceptedFlashDuration;
 
     Texture             background;
     Color               choiceColor;
     Color               targetColor;
     Color               selectedColor;
     Color               recommendedColor;
+    Color               acceptedColor;
     std::pair<Color, Color> damageColors;
     std::string         hintFont;
+    std::string         statusFont;
     Point               hintPos;
     Point               phasePos;
     Point               timelinePos;
     Point               previewPos;
+    Point               statusPos;
     Rect                autoArea;
     Point               autoTextPos;
     std::string         name1;
@@ -468,13 +476,15 @@ class BattleChoiceDialog : public DialogWindow
 protected:
     bool                mouseClickEvent(const ButtonsEvent &) override;
     bool                keyPressEvent(const KeySym &) override;
+    void                tickEvent(u32) override;
 
 public:
     BattleChoiceDialog(const BattleLegend &, const std::string & phase,
                        const BattleStrikes & history,
                        const std::vector<int> & actors,
                        const std::vector<int> & targets, int recommendedActor,
-                       int recommendedTarget, Window &);
+                       int recommendedTarget, int choiceNumber, int choiceCount,
+                       Window &);
 
     void                renderWindow(void) override;
     int                 actor(void) const { return selectedActor; }

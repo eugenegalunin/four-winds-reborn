@@ -1411,11 +1411,20 @@ namespace
             .append(" ").append(_("damage"));
     }
 
-    std::string battleChoicePhase(const std::string & phase)
+    std::string battleChoicePhase(const std::string & phase, int choiceNumber,
+                                  int choiceCount)
     {
         if(phase == "opening_leader") return _("Opening leader");
-        if(phase == "attacker_ranged") return _("Missile assignment");
-        return _("Melee round");
+        if(phase == "attacker_ranged")
+        {
+            if(0 < choiceNumber && 0 < choiceCount)
+                return StringFormat(_("Missile assignment %1/%2"))
+                    .arg(choiceNumber).arg(choiceCount);
+            return _("Missile assignment");
+        }
+        if(0 < choiceNumber)
+            return StringFormat(_("Melee action %1")).arg(choiceNumber);
+        return _("Melee action");
     }
 }
 
@@ -1683,12 +1692,16 @@ BattleChoiceDialog::BattleChoiceDialog(const BattleLegend & leg,
                                        const std::vector<int> & legalActors,
                                        const std::vector<int> & legalTargets,
                                        int preferredActor, int preferredTarget,
+                                       int currentChoiceNumber, int currentChoiceCount,
                                        Window & win)
     : DialogWindow("dialog_combat.json", win), legend(leg), phase(battlePhase),
       history(battleHistory), actors(legalActors),
       targets(legalTargets), recommendedActor(preferredActor),
       recommendedTarget(preferredTarget), selectedActor(-1), selectedTarget(-1),
-      resolveAutomatically(false)
+      choiceNumber(currentChoiceNumber), choiceCount(currentChoiceCount),
+      resolveAutomatically(false),
+      acceptedFlashVisible(battlePhase != "opening_leader"),
+      acceptedFlashStarted(0), acceptedFlashDuration(0)
 {
     background = GameTheme::jsonSprite(jobject, "background");
     const Texture lifeStatus = GameTheme::jsonSprite(jobject, "sprite:lifestatus");
@@ -1698,9 +1711,11 @@ BattleChoiceDialog::BattleChoiceDialog(const BattleLegend & leg,
     targetColor = GameTheme::jsonColor(jobject, "color:target");
     selectedColor = GameTheme::jsonColor(jobject, "color:selected");
     recommendedColor = GameTheme::jsonColor(jobject, "color:recommended");
+    acceptedColor = GameTheme::jsonColor(jobject, "color:accepted");
     damageColors.first = GameTheme::jsonColor(jobject, "color:alive");
     damageColors.second = GameTheme::jsonColor(jobject, "color:damage");
     hintFont = jobject.getString("font:choice", "dejavus18");
+    statusFont = jobject.getString("font:choice_status", "dejavus14");
     hintPos = GameTheme::jsonPoint(jobject, "offset:choice");
     autoArea = GameTheme::jsonRect(jobject, "area:auto");
     autoTextPos = GameTheme::jsonPoint(jobject, "offset:auto");
@@ -1718,6 +1733,9 @@ BattleChoiceDialog::BattleChoiceDialog(const BattleLegend & leg,
     phasePos = GameTheme::jsonPoint(jobject, "offset:choice_phase");
     timelinePos = GameTheme::jsonPoint(jobject, "offset:choice_timeline");
     previewPos = GameTheme::jsonPoint(jobject, "offset:choice_preview");
+    statusPos = GameTheme::jsonPoint(jobject, "offset:choice_status");
+    acceptedFlashDuration = static_cast<u32>(
+        std::max(0, jobject.getInteger("delay:choice_status", 900)));
 
     units.push_back(CombatUnit(&legend.town, GameTheme::jsonPoint(jobject, "offset:tower"),
                                cellFill, lifeStatus));
@@ -1753,7 +1771,8 @@ void BattleChoiceDialog::renderWindow(void)
     renderText(defaultFont, name2, textColor, center2Pos, AlignCenter, AlignCenter);
 
     renderText(GameTheme::fontRender(hintFont),
-               std::string(_("Phase: ")).append(battleChoicePhase(phase)), textColor,
+               std::string(_("Phase: ")).append(
+                   battleChoicePhase(phase, choiceNumber, choiceCount)), textColor,
                phasePos, AlignCenter, AlignCenter);
     if(!history.empty())
     {
@@ -1764,6 +1783,9 @@ void BattleChoiceDialog::renderWindow(void)
         renderText(GameTheme::fontRender(hintFont), event, textColor,
                    timelinePos, AlignCenter, AlignCenter);
     }
+    if(acceptedFlashVisible)
+        renderText(GameTheme::fontRender(statusFont), _("Choice accepted"), acceptedColor,
+                   statusPos, AlignCenter, AlignCenter);
 
     for(const CombatUnit & unit : units)
     {
@@ -1823,6 +1845,21 @@ void BattleChoiceDialog::renderWindow(void)
     renderRect(recommendedColor, autoArea);
     renderText(GameTheme::fontRender(hintFont), _("Auto Resolve"), textColor,
                autoTextPos, AlignCenter, AlignCenter);
+}
+
+void BattleChoiceDialog::tickEvent(u32 ms)
+{
+    if(!acceptedFlashVisible || !acceptedFlashDuration) return;
+    if(!acceptedFlashStarted)
+    {
+        acceptedFlashStarted = ms;
+        return;
+    }
+    if(ms - acceptedFlashStarted >= acceptedFlashDuration)
+    {
+        acceptedFlashVisible = false;
+        renderWindow();
+    }
 }
 
 bool BattleChoiceDialog::mouseClickEvent(const ButtonsEvent & coords)

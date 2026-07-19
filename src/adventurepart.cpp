@@ -605,12 +605,12 @@ void MapScreenBase::renderBattleForecast(void)
         renderTextInfo(forecastCapture, _("Outcome hidden on Hard"));
     }
     renderTextInfo(forecastForces,
-                   StringFormat(_("Known: %1 attackers / %2 visible guards"))
-                       .arg(forecastPreview.attackerCount)
-                       .arg(forecastPreview.visibleDefenderCount));
+			   StringFormat(_("Known: %1 atk. / %2 guards"))
+			       .arg(forecastPreview.attackerCount)
+			       .arg(forecastPreview.visibleDefenderCount));
     renderTextInfo(forecastScope,
-                   StringFormat(_("Town loyalty: %1 - known forces only"))
-                       .arg(forecastPreview.townLoyalty));
+			   StringFormat(_("Land: %1 - visible forces only"))
+			       .arg(forecastPreview.townLoyalty));
 }
 
 void MapScreenBase::renderCreatureInfo(const BattleCreature & battle)
@@ -1682,7 +1682,8 @@ bool AdventurePartScreen::actionAdventureBattleChoice(const ActionMessage & v)
 
     BattleChoiceDialog dialog(legend, action.phase(), action.strikes(),
                               action.actors(), action.targets(),
-	                      action.recommendedActor(), action.recommendedTarget(), *this);
+	                      action.recommendedActor(), action.recommendedTarget(),
+	                      action.choiceNumber(), action.choiceCount(), *this);
     dialog.exec();
 
     const ClientBattleChoice choice(dialog.actor(), dialog.target(), dialog.autoResolve());

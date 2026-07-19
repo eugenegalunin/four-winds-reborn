@@ -4,6 +4,9 @@
     "music":            [ "win" ],
     "default:font":     "dejavus26",
     "default:color":    "#efe4ae",
+    "clan:font_compact": "dejavus18",
+    "clan:font_tiny":    "dejavus16",
+    "clan:text_width":   112,
 
     "buttons":      [
                       { "id": "but_done", "position": [ 926, 710 ], "sprites": [ "but_done1", "but_done2" ] }

@@ -31,6 +31,9 @@ class BattleSummaryScreen : public JsonWindow
     Color               defaultColor;
     std::string         defaultFont;
     std::string         areaFont;
+    std::string         clanCompactFont;
+    std::string         clanTinyFont;
+    int                 clanTextWidth;
 
     JsonButton*         buttonNext;
     Point		offsetPlayers[4];

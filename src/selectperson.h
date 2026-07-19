@@ -56,6 +56,8 @@ class SelectPersonScreen : public JsonWindow
     Point		personImagePos, creaturesPos, textPos;
 
     JsonTextInfo	personName1, personName2, personDescription, personClan, personClans, spellText;
+    JsonTextInfo	personClanCompact, personClanTiny;
+    JsonTextInfo	personClansCompact, personClansTiny;
     JsonTextInfo	spellTextCompact, spellTextTiny, abilityText;
     JsonTextInfo	supplementalSpells, specialAbilities;
 
@@ -68,6 +70,9 @@ class SelectPersonScreen : public JsonWindow
     bool	actionButtonClose(void);
     bool	actionClickPersons(const ButtonsEvent &);
     bool	actionClickClans(const ButtonsEvent &);
+    void	refreshSelectionFilters(void);
+    void	clearClanSelection(void);
+    void	selectRandomAvatar(void);
 
 protected:
     bool	mouseClickEvent(const ButtonsEvent &) override;

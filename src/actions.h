@@ -397,7 +397,8 @@ struct AdventureBattleChoice : AdventureMessage
                           const BattleStrikes & strikes,
                           const std::vector<int> & actors,
                           const std::vector<int> & targets,
-                          const std::pair<int, int> & recommended)
+                          const std::pair<int, int> & recommended,
+                          int choiceNumber, int choiceCount)
 	: AdventureMessage(Action::AdventureBattleChoice, currentWind)
     {
 	addObject("legend", legend.toJsonObject());
@@ -407,6 +408,8 @@ struct AdventureBattleChoice : AdventureMessage
 	addArray("targets", JsonPack::stdVector<int>(targets));
 	addInteger("recommendedActor", recommended.first);
 	addInteger("recommendedTarget", recommended.second);
+	addInteger("choiceNumber", choiceNumber);
+	addInteger("choiceCount", choiceCount);
     }
 
     BattleLegend legend(void) const
@@ -425,6 +428,8 @@ struct AdventureBattleChoice : AdventureMessage
     std::vector<int> targets(void) const { return getStdVector<int>("targets"); }
     int recommendedActor(void) const { return getInteger("recommendedActor", -1); }
     int recommendedTarget(void) const { return getInteger("recommendedTarget", -1); }
+    int choiceNumber(void) const { return getInteger("choiceNumber", 0); }
+    int choiceCount(void) const { return getInteger("choiceCount", 0); }
 };
 
 struct AdventureEnd : AdventureMessage

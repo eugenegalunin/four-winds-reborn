@@ -30,6 +30,7 @@ fi
 
 packages=(
     git
+    gettext
     mingw-w64-ucrt-x86_64-toolchain
     mingw-w64-ucrt-x86_64-cmake
     mingw-w64-ucrt-x86_64-ninja
@@ -45,7 +46,7 @@ if (( install_deps )); then
     pacman -S --needed --noconfirm "${packages[@]}"
 fi
 
-for command_name in git cmake ninja pkg-config c++; do
+for command_name in git cmake ninja pkg-config c++ msgfmt; do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "Missing command: $command_name (rerun PowerShell with -InstallDeps)." >&2
         exit 2
@@ -85,6 +86,12 @@ trap 'rm -rf "$staging_dir"' EXIT
 mkdir -p "$staging_dir"
 cp "$build_dir/four-winds-reborn.exe" "$staging_dir/"
 cp -R "$repo_root/themes" "$staging_dir/"
+
+# Compile translations from their editable source on every package build.
+# This prevents an updated .po file from silently shipping with a stale .mo.
+while IFS= read -r -d '' po_file; do
+    msgfmt "$po_file" -o "${po_file%.po}.mo"
+done < <(find "$staging_dir/themes" -type f -name '*.po' -print0)
 
 while IFS= read -r dependency; do
     [[ -n "$dependency" ]] && cp -f "$dependency" "$staging_dir/"
