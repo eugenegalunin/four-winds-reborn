@@ -88,6 +88,7 @@ set(FOUR_WINDS_SOURCE
     src/strings.cpp
     src/gamedata.cpp
     src/actionvalidation.cpp
+    src/adventurecommands.cpp
     src/runewars.cpp
     src/intropart.cpp
     src/mainmenu.cpp
