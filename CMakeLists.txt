@@ -102,6 +102,7 @@ set(FOUR_WINDS_SOURCE
     src/runegamestate.cpp
     src/runegamescoring.cpp
     src/playerstate.cpp
+    src/creaturestate.cpp
     src/battlestate.cpp
     src/battleentities.cpp
     src/battlesession.cpp
