@@ -96,6 +96,7 @@ set(FOUR_WINDS_SOURCE
     src/gametheme.cpp
     src/gameobjects.cpp
     src/battlestate.cpp
+    src/battleentities.cpp
     src/settings.cpp
     src/aiturn.cpp
     src/aiprofile.cpp
