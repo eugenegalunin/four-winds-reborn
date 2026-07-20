@@ -88,6 +88,7 @@ set(FOUR_WINDS_SOURCE
     src/developerfixtures.cpp
     src/strings.cpp
     src/gamedata.cpp
+    src/gamestateio.cpp
     src/runegamecommands.cpp
     src/actionvalidation.cpp
     src/adventurecommands.cpp
