@@ -85,6 +85,7 @@ set(FOUR_WINDS_SOURCE
     src/replay.cpp
     src/simulation.cpp
     src/developertools.cpp
+    src/developerfixtures.cpp
     src/strings.cpp
     src/gamedata.cpp
     src/actionvalidation.cpp
