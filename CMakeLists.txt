@@ -99,6 +99,7 @@ set(FOUR_WINDS_SOURCE
     src/loadrecovery.cpp
     src/gametheme.cpp
     src/gameobjects.cpp
+    src/runegamestate.cpp
     src/battlestate.cpp
     src/battleentities.cpp
     src/battlesession.cpp
