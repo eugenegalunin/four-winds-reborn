@@ -27,7 +27,6 @@
 
 namespace GameData
 {
-    bool rejectAction(ActionRejectReason, int available = -1, int required = -1);
     bool adventureBattleAction(const Avatar &, ActionList &);
     bool clientBattleChoice(const Avatar &, const ClientMessage &, ActionList &);
     bool emitPendingBattleChoice(ActionList &);

@@ -24,6 +24,7 @@
 #include <list>
 #include <vector>
 
+#include "actionvalidation.h"
 #include "aiprofile.h"
 #include "battlecommands.h"
 #include "battlesession.h"
