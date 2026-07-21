@@ -77,65 +77,77 @@ set(FOUR_WINDS_BUILD_DEFINITIONS
     FOUR_WINDS_ENGINE_REVISION="${FOUR_WINDS_ENGINE_REVISION}")
 
 set(FOUR_WINDS_SOURCE
-    src/crashreport.cpp
-    src/gameplayrng.cpp
-    src/matchscore.cpp
-    src/recovery.cpp
-    src/savegames.cpp
-    src/replay.cpp
-    src/simulation.cpp
-    src/developertools.cpp
-    src/developerfixtures.cpp
-    src/strings.cpp
     src/gamedata.cpp
-    src/gamestateio.cpp
-    src/runegamecommands.cpp
-    src/actionvalidation.cpp
-    src/adventurecommands.cpp
     src/runewars.cpp
-    src/intropart.cpp
-    src/mainmenu.cpp
-    src/encyclopedia.cpp
-    src/settingsmenu.cpp
-    src/loadrecovery.cpp
-    src/gametheme.cpp
     src/gameobjects.cpp
-    src/runegamestate.cpp
-    src/runegamescoring.cpp
-    src/runegameruleset.cpp
-    src/playerstate.cpp
-    src/creaturestate.cpp
-    src/battlestate.cpp
-    src/battleentities.cpp
-    src/battlesession.cpp
-    src/battlecommands.cpp
-    src/settings.cpp
-    src/aiturn.cpp
-    src/aiprofile.cpp
-    src/aistrategy.cpp
-    src/aiadventure.cpp
-    src/aibattle.cpp
-    src/aispell.cpp
-    src/battle.cpp
-    src/battleuitext.cpp
-    src/battlechoicedialog.cpp
-    src/dialogs.cpp
-    src/adventurehints.cpp
-    src/adventureinput.cpp
-    src/adventurepart.cpp
-    src/runegameinput.cpp
-    src/runegamepresentation.cpp
-    src/runegametargetdialogs.cpp
-    src/runegamewidgets.cpp
-    src/battlesummarypart.cpp
-    src/mahjongsummarypart.cpp
-    src/gamesummarypart.cpp
-    src/mahjongpart.cpp
-    src/jsongui.cpp
-    src/showplayers.cpp
-    src/selectperson.cpp)
 
-include_directories(engine src)
+    src/platform/crashreport.cpp
+    src/platform/recovery.cpp
+    src/platform/savegames.cpp
+    src/platform/settings.cpp
+
+    src/rules/actionvalidation.cpp
+    src/rules/adventurecommands.cpp
+    src/rules/creaturestate.cpp
+    src/rules/developerfixtures.cpp
+    src/rules/gamestateio.cpp
+    src/rules/gameplayrng.cpp
+    src/rules/matchscore.cpp
+    src/rules/playerstate.cpp
+    src/rules/replay.cpp
+    src/rules/runegamecommands.cpp
+    src/rules/runegameruleset.cpp
+    src/rules/runegamescoring.cpp
+    src/rules/runegamestate.cpp
+
+    src/battle/battle.cpp
+    src/battle/battlecommands.cpp
+    src/battle/battleentities.cpp
+    src/battle/battlesession.cpp
+    src/battle/battlestate.cpp
+
+    src/ai/aiadventure.cpp
+    src/ai/aibattle.cpp
+    src/ai/aiprofile.cpp
+    src/ai/aispell.cpp
+    src/ai/aistrategy.cpp
+    src/ai/aiturn.cpp
+    src/ai/simulation.cpp
+
+    src/ui/adventurehints.cpp
+    src/ui/adventureinput.cpp
+    src/ui/adventurepart.cpp
+    src/ui/battlechoicedialog.cpp
+    src/ui/battlesummarypart.cpp
+    src/ui/battleuitext.cpp
+    src/ui/developertools.cpp
+    src/ui/dialogs.cpp
+    src/ui/encyclopedia.cpp
+    src/ui/gamesummarypart.cpp
+    src/ui/gametheme.cpp
+    src/ui/intropart.cpp
+    src/ui/jsongui.cpp
+    src/ui/loadrecovery.cpp
+    src/ui/mahjongpart.cpp
+    src/ui/mahjongsummarypart.cpp
+    src/ui/mainmenu.cpp
+    src/ui/runegameinput.cpp
+    src/ui/runegamepresentation.cpp
+    src/ui/runegametargetdialogs.cpp
+    src/ui/runegamewidgets.cpp
+    src/ui/selectperson.cpp
+    src/ui/settingsmenu.cpp
+    src/ui/showplayers.cpp
+    src/ui/strings.cpp)
+
+include_directories(
+    engine
+    src
+    src/ai
+    src/battle
+    src/platform
+    src/rules
+    src/ui)
 add_executable(four_winds_reborn ${FOUR_WINDS_SOURCE})
 target_compile_definitions(four_winds_reborn PRIVATE ${FOUR_WINDS_BUILD_DEFINITIONS})
 
@@ -157,7 +169,7 @@ if(BUILD_TESTING)
     add_executable(gameplay_regression_tests
         tests/gameplay_regression_tests.cpp
         tests/avatar_balance_tests.cpp
-        src/tournament.cpp
+        src/ai/tournament.cpp
         ${FOUR_WINDS_SOURCE})
     target_compile_definitions(gameplay_regression_tests PRIVATE
         RUNEWARS_NO_MAIN
