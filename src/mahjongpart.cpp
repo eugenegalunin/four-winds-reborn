@@ -27,7 +27,7 @@
 #include "runewars.h"
 #include "gametheme.h"
 #include "dialogs.h"
-#include "adventurepart.h"
+#include "runegametargetdialogs.h"
 #include "actions.h"
 #include "crashreport.h"
 #include "mahjongpart.h"

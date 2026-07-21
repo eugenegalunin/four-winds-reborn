@@ -186,43 +186,6 @@ public:
     bool		isMyClan(const Clan &) const;
 };
 
-class ShowMapDialog : public MapScreenBase
-{
-    void		renderLabel(void) override;
-
-public:
-    ShowMapDialog(const LocalData &, Window &);
-};
-
-class ShowSummonCreatureDialog : public MapScreenBase
-{
-    void		renderLabel(void) override;
-    bool		landAllowJoin(const LandInfo &, const LocalPlayer &);
-
-protected:
-    bool		userEvent(int, void*) override;
-
-public:
-    ShowSummonCreatureDialog(const LocalData &, const Creature &, Window &);
-    const Land &	land(void) const;
-};
-
-class ShowCastSpellDialog : public MapScreenBase
-{
-    Spell		spell;
-    int			targetUnit;
-    Land			targetSource;
-    void		renderLabel(void) override;
-
-protected:
-    bool		userEvent(int, void*) override;
-
-public:
-    ShowCastSpellDialog(const LocalData &, const Spell &, Window &);
-    const Land &	land(void) const;
-    int			unit(void) const;
-};
-
 class MoveFlagWindow : public Window
 {
     Texture		flagTexture;

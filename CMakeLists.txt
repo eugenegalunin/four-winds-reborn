@@ -121,6 +121,7 @@ set(FOUR_WINDS_SOURCE
     src/dialogs.cpp
     src/adventurehints.cpp
     src/adventurepart.cpp
+    src/runegametargetdialogs.cpp
     src/battlesummarypart.cpp
     src/mahjongsummarypart.cpp
     src/gamesummarypart.cpp
