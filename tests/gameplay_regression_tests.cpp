@@ -26,6 +26,7 @@
 #include "intropart.h"
 #include "recovery.h"
 #include "replay.h"
+#include "runegameruleset.h"
 #include "savegames.h"
 #include "settings.h"
 #include "simulation.h"
@@ -85,6 +86,21 @@ JsonObject toJsonObject(const JsonObject &);
 namespace
 {
 int failures = 0;
+
+class AlternateScoringRuleset final : public RuneGameRuleset
+{
+public:
+    const std::string & id(void) const override
+    {
+        static const std::string value("test-alternate-scoring");
+        return value;
+    }
+
+    int version(void) const override { return 7; }
+    int baseWinPoints(void) const override { return 30; }
+    int scoreMultiplier(int doubles) const override { return 3 << std::max(0, doubles); }
+    int maximumWinScore(void) const override { return 200; }
+};
 
 void expect(bool condition, const char* message)
 {
@@ -4515,6 +4531,9 @@ int main(int argc, char** argv)
     expect(javed && hasSpell(*javed, Spell(Spell::MassDispel)),
            "Javed must know Mass Dispel");
 
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+    expect(classicRuleset.id() == "classic" && classicRuleset.version() == 1,
+           "Classic Rune Game ruleset identity must remain stable");
     expect(WinResults::scoreMultiplier(0) == 1, "zero doubles must use x1");
     expect(WinResults::scoreMultiplier(1) == 2, "one double must use x2");
     expect(WinResults::scoreMultiplier(4) == 16, "four doubles must use x16");
@@ -4532,6 +4551,16 @@ int main(int argc, char** argv)
     expect(pointHand.totalScore() == 24,
            "Mahjong total score must include set and hand points without doubles");
 
+    const AlternateScoringRuleset alternateRuleset;
+    expect(alternateRuleset.id() == "test-alternate-scoring" && alternateRuleset.version() == 7,
+           "an injected Rune Game ruleset must expose independent identity and version");
+    expect(pointHand.totalPoints(alternateRuleset) == 34,
+           "an injected Rune Game ruleset must control base win points");
+    expect(pointHand.totalScore(alternateRuleset) == 102,
+           "an injected Rune Game ruleset must control score multiplication");
+    expect(pointHand.totalScore() == 24,
+           "an injected Rune Game ruleset must not mutate the implicit Classic ruleset");
+
     WinRules doubledRules;
     doubledRules << WinRule(WinRule::Pung, Stone(Stone::WindEast), false)
                  << WinRule(WinRule::Chao, Stone(Stone::Sword2), false)
@@ -4543,6 +4572,8 @@ int main(int argc, char** argv)
            "a lucky exposed Wind Pung must retain its four base points");
     expect(doubledHand.totalScore() == 48,
            "Mahjong doubles must multiply the complete accumulated point total");
+    expect(doubledHand.totalScore(alternateRuleset) == 200,
+           "an injected Rune Game ruleset must control the maximum win score");
 
     WinRules concealedRules;
     concealedRules << WinRule(WinRule::Pung, Stone(Stone::Skull1), true)

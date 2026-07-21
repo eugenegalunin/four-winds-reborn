@@ -32,6 +32,8 @@ using namespace SWE;
 #define GAME_SET_COUNT  13
 #define GAME_STONE_MAX  70
 
+class RuneGameRuleset;
+
 struct Enum
 {
     int	val;
@@ -1034,11 +1036,14 @@ struct WinResults
     OpponentFinesList		opponentFines(void) const;
 
     int				totalPoints(void) const;
+    int                         totalPoints(const RuneGameRuleset &) const;
     int				scoreRules(void) const;
     int				totalScore(void) const;
+    int                         totalScore(const RuneGameRuleset &) const;
     static int			scoreMultiplier(int doubles);
 
     int                         baseScore(void) const;
+    int                         baseScore(const RuneGameRuleset &) const;
     int                         pairBonus(void) const;
 
     std::string			toString(void) const;

@@ -25,6 +25,7 @@
 #include <sstream>
 
 #include "gamedata.h"
+#include "runegameruleset.h"
 
 /* WinResults */
 enum { AllConcealedWithDiscard = 0x80000000 };
@@ -282,7 +283,12 @@ bool WinResults::noPoints(void) const
 
 int WinResults::baseScore(void) const
 {
-    return 20;
+    return baseScore(classicRuneGameRuleset());
+}
+
+int WinResults::baseScore(const RuneGameRuleset & ruleset) const
+{
+    return ruleset.baseWinPoints();
 }
 
 int WinResults::pairBonus(void) const
@@ -329,7 +335,12 @@ HandBonusList WinResults::bonusHands(void) const
 
 int WinResults::totalPoints(void) const
 {
-    int res = baseScore();
+    return totalPoints(classicRuneGameRuleset());
+}
+
+int WinResults::totalPoints(const RuneGameRuleset & ruleset) const
+{
+    int res = baseScore(ruleset);
 
     res += scoreRules();
     res += pairBonus();
@@ -512,22 +523,25 @@ DoubleBonusList WinResults::bonusDoubles(void) const
 
 int WinResults::totalScore(void) const
 {
+    return totalScore(classicRuneGameRuleset());
+}
+
+int WinResults::totalScore(const RuneGameRuleset & ruleset) const
+{
     int doubles = 0;
 
     DoubleBonusList list = bonusDoubles();
     for(auto it = list.begin(); it != list.end(); ++it) doubles += (*it).value();
 
-    int res = totalPoints() * scoreMultiplier(doubles);
-    if(res > 500) res = 500;
+    int res = totalPoints(ruleset) * ruleset.scoreMultiplier(doubles);
+    if(res > ruleset.maximumWinScore()) res = ruleset.maximumWinScore();
 
     return res;
 }
 
 int WinResults::scoreMultiplier(int doubles)
 {
-    if(doubles <= 0) return 1;
-    if(5 < doubles) doubles = 5;
-    return 1 << doubles;
+    return classicRuneGameRuleset().scoreMultiplier(doubles);
 }
 
 OpponentFinesList WinResults::opponentFines(void) const
