@@ -35,10 +35,6 @@
 namespace GameData
 {
     extern LocalPlayers gamers;
-    extern int bonusKong;
-    extern int bonusPung;
-    extern int bonusChao;
-    extern int bonusPass;
 
     LocalPlayer &	playerOfAvatar(const Avatar &);
     LocalPlayer &	playerOfClan(const Clan &);
@@ -202,19 +198,23 @@ namespace
     }
 
     int mahjongCallScore(const LocalPlayer & player, AI::MahjongCallType type,
-                         const Stones & consumed, const AI::StrategicIntent & intent)
+                         const Stones & consumed, const AI::StrategicIntent & intent,
+                         const RuneGameRuleset & ruleset)
     {
         int result = 45 + 12 * (static_cast<int>(player.rules.size()) + 1);
         switch(type)
         {
             case AI::MahjongCallType::Kong:
-                result += 35 + GameData::bonusKong - GameData::bonusPass;
+                result += 35 + ruleset.spellPointAward(RuneGameSpellPointEvent::Kong) -
+                    ruleset.spellPointAward(RuneGameSpellPointEvent::Discard);
                 break;
             case AI::MahjongCallType::Pung:
-                result += 20 + GameData::bonusPung - GameData::bonusPass;
+                result += 20 + ruleset.spellPointAward(RuneGameSpellPointEvent::Pung) -
+                    ruleset.spellPointAward(RuneGameSpellPointEvent::Discard);
                 break;
             case AI::MahjongCallType::Chao:
-                result += 5 + GameData::bonusChao - GameData::bonusPass;
+                result += 5 + ruleset.spellPointAward(RuneGameSpellPointEvent::Chao) -
+                    ruleset.spellPointAward(RuneGameSpellPointEvent::Discard);
                 break;
             case AI::MahjongCallType::Pass:
                 return 0;
@@ -249,7 +249,7 @@ AI::MahjongCallPlan AI::chooseMahjongCall(const LocalPlayer & player, const Wind
     MahjongCallPlan best;
     auto consider = [&](MahjongCallType type, const Stones & consumed, int variant)
     {
-        const int score = mahjongCallScore(player, type, consumed, intent);
+        const int score = mahjongCallScore(player, type, consumed, intent, ruleset);
         if(score > best.score ||
            (score == best.score &&
             ruleset.callChoicePriority(toRulesetCall(type)) >

@@ -22,6 +22,15 @@ enum class RuneGameCall
     Game
 };
 
+enum class RuneGameSpellPointEvent
+{
+    Discard,
+    Chao,
+    Pung,
+    Kong,
+    Win
+};
+
 // Pure round transition data keeps the rules contract independent from the
 // runtime player objects. Wind identifiers use the stable serialized values
 // defined by Wind; GameData applies the transition to the live match.
@@ -35,8 +44,7 @@ struct RuneGameRoundAdvance
 
 // Authoritative Rune Game rules are introduced one stable seam at a time.
 // The contract now owns scoring, wall/hand construction, legal calls and win
-// validation and round/dealer flow. Further slices extend it with spell-point
-// conversion policy.
+// validation, round/dealer flow and spell-point conversion.
 class RuneGameRuleset
 {
 public:
@@ -67,6 +75,8 @@ public:
 
     virtual RuneGameRoundAdvance advanceRound(int roundWindId, int partWindId) const = 0;
     virtual int firstTurnWindId(void) const = 0;
+
+    virtual int spellPointAward(RuneGameSpellPointEvent) const = 0;
 
     virtual int baseWinPoints(void) const = 0;
     virtual int scoreMultiplier(int doubles) const = 0;

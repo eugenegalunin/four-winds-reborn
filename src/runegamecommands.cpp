@@ -223,10 +223,11 @@ bool GameData::clientButtonGame(const Avatar & avatar, const ClientMessage & act
     }
 
     winResult = validatedResult;
+    const RuneGameRuleset & ruleset = activeRuneGameRuleset();
 
-    client.setMahjongGame(winResult);
+    client.setMahjongGame(winResult, ruleset);
 
-    const int score = winResult.totalScore();
+    const int score = winResult.totalScore(ruleset);
     if(0 < score)
     {
         for(const auto & fine : winResult.opponentFines())
@@ -282,7 +283,7 @@ bool GameData::clientButtonPung(const Avatar & avatar, const ClientMessage & act
 	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongPung(client.wind, dropStone));
-    client.setMahjongPung(dropStone);
+    client.setMahjongPung(dropStone, activeRuneGameRuleset());
     dropStone.reset();
     currentWind = client.wind;
     actions.push_back(MahjongData(currentWind));
@@ -302,7 +303,7 @@ bool GameData::clientButtonKong1(const Avatar & avatar, const ClientMessage & ac
 	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongKong1(client.wind, dropStone));
-    client.setMahjongKong1(dropStone);
+    client.setMahjongKong1(dropStone, activeRuneGameRuleset());
     dropStone.reset();
     currentWind = client.wind;
     actions.push_back(MahjongData(currentWind));
@@ -325,7 +326,7 @@ bool GameData::clientButtonKong2(const Avatar & avatar, const ClientMessage & ac
 	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongKong2(client.wind));
-    client.setMahjongKong2();
+    client.setMahjongKong2(activeRuneGameRuleset());
     actions.push_back(MahjongData(currentWind));
 
     return true;
@@ -346,7 +347,7 @@ bool GameData::clientChaoVariant(const Avatar & avatar, const ClientMessage & ac
 	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongChao(client.wind, dropStone));
-    client.setMahjongChao(dropStone, ca.chaoVariant());
+    client.setMahjongChao(dropStone, ca.chaoVariant(), activeRuneGameRuleset());
     dropStone.reset();
     currentWind = client.wind;
     actions.push_back(MahjongData(currentWind));
@@ -375,7 +376,7 @@ bool GameData::clientDropIndex(const Avatar & avatar, const ClientMessage & act,
        (client.stones.size() == ca.dropIndex() && !client.newStone.isValid()))
 	return rejectAction(ActionRejectReason::InvalidRuneChoice);
 
-    dropStone = client.setMahjongDrop(ca.dropIndex());
+    dropStone = client.setMahjongDrop(ca.dropIndex(), activeRuneGameRuleset());
     actions.push_back(MahjongDrop(currentWind, dropStone));
     actions.push_back(MahjongData(currentWind));
 

@@ -163,6 +163,18 @@ public:
         return { Wind::East, Wind::South, false, false };
     }
     int firstTurnWindId(void) const override { return Wind::South; }
+    int spellPointAward(RuneGameSpellPointEvent event) const override
+    {
+        switch(event)
+        {
+            case RuneGameSpellPointEvent::Discard: return 2;
+            case RuneGameSpellPointEvent::Chao: return 4;
+            case RuneGameSpellPointEvent::Pung: return 6;
+            case RuneGameSpellPointEvent::Kong: return 8;
+            case RuneGameSpellPointEvent::Win: return 10;
+        }
+        return 0;
+    }
     int baseWinPoints(void) const override { return 30; }
     int scoreMultiplier(int doubles) const override { return 3 << std::max(0, doubles); }
     int maximumWinScore(void) const override { return 200; }
@@ -222,6 +234,93 @@ void testRuneGameRoundFlowRuleset()
            "GameData tournament completion must route through the injected ruleset");
     GameData::roundWind = savedRoundWind;
     GameData::partWind = savedPartWind;
+}
+
+void testRuneGameSpellPointRuleset()
+{
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+    const AlternateRuneGameRuleset alternateRuleset;
+
+    expect(classicRuleset.spellPointAward(RuneGameSpellPointEvent::Discard) == 10 &&
+           classicRuleset.spellPointAward(RuneGameSpellPointEvent::Chao) == 20 &&
+           classicRuleset.spellPointAward(RuneGameSpellPointEvent::Pung) == 30 &&
+           classicRuleset.spellPointAward(RuneGameSpellPointEvent::Kong) == 40 &&
+           classicRuleset.spellPointAward(RuneGameSpellPointEvent::Win) == 50,
+           "Classic ruleset must preserve every established spell-point award");
+
+    LocalPlayer classicDiscard;
+    classicDiscard.points = 0;
+    classicDiscard.stones.add(GameStone(Stone::Sword1));
+    classicDiscard.setMahjongDrop(0);
+    expect(classicDiscard.points == 10,
+           "the compatibility discard path must keep the Classic spell-point award");
+
+    LocalPlayer alternateDiscard;
+    alternateDiscard.points = 0;
+    alternateDiscard.stones.add(GameStone(Stone::Sword1));
+    alternateDiscard.setMahjongDrop(0, alternateRuleset);
+    expect(alternateDiscard.points == 2,
+           "an injected ruleset must control the discard spell-point award");
+
+    LocalPlayer alternateChao;
+    alternateChao.points = 0;
+    alternateChao.stones.add(GameStone(Stone::Sword1));
+    alternateChao.stones.add(GameStone(Stone::Sword3));
+    alternateChao.setMahjongChao(Stone(Stone::Sword2), 0, alternateRuleset);
+    expect(alternateChao.points == 4 && alternateChao.rules.size() == 1 &&
+           alternateChao.rules.front().isChao(),
+           "an injected ruleset must control the Chao spell-point award");
+
+    LocalPlayer alternatePung;
+    alternatePung.points = 0;
+    alternatePung.stones.add(GameStone(Stone::Dragon1));
+    alternatePung.stones.add(GameStone(Stone::Dragon1));
+    alternatePung.setMahjongPung(Stone(Stone::Dragon1), alternateRuleset);
+    expect(alternatePung.points == 6 && alternatePung.rules.size() == 1 &&
+           alternatePung.rules.front().isPung(),
+           "an injected ruleset must control the Pung spell-point award");
+
+    LocalPlayer exposedKong;
+    exposedKong.points = 0;
+    exposedKong.stones.add(GameStone(Stone::Sword5));
+    exposedKong.stones.add(GameStone(Stone::Sword5));
+    exposedKong.stones.add(GameStone(Stone::Sword5));
+    exposedKong.setMahjongKong1(Stone(Stone::Sword5), alternateRuleset);
+    expect(exposedKong.points == 8 && exposedKong.rules.size() == 1 &&
+           exposedKong.rules.front().isKong(),
+           "an injected ruleset must control the exposed Kong spell-point award");
+
+    LocalPlayer concealedKong;
+    concealedKong.points = 0;
+    concealedKong.stones.add(GameStone(Stone::Number4));
+    concealedKong.stones.add(GameStone(Stone::Number4));
+    concealedKong.stones.add(GameStone(Stone::Number4));
+    concealedKong.newStone = GameStone(Stone(Stone::Number4), false);
+    concealedKong.setMahjongKong2(alternateRuleset);
+    expect(concealedKong.points == 8 && concealedKong.rules.size() == 1 &&
+           concealedKong.rules.front().isKong() && concealedKong.rules.front().isConcealed(),
+           "an injected ruleset must control the concealed Kong spell-point award");
+
+    LocalPlayer upgradedKong;
+    upgradedKong.points = 0;
+    upgradedKong.rules.push_back(WinRule(WinRule::Pung, Stone(Stone::Skull2), false));
+    upgradedKong.newStone = GameStone(Stone(Stone::Skull2), false);
+    upgradedKong.setMahjongKong2(alternateRuleset);
+    expect(upgradedKong.points == 8 && upgradedKong.rules.front().isKong(),
+           "an injected ruleset must control the upgraded Kong spell-point award");
+
+    WinRules concealedRules;
+    concealedRules << WinRule(WinRule::Chao, Stone(Stone::Sword1), false)
+                   << WinRule(WinRule::Pung, Stone(Stone::Dragon1), false)
+                   << WinRule(WinRule::Kong, Stone(Stone::Skull1), false);
+    const WinResults alternateWin(
+        Wind(Wind::East), Wind(Wind::South), Wind(Wind::West),
+        WinRules(), concealedRules, Stone(Stone::Number2), Stone(Stone::Number2));
+    LocalPlayer winner;
+    winner.points = 0;
+    winner.setMahjongGame(alternateWin, alternateRuleset);
+    expect(winner.points == 28,
+           "a winner must convert concealed sets and the win through one injected ruleset");
 }
 
 BattleCreature creature(int uid, int move, int loyalty = 3, int ranger = 1)
@@ -979,7 +1078,7 @@ void testDeveloperFastForward()
 int runFixedSeedReplaySelfTest()
 {
     constexpr uint64_t seed = UINT64_C(0x123456789abcdef);
-    constexpr const char* expectedHash = "3b5df0ad83ed7d45";
+    constexpr const char* expectedHash = "5f1012c76a1d1638";
 
     GameplayRng::seed(seed);
     GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
@@ -1642,6 +1741,12 @@ void testMahjongCallPlanning()
         chao, Wind(Wind::East), Stone(Stone::Sword3), chaoIntent);
     expect(selectedChao.type == AI::MahjongCallType::Chao && selectedChao.variant == 2,
            "Mahjong AI must choose the Chao variant that preserves its strategic runes");
+    const AI::MahjongCallPlan alternateChao = AI::chooseMahjongCall(
+        chao, Wind(Wind::East), Stone(Stone::Sword3), chaoIntent, alternateRuleset);
+    expect(alternateChao.type == AI::MahjongCallType::Chao &&
+           alternateChao.variant == selectedChao.variant &&
+           alternateChao.score == selectedChao.score - 8,
+           "Mahjong AI call scoring must consume the injected spell-point economy");
 
     LocalPlayer compactWin;
     compactWin.avatar = Avatar::Orachi;
@@ -4619,6 +4724,7 @@ int main(int argc, char** argv)
 
     testDifficultyRules();
     testRuneGameRoundFlowRuleset();
+    testRuneGameSpellPointRuleset();
     testPolygonHitTesting();
     testDrawnMahjongResult();
     testStrategicRunePlanning();

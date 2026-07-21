@@ -148,6 +148,19 @@ namespace
             return Wind::East;
         }
 
+        int spellPointAward(RuneGameSpellPointEvent event) const override
+        {
+            switch(event)
+            {
+                case RuneGameSpellPointEvent::Discard: return 10;
+                case RuneGameSpellPointEvent::Chao: return 20;
+                case RuneGameSpellPointEvent::Pung: return 30;
+                case RuneGameSpellPointEvent::Kong: return 40;
+                case RuneGameSpellPointEvent::Win: return 50;
+            }
+            return 0;
+        }
+
         int baseWinPoints(void) const override
         {
             return 20;

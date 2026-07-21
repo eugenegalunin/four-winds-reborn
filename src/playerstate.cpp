@@ -30,11 +30,6 @@
 namespace GameData
 {
     extern int bonusStart;
-    extern int bonusGame;
-    extern int bonusKong;
-    extern int bonusPung;
-    extern int bonusChao;
-    extern int bonusPass;
 }
 
 namespace
@@ -543,6 +538,11 @@ bool LocalPlayer::isWinMahjong(const Wind & currentWind, const Wind & roundWind,
 
 Stone LocalPlayer::setMahjongDrop(int indexDrop)
 {
+    return setMahjongDrop(indexDrop, classicRuneGameRuleset());
+}
+
+Stone LocalPlayer::setMahjongDrop(int indexDrop, const RuneGameRuleset & ruleset)
+{
 
     if(stones.size() < indexDrop)
     {
@@ -576,7 +576,7 @@ Stone LocalPlayer::setMahjongDrop(int indexDrop)
     }
 
     newStone = GameStone(Stone::None, true);
-    points += GameData::bonusPass;
+    points += ruleset.spellPointAward(RuneGameSpellPointEvent::Discard);
 
     if(isAffectedSpell(Spell::Silence))
     {
@@ -602,6 +602,12 @@ Stone LocalPlayer::setMahjongDrop(int indexDrop)
 
 void LocalPlayer::setMahjongChao(const Stone & dropStone, int index)
 {
+    setMahjongChao(dropStone, index, classicRuneGameRuleset());
+}
+
+void LocalPlayer::setMahjongChao(const Stone & dropStone, int index,
+                                  const RuneGameRuleset & ruleset)
+{
     DEBUG(toString() << ", " << "stones: " << stones.toString() << ", " << "drop stone: " << dropStone.id() <<
 	    ", " << "variant: " << index);
 
@@ -623,7 +629,7 @@ void LocalPlayer::setMahjongChao(const Stone & dropStone, int index)
 	stones.add(dropStone);
 	stones.remove(winRule);
 	rules.push_back(winRule);
-	points += GameData::bonusChao;
+	points += ruleset.spellPointAward(RuneGameSpellPointEvent::Chao);
     }
     else
         ERROR("index out of range");
@@ -631,6 +637,12 @@ void LocalPlayer::setMahjongChao(const Stone & dropStone, int index)
 }
 
 void LocalPlayer::setMahjongPung(const Stone & dropStone)
+{
+    setMahjongPung(dropStone, classicRuneGameRuleset());
+}
+
+void LocalPlayer::setMahjongPung(const Stone & dropStone,
+                                  const RuneGameRuleset & ruleset)
 {
     DEBUG(toString() << ", " << "stones: " << stones.toString() << ", " << "drop stone: " << dropStone.id());
 
@@ -642,13 +654,19 @@ void LocalPlayer::setMahjongPung(const Stone & dropStone)
         stones.add(dropStone);
         stones.remove(winRule);
         rules.push_back(winRule);
-        points += GameData::bonusPung;
+        points += ruleset.spellPointAward(RuneGameSpellPointEvent::Pung);
     }
     else
         ERROR("stone not found: " << dropStone.id());
 }
 
 void LocalPlayer::setMahjongKong1(const Stone & dropStone)
+{
+    setMahjongKong1(dropStone, classicRuneGameRuleset());
+}
+
+void LocalPlayer::setMahjongKong1(const Stone & dropStone,
+                                   const RuneGameRuleset & ruleset)
 {
     DEBUG(toString() << ", " << "stones: " << stones.toString() << ", " << "drop stone: " << dropStone.id());
 
@@ -660,13 +678,19 @@ void LocalPlayer::setMahjongKong1(const Stone & dropStone)
         stones.add(dropStone);
         stones.remove(winRule);
         rules.push_back(winRule);
-        points += GameData::bonusKong;
+        points += ruleset.spellPointAward(RuneGameSpellPointEvent::Kong);
     }
     else
         ERROR("stone not found: " << dropStone.id());
 }
 
 void LocalPlayer::setMahjongGame(const WinResults & winResult)
+{
+    setMahjongGame(winResult, classicRuneGameRuleset());
+}
+
+void LocalPlayer::setMahjongGame(const WinResults & winResult,
+                                  const RuneGameRuleset & ruleset)
 {
     WinRules rules2 = winResult.winRulesConcealed();
 
@@ -678,17 +702,28 @@ void LocalPlayer::setMahjongGame(const WinResults & winResult)
     {
 	switch((*it).rule())
 	{
-	    case WinRule::Chao: points += GameData::bonusChao; break;
-	    case WinRule::Pung: points += GameData::bonusPung; break;
-	    case WinRule::Kong: points += GameData::bonusKong; break;
+	    case WinRule::Chao:
+                points += ruleset.spellPointAward(RuneGameSpellPointEvent::Chao);
+                break;
+	    case WinRule::Pung:
+                points += ruleset.spellPointAward(RuneGameSpellPointEvent::Pung);
+                break;
+	    case WinRule::Kong:
+                points += ruleset.spellPointAward(RuneGameSpellPointEvent::Kong);
+                break;
 	    default: break;
 	}
     }
 
-    points += GameData::bonusGame;
+    points += ruleset.spellPointAward(RuneGameSpellPointEvent::Win);
 }
 
 void LocalPlayer::setMahjongKong2(void)
+{
+    setMahjongKong2(classicRuneGameRuleset());
+}
+
+void LocalPlayer::setMahjongKong2(const RuneGameRuleset & ruleset)
 {
     DEBUG(toString() << ", " << "stones: " << stones.toString() << ", " << "new stone: " << newStone.id());
 
@@ -699,7 +734,7 @@ void LocalPlayer::setMahjongKong2(void)
         newStone = GameStone(Stone::None, true);
         stones.remove(winRule);
         rules.push_back(winRule);
-        points += GameData::bonusKong;
+        points += ruleset.spellPointAward(RuneGameSpellPointEvent::Kong);
     }
     else
     {
@@ -710,7 +745,7 @@ void LocalPlayer::setMahjongKong2(void)
 	{
 	    (*it).upgradeKong();
 	    newStone = GameStone(Stone::None, true);
-	    points += GameData::bonusKong;
+	    points += ruleset.spellPointAward(RuneGameSpellPointEvent::Kong);
 	}
 	else
 	{

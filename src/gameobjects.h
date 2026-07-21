@@ -1142,11 +1142,17 @@ struct LocalPlayer : public RemotePlayer
     LocalPlayer() {}
 
     Stone			setMahjongDrop(int);
+    Stone                       setMahjongDrop(int, const RuneGameRuleset &);
     void			setMahjongChao(const Stone &, int);
+    void                        setMahjongChao(const Stone &, int, const RuneGameRuleset &);
     void			setMahjongPung(const Stone &);
+    void                        setMahjongPung(const Stone &, const RuneGameRuleset &);
     void			setMahjongKong1(const Stone &);
+    void                        setMahjongKong1(const Stone &, const RuneGameRuleset &);
     void			setMahjongKong2(void);
+    void                        setMahjongKong2(const RuneGameRuleset &);
     void			setMahjongGame(const WinResults &);
+    void                        setMahjongGame(const WinResults &, const RuneGameRuleset &);
 
     bool			haveKong(void) const;
     bool			allowCastSpell(const Spell &) const;
