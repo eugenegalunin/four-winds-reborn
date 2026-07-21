@@ -42,7 +42,8 @@ namespace
 GameSummaryScreen::GameSummaryScreen() : JsonWindow("screen_game_summary.json", nullptr),
     buttonNext(nullptr), scores(MatchScore::current()),
     winners(MatchScore::winnerIndices(scores)), winnerPage(0), page(Page::Victory),
-    scoresOpenedAtMilliseconds(0)
+    mousePressedWinnerPage(0), victoryMousePressArmed(false),
+    victoryAdvancePending(false), scoresOpenedAtMilliseconds(0)
 {
     labels.push_back(GameTheme::jsonTextInfo(jobject, "textinfo:category"));
     labels.back().text = _("Category");
@@ -250,6 +251,7 @@ void GameSummaryScreen::advanceVictoryPage(void)
 {
     if(page != Page::Victory) return;
 
+    const std::uint64_t now = monotonicMilliseconds();
     if(winnerPage + 1 < winners.size())
     {
         ++winnerPage;
@@ -258,11 +260,22 @@ void GameSummaryScreen::advanceVictoryPage(void)
     else
     {
         page = Page::Scores;
-        scoresOpenedAtMilliseconds = monotonicMilliseconds();
+        scoresOpenedAtMilliseconds = now;
         buttons.setVisible(true);
     }
 
     renderWindow();
+}
+
+void GameSummaryScreen::tickEvent(u32)
+{
+    if(!victoryAdvancePending) return;
+
+    // SDL drains every queued input event before the scene tick.  Delaying the
+    // transition until here collapses both halves of a rapid double click into
+    // one page advance, so every joint winner requires a distinct later click.
+    victoryAdvancePending = false;
+    advanceVictoryPage();
 }
 
 void GameSummaryScreen::renderWindow(void)
@@ -324,7 +337,7 @@ bool GameSummaryScreen::keyPressEvent(const KeySym & key)
         case Key::SPACE:
             if(page == Page::Victory)
             {
-                advanceVictoryPage();
+                victoryAdvancePending = true;
                 return true;
             }
             pushEventAction(Action::ButtonDone, this, nullptr);
@@ -339,7 +352,26 @@ bool GameSummaryScreen::keyPressEvent(const KeySym & key)
 bool GameSummaryScreen::mouseClickEvent(const ButtonsEvent & event)
 {
     if(page != Page::Victory || !event.isButtonLeft()) return false;
-    advanceVictoryPage();
+
+    const bool accepted = GameSummaryInput::acceptsVictoryPageClick(
+        victoryMousePressArmed, mousePressedWinnerPage, winnerPage);
+    victoryMousePressArmed = false;
+    if(!accepted) return true;
+
+    victoryAdvancePending = true;
+    return true;
+}
+
+bool GameSummaryScreen::mousePressEvent(const ButtonEvent & event)
+{
+    if(page != Page::Victory || !event.isButtonLeft())
+    {
+        victoryMousePressArmed = false;
+        return false;
+    }
+
+    victoryMousePressArmed = true;
+    mousePressedWinnerPage = winnerPage;
     return true;
 }
 
@@ -348,15 +380,26 @@ bool GameSummaryScreen::userEvent(int act, void* data)
     switch(act)
     {
         case Action::ButtonDone:
-            // A mouse-up that advances the victory page may also reach the newly
-            // revealed Done button during the same event dispatch.  Do not let
-            // that transition click immediately close the detailed scores.
-            if(page == Page::Scores && GameSummaryInput::blocksScorePageDone(
-                scoresOpenedAtMilliseconds, monotonicMilliseconds()))
-                break;
+            switch(GameSummaryInput::doneDisposition(page == Page::Victory,
+                       scoresOpenedAtMilliseconds, monotonicMilliseconds()))
+            {
+                case GameSummaryInput::DoneDisposition::AdvanceVictory:
+                    // The legacy Done button remains visible over the victory
+                    // art.  Treat it as Next until every joint winner has been
+                    // shown instead of closing the entire summary early.
+                    victoryAdvancePending = true;
+                    break;
 
-            setResultCode(Menu::MainMenu);
-            setVisible(false);
+                case GameSummaryInput::DoneDisposition::Ignore:
+                    // A mouse-up that reveals the score page may also reach its
+                    // Done button during the same event dispatch.
+                    break;
+
+                case GameSummaryInput::DoneDisposition::Close:
+                    setResultCode(Menu::MainMenu);
+                    setVisible(false);
+                    break;
+            }
             break;
 
         default: break;

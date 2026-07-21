@@ -3853,6 +3853,13 @@ void testGameSummaryInputGuard()
 {
     using namespace GameSummaryInput;
 
+    expect(!acceptsVictoryPageClick(false, 0, 0),
+           "victory page must reject a release whose press was not observed");
+    expect(!acceptsVictoryPageClick(true, 0, 1),
+           "victory page must reject a click pressed on the previous winner");
+    expect(acceptsVictoryPageClick(true, 1, 1),
+           "victory page must accept a fresh press and release on the same winner");
+
     expect(!blocksScorePageDone(0, 1000),
            "score-page input guard must be inactive until the summary is opened");
     expect(blocksScorePageDone(1000, 1000),
@@ -3863,6 +3870,14 @@ void testGameSummaryInputGuard()
            "score-page input guard must release normal input at the boundary");
     expect(!blocksScorePageDone(1000, 999),
            "score-page input guard must tolerate a non-monotonic test timestamp");
+
+    expect(doneDisposition(true, 0, 1000) == DoneDisposition::AdvanceVictory,
+           "the visible Done button must advance while a winner portrait is shown");
+    expect(doneDisposition(false, 1000, 1100) == DoneDisposition::Ignore,
+           "the Done button must ignore the event that just opened the score page");
+    expect(doneDisposition(false, 1000, 1000 + ScorePageGuardMilliseconds) ==
+               DoneDisposition::Close,
+           "the Done button must close the settled score page");
 }
 
 void testMatchScoreContract()

@@ -32,10 +32,31 @@ namespace GameSummaryInput
 {
     constexpr std::uint64_t ScorePageGuardMilliseconds = 350;
 
+    enum class DoneDisposition
+    {
+        AdvanceVictory,
+        Ignore,
+        Close
+    };
+
+    inline bool acceptsVictoryPageClick(bool armed, std::size_t pressedPage,
+                                        std::size_t currentPage)
+    {
+        return armed && pressedPage == currentPage;
+    }
+
     inline bool blocksScorePageDone(std::uint64_t openedAt, std::uint64_t now)
     {
         return openedAt != 0 && openedAt <= now &&
                now - openedAt < ScorePageGuardMilliseconds;
+    }
+
+    inline DoneDisposition doneDisposition(bool victoryPage, std::uint64_t openedAt,
+                                           std::uint64_t now)
+    {
+        if(victoryPage) return DoneDisposition::AdvanceVictory;
+        if(blocksScorePageDone(openedAt, now)) return DoneDisposition::Ignore;
+        return DoneDisposition::Close;
     }
 }
 
@@ -54,6 +75,9 @@ class GameSummaryScreen : public JsonWindow
     std::vector<std::size_t> winners;
     std::size_t         winnerPage;
     Page                page;
+    std::size_t         mousePressedWinnerPage;
+    bool                victoryMousePressArmed;
+    bool                victoryAdvancePending;
     std::uint64_t       scoresOpenedAtMilliseconds;
     Texture             victoryArt;
     Rect                victoryPanel;
@@ -76,7 +100,9 @@ class GameSummaryScreen : public JsonWindow
     std::string         winnerNames(void) const;
 
 protected:
+    void                tickEvent(u32) override;
     bool                keyPressEvent(const KeySym &) override;
+    bool                mousePressEvent(const ButtonEvent &) override;
     bool                mouseClickEvent(const ButtonsEvent &) override;
     bool		userEvent(int, void*) override;
 
