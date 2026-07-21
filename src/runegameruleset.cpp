@@ -56,6 +56,64 @@ namespace
             return 13;
         }
 
+        bool allowsChao(bool nextPlayer, bool sequenceRune, int variantCount) const override
+        {
+            return nextPlayer && sequenceRune && 0 < variantCount;
+        }
+
+        bool allowsPung(bool otherPlayer, int matchingRuneCount) const override
+        {
+            return otherPlayer && 1 < matchingRuneCount;
+        }
+
+        bool allowsExposedKong(bool otherPlayer, int matchingRuneCount) const override
+        {
+            return otherPlayer && 2 < matchingRuneCount;
+        }
+
+        bool allowsSelfKong(bool currentPlayer, bool hasDrawnRune,
+                            bool upgradesPung, int matchingRuneCount) const override
+        {
+            return currentPlayer && hasDrawnRune && (upgradesPung || 3 == matchingRuneCount);
+        }
+
+        bool allowsWinStone(bool hasDrawnRune, bool hasDiscard,
+                            bool discardFromAnotherPlayer) const override
+        {
+            return hasDrawnRune || (hasDiscard && discardFromAnotherPlayer);
+        }
+
+        bool isWinningStructure(int groupCount, int pairCount) const override
+        {
+            return 3 < groupCount && 0 < pairCount;
+        }
+
+        int callChoicePriority(RuneGameCall call) const override
+        {
+            switch(call)
+            {
+                case RuneGameCall::Game: return 4;
+                case RuneGameCall::Kong: return 3;
+                case RuneGameCall::Pung: return 2;
+                case RuneGameCall::Chao: return 1;
+                case RuneGameCall::None: break;
+            }
+            return 0;
+        }
+
+        int discardClaimPriority(RuneGameCall call) const override
+        {
+            switch(call)
+            {
+                case RuneGameCall::Game: return 3;
+                case RuneGameCall::Kong:
+                case RuneGameCall::Pung: return 2;
+                case RuneGameCall::Chao: return 1;
+                case RuneGameCall::None: break;
+            }
+            return 0;
+        }
+
         int baseWinPoints(void) const override
         {
             return 20;

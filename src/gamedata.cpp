@@ -864,6 +864,7 @@ LocalPlayer & GameData::playerOfWind(const Wind & wind)
 bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 {
     LocalPlayer & current = playerOfWind(currentWind);
+    const RuneGameRuleset & ruleset = classicRuneGameRuleset();
     const auto runAutomatedTurn = [&](bool showGame, bool showKong)
     {
 	const WinRules & left = playerOfWind(prevWindCompass(currentWind)).rules;
@@ -893,8 +894,8 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 	    current.newStone = GameStone(croupier.resolveLuckDraw(selected), false);
 	    if(0 < stoneLastCount) --stoneLastCount;
 	    return runAutomatedTurn(
-	        current.isWinMahjong(currentWind, roundWind, dropStone, &winResult),
-	        current.isMahjongKong2(currentWind));
+	        current.isWinMahjong(currentWind, roundWind, dropStone, &winResult, ruleset),
+	        current.isMahjongKong2(currentWind, ruleset));
 	}
 
 	if(current.avatar == avatar)
@@ -909,8 +910,8 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
     {
 	if(GameData::usesAI(current))
 	    return runAutomatedTurn(
-	        current.isWinMahjong(currentWind, roundWind, dropStone, &winResult),
-	        current.isMahjongKong2(currentWind));
+	        current.isWinMahjong(currentWind, roundWind, dropStone, &winResult, ruleset),
+	        current.isMahjongKong2(currentWind, ruleset));
 
 	//DEBUG("wind: " << currentWind.toString() << ", " << "person: " << current.name() << ", " <<
 	//	"new stone: " << current.newStone() << ", " << "wait action");
@@ -928,7 +929,8 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 
 	skipRepeatSay = true;
 
-	if(AI::mahjongGameKongPungChao(currentWind, roundWind, dropStone, winResult, actions, true))
+	if(AI::mahjongGameKongPungChao(currentWind, roundWind, dropStone, winResult,
+	                                 actions, true, ruleset))
 	    return true;
 
 	DEBUG("wait player pass" << ", " << "current: " << current.toString());
@@ -979,8 +981,8 @@ bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 
 	stoneLastCount--;
 
-	showGame2 = current.isWinMahjong(currentWind, roundWind, dropStone, & winResult);
-	showKong2 = current.isMahjongKong2(currentWind);
+	showGame2 = current.isWinMahjong(currentWind, roundWind, dropStone, & winResult, ruleset);
+	showKong2 = current.isMahjongKong2(currentWind, ruleset);
     }
     else
     {

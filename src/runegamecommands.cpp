@@ -17,6 +17,15 @@
 #include "crashreport.h"
 #include "gamedata.h"
 #include "replay.h"
+#include "runegameruleset.h"
+
+namespace
+{
+    const RuneGameRuleset & activeRuneGameRuleset(void)
+    {
+        return classicRuneGameRuleset();
+    }
+}
 
 namespace GameData
 {
@@ -77,8 +86,10 @@ bool GameData::clientLuckChoice(const Avatar & avatar, const ClientMessage & act
     client.newStone = GameStone(selected, false);
     if(0 < stoneLastCount) stoneLastCount--;
 
-    const bool showGame = client.isWinMahjong(currentWind, roundWind, dropStone, &winResult);
-    const bool showKong = client.isMahjongKong2(currentWind);
+    const RuneGameRuleset & ruleset = activeRuneGameRuleset();
+    const bool showGame = client.isWinMahjong(currentWind, roundWind, dropStone,
+                                              &winResult, ruleset);
+    const bool showKong = client.isMahjongKong2(currentWind, ruleset);
     actions.push_back(MahjongTurn(currentWind, client.newStone, showKong, showGame));
     actions.push_back(MahjongData(currentWind));
     return true;
@@ -105,7 +116,8 @@ bool GameData::clientSayGame(const Avatar & avatar, const ClientMessage & act, A
     }
 
     // need fill winResult
-    if(client.isWinMahjong(currentWind, roundWind, dropStone, & winResult))
+    if(client.isWinMahjong(currentWind, roundWind, dropStone, & winResult,
+                           activeRuneGameRuleset()))
     {
 	DEBUG(client.toString());
 
@@ -130,7 +142,7 @@ bool GameData::clientSayChao(const Avatar & avatar, const ClientMessage & act, A
 	return rejectAction(ActionRejectReason::Silenced);
     }
 
-    if(client.isMahjongChao(currentWind, dropStone))
+    if(client.isMahjongChao(currentWind, dropStone, activeRuneGameRuleset()))
     {
 	actions.push_back(MahjongSayChao(client.wind));
 	AI::mahjongOtherPass(currentWind, actions, client.wind);
@@ -153,7 +165,7 @@ bool GameData::clientSayPung(const Avatar & avatar, const ClientMessage & act, A
 	return rejectAction(ActionRejectReason::Silenced);
     }
 
-    if(client.isMahjongPung(currentWind, dropStone))
+    if(client.isMahjongPung(currentWind, dropStone, activeRuneGameRuleset()))
     {
 	actions.push_back(MahjongSayPung(client.wind));
 	AI::mahjongOtherPass(currentWind, actions, client.wind);
@@ -177,14 +189,15 @@ bool GameData::clientSayKong(const Avatar & avatar, const ClientMessage & act, A
 	return rejectAction(ActionRejectReason::Silenced);
     }
 
-    if(1 == action.kongType() && client.isMahjongKong1(currentWind, dropStone))
+    if(1 == action.kongType() &&
+       client.isMahjongKong1(currentWind, dropStone, activeRuneGameRuleset()))
     {
 	actions.push_back(MahjongSayKong(client.wind));
 	AI::mahjongOtherPass(currentWind, actions, client.wind);
 	return true;
     }
     else
-    if(2 == action.kongType() && client.isMahjongKong2(currentWind))
+    if(2 == action.kongType() && client.isMahjongKong2(currentWind, activeRuneGameRuleset()))
     {
 	actions.push_back(MahjongSayKong(client.wind));
 	return true;
@@ -201,7 +214,8 @@ bool GameData::clientButtonGame(const Avatar & avatar, const ClientMessage & act
     DEBUG(client.toString());
 
     WinResults validatedResult;
-    if(!client.isWinMahjong(currentWind, roundWind, dropStone, &validatedResult))
+    if(!client.isWinMahjong(currentWind, roundWind, dropStone, &validatedResult,
+                            activeRuneGameRuleset()))
     {
 	ERROR("invalid Mahjong Game claim: " << client.toString());
 	return rejectAction(client.isSilenced() ? ActionRejectReason::Silenced :
@@ -239,7 +253,8 @@ bool GameData::clientButtonPass(const Avatar & avatar, const ClientMessage & act
 
     DEBUG(client.toString());
 
-    if(AI::mahjongGameKongPungChao(currentWind, roundWind, dropStone, winResult, actions, false))
+    if(AI::mahjongGameKongPungChao(currentWind, roundWind, dropStone, winResult,
+                                   actions, false, activeRuneGameRuleset()))
 	return true;
 
 	const bool allAI = std::all_of(gamers.begin(), gamers.end(),
@@ -263,7 +278,7 @@ bool GameData::clientButtonPung(const Avatar & avatar, const ClientMessage & act
     DEBUG(client.toString());
 
     if(client.isSilenced()) return rejectAction(ActionRejectReason::Silenced);
-    if(!client.isMahjongPung(currentWind, dropStone))
+    if(!client.isMahjongPung(currentWind, dropStone, activeRuneGameRuleset()))
 	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongPung(client.wind, dropStone));
@@ -283,7 +298,7 @@ bool GameData::clientButtonKong1(const Avatar & avatar, const ClientMessage & ac
     DEBUG(client.toString());
 
     if(client.isSilenced()) return rejectAction(ActionRejectReason::Silenced);
-    if(!client.isMahjongKong1(currentWind, dropStone))
+    if(!client.isMahjongKong1(currentWind, dropStone, activeRuneGameRuleset()))
 	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongKong1(client.wind, dropStone));
@@ -306,7 +321,7 @@ bool GameData::clientButtonKong2(const Avatar & avatar, const ClientMessage & ac
     DEBUG(client.toString());
 
     if(client.isSilenced()) return rejectAction(ActionRejectReason::Silenced);
-    if(!client.isMahjongKong2(currentWind))
+    if(!client.isMahjongKong2(currentWind, activeRuneGameRuleset()))
 	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
     actions.push_back(MahjongKong2(client.wind));
@@ -326,7 +341,7 @@ bool GameData::clientChaoVariant(const Avatar & avatar, const ClientMessage & ac
 
     if(client.isSilenced()) return rejectAction(ActionRejectReason::Silenced);
     const Stones variants = client.stones.findChaoVariants(dropStone);
-    if(!client.isMahjongChao(currentWind, dropStone) ||
+    if(!client.isMahjongChao(currentWind, dropStone, activeRuneGameRuleset()) ||
        ca.chaoVariant() < 0 || variants.size() <= ca.chaoVariant())
 	return rejectAction(ActionRejectReason::IllegalMahjongCall);
 
@@ -366,7 +381,8 @@ bool GameData::clientDropIndex(const Avatar & avatar, const ClientMessage & act,
 
     DEBUG("drop stone: " << dropStone() << ", " << "(" << dropStone.toString() << ")");
 
-    AI::mahjongGameKongPungChao(currentWind, roundWind, dropStone, winResult, actions, true);
+    AI::mahjongGameKongPungChao(currentWind, roundWind, dropStone, winResult,
+                                actions, true, activeRuneGameRuleset());
     skipRepeatSay = true;
     skipNewStone = false;
     skipNewTurn = false;

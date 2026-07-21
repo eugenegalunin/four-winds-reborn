@@ -1155,10 +1155,16 @@ struct LocalPlayer : public RemotePlayer
     bool			newTurnEvent(CroupierSet &, bool skipnewStone);
 
     bool			isMahjongChao(const Wind &, const Stone &) const;
+    bool                        isMahjongChao(const Wind &, const Stone &, const RuneGameRuleset &) const;
     bool			isMahjongPung(const Wind &, const Stone &) const;
+    bool                        isMahjongPung(const Wind &, const Stone &, const RuneGameRuleset &) const;
     bool			isMahjongKong1(const Wind &, const Stone &) const;
+    bool                        isMahjongKong1(const Wind &, const Stone &, const RuneGameRuleset &) const;
     bool			isMahjongKong2(const Wind &) const;
+    bool                        isMahjongKong2(const Wind &, const RuneGameRuleset &) const;
     bool			isWinMahjong(const Wind &, const Wind &, const Stone &, WinResults* = nullptr) const;
+    bool                        isWinMahjong(const Wind &, const Wind &, const Stone &,
+                                             WinResults*, const RuneGameRuleset &) const;
 
     JsonObject			toJsonObject(void) const;
     static LocalPlayer		fromJsonObject(const JsonObject &);

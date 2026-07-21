@@ -26,6 +26,8 @@
 #include "gametheme.h"
 #include "aistrategy.h"
 
+class RuneGameRuleset;
+
 namespace AI
 {
     enum class MahjongCallType
@@ -52,9 +54,14 @@ namespace AI
 
     MahjongCallPlan chooseMahjongCall(const LocalPlayer &, const Wind &, const Stone &,
                                       const StrategicIntent &);
+    MahjongCallPlan chooseMahjongCall(const LocalPlayer &, const Wind &, const Stone &,
+                                      const StrategicIntent &, const RuneGameRuleset &);
 
     bool        mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWind,
 			    const Stone & dropStone, WinResults &, ActionList &, bool sayOnly);
+    bool        mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWind,
+			    const Stone & dropStone, WinResults &, ActionList &, bool sayOnly,
+                                        const RuneGameRuleset &);
 
     int         mahjongSelect(const GameStones &, const VecStones &, const WinRules &);
     int         mahjongSelect(const GameStones &, const VecStones &, const WinRules &,

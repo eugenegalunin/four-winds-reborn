@@ -104,6 +104,55 @@ public:
     }
     int wallCopies(void) const override { return 4; }
     int initialHandSize(void) const override { return 2; }
+    bool allowsChao(bool nextPlayer, bool sequenceRune, int variantCount) const override
+    {
+        return nextPlayer && sequenceRune && 0 < variantCount;
+    }
+    bool allowsPung(bool otherPlayer, int matchingRuneCount) const override
+    {
+        return otherPlayer && 0 < matchingRuneCount;
+    }
+    bool allowsExposedKong(bool otherPlayer, int matchingRuneCount) const override
+    {
+        return otherPlayer && 1 < matchingRuneCount;
+    }
+    bool allowsSelfKong(bool currentPlayer, bool hasDrawnRune,
+                        bool upgradesPung, int matchingRuneCount) const override
+    {
+        return currentPlayer && hasDrawnRune && (upgradesPung || 2 == matchingRuneCount);
+    }
+    bool allowsWinStone(bool hasDrawnRune, bool, bool) const override
+    {
+        return hasDrawnRune;
+    }
+    bool isWinningStructure(int groupCount, int pairCount) const override
+    {
+        return 0 < groupCount && 0 < pairCount;
+    }
+    int callChoicePriority(RuneGameCall call) const override
+    {
+        switch(call)
+        {
+            case RuneGameCall::Game: return 4;
+            case RuneGameCall::Chao: return 3;
+            case RuneGameCall::Pung: return 2;
+            case RuneGameCall::Kong: return 1;
+            case RuneGameCall::None: break;
+        }
+        return 0;
+    }
+    int discardClaimPriority(RuneGameCall call) const override
+    {
+        switch(call)
+        {
+            case RuneGameCall::Game: return 3;
+            case RuneGameCall::Chao: return 2;
+            case RuneGameCall::Pung:
+            case RuneGameCall::Kong: return 1;
+            case RuneGameCall::None: break;
+        }
+        return 0;
+    }
     int baseWinPoints(void) const override { return 30; }
     int scoreMultiplier(int doubles) const override { return 3 << std::max(0, doubles); }
     int maximumWinScore(void) const override { return 200; }
@@ -1465,6 +1514,21 @@ void testAvatarPassives()
 
 void testMahjongCallPlanning()
 {
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+    const AlternateRuneGameRuleset alternateRuleset;
+    expect(classicRuleset.callChoicePriority(RuneGameCall::Kong) >
+               classicRuleset.callChoicePriority(RuneGameCall::Pung) &&
+           classicRuleset.callChoicePriority(RuneGameCall::Pung) >
+               classicRuleset.callChoicePriority(RuneGameCall::Chao),
+           "Classic call choice priority must remain Kong, Pung, Chao");
+    expect(classicRuleset.discardClaimPriority(RuneGameCall::Game) >
+               classicRuleset.discardClaimPriority(RuneGameCall::Pung) &&
+           classicRuleset.discardClaimPriority(RuneGameCall::Pung) ==
+               classicRuleset.discardClaimPriority(RuneGameCall::Kong) &&
+           classicRuleset.discardClaimPriority(RuneGameCall::Pung) >
+               classicRuleset.discardClaimPriority(RuneGameCall::Chao),
+           "Classic discard claims must keep Game first and Pung/Kong above Chao");
+
     LocalPlayer pung;
     pung.avatar = Avatar::Orachi;
     pung.clan = Clan::Red;
@@ -1476,6 +1540,14 @@ void testMahjongCallPlanning()
         pung, Wind(Wind::East), Stone(Stone::Dragon1), AI::StrategicIntent());
     expect(ordinaryPung.type == AI::MahjongCallType::Pung && 0 < ordinaryPung.score,
            "Mahjong AI must accept a useful Pung when it does not sacrifice a strategic rune goal");
+
+    LocalPlayer singleMatch = pung;
+    singleMatch.stones.pop_back();
+    expect(!singleMatch.isMahjongPung(Wind(Wind::East), Stone(Stone::Dragon1),
+                                      classicRuleset) &&
+           singleMatch.isMahjongPung(Wind(Wind::East), Stone(Stone::Dragon1),
+                                     alternateRuleset),
+           "an injected ruleset must control Pung legality without changing Classic");
 
     AI::StrategicIntent protectedIntent;
     AI::RuneGoal protectedDragon;
@@ -1512,6 +1584,26 @@ void testMahjongCallPlanning()
         chao, Wind(Wind::East), Stone(Stone::Sword3), chaoIntent);
     expect(selectedChao.type == AI::MahjongCallType::Chao && selectedChao.variant == 2,
            "Mahjong AI must choose the Chao variant that preserves its strategic runes");
+
+    LocalPlayer compactWin;
+    compactWin.avatar = Avatar::Orachi;
+    compactWin.clan = Clan::Red;
+    compactWin.wind = Wind::South;
+    compactWin.stones.add(GameStone(Stone(Stone::Sword1)));
+    compactWin.stones.add(GameStone(Stone(Stone::Sword2)));
+    compactWin.stones.add(GameStone(Stone(Stone::Sword3)));
+    compactWin.stones.add(GameStone(Stone(Stone::Dragon1)));
+    compactWin.newStone = GameStone(Stone(Stone::Dragon1), false);
+    expect(!compactWin.isWinMahjong(Wind(Wind::South), Wind(Wind::East), Stone(),
+                                    nullptr, classicRuleset) &&
+           compactWin.isWinMahjong(Wind(Wind::South), Wind(Wind::East), Stone(),
+                                   nullptr, alternateRuleset),
+           "an injected ruleset must control winning structure validation");
+
+    compactWin.newStone.reset();
+    expect(!compactWin.isWinMahjong(Wind(Wind::East), Wind(Wind::East),
+                                    Stone(Stone::Dragon1), nullptr, alternateRuleset),
+           "an injected ruleset must control whether a discard may complete a win");
 
     LocalPlayer duplicateChao;
     duplicateChao.stones.add(GameStone(Stone::Sword2));
@@ -2405,6 +2497,96 @@ void testBattleAI()
            hardOverkill.score < normalOverkill.score &&
            normalOverkill.score < easyOverkill.score,
            "Unfair must penalize wasted battle damage more strongly than Hard, Normal and Easy");
+}
+
+void testMahjongClaimPriorityRuleset()
+{
+    const LocalPlayers savedPlayers = GameData::gamers;
+    const Wind savedCurrentWind = GameData::currentWind;
+    const Wind savedRoundWind = GameData::roundWind;
+    const CroupierSet savedCroupier = GameData::croupier;
+    const int savedStoneLastCount = GameData::stoneLastCount;
+    const Stone savedDropStone = GameData::dropStone;
+    const WinResults savedWinResult = GameData::winResult;
+    const bool savedSkipRepeatSay = GameData::skipRepeatSay;
+    const bool savedSkipNewStone = GameData::skipNewStone;
+    const bool savedSkipNewTurn = GameData::skipNewTurn;
+
+    auto player = [](Avatar::avatar_t avatar, Clan::clan_t clan, Wind::wind_t wind)
+    {
+        LocalPlayer result;
+        result.avatar = avatar;
+        result.clan = clan;
+        result.wind = wind;
+        result.setAI(true);
+        return result;
+    };
+
+    GameData::gamers.clear();
+    GameData::gamers.push_back(player(Avatar::Javed, Clan::Red, Wind::East));
+    GameData::gamers.push_back(player(Avatar::Orachi, Clan::Yellow, Wind::South));
+    GameData::gamers.push_back(player(Avatar::Niana, Clan::Aqua, Wind::West));
+    GameData::gamers.push_back(player(Avatar::Dayla, Clan::Purple, Wind::North));
+
+    LocalPlayer & chaoCaller = GameData::gamers[1];
+    chaoCaller.stones.add(GameStone(Stone(Stone::Sword1)));
+    chaoCaller.stones.add(GameStone(Stone(Stone::Sword2)));
+    chaoCaller.stones.add(GameStone(Stone(Stone::Dragon2)));
+
+    LocalPlayer & pungCaller = GameData::gamers[2];
+    pungCaller.stones.add(GameStone(Stone(Stone::Sword3)));
+    pungCaller.stones.add(GameStone(Stone(Stone::Sword3)));
+    pungCaller.stones.add(GameStone(Stone(Stone::Dragon2)));
+
+    GameData::currentWind = Wind(Wind::East);
+    GameData::roundWind = Wind(Wind::East);
+    GameData::croupier = CroupierSet();
+    GameData::stoneLastCount = 100;
+    GameData::dropStone = Stone(Stone::Sword3);
+    GameData::winResult = WinResults();
+    GameData::skipRepeatSay = false;
+    GameData::skipNewStone = false;
+    GameData::skipNewTurn = false;
+
+    ActionList classicActions;
+    expect(AI::mahjongGameKongPungChao(
+               GameData::currentWind, GameData::roundWind, GameData::dropStone,
+               GameData::winResult, classicActions, true, classicRuneGameRuleset()),
+           "Classic ruleset must resolve a competing discard claim");
+    const auto classicPung = std::find_if(classicActions.begin(), classicActions.end(),
+        [](const ActionMessage & action)
+        {
+            return action.type() == Action::MahjongPung && action.getBoolean("sayOnly") &&
+                action.getString("currentWind") == "west";
+        });
+    expect(classicPung != classicActions.end(),
+           "Classic claim priority must choose Pung over Chao");
+
+    ActionList alternateActions;
+    const AlternateRuneGameRuleset alternateRuleset;
+    expect(AI::mahjongGameKongPungChao(
+               GameData::currentWind, GameData::roundWind, GameData::dropStone,
+               GameData::winResult, alternateActions, true, alternateRuleset),
+           "an alternate ruleset must resolve the same competing discard claim");
+    const auto alternateChao = std::find_if(alternateActions.begin(), alternateActions.end(),
+        [](const ActionMessage & action)
+        {
+            return action.type() == Action::MahjongChao && action.getBoolean("sayOnly") &&
+                action.getString("currentWind") == "south";
+        });
+    expect(alternateChao != alternateActions.end(),
+           "an injected ruleset must be able to prefer Chao over Pung");
+
+    GameData::gamers = savedPlayers;
+    GameData::currentWind = savedCurrentWind;
+    GameData::roundWind = savedRoundWind;
+    GameData::croupier = savedCroupier;
+    GameData::stoneLastCount = savedStoneLastCount;
+    GameData::dropStone = savedDropStone;
+    GameData::winResult = savedWinResult;
+    GameData::skipRepeatSay = savedSkipRepeatSay;
+    GameData::skipNewStone = savedSkipNewStone;
+    GameData::skipNewTurn = savedSkipNewTurn;
 }
 
 void testAdventureHints()
@@ -4386,6 +4568,7 @@ int main(int argc, char** argv)
     testLuckAbility();
     testAvatarPassives();
     testMahjongCallPlanning();
+    testMahjongClaimPriorityRuleset();
     testExposedKongDispatchAndReplacementDraw();
     testSpellAndSpecialityContracts();
     testSpellCastingAI();

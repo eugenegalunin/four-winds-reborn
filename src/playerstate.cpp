@@ -407,61 +407,91 @@ bool LocalPlayer::allowCastSpell(const Spell & spell) const
 
 bool LocalPlayer::isMahjongChao(const Wind & currentWind, const Stone & dropStone) const
 {
+    return isMahjongChao(currentWind, dropStone, classicRuneGameRuleset());
+}
+
+bool LocalPlayer::isMahjongChao(const Wind & currentWind, const Stone & dropStone,
+                                const RuneGameRuleset & ruleset) const
+{
     if(isSilenced())
         return false;
 
-    return dropStone.isValid() && ! dropStone.isSpecial() &&
-        wind == currentWind.next() &&
-        stones.findChaoVariants(dropStone).size();
+    return ruleset.allowsChao(wind == currentWind.next(),
+                              dropStone.isValid() && !dropStone.isSpecial(),
+                              static_cast<int>(stones.findChaoVariants(dropStone).size()));
 }
 
 bool LocalPlayer::isMahjongPung(const Wind & currentWind, const Stone & dropStone) const
 {
+    return isMahjongPung(currentWind, dropStone, classicRuneGameRuleset());
+}
+
+bool LocalPlayer::isMahjongPung(const Wind & currentWind, const Stone & dropStone,
+                                const RuneGameRuleset & ruleset) const
+{
     if(isSilenced())
         return false;
 
-    if(dropStone.isValid() && currentWind != wind)
-        return 1 < stones.countStone(dropStone);
-
-    return false;
+    return dropStone.isValid() &&
+        ruleset.allowsPung(currentWind != wind, stones.countStone(dropStone));
 }
 
 bool LocalPlayer::isMahjongKong1(const Wind & currentWind, const Stone & dropStone) const
 {
-    if(isSilenced())
-        return false;
-
-    if(dropStone.isValid() && currentWind != wind)
-        return 2 < stones.countStone(dropStone);
-
-    return false;
+    return isMahjongKong1(currentWind, dropStone, classicRuneGameRuleset());
 }
 
-bool LocalPlayer::isMahjongKong2(const Wind & currentWind) const
+bool LocalPlayer::isMahjongKong1(const Wind & currentWind, const Stone & dropStone,
+                                 const RuneGameRuleset & ruleset) const
 {
     if(isSilenced())
         return false;
 
-    if(newStone.isValid() && currentWind == wind)
-    {
-        return std::any_of(rules.begin(), rules.end(),
-		[&](const WinRule & rule){ return rule.isPungStone(newStone); }) || 3 == stones.countStone(newStone);
-    }
+    return dropStone.isValid() &&
+        ruleset.allowsExposedKong(currentWind != wind, stones.countStone(dropStone));
+}
 
-    return false;
+bool LocalPlayer::isMahjongKong2(const Wind & currentWind) const
+{
+    return isMahjongKong2(currentWind, classicRuneGameRuleset());
+}
+
+bool LocalPlayer::isMahjongKong2(const Wind & currentWind,
+                                 const RuneGameRuleset & ruleset) const
+{
+    if(isSilenced())
+        return false;
+
+    const bool upgradesPung = newStone.isValid() &&
+        std::any_of(rules.begin(), rules.end(),
+            [&](const WinRule & rule){ return rule.isPungStone(newStone); });
+    const int matchingRuneCount = newStone.isValid() ? stones.countStone(newStone) : 0;
+    return ruleset.allowsSelfKong(currentWind == wind, newStone.isValid(),
+                                  upgradesPung, matchingRuneCount);
 }
 
 bool LocalPlayer::isWinMahjong(const Wind & currentWind, const Wind & roundWind, const Stone & dropStone, WinResults* winResult) const
+{
+    return isWinMahjong(currentWind, roundWind, dropStone, winResult,
+                        classicRuneGameRuleset());
+}
+
+bool LocalPlayer::isWinMahjong(const Wind & currentWind, const Wind & roundWind,
+                               const Stone & dropStone, WinResults* winResult,
+                               const RuneGameRuleset & ruleset) const
 {
     if(isSilenced())
         return false;
 
     Stone winStone;
 
+    if(!ruleset.allowsWinStone(newStone.isValid(), dropStone.isValid(), currentWind != wind))
+        return false;
+
     if(newStone.isValid())
         winStone = newStone;
     else
-    if(dropStone.isValid() && currentWind != wind)
+    if(dropStone.isValid())
         winStone = dropStone;
     else
         return false;
@@ -473,7 +503,8 @@ bool LocalPlayer::isWinMahjong(const Wind & currentWind, const Wind & roundWind,
     if(pairs.empty()) return false;
 
     // wins: 4 rules and pair
-    if(3 < rules.size())
+    if(ruleset.isWinningStructure(static_cast<int>(rules.size()),
+                                  static_cast<int>(pairs.size())))
     {
 	DEBUG(toString() << ", " << "win stone: " << winStone() <<
 		", " << "stones: " << stones.toString() << ", " << "rules: " << rules.toString());
@@ -497,7 +528,7 @@ bool LocalPlayer::isWinMahjong(const Wind & currentWind, const Wind & roundWind,
 
         WinRules rules2 = WinRules::fromStones(stones3);
 
-        if(3 < rules.size() + rules2.size())
+        if(ruleset.isWinningStructure(static_cast<int>(rules.size() + rules2.size()), 1))
         {
 	    DEBUG("wind: " << currentWind.toString() << ", " << "win stone: " << winStone() <<
 		", " << "stones: " << stones.toString() << ", " << "rules: " << rules.toString() <<

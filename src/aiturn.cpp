@@ -30,6 +30,7 @@
 #include "aistrategy.h"
 #include "gamedata.h"
 #include "gameplayrng.h"
+#include "runegameruleset.h"
 
 namespace GameData
 {
@@ -221,28 +222,38 @@ namespace
         return result - mahjongRunePreservationCost(player.stones, consumed, intent);
     }
 
-    int mahjongCallPriority(AI::MahjongCallType type)
+    RuneGameCall toRulesetCall(AI::MahjongCallType type)
     {
         switch(type)
         {
-            case AI::MahjongCallType::Kong: return 3;
-            case AI::MahjongCallType::Pung: return 2;
-            case AI::MahjongCallType::Chao: return 1;
+            case AI::MahjongCallType::Kong: return RuneGameCall::Kong;
+            case AI::MahjongCallType::Pung: return RuneGameCall::Pung;
+            case AI::MahjongCallType::Chao: return RuneGameCall::Chao;
             case AI::MahjongCallType::Pass: break;
         }
-        return 0;
+        return RuneGameCall::None;
     }
 }
 
 AI::MahjongCallPlan AI::chooseMahjongCall(const LocalPlayer & player, const Wind & currentWind,
                                           const Stone & dropStone, const StrategicIntent & intent)
 {
+    return chooseMahjongCall(player, currentWind, dropStone, intent,
+                             classicRuneGameRuleset());
+}
+
+AI::MahjongCallPlan AI::chooseMahjongCall(const LocalPlayer & player, const Wind & currentWind,
+                                          const Stone & dropStone, const StrategicIntent & intent,
+                                          const RuneGameRuleset & ruleset)
+{
     MahjongCallPlan best;
     auto consider = [&](MahjongCallType type, const Stones & consumed, int variant)
     {
         const int score = mahjongCallScore(player, type, consumed, intent);
         if(score > best.score ||
-           (score == best.score && mahjongCallPriority(type) > mahjongCallPriority(best.type)))
+           (score == best.score &&
+            ruleset.callChoicePriority(toRulesetCall(type)) >
+                ruleset.callChoicePriority(toRulesetCall(best.type))))
         {
             best.type = type;
             best.variant = variant;
@@ -250,13 +261,13 @@ AI::MahjongCallPlan AI::chooseMahjongCall(const LocalPlayer & player, const Wind
         }
     };
 
-    if(player.isMahjongKong1(currentWind, dropStone))
+    if(player.isMahjongKong1(currentWind, dropStone, ruleset))
         consider(MahjongCallType::Kong,
                  mahjongCallRunes(MahjongCallType::Kong, dropStone), -1);
-    if(player.isMahjongPung(currentWind, dropStone))
+    if(player.isMahjongPung(currentWind, dropStone, ruleset))
         consider(MahjongCallType::Pung,
                  mahjongCallRunes(MahjongCallType::Pung, dropStone), -1);
-    if(player.isMahjongChao(currentWind, dropStone))
+    if(player.isMahjongChao(currentWind, dropStone, ruleset))
     {
         const Stones variants = player.stones.findChaoVariants(dropStone);
         for(std::size_t index = 0; index < variants.size(); ++index)
@@ -270,6 +281,15 @@ AI::MahjongCallPlan AI::chooseMahjongCall(const LocalPlayer & player, const Wind
 
 bool AI::mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWind, const Stone & dropStone, WinResults & winResult, ActionList & actions, bool sayOnly)
 {
+    return mahjongGameKongPungChao(currentWind, roundWind, dropStone, winResult,
+                                   actions, sayOnly, classicRuneGameRuleset());
+}
+
+bool AI::mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWind,
+                                 const Stone & dropStone, WinResults & winResult,
+                                 ActionList & actions, bool sayOnly,
+                                 const RuneGameRuleset & ruleset)
+{
     // set game
     for(auto & id : winds_all)
     {
@@ -279,7 +299,7 @@ bool AI::mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWin
 	LocalPlayer & playerAI = GameData::playerOfWind(id);
 
 	if(GameData::usesAI(playerAI) &&
-	    playerAI.isWinMahjong(currentWind, roundWind, dropStone, & winResult))
+	    playerAI.isWinMahjong(currentWind, roundWind, dropStone, & winResult, ruleset))
 	{
 	    if(sayOnly)
 		return GameData::client2Mahjong(playerAI.avatar, ClientSayGame(), actions);
@@ -300,30 +320,44 @@ bool AI::mahjongGameKongPungChao(const Wind & currentWind, const Wind & roundWin
 
 	    const StrategicIntent intent = chooseStrategicIntent(
 		observePlayer(playerAI.avatar), behaviorProfile(playerAI), GameData::aiDifficulty());
-	    const MahjongCallPlan plan = chooseMahjongCall(playerAI, currentWind, dropStone, intent);
+	    const MahjongCallPlan plan = chooseMahjongCall(playerAI, currentWind, dropStone,
+                                                         intent, ruleset);
 	    DEBUG("AI Mahjong call: avatar=" << playerAI.avatar.toString() <<
 		  ", type=" << static_cast<int>(plan.type) << ", score=" << plan.score <<
 		  ", variant=" << plan.variant);
 	    if(plan.isCall()) callPlans.emplace_back(playerAI.avatar, plan);
 	}
 
-	// Game is always accepted. Among optional calls, preserve the rules priority
-	// of Kong/Pung over Chao while allowing each AI to prefer Pass.
-	for(const auto & entry : callPlans)
+	// Game is always accepted above. Optional calls use ruleset priority while
+	// stable wind iteration preserves the established tie break.
+	auto selected = callPlans.end();
+	int selectedPriority = 0;
+	for(auto iter = callPlans.begin(); iter != callPlans.end(); ++iter)
 	{
-	    if(entry.second.type == MahjongCallType::Kong)
-		return sayOnly ? GameData::client2Mahjong(entry.first, ClientSayKong(1), actions) :
-		                 GameData::client2Mahjong(entry.first, ClientButtonKong1(), actions);
-	    if(entry.second.type == MahjongCallType::Pung)
-		return sayOnly ? GameData::client2Mahjong(entry.first, ClientSayPung(), actions) :
-		                 GameData::client2Mahjong(entry.first, ClientButtonPung(), actions);
+	    const int priority = ruleset.discardClaimPriority(toRulesetCall(iter->second.type));
+	    if(selected == callPlans.end() || selectedPriority < priority)
+	    {
+		selected = iter;
+		selectedPriority = priority;
+	    }
 	}
 
-	for(const auto & entry : callPlans)
+	if(selected == callPlans.end() || selectedPriority <= 0) return false;
+
+	switch(selected->second.type)
 	{
-	    if(entry.second.type != MahjongCallType::Chao) continue;
-	    return sayOnly ? GameData::client2Mahjong(entry.first, ClientSayChao(), actions) :
-	                     GameData::client2Mahjong(entry.first, ClientChaoVariant(entry.second.variant), actions);
+	    case MahjongCallType::Kong:
+		return sayOnly ? GameData::client2Mahjong(selected->first, ClientSayKong(1), actions) :
+		                 GameData::client2Mahjong(selected->first, ClientButtonKong1(), actions);
+	    case MahjongCallType::Pung:
+		return sayOnly ? GameData::client2Mahjong(selected->first, ClientSayPung(), actions) :
+		                 GameData::client2Mahjong(selected->first, ClientButtonPung(), actions);
+	    case MahjongCallType::Chao:
+		return sayOnly ? GameData::client2Mahjong(selected->first, ClientSayChao(), actions) :
+		                 GameData::client2Mahjong(selected->first,
+		                     ClientChaoVariant(selected->second.variant), actions);
+	    case MahjongCallType::Pass:
+		break;
 	}
 
     return false;
