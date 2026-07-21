@@ -364,6 +364,8 @@ namespace GameData
     bool			saveGame(const JsonObject &);
     bool                        saveNamedGame(const JsonObject &, const std::string &,
                                              bool overwrite, std::string* error = nullptr);
+    bool                        archiveCurrentReplay(std::string* savedFile = nullptr,
+                                                     std::string* error = nullptr);
     bool                        saveRecovery(const JsonObject &, const std::string & reason);
     JsonObject                  authoritativeState(void);
     bool                        restoreState(const JsonObject &);

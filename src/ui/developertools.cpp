@@ -437,7 +437,15 @@ DeveloperTools::FastForwardResult DeveloperTools::fastForward(Command command,
     result.menu = GameData::loadedGamePart();
     result.success = ok && reachedTarget;
     if(command == Command::FinishGame)
+    {
         result.success = ok && result.menu == Menu::GameSummaryPart;
+        if(result.success)
+        {
+            std::string replayError;
+            if(!GameData::archiveCurrentReplay(nullptr, &replayError))
+                ERROR("developer fast-forward replay archive failed: " << replayError);
+        }
+    }
     CrashReport::breadcrumb(std::string("Developer fast-forward end status=")
         .append(result.success ? "ok" : "failed")
         .append(" menu=").append(std::to_string(result.menu))

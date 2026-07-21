@@ -70,24 +70,34 @@ namespace GameData
     extern Avatar                       developerAutoplayAvatar;
 #endif
 
-    namespace
+    bool archiveCurrentReplay(std::string* savedFile, std::string* error)
     {
-        void archiveCurrentReplay(void)
+        if(Replay::actionJournalSize() == 0)
         {
-            if(Replay::actionJournalSize() == 0) return;
-
-            const JsonObject journal = Replay::actionJournal(GameData::authoritativeState());
-            if(!journal.getBoolean("contiguousToCheckpoint")) return;
-
-            std::string error;
-            std::string path;
-            if(!ReplayFiles::writeAutomatic(journal, &path, &error)) {
-                ERROR("automatic replay archive failed: " << error);
-            }
-            else {
-                VERBOSE("automatic replay archived: " << path);
-            }
+            if(error) *error = "replay journal is empty";
+            return false;
         }
+
+        const JsonObject journal = Replay::actionJournal(GameData::authoritativeState());
+        if(!journal.getBoolean("contiguousToCheckpoint"))
+        {
+            if(error) *error = "replay journal is not contiguous to the current state";
+            return false;
+        }
+
+        std::string localError;
+        std::string path;
+        if(!ReplayFiles::writeAutomatic(journal, &path, &localError))
+        {
+            if(error) *error = localError;
+            ERROR("automatic replay archive failed: " << localError);
+            return false;
+        }
+
+        if(savedFile) *savedFile = path;
+        if(error) error->clear();
+        VERBOSE("automatic replay archived: " << path);
+        return true;
     }
     extern JsonObject                   stateGUI;
     extern std::vector<LandInfo>        landsInfo;

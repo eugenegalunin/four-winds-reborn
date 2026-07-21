@@ -1332,6 +1332,13 @@ void testDeveloperFastForward()
     expect(finalScoreResult.success && finalScoreResult.menu == Menu::GameSummaryPart &&
            0 < finalScoreResult.ticks,
            "developer final Adventure fixture must legally reach final scoring");
+    const std::vector<ReplayFiles::Info> archivedReplays = ReplayFiles::inspect();
+    expect(std::any_of(archivedReplays.begin(), archivedReplays.end(),
+        [](const ReplayFiles::Info & info)
+        {
+            return info.valid && info.journal.developerAssisted &&
+                   0 < info.journal.actionCount && info.journal.contiguousToCheckpoint;
+        }), "developer Finish Game must archive a playable replay");
 }
 #endif
 
