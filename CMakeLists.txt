@@ -134,6 +134,7 @@ set(FOUR_WINDS_SOURCE
     src/ui/mahjongsummarypart.cpp
     src/ui/mainmenu.cpp
     src/ui/replaybrowser.cpp
+    src/ui/replayviewer.cpp
     src/ui/runegameinput.cpp
     src/ui/runegamepresentation.cpp
     src/ui/runegametargetdialogs.cpp

@@ -32,6 +32,7 @@ class ReplayBrowserScreen : public JsonWindow
     Rect               backArea;
     Rect               deleteArea;
     Rect               detailsArea;
+    Rect               playArea;
     int                itemHeight;
     int                itemGap;
 
@@ -53,6 +54,7 @@ class ReplayBrowserScreen : public JsonWindow
     void               layoutVisibleEntries(void);
     bool               selectNext(int);
     bool               showDetails(void);
+    bool               playSelected(void);
     bool               deleteSelected(void);
     bool               actionBack(void);
 

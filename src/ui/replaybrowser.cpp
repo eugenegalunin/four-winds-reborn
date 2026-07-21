@@ -10,6 +10,7 @@
 
 #include "dialogs.h"
 #include "gametheme.h"
+#include "replayviewer.h"
 #include "swe/swe_tools.h"
 
 namespace
@@ -63,8 +64,9 @@ ReplayBrowserScreen::ReplayBrowserScreen() :
     panelArea = JsonUnpack::rect(jobject, "panel:area", Rect(132, 54, 760, 660));
     listArea = JsonUnpack::rect(jobject, "list:area", Rect(176, 146, 672, 382));
     backArea = JsonUnpack::rect(jobject, "button:back", Rect(176, 642, 150, 50));
-    deleteArea = JsonUnpack::rect(jobject, "button:delete", Rect(548, 642, 140, 50));
-    detailsArea = JsonUnpack::rect(jobject, "button:details", Rect(698, 642, 150, 50));
+    deleteArea = JsonUnpack::rect(jobject, "button:delete", Rect(516, 642, 140, 50));
+    detailsArea = JsonUnpack::rect(jobject, "button:details", Rect(346, 642, 150, 50));
+    playArea = JsonUnpack::rect(jobject, "button:play", Rect(676, 642, 150, 50));
     itemHeight = jobject.getInteger("list:item_height", 82);
     itemGap = jobject.getInteger("list:item_gap", 12);
 
@@ -189,8 +191,10 @@ void ReplayBrowserScreen::renderWindow(void)
     drawButton(backArea, _("Back"), true);
     drawButton(deleteArea, _("Delete"), selectedInRange);
     drawButton(detailsArea, _("Details"), selectedInRange);
+    drawButton(playArea, _("Play"), selectedInRange && entries[selected].info.valid &&
+                                           entries[selected].info.journal.contiguousToCheckpoint);
 
-    renderText(small, _("Double-click a replay to inspect its recorded session."),
+    renderText(small, _("Double-click a replay to watch its recorded session."),
                mutedColor, Point(width() / 2, 612), AlignCenter);
 }
 
@@ -224,6 +228,30 @@ bool ReplayBrowserScreen::showDetails(void)
             .arg(entry.info.journal.contiguousToCheckpoint ?
                  _("Ready for playback") : _("Incomplete"));
     MessageBox(_("Replay Details"), message, *this, false).exec();
+    renderWindow();
+    return true;
+}
+
+bool ReplayBrowserScreen::playSelected(void)
+{
+    if(selected < 0 || static_cast<size_t>(selected) >= entries.size()) return true;
+    const Entry & entry = entries[selected];
+    if(!entry.info.valid || !entry.info.journal.contiguousToCheckpoint)
+        return showDetails();
+
+    const JsonObject journal = JsonContentFile(entry.info.path).toObject();
+    std::string error;
+    {
+        ReplayViewerScreen viewer(journal, &error);
+        if(!viewer.ready())
+        {
+            MessageBox(_("Replay Playback"),
+                StringFormat(_("The replay could not be opened: %1")).arg(error),
+                *this, false).exec();
+        }
+        else viewer.exec();
+    }
+    playMusic("intro");
     renderWindow();
     return true;
 }
@@ -274,7 +302,7 @@ bool ReplayBrowserScreen::keyPressEvent(const KeySym & key)
         case Key::DOWN: return selectNext(1);
         case Key::DELETE: return deleteSelected();
         case Key::RETURN:
-        case Key::SPACE: return showDetails();
+        case Key::SPACE: return playSelected();
         case Key::ESCAPE: return actionBack();
         default: break;
     }
@@ -287,6 +315,7 @@ bool ReplayBrowserScreen::mouseClickEvent(const ButtonsEvent & event)
     if(event.isClick(backArea)) return actionBack();
     if(event.isClick(deleteArea)) return deleteSelected();
     if(event.isClick(detailsArea)) return showDetails();
+    if(event.isClick(playArea)) return playSelected();
 
     const int end = std::min(static_cast<int>(entries.size()), firstVisible + visibleCount());
     for(int index = firstVisible; index < end; ++index)
@@ -303,7 +332,7 @@ bool ReplayBrowserScreen::mouseClickEvent(const ButtonsEvent & event)
             {
                 lastClickedEntry = -1;
                 lastClickAt = 0;
-                return showDetails();
+                return playSelected();
             }
             renderWindow();
             return true;

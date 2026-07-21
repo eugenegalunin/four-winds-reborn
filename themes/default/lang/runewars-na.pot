@@ -3305,7 +3305,7 @@ msgid "Details"
 msgstr ""
 
 #: src/ui/replaybrowser.cpp
-msgid "Double-click a replay to inspect its recorded session."
+msgid "Double-click a replay to watch its recorded session."
 msgstr ""
 
 #: src/ui/replaybrowser.cpp
@@ -3343,4 +3343,44 @@ msgstr ""
 
 #: src/ui/replaybrowser.cpp
 msgid "The replay could not be deleted: %1"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp src/ui/replayviewer.cpp
+msgid "Play"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp src/ui/replayviewer.cpp
+msgid "Replay Playback"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "The replay could not be opened: %1"
+msgstr ""
+
+#: src/ui/replayviewer.cpp
+msgid "Rune Game"
+msgstr ""
+
+#: src/ui/replayviewer.cpp
+msgid "Rune Game Summary"
+msgstr ""
+
+#: src/ui/replayviewer.cpp
+msgid "Playback stopped: %1"
+msgstr ""
+
+#: src/ui/replayviewer.cpp
+msgid "<< Phase"
+msgstr ""
+
+#: src/ui/replayviewer.cpp
+msgid "Phase >>"
+msgstr ""
+
+#: src/ui/replayviewer.cpp
+msgid "%1 | phase %2/%3 | action %4/%5"
+msgstr ""
+
+#: src/ui/replayviewer.cpp
+msgid "Space: play/pause  Arrows: step  PgUp/PgDn: phase  +/-: speed"
 msgstr ""

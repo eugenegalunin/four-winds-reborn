@@ -10,6 +10,11 @@
 #include "recovery.h"
 #include "runegameruleset.h"
 
+namespace GameData
+{
+extern bool skipRepeatSay;
+}
+
 namespace
 {
 constexpr std::size_t MaximumJournalSteps = 64;
@@ -104,6 +109,152 @@ struct BehaviorProfileReplayScope
         else AI::clearBehaviorProfileOverride();
     }
 };
+
+bool decodeJournalSteps(const JsonObject & journal, std::vector<Replay::Step> & steps,
+                        std::string & selectedProfile, std::string* error)
+{
+    const JsonArray* encodedSteps = journal.getArray("steps");
+    if(!encodedSteps)
+    {
+        if(error) *error = "journal is missing steps";
+        return false;
+    }
+
+    selectedProfile = journal.getString("aiBehaviorProfile", "native");
+    AI::BehaviorProfile profile = AI::BehaviorProfile::Balanced;
+    if(selectedProfile != "native" &&
+       !AI::behaviorProfileFromString(selectedProfile, profile))
+    {
+        if(error) *error = "journal has an invalid AI behavior profile: " + selectedProfile;
+        return false;
+    }
+
+    steps.clear();
+    steps.reserve(encodedSteps->size());
+    for(std::size_t index = 0; index < encodedSteps->size(); ++index)
+    {
+        const JsonObject* encoded = encodedSteps->getObject(index);
+        const JsonObject* action = encoded ? encoded->getObject("action") : nullptr;
+        const std::string operation = encoded ?
+            encoded->getString("systemOperation") : std::string();
+        const bool expectedAccepted = encoded ?
+            encoded->getBoolean("expectedAccepted", true) : true;
+        const std::string expectedException = encoded ?
+            encoded->getString("expectedException") : std::string();
+        const Avatar actor(encoded ? encoded->getString("avatar") : std::string());
+        const std::string expected = encoded ?
+            encoded->getString("expectedStateHash") : std::string();
+        if(!encoded || expected.empty() ||
+           (operation.empty() && (!action || !actor.isValid())) ||
+           (!operation.empty() && action))
+        {
+            if(error) *error = "invalid journal step " + std::to_string(index);
+            return false;
+        }
+        if(operation.empty()) steps.emplace_back(actor, *action, expected);
+        else steps.emplace_back(operation, expected, expectedAccepted, expectedException);
+    }
+
+    return true;
+}
+
+BehaviorProfileReplayScope replayProfileScope(const std::string & selectedProfile)
+{
+    AI::BehaviorProfile profile = AI::BehaviorProfile::Balanced;
+    const bool forceProfile = selectedProfile != "native";
+    if(forceProfile) AI::behaviorProfileFromString(selectedProfile, profile);
+    return BehaviorProfileReplayScope(forceProfile, profile);
+}
+
+bool applyReplayStep(const Replay::Step & step, std::size_t index, std::string* error)
+{
+    bool accepted = false;
+    if(step.isSystem())
+    {
+        std::string actualException;
+        try
+        {
+            if(step.systemOperation == "init_mahjong")
+                accepted = GameData::initMahjong();
+            else if(step.systemOperation == "init_adventure")
+                accepted = GameData::initAdventure();
+            else if(step.systemOperation == "game_summary")
+            {
+                GameData::setGamePart(Menu::GameSummaryPart);
+                accepted = true;
+            }
+            else if(step.systemOperation == "mahjong_tick")
+            {
+                ActionList emitted;
+                accepted = GameData::mahjong2Client(
+                    GameData::currentPerson().avatar, emitted);
+            }
+            else if(step.systemOperation == "adventure_tick")
+            {
+                ActionList emitted;
+                accepted = GameData::adventure2Client(
+                    GameData::currentPerson().avatar, emitted);
+            }
+            else
+            {
+                if(error) *error = "unknown system operation at step " +
+                    std::to_string(index);
+                return false;
+            }
+        }
+        catch(const std::exception & failure)
+        {
+            actualException = failure.what();
+        }
+        catch(...)
+        {
+            actualException = "unknown exception";
+        }
+
+        if(actualException != step.expectedException)
+        {
+            if(error) *error = "system operation exception mismatch at step " +
+                std::to_string(index) + ": expected=" + step.expectedException +
+                " actual=" + actualException;
+            return false;
+        }
+    }
+    else
+    {
+        std::unique_ptr<ClientMessage> action = Replay::clientMessageFromJson(step.action);
+        if(!action)
+        {
+            if(error) *error = "unknown action at step " + std::to_string(index);
+            return false;
+        }
+
+        ActionList emitted;
+        accepted = isAdventureAction(action->type()) ?
+            GameData::client2Adventure(step.avatar, *action, emitted) :
+            GameData::client2Mahjong(step.avatar, *action, emitted);
+    }
+    if(step.isSystem() && accepted != step.expectedAccepted)
+    {
+        if(error) *error = "system operation outcome mismatch at step " +
+            std::to_string(index);
+        return false;
+    }
+    if(!step.isSystem() && !accepted)
+    {
+        if(error) *error = "action rejected at step " + std::to_string(index);
+        return false;
+    }
+
+    const std::string actualHash = Replay::authoritativeStateHash();
+    if(actualHash != step.expectedStateHash)
+    {
+        if(error) *error = "state hash mismatch at step " + std::to_string(index) +
+            ": expected=" + step.expectedStateHash + " actual=" + actualHash;
+        return false;
+    }
+
+    return true;
+}
 }
 
 JsonObject Replay::Step::toJsonObject(void) const
@@ -403,94 +554,9 @@ bool Replay::run(const JsonObject & initialState, const std::vector<Step> & step
     }
 
     for(std::size_t index = 0; index < steps.size(); ++index)
-    {
-        const Step & step = steps[index];
-        bool accepted = false;
-        if(step.isSystem())
-        {
-            std::string actualException;
-            try
-            {
-                if(step.systemOperation == "init_mahjong")
-                    accepted = GameData::initMahjong();
-                else if(step.systemOperation == "init_adventure")
-                    accepted = GameData::initAdventure();
-                else if(step.systemOperation == "game_summary")
-                {
-                    GameData::setGamePart(Menu::GameSummaryPart);
-                    accepted = true;
-                }
-                else if(step.systemOperation == "mahjong_tick")
-                {
-                    ActionList emitted;
-                    accepted = GameData::mahjong2Client(
-                        GameData::currentPerson().avatar, emitted);
-                }
-                else if(step.systemOperation == "adventure_tick")
-                {
-                    ActionList emitted;
-                    accepted = GameData::adventure2Client(
-                        GameData::currentPerson().avatar, emitted);
-                }
-                else
-                {
-                    if(error) *error = "unknown system operation at step " +
-                        std::to_string(index);
-                    return false;
-                }
-            }
-            catch(const std::exception & failure)
-            {
-                actualException = failure.what();
-            }
-            catch(...)
-            {
-                actualException = "unknown exception";
-            }
+        if(!applyReplayStep(steps[index], index, error)) return false;
 
-            if(actualException != step.expectedException)
-            {
-                if(error) *error = "system operation exception mismatch at step " +
-                    std::to_string(index) + ": expected=" + step.expectedException +
-                    " actual=" + actualException;
-                return false;
-            }
-        }
-        else
-        {
-            std::unique_ptr<ClientMessage> action = clientMessageFromJson(step.action);
-            if(!action)
-            {
-                if(error) *error = "unknown action at step " + std::to_string(index);
-                return false;
-            }
-
-            ActionList emitted;
-            accepted = isAdventureAction(action->type()) ?
-                GameData::client2Adventure(step.avatar, *action, emitted) :
-                GameData::client2Mahjong(step.avatar, *action, emitted);
-        }
-        if(step.isSystem() && accepted != step.expectedAccepted)
-        {
-            if(error) *error = "system operation outcome mismatch at step " +
-                std::to_string(index);
-            return false;
-        }
-        if(!step.isSystem() && !accepted)
-        {
-            if(error) *error = "action rejected at step " + std::to_string(index);
-            return false;
-        }
-
-        const std::string actualHash = authoritativeStateHash();
-        if(actualHash != step.expectedStateHash)
-        {
-            if(error) *error = "state hash mismatch at step " + std::to_string(index) +
-                ": expected=" + step.expectedStateHash + " actual=" + actualHash;
-            return false;
-        }
-    }
-
+    if(error) error->clear();
     return true;
 }
 
@@ -500,42 +566,228 @@ bool Replay::run(const JsonObject & journal, std::string* error)
     if(!inspectJournal(journal, info, error)) return false;
 
     const JsonObject* initialState = journal.getObject("initialState");
-    const JsonArray* encodedSteps = journal.getArray("steps");
-
-    const std::string selectedProfile = journal.getString("aiBehaviorProfile", "native");
-    AI::BehaviorProfile profile = AI::BehaviorProfile::Balanced;
-    const bool forceProfile = selectedProfile != "native";
-    if(forceProfile && !AI::behaviorProfileFromString(selectedProfile, profile))
-    {
-        if(error) *error = "journal has an invalid AI behavior profile: " + selectedProfile;
-        return false;
-    }
-    BehaviorProfileReplayScope profileScope(forceProfile, profile);
-
     std::vector<Step> steps;
-    steps.reserve(encodedSteps->size());
-    for(std::size_t index = 0; index < encodedSteps->size(); ++index)
-    {
-        const JsonObject* encoded = encodedSteps->getObject(index);
-        const JsonObject* action = encoded ? encoded->getObject("action") : nullptr;
-        const std::string operation = encoded ?
-            encoded->getString("systemOperation") : std::string();
-        const bool expectedAccepted = encoded ?
-            encoded->getBoolean("expectedAccepted", true) : true;
-        const std::string expectedException = encoded ?
-            encoded->getString("expectedException") : std::string();
-        const Avatar actor(encoded ? encoded->getString("avatar") : std::string());
-        const std::string expected = encoded ? encoded->getString("expectedStateHash") : std::string();
-        if(!encoded || expected.empty() ||
-           (operation.empty() && (!action || !actor.isValid())) ||
-           (!operation.empty() && action))
-        {
-            if(error) *error = "invalid journal step " + std::to_string(index);
-            return false;
-        }
-        if(operation.empty()) steps.emplace_back(actor, *action, expected);
-        else steps.emplace_back(operation, expected, expectedAccepted, expectedException);
-    }
+    std::string selectedProfile;
+    if(!decodeJournalSteps(journal, steps, selectedProfile, error)) return false;
+    auto profileScope = replayProfileScope(selectedProfile);
 
     return run(*initialState, steps, error);
+}
+
+Replay::Playback::Playback(const JsonObject & journal, std::string* error)
+{
+    open(journal, error);
+}
+
+Replay::Playback::~Playback()
+{
+    close();
+}
+
+bool Replay::Playback::open(const JsonObject & journal, std::string* error)
+{
+    close();
+
+    JournalInfo info;
+    if(!inspectJournal(journal, info, error)) return false;
+
+    const JsonObject* encodedInitial = journal.getObject("initialState");
+    if(!encodedInitial)
+    {
+        if(error) *error = "journal is missing initialState";
+        return false;
+    }
+
+    std::vector<Step> decodedSteps;
+    std::string decodedProfile;
+    if(!decodeJournalSteps(journal, decodedSteps, decodedProfile, error)) return false;
+
+    previousState = GameData::authoritativeState();
+    previousStateValid = Recovery::validateSaveState(previousState);
+    previousSkipRepeatSay = GameData::skipRepeatSay;
+    initialState = *encodedInitial;
+    steps.swap(decodedSteps);
+    behaviorProfile = decodedProfile;
+    currentPosition = 0;
+    phasePositions.clear();
+
+    RecordingPause pause;
+    auto profileScope = replayProfileScope(behaviorProfile);
+    if(!GameData::restoreState(initialState))
+    {
+        restorePrevious();
+        if(error) *error = "initial state rejected";
+        return false;
+    }
+
+    phasePositions.push_back(0);
+    int previousPart = GameData::loadedGamePart();
+    for(std::size_t index = 0; index < steps.size(); ++index)
+    {
+        if(!applyReplayStep(steps[index], index, error))
+        {
+            restorePrevious();
+            steps.clear();
+            phasePositions.clear();
+            return false;
+        }
+
+        const int currentPart = GameData::loadedGamePart();
+        if(currentPart != previousPart)
+        {
+            phasePositions.push_back(index + 1);
+            previousPart = currentPart;
+        }
+    }
+
+    if(!GameData::restoreState(initialState))
+    {
+        restorePrevious();
+        steps.clear();
+        phasePositions.clear();
+        if(error) *error = "initial state rejected after replay validation";
+        return false;
+    }
+
+    opened = true;
+    if(error) error->clear();
+    return true;
+}
+
+void Replay::Playback::restorePrevious(void)
+{
+    if(previousStateValid)
+    {
+        GameData::restoreState(previousState);
+        GameData::skipRepeatSay = previousSkipRepeatSay;
+    }
+    previousStateValid = false;
+    previousSkipRepeatSay = false;
+    previousState.clear();
+}
+
+void Replay::Playback::close(void)
+{
+    if(opened || previousStateValid) restorePrevious();
+    opened = false;
+    initialState.clear();
+    steps.clear();
+    phasePositions.clear();
+    behaviorProfile.clear();
+    currentPosition = 0;
+}
+
+bool Replay::Playback::restoreInitial(std::string* error)
+{
+    RecordingPause pause;
+    auto profileScope = replayProfileScope(behaviorProfile);
+    if(!GameData::restoreState(initialState))
+    {
+        if(error) *error = "initial state rejected";
+        return false;
+    }
+    currentPosition = 0;
+    return true;
+}
+
+bool Replay::Playback::applyRange(std::size_t begin, std::size_t end,
+                                  std::string* error)
+{
+    RecordingPause pause;
+    auto profileScope = replayProfileScope(behaviorProfile);
+    for(std::size_t index = begin; index < end; ++index)
+    {
+        if(!applyReplayStep(steps[index], index, error)) return false;
+        currentPosition = index + 1;
+    }
+    if(error) error->clear();
+    return true;
+}
+
+bool Replay::Playback::seek(std::size_t requestedPosition, std::string* error)
+{
+    if(!opened)
+    {
+        if(error) *error = "replay playback is not open";
+        return false;
+    }
+    if(steps.size() < requestedPosition)
+    {
+        if(error) *error = "replay position is out of range";
+        return false;
+    }
+    if(requestedPosition == currentPosition)
+    {
+        if(error) error->clear();
+        return true;
+    }
+
+    const std::size_t previousPosition = currentPosition;
+    if(requestedPosition < currentPosition && !restoreInitial(error)) return false;
+    if(applyRange(currentPosition, requestedPosition, error)) return true;
+
+    // Keep a failed seek from leaving the viewer on an undocumented partial state.
+    std::string ignored;
+    if(restoreInitial(&ignored)) applyRange(0, previousPosition, &ignored);
+    return false;
+}
+
+bool Replay::Playback::stepForward(std::string* error)
+{
+    if(atEnd())
+    {
+        if(error) error->clear();
+        return true;
+    }
+    return seek(currentPosition + 1, error);
+}
+
+bool Replay::Playback::stepBackward(std::string* error)
+{
+    if(atBeginning())
+    {
+        if(error) error->clear();
+        return true;
+    }
+    return seek(currentPosition - 1, error);
+}
+
+std::size_t Replay::Playback::phaseIndex(void) const
+{
+    if(phasePositions.empty()) return 0;
+    const auto next = std::upper_bound(phasePositions.begin(), phasePositions.end(),
+                                       currentPosition);
+    return next == phasePositions.begin() ? 0 :
+        static_cast<std::size_t>(std::distance(phasePositions.begin(), next) - 1);
+}
+
+int Replay::Playback::gamePart(void) const
+{
+    return opened ? GameData::loadedGamePart() : 0;
+}
+
+bool Replay::Playback::nextPhase(std::string* error)
+{
+    if(!opened)
+    {
+        if(error) *error = "replay playback is not open";
+        return false;
+    }
+    const auto next = std::upper_bound(phasePositions.begin(), phasePositions.end(),
+                                       currentPosition);
+    return next == phasePositions.end() ? seek(steps.size(), error) : seek(*next, error);
+}
+
+bool Replay::Playback::previousPhase(std::string* error)
+{
+    if(!opened)
+    {
+        if(error) *error = "replay playback is not open";
+        return false;
+    }
+    auto previous = std::lower_bound(phasePositions.begin(), phasePositions.end(),
+                                     currentPosition);
+    if(previous == phasePositions.begin()) return seek(0, error);
+    --previous;
+    return seek(*previous, error);
 }

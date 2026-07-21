@@ -23,8 +23,9 @@
     "list:item_height": 82,
     "list:item_gap": 12,
     "button:back": [ 176, 642, 150, 50 ],
-    "button:delete": [ 548, 642, 140, 50 ],
-    "button:details": [ 698, 642, 150, 50 ],
+    "button:details": [ 346, 642, 150, 50 ],
+    "button:delete": [ 516, 642, 140, 50 ],
+    "button:play": [ 676, 642, 150, 50 ],
 
     "font:title": "dejavus34",
     "font:entry": "dejavus22",

@@ -1115,6 +1115,30 @@ void testActionReplay()
            !AI::behaviorProfileOverrideEnabled(),
            "replay journal must restore RNG state, AI doctrine and its caller scope");
 
+    const std::string stateBeforePlayback = GameData::authoritativeState().toString();
+    {
+        Replay::Playback playback;
+        replayError.clear();
+        expect(playback.open(journal, &replayError) && replayError.empty() &&
+               playback.position() == 0 && playback.size() == 1 &&
+               playback.phaseCount() == 1 &&
+               GameData::authoritativeState().toString() == randomInitialState.toString(),
+               "replay playback must open at its validated initial state");
+        expect(playback.stepForward(&replayError) && playback.atEnd() &&
+               Replay::authoritativeStateHash() == randomExpectedHash,
+               "replay playback must advance one deterministic action");
+        expect(playback.stepBackward(&replayError) && playback.atBeginning() &&
+               GameData::authoritativeState().toString() == randomInitialState.toString(),
+               "replay playback must rebuild the previous deterministic position");
+        expect(playback.seek(playback.size(), &replayError) &&
+               playback.nextPhase(&replayError) && playback.atEnd() &&
+               playback.previousPhase(&replayError) && playback.atBeginning(),
+               "replay playback phase navigation must clamp to valid boundaries");
+    }
+    expect(GameData::authoritativeState().toString() == stateBeforePlayback &&
+           !AI::behaviorProfileOverrideEnabled(),
+           "closing replay playback must restore the caller's game and AI scope");
+
     JsonObject legacyJournal = jsonObjectWithoutKey(journal, RuneGameRulesetIdentityKey);
     legacyJournal = jsonObjectWithoutKey(legacyJournal, ContentPackageIdentityKey);
     const JsonObject* journalInitial = journal.getObject("initialState");
@@ -1311,7 +1335,7 @@ void testDeveloperFastForward()
 }
 #endif
 
-int runFixedSeedReplaySelfTest()
+int runFixedSeedReplaySelfTest(const std::string & replayDirectory = std::string())
 {
     constexpr uint64_t seed = UINT64_C(0x123456789abcdef);
     constexpr const char* expectedHash = "5f1012c76a1d1638";
@@ -1343,7 +1367,9 @@ int runFixedSeedReplaySelfTest()
 
     const JsonObject finalState = GameData::authoritativeState();
     const std::string actualHash = Replay::authoritativeStateHash();
-    const JsonObject journal = Replay::actionJournal(finalState);
+    JsonObject journal = Replay::actionJournal(finalState);
+    if(!replayDirectory.empty())
+        journal.addBoolean("developerAssisted", true);
     std::string replayError;
     if(!Replay::run(journal, &replayError) || Replay::authoritativeStateHash() != actualHash)
     {
@@ -1357,6 +1383,18 @@ int runFixedSeedReplaySelfTest()
         std::cerr << "FAIL: expected fixed-seed replay hash " << expectedHash
                   << ", got " << actualHash << '\n';
         return 1;
+    }
+
+    if(!replayDirectory.empty())
+    {
+        std::string replayFile;
+        replayError.clear();
+        if(!ReplayFiles::writeAutomatic(replayDirectory, journal, &replayFile, &replayError))
+        {
+            std::cerr << "FAIL: unable to write test replay: " << replayError << '\n';
+            return 1;
+        }
+        std::cout << "test replay: " << replayFile << '\n';
     }
 
     return 0;
@@ -5088,6 +5126,9 @@ int main(int argc, char** argv)
 
     if(1 < argc && std::string(argv[1]) == "--settings-self-test")
         return runSettingsPersistenceSelfTest();
+
+    if(2 < argc && std::string(argv[1]) == "--write-test-replay")
+        return runFixedSeedReplaySelfTest(argv[2]);
 
     if(1 < argc && std::string(argv[1]) == "--fixed-seed-replay")
         return runFixedSeedReplaySelfTest();

@@ -52,6 +52,49 @@ namespace Replay
         JsonObject toJsonObject(void) const;
     };
 
+    class Playback
+    {
+        JsonObject              initialState;
+        JsonObject              previousState;
+        std::vector<Step>       steps;
+        std::vector<std::size_t> phasePositions;
+        std::string             behaviorProfile;
+        std::size_t             currentPosition = 0;
+        bool                    previousSkipRepeatSay = false;
+        bool                    previousStateValid = false;
+        bool                    opened = false;
+
+        bool applyRange(std::size_t begin, std::size_t end, std::string* error);
+        bool restoreInitial(std::string* error);
+        void restorePrevious(void);
+
+    public:
+        Playback() = default;
+        explicit Playback(const JsonObject &, std::string* error = nullptr);
+        ~Playback();
+
+        Playback(const Playback &) = delete;
+        Playback & operator=(const Playback &) = delete;
+
+        bool open(const JsonObject &, std::string* error = nullptr);
+        void close(void);
+
+        bool isOpen(void) const { return opened; }
+        bool atBeginning(void) const { return currentPosition == 0; }
+        bool atEnd(void) const { return currentPosition == steps.size(); }
+        std::size_t position(void) const { return currentPosition; }
+        std::size_t size(void) const { return steps.size(); }
+        std::size_t phaseIndex(void) const;
+        std::size_t phaseCount(void) const { return phasePositions.size(); }
+        int gamePart(void) const;
+
+        bool seek(std::size_t, std::string* error = nullptr);
+        bool stepForward(std::string* error = nullptr);
+        bool stepBackward(std::string* error = nullptr);
+        bool nextPhase(std::string* error = nullptr);
+        bool previousPhase(std::string* error = nullptr);
+    };
+
     std::unique_ptr<ClientMessage> clientMessageFromJson(const JsonObject & action);
     std::string authoritativeStateHash(void);
     bool actionRecordingEnabled(void);
