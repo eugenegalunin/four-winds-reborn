@@ -87,7 +87,7 @@ namespace
 {
 int failures = 0;
 
-class AlternateScoringRuleset final : public RuneGameRuleset
+class AlternateRuneGameRuleset final : public RuneGameRuleset
 {
 public:
     const std::string & id(void) const override
@@ -97,6 +97,13 @@ public:
     }
 
     int version(void) const override { return 7; }
+    const std::vector<int> & wallStoneIds(void) const override
+    {
+        static const std::vector<int> stones = { Stone::Skull1, Stone::Sword1 };
+        return stones;
+    }
+    int wallCopies(void) const override { return 4; }
+    int initialHandSize(void) const override { return 2; }
     int baseWinPoints(void) const override { return 30; }
     int scoreMultiplier(int doubles) const override { return 3 << std::max(0, doubles); }
     int maximumWinScore(void) const override { return 200; }
@@ -1228,6 +1235,29 @@ void testLuckAbility()
     openingDeal.distributeStones(openingWall);
     expect(openingDeal.front().stones.size() == GAME_SET_COUNT && !openingWall.hasLuckDraw(),
            "Luck must not trigger during the initial thirteen-rune deal");
+
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+    expect(classicRuleset.wallStoneIds().size() == 34 &&
+           classicRuleset.wallCopies() == 4 &&
+           classicRuleset.initialHandSize() == GAME_SET_COUNT,
+           "Classic ruleset must own the established 136-rune wall and thirteen-rune hand");
+
+    const AlternateRuneGameRuleset alternateRuleset;
+    CroupierSet alternateWall;
+    alternateWall.reset(alternateRuleset);
+    expect(alternateWall.bank.size() == 8 &&
+           std::count(alternateWall.bank.begin(), alternateWall.bank.end(), Stone(Stone::Skull1)) == 4 &&
+           std::count(alternateWall.bank.begin(), alternateWall.bank.end(), Stone(Stone::Sword1)) == 4,
+           "an injected ruleset must control wall composition and copy count");
+
+    LocalPlayers alternateDeal = openingDeal;
+    for(auto & player : alternateDeal) player.stones.clear();
+    alternateDeal.distributeStones(alternateWall, alternateRuleset);
+    expect(std::all_of(alternateDeal.begin(), alternateDeal.end(), [](const LocalPlayer & player)
+           {
+               return player.stones.size() == 2;
+           }) && alternateWall.bank.empty(),
+           "an injected ruleset must control the initial hand size without changing Classic");
 
     GameStones hand;
     hand.add(GameStone(Stone(Stone::Sword2), false));
@@ -4551,7 +4581,7 @@ int main(int argc, char** argv)
     expect(pointHand.totalScore() == 24,
            "Mahjong total score must include set and hand points without doubles");
 
-    const AlternateScoringRuleset alternateRuleset;
+    const AlternateRuneGameRuleset alternateRuleset;
     expect(alternateRuleset.id() == "test-alternate-scoring" && alternateRuleset.version() == 7,
            "an injected Rune Game ruleset must expose independent identity and version");
     expect(pointHand.totalPoints(alternateRuleset) == 34,

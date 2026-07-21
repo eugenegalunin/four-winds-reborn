@@ -9,6 +9,7 @@
 
 #include <algorithm>
 
+#include "gameobjects.h"
 #include "runegameruleset.h"
 
 namespace
@@ -25,6 +26,34 @@ namespace
         int version(void) const override
         {
             return 1;
+        }
+
+        const std::vector<int> & wallStoneIds(void) const override
+        {
+            static const std::vector<int> stones = {
+                Stone::Skull1, Stone::Skull2, Stone::Skull3,
+                Stone::Skull4, Stone::Skull5, Stone::Skull6,
+                Stone::Skull7, Stone::Skull8, Stone::Skull9,
+                Stone::Sword1, Stone::Sword2, Stone::Sword3,
+                Stone::Sword4, Stone::Sword5, Stone::Sword6,
+                Stone::Sword7, Stone::Sword8, Stone::Sword9,
+                Stone::Number1, Stone::Number2, Stone::Number3,
+                Stone::Number4, Stone::Number5, Stone::Number6,
+                Stone::Number7, Stone::Number8, Stone::Number9,
+                Stone::Wind1, Stone::Wind2, Stone::Wind3, Stone::Wind4,
+                Stone::Dragon1, Stone::Dragon2, Stone::Dragon3
+            };
+            return stones;
+        }
+
+        int wallCopies(void) const override
+        {
+            return 4;
+        }
+
+        int initialHandSize(void) const override
+        {
+            return 13;
         }
 
         int baseWinPoints(void) const override

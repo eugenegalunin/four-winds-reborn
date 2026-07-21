@@ -913,6 +913,7 @@ struct CroupierSet
     const VecStones &           luckChoices(void) const { return luckDraw; }
     Stone                       resolveLuckDraw(int);
     void                        reset(void);
+    void                        reset(const RuneGameRuleset &);
     bool                        valid(void) const;
     void                        put(const Stone &);
 
@@ -1167,6 +1168,7 @@ struct LocalPlayers : public std::vector<LocalPlayer>
 {
     void			setPersons(const Persons &);
     void			distributeStones(CroupierSet &);
+    void                        distributeStones(CroupierSet &, const RuneGameRuleset &);
     void			shiftWinds(void);
 
     bool			findKongs(void) const;

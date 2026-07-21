@@ -34,6 +34,7 @@
 #include "crashreport.h"
 #include "gamedata.h"
 #include "replay.h"
+#include "runegameruleset.h"
 
 std::string SpellInfo::effectDescription(void) const
 {
@@ -750,14 +751,15 @@ bool GameData::initPersons(const Persons & configured)
 
 bool GameData::initMahjong(void)
 {
+    const RuneGameRuleset & ruleset = classicRuneGameRuleset();
     pendingBattle = PendingBattle();
     do
     {
 	for(auto & lp : gamers)
 	    lp.initMahjongPart();
 
-	croupier.reset();
-	gamers.distributeStones(croupier);
+	croupier.reset(ruleset);
+	gamers.distributeStones(croupier, ruleset);
     }
     // fix kong startup
     while(gamers.findKongs());

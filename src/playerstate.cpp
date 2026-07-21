@@ -25,6 +25,7 @@
 
 #include "gameplayrng.h"
 #include "gamedata.h"
+#include "runegameruleset.h"
 
 namespace GameData
 {
@@ -698,7 +699,12 @@ void LocalPlayers::setPersons(const Persons & persons)
 
 void LocalPlayers::distributeStones(CroupierSet & croupier)
 {
-    for(int ii = 0; ii < GAME_SET_COUNT; ++ii)
+    distributeStones(croupier, classicRuneGameRuleset());
+}
+
+void LocalPlayers::distributeStones(CroupierSet & croupier, const RuneGameRuleset & ruleset)
+{
+    for(int ii = 0; ii < ruleset.initialHandSize(); ++ii)
     {
         for(auto & player : *this)
 	    player.stones.add(GameStone(croupier.get(player), false));

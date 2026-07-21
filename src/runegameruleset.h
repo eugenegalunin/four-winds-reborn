@@ -11,6 +11,7 @@
 #define FOUR_WINDS_RUNE_GAME_RULESET_H
 
 #include <string>
+#include <vector>
 
 // Authoritative Rune Game rules are introduced one stable seam at a time.
 // The first seam owns scoring constants and arithmetic. Further slices extend
@@ -22,6 +23,12 @@ public:
 
     virtual const std::string & id(void) const = 0;
     virtual int version(void) const = 0;
+
+    // Stone identifiers are returned as data only. CroupierSet remains the
+    // sole owner of gameplay RNG and preserves the established shuffle order.
+    virtual const std::vector<int> & wallStoneIds(void) const = 0;
+    virtual int wallCopies(void) const = 0;
+    virtual int initialHandSize(void) const = 0;
 
     virtual int baseWinPoints(void) const = 0;
     virtual int scoreMultiplier(int doubles) const = 0;
