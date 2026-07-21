@@ -19,18 +19,16 @@ On Windows, unpack the archive and launch `four-winds-reborn.exe`.
 
 ## Roadmap
 
-- Add development tools for AI takeover, fast-forwarding and reproducible
-  near-end scenarios so long games can be tested quickly.
-- Improve battle explanations, training and replay viewing while incrementally
-  splitting the largest gameplay files into ruleset-ready modules.
-- Add versioned themes and mod support, including a legally distinct optional
-  art, music and naming set.
-- Ship an Android build with native touch controls, safe app lifecycle handling
-  and compatible saves.
-- Add local Duel and Coalition rulesets, followed by additional Rune Game rules
-  through a shared versioned ruleset contract.
-- Add authoritative multiplayer last, after the platforms and local rulesets
-  are stable.
+- Complete v0.3.0 with a player-facing replay viewer, versioned content and
+  theme manifests, in-menu package selection and clear compatibility checks.
+- Add an optional legally distinct Reborn content set with its own art, music
+  and names while keeping the classic presentation available as a package.
+- Make Android the focus of v0.4.0, with native touch controls, safe app
+  lifecycle handling and compatible saves.
+- Prove the shared ruleset contract with additional local Rune Game rules,
+  followed by separate Duel and Coalition modes.
+- Add authoritative multiplayer last, after Android and the local rulesets are
+  stable.
 
 ## Screenshots
 
