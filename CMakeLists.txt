@@ -121,6 +121,7 @@ set(FOUR_WINDS_SOURCE
     src/dialogs.cpp
     src/adventurehints.cpp
     src/adventurepart.cpp
+    src/runegameinput.cpp
     src/runegametargetdialogs.cpp
     src/runegamewidgets.cpp
     src/battlesummarypart.cpp
