@@ -73,6 +73,7 @@ extern int bonusPass;
 extern LocalPlayers gamers;
 extern Wind currentWind;
 extern Wind roundWind;
+extern Wind partWind;
 extern CroupierSet croupier;
 extern int stoneLastCount;
 extern Stone dropStone;
@@ -153,6 +154,15 @@ public:
         }
         return 0;
     }
+    RuneGameRoundAdvance advanceRound(int roundWindId, int partWindId) const override
+    {
+        if(Wind::East == roundWindId && Wind::South == partWindId)
+            return { roundWindId, partWindId, false, true };
+        if(Wind::None == roundWindId && Wind::None == partWindId)
+            return { Wind::East, Wind::East, false, false };
+        return { Wind::East, Wind::South, false, false };
+    }
+    int firstTurnWindId(void) const override { return Wind::South; }
     int baseWinPoints(void) const override { return 30; }
     int scoreMultiplier(int doubles) const override { return 3 << std::max(0, doubles); }
     int maximumWinScore(void) const override { return 200; }
@@ -164,6 +174,54 @@ void expect(bool condition, const char* message)
 
     std::cerr << "FAIL: " << message << '\n';
     ++failures;
+}
+
+void testRuneGameRoundFlowRuleset()
+{
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+
+    RuneGameRoundAdvance advance = classicRuleset.advanceRound(Wind::None, Wind::None);
+    expect(advance.roundWindId == Wind::East && advance.partWindId == Wind::East &&
+           !advance.rotatePlayerWinds && !advance.complete &&
+           classicRuleset.firstTurnWindId() == Wind::East,
+           "Classic ruleset must start the East round and East part with East taking the turn");
+
+    advance = classicRuleset.advanceRound(Wind::East, Wind::East);
+    expect(advance.roundWindId == Wind::East && advance.partWindId == Wind::South &&
+           advance.rotatePlayerWinds && !advance.complete,
+           "Classic ruleset must rotate seats when advancing within a round");
+
+    advance = classicRuleset.advanceRound(Wind::East, Wind::North);
+    expect(advance.roundWindId == Wind::South && advance.partWindId == Wind::East &&
+           !advance.rotatePlayerWinds && !advance.complete,
+           "Classic ruleset must begin the next round after the North part");
+
+    advance = classicRuleset.advanceRound(Wind::North, Wind::North);
+    expect(advance.complete,
+           "Classic ruleset must finish after the North part of the North round");
+
+    const AlternateRuneGameRuleset alternateRuleset;
+    advance = alternateRuleset.advanceRound(Wind::None, Wind::None);
+    expect(advance.roundWindId == Wind::East && advance.partWindId == Wind::East &&
+           !advance.rotatePlayerWinds && !advance.complete &&
+           alternateRuleset.firstTurnWindId() == Wind::South,
+           "an injected ruleset must control its opening round and first turn");
+    advance = alternateRuleset.advanceRound(Wind::East, Wind::East);
+    expect(advance.roundWindId == Wind::East && advance.partWindId == Wind::South &&
+           !advance.rotatePlayerWinds && !advance.complete,
+           "an injected ruleset must control seat rotation independently from Classic");
+    advance = alternateRuleset.advanceRound(Wind::East, Wind::South);
+    expect(advance.complete,
+           "an injected ruleset must control its own tournament completion point");
+
+    const Wind savedRoundWind = GameData::roundWind;
+    const Wind savedPartWind = GameData::partWind;
+    GameData::roundWind = Wind(Wind::East);
+    GameData::partWind = Wind(Wind::South);
+    expect(!GameData::isGameOver(classicRuleset) && GameData::isGameOver(alternateRuleset),
+           "GameData tournament completion must route through the injected ruleset");
+    GameData::roundWind = savedRoundWind;
+    GameData::partWind = savedPartWind;
 }
 
 BattleCreature creature(int uid, int move, int loyalty = 3, int ranger = 1)
@@ -4560,6 +4618,7 @@ int main(int argc, char** argv)
     }
 
     testDifficultyRules();
+    testRuneGameRoundFlowRuleset();
     testPolygonHitTesting();
     testDrawnMahjongResult();
     testStrategicRunePlanning();

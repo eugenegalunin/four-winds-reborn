@@ -114,6 +114,40 @@ namespace
             return 0;
         }
 
+        RuneGameRoundAdvance advanceRound(int roundWindId, int partWindId) const override
+        {
+            RuneGameRoundAdvance result;
+            result.roundWindId = roundWindId;
+            result.partWindId = partWindId;
+
+            if(Wind::North == roundWindId && Wind::North == partWindId)
+            {
+                result.complete = true;
+            }
+            else if(Wind::None == roundWindId && Wind::None == partWindId)
+            {
+                result.roundWindId = Wind::East;
+                result.partWindId = Wind::East;
+            }
+            else if(Wind::North == partWindId)
+            {
+                result.roundWindId = Wind(static_cast<Wind::wind_t>(roundWindId)).next()();
+                result.partWindId = Wind::East;
+            }
+            else
+            {
+                result.partWindId = Wind(static_cast<Wind::wind_t>(partWindId)).next()();
+                result.rotatePlayerWinds = true;
+            }
+
+            return result;
+        }
+
+        int firstTurnWindId(void) const override
+        {
+            return Wind::East;
+        }
+
         int baseWinPoints(void) const override
         {
             return 20;

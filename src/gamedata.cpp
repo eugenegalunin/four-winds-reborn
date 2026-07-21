@@ -396,7 +396,12 @@ int GameData::nextBattleUnitId(void)
 
 bool GameData::isGameOver(void)
 {
-    return roundWind() == Wind::North && partWind() == Wind::North;
+    return isGameOver(classicRuneGameRuleset());
+}
+
+bool GameData::isGameOver(const RuneGameRuleset & ruleset)
+{
+    return ruleset.advanceRound(roundWind(), partWind()).complete;
 }
 
 std::list<BattleLegend> GameData::getBattleHistoryFor(const Avatar & avatar)
@@ -751,7 +756,11 @@ bool GameData::initPersons(const Persons & configured)
 
 bool GameData::initMahjong(void)
 {
-    const RuneGameRuleset & ruleset = classicRuneGameRuleset();
+    return initMahjong(classicRuneGameRuleset());
+}
+
+bool GameData::initMahjong(const RuneGameRuleset & ruleset)
+{
     pendingBattle = PendingBattle();
     do
     {
@@ -771,30 +780,16 @@ bool GameData::initMahjong(void)
     skipNewTurn = false;
     stateGUI.clear();
 
-    if(partWind() == Wind::North && roundWind() == Wind::North)
-	return false;
-    else
-    if(! partWind.isValid() && ! roundWind.isValid())
-    {
-	// new round, new part
-        partWind = Wind(Wind::East);
-        roundWind = Wind(Wind::East);
-    }
-    else
-    if(partWind() == Wind::North)
-    {
-	// new round, new part
-	roundWind.shift();
-	partWind = Wind(Wind::East);
-    }
-    else
-    {
-	// new part
-	gamers.shiftWinds();
-	partWind.shift();
-    }
+    const RuneGameRoundAdvance advance = ruleset.advanceRound(roundWind(), partWind());
+    if(advance.complete)
+        return false;
 
-    currentWind = Wind(Wind::East);
+    if(advance.rotatePlayerWinds)
+        gamers.shiftWinds();
+
+    roundWind = Wind(static_cast<Wind::wind_t>(advance.roundWindId));
+    partWind = Wind(static_cast<Wind::wind_t>(advance.partWindId));
+    currentWind = Wind(static_cast<Wind::wind_t>(ruleset.firstTurnWindId()));
     dropStone = Stone(Stone::None);
     winResult = WinResults();
 

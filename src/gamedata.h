@@ -33,6 +33,8 @@ namespace AI
     enum class Difficulty;
 }
 
+class RuneGameRuleset;
+
 namespace Menu
 {
     // Keep serialized gameplay part values stable; UI-only states belong at the end.
@@ -324,6 +326,7 @@ namespace GameData
     bool                        initPersons(const Persons &);
 
     bool			initMahjong(void);
+    bool                        initMahjong(const RuneGameRuleset &);
     bool			mahjong2Client(const Avatar &, ActionList &);
     bool			client2Mahjong(const Avatar &, const ClientMessage &, ActionList &,
                                        ActionRejection* rejection = nullptr);
@@ -366,6 +369,7 @@ namespace GameData
     bool			loadGame(void);
     bool			loadGame(const std::string &);
     bool			isGameOver(void);
+    bool                        isGameOver(const RuneGameRuleset &);
 
     int				loadedGamePart(void);
     void                        setGamePart(int);
