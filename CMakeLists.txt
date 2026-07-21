@@ -88,6 +88,7 @@ set(FOUR_WINDS_SOURCE
 
     src/rules/actionvalidation.cpp
     src/rules/adventurecommands.cpp
+    src/rules/contentpackage.cpp
     src/rules/creaturestate.cpp
     src/rules/developerfixtures.cpp
     src/rules/gamestateio.cpp

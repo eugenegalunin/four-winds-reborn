@@ -3,37 +3,19 @@
     "description":	"Original Theme",
     "author":		"Arcanium Productions",
     "size":		[ 1024, 768 ],
+    "contentPackage":	{
+			    "schema": 1,
+			    "id": "classic-original",
+			    "version": 1,
+			    "engineContract": "four-winds-classic-v1",
+			    "gameData": "content.json",
+			    "compatibleVersions": [ 1 ]
+			},
 
     "tooltips":		{
 			    "bgcolor":	"wheat",
 			    "fncolor":	"midnightblue",
 			    "rtcolor":	"black",
 			    "font":	"tooltips"
-			},
-
-    "bonus:start":	250,
-    "bonus:game":	50,
-    "bonus:kong":	40,
-    "bonus:pung":	30,
-    "bonus:chao":	20,
-    "bonus:pass":	10,
-
-    "index:winds":	[ "none", "east", "south", "west", "north" ],
-    "index:clans":	[ "none", "red", "yellow", "aqua", "purple" ],
-    "index:abilities":	[ "none", "monacle", "catasrophic", "bard", "luck", "telepath" ],
-    "index:specials":	[ "none", "swarm", "merge", "invisibility", "regeneration", "cast_hellblast", "magic_resistance", "mighty_blow", "gate",
-			    "first_strike", "see_invisible", "ignore_missiles", "devotion", "fire_shield", "cast_draw_number", "cast_draw_sword",
-			    "cast_draw_skull", "cast_random_discard", "cast_silence", "cast_scry_runes", "cast_mana_fog", "ranger_attack" ],
-    "index:avatars":	[ "none", "orachi", "lakkho", "dayla", "ziag", "niana", "kierac", "logun", "nucrus", "javed", "random" ],
-    "index:spells":	[ "none", "smoke", "demonic_compulsion", "mass_panic", "paralyze", "reduction", "battle_fury", "guidance", "force_shield",
-			    "dust_cloud", "heroism", "mystical_fountain", "mystical_fountain_attack", "mystical_fountain_range", "mystical_fountain_loyalty",
-			    "blind_ambition", "brilliant_lights", "magical_aura", "teleport", "dispel_magic", "lightning_bolt",
-			    "healing", "hell_blast", "draw_skull", "draw_sword", "draw_number", "random_discard", "scry_runes", "silence", "mana_fog", "mass_dispel" ],
-    "index:creatures":	[ "none", "skeleton_horde", "shadow", "durlock", "kilor_celsbane", "wraith", "maz_ra", "knight_templar", "great_carol", "minotaur",
-			    "adventure_party", "fire_giant", "king_drago", "sand_wraith", "stone_golem", "learra_siren",  "thunder_bird", "ki_lin", "shanahan", "white_dragon",
-			    "green_dragon", "red_dragon", "fire_elemental", "earth_elemental", "air_elemental", "water_elemental", "juggernaut", "tornado", "griffon", "chameleon" ],
-    "index:lands":	[ "none", "tower_of4_winds", "maithaius", "baliphon", "vermille", "sulanthia", "trojensek", "talon", "siramak", "ronzinol", "corzen",
-			    "greenbaw", "zubrus", "corimar", "inkartha", "hexan", "firland", "vesna", "kern", "regency_peaks", "knighthaven", "rikter", "gorok", "suntura", "bertram",
-			    "mastenbroek", "reisse", "cirrus", "grosek", "chahrr", "saugrezz", "mahnjeet", "trassk", "bechnarr", "azuria", "pyramus_reach", "serenity_plains", "sunspot",
-			    "charmers_expanse", "gambits_run", "ash_point", "orchid_bay", "mocklebury", "celestial_wood", "tortoise_isle", "siphons_chute" ]
+			}
 }

@@ -4,6 +4,7 @@
 #include <exception>
 
 #include "aiprofile.h"
+#include "contentpackage.h"
 #include "gamedata.h"
 #include "recovery.h"
 #include "runegameruleset.h"
@@ -25,12 +26,12 @@ bool isAdventureAction(int type)
            type == Action::ClientBattleChoice;
 }
 
-JsonObject stateWithoutRulesetIdentity(const JsonObject & state)
+JsonObject stateWithoutArtifactIdentity(const JsonObject & state)
 {
     JsonObject result;
     for(const std::string & key : state.keys())
     {
-        if(key == RuneGameRulesetIdentityKey) continue;
+        if(key == RuneGameRulesetIdentityKey || key == ContentPackageIdentityKey) continue;
 
         const JsonValue* value = state.getValue(key);
         if(!value) continue;
@@ -54,10 +55,10 @@ JsonObject stateWithoutRulesetIdentity(const JsonObject & state)
 
 std::string replayStateHash(const JsonObject & state)
 {
-    // The ruleset identity is validated separately by Replay::run. Keeping it
-    // outside the gameplay hash preserves existing Classic replay hashes while
-    // still rejecting unavailable or mismatched rulesets before playback.
-    return Recovery::stateHash(stateWithoutRulesetIdentity(state));
+    // Ruleset and content-package identities are validated separately by
+    // Replay::run. Keeping them outside the gameplay hash preserves existing
+    // Classic replay hashes while rejecting incompatible artifacts up front.
+    return Recovery::stateHash(stateWithoutArtifactIdentity(state));
 }
 
 struct RecordingPause
@@ -271,6 +272,8 @@ JsonObject Replay::actionJournal(const JsonObject & checkpointState)
     result.addInteger("schema", forcedProfile ? 3 : (hasSystemOperations ? 2 : 1));
     result.addObject(RuneGameRulesetIdentityKey,
                      runeGameRulesetIdentityJson(activeRuneGameRuleset()));
+    result.addObject(ContentPackageIdentityKey,
+                     contentPackageIdentityJson(activeContentPackageManifest()));
     result.addString("aiBehaviorProfile", forcedProfile ?
         AI::behaviorProfileName(AI::behaviorProfileOverride()) : "native");
     result.addInteger("actionCount", static_cast<int>(journalSteps.size()));
@@ -409,6 +412,17 @@ bool Replay::run(const JsonObject & journal, std::string* error)
     if(!sameRuneGameRuleset(journalRuleset, stateRuleset))
     {
         if(error) *error = "journal and initial state use different Rune Game rulesets";
+        return false;
+    }
+
+    ContentPackageIdentity journalPackage;
+    ContentPackageIdentity statePackage;
+    if(!resolveContentPackageIdentity(journal, journalPackage, true, error) ||
+       !resolveContentPackageIdentity(*initialState, statePackage, true, error))
+        return false;
+    if(!sameContentPackage(journalPackage, statePackage))
+    {
+        if(error) *error = "journal and initial state use different content packages";
         return false;
     }
 

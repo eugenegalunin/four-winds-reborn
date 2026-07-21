@@ -28,6 +28,7 @@
 #include "settings.h"
 #include "gametheme.h"
 #include "crashreport.h"
+#include "contentpackage.h"
 
 struct dirNotFound
 {
@@ -163,6 +164,20 @@ bool GameTheme::init(const Application & app)
         return false;
     }
 
+    std::string contentPackageError;
+    if(!activateContentPackage(jo, &contentPackageError))
+    {
+        CrashReport::breadcrumb(std::string("Theme stage=content-package status=failed reason=")
+            .append(contentPackageError));
+        ERROR("content package: " << contentPackageError);
+        return false;
+    }
+    const ContentPackageManifest & contentManifest = activeContentPackageManifest();
+    const ContentPackageIdentity package = contentPackageIdentity(contentManifest);
+    CrashReport::breadcrumb(std::string("Theme stage=content-package status=ok id=")
+        .append(package.id).append(" version=").append(std::to_string(package.version))
+        .append(" contract=").append(contentManifest.engineContract));
+
     Settings::read();
 
     // load caches
@@ -203,8 +218,17 @@ bool GameTheme::init(const Application & app)
 	themeTooltips.font = "tooltips";
     }
 
-    CrashReport::breadcrumb("Theme stage=gamedata status=begin");
-    if(! GameData::init(jo))
+    CrashReport::breadcrumb(std::string("Theme stage=gamedata status=begin file=")
+        .append(contentManifest.gameData));
+    JsonObject gameData = jsonResource(contentManifest.gameData).toObject();
+    if(!gameData.isValid())
+    {
+        CrashReport::breadcrumb(std::string("Theme stage=gamedata status=failed file=")
+            .append(contentManifest.gameData).append(" reason=invalid-or-missing"));
+        ERROR("content package game data not found or invalid: " << contentManifest.gameData);
+        return false;
+    }
+    if(! GameData::init(gameData))
     {
 	CrashReport::breadcrumb("Theme stage=gamedata status=failed");
 	ERROR("game data init: error");

@@ -13,6 +13,24 @@ Reborn work only; they do not claim authorship of inherited code or assets.
 
 ## [Unreleased]
 
+### Added - content package identity
+
+- Added a versioned content-package manifest with a stable package identifier,
+  package version, compatible-version list and an explicit engine content
+  contract.
+- New saves, recovery checkpoints and deterministic replay journals now record
+  their content-package identity. Incompatible or unavailable packages are
+  rejected before state is changed, while pre-manifest Classic artifacts remain
+  load-compatible.
+
+### Changed - theme and game-data separation
+
+- Moved authoritative gameplay bonuses and indexed object tables out of the
+  presentation theme manifest into its declared `content.json` payload.
+- Extended theme validation and regression coverage so incomplete packages,
+  mixed presentation/gameplay manifests and unsupported engine contracts fail
+  clearly instead of being loaded partially.
+
 ## [0.2.0] - 2026-07-18
 
 This release completes the stable post-`v0.1.0` player-facing slice before the

@@ -16,6 +16,7 @@
 #include "adventurehints.h"
 #include "avatar_balance_tests.h"
 #include "battle.h"
+#include "contentpackage.h"
 #include "crashreport.h"
 #ifdef BUILD_DEBUG
 #include "developertools.h"
@@ -263,6 +264,104 @@ void testRuneGameRulesetIdentityContract()
            sameRuneGameRuleset(runeGameRulesetIdentity(activeRuneGameRuleset()),
                                classicIdentity),
            "unregistered rulesets must be rejected without changing the active ruleset");
+}
+
+void testContentPackageIdentityContract()
+{
+    JsonObject classicManifest;
+    classicManifest.addInteger("schema", ContentPackageManifestSchema);
+    classicManifest.addString("id", ClassicContentPackageId);
+    classicManifest.addInteger("version", ClassicContentPackageVersion);
+    classicManifest.addString("engineContract", ClassicEngineContentContract);
+    classicManifest.addString("gameData", "content.json");
+    JsonArray classicVersions;
+    classicVersions.addInteger(ClassicContentPackageVersion);
+    classicManifest.addArray("compatibleVersions", classicVersions);
+    JsonObject classicIndex;
+    classicIndex.addObject(ContentPackageIdentityKey, classicManifest);
+
+    std::string packageError;
+    expect(activateContentPackage(classicIndex, &packageError) && packageError.empty(),
+           "the Classic content package manifest must activate");
+    const ContentPackageIdentity classicIdentity =
+        contentPackageIdentity(activeContentPackageManifest());
+    const JsonObject encodedClassic =
+        contentPackageIdentityJson(activeContentPackageManifest());
+    expect(classicIdentity.id == ClassicContentPackageId &&
+           classicIdentity.version == ClassicContentPackageVersion &&
+           encodedClassic.getString("id") == ClassicContentPackageId &&
+           encodedClassic.getInteger("version") == ClassicContentPackageVersion,
+           "Classic content package identity must have one stable JSON representation");
+
+    ContentPackageIdentity resolved;
+    const JsonObject legacyContainer;
+    packageError.clear();
+    expect(resolveContentPackageIdentity(legacyContainer, resolved, true, &packageError) &&
+           sameContentPackage(resolved, classicIdentity) && packageError.empty(),
+           "legacy artifacts without content package metadata must load as Classic");
+    packageError.clear();
+    expect(!resolveContentPackageIdentity(legacyContainer, resolved, false, &packageError) &&
+           packageError == "Content package metadata is missing",
+           "new artifacts must be able to require explicit content package metadata");
+
+    JsonObject malformed;
+    malformed.addString(ContentPackageIdentityKey, ClassicContentPackageId);
+    packageError.clear();
+    expect(!resolveContentPackageIdentity(malformed, resolved, true, &packageError) &&
+           packageError == "Content package metadata is invalid",
+           "malformed content package metadata must be rejected");
+
+    JsonObject unavailableIdentity;
+    unavailableIdentity.addString("id", "removed-package");
+    unavailableIdentity.addInteger("version", 4);
+    JsonObject unavailable;
+    unavailable.addObject(ContentPackageIdentityKey, unavailableIdentity);
+    packageError.clear();
+    expect(!resolveContentPackageIdentity(unavailable, resolved, true, &packageError) &&
+           packageError.find("removed-package@4") != std::string::npos,
+           "artifacts from an unavailable content package must be rejected clearly");
+
+    JsonObject compatibleManifest;
+    compatibleManifest.addInteger("schema", ContentPackageManifestSchema);
+    compatibleManifest.addString("id", ClassicContentPackageId);
+    compatibleManifest.addInteger("version", 2);
+    compatibleManifest.addString("engineContract", ClassicEngineContentContract);
+    compatibleManifest.addString("gameData", "content-v2.json");
+    JsonArray compatibleVersions;
+    compatibleVersions.addInteger(1);
+    compatibleVersions.addInteger(2);
+    compatibleManifest.addArray("compatibleVersions", compatibleVersions);
+    JsonObject compatibleIndex;
+    compatibleIndex.addObject(ContentPackageIdentityKey, compatibleManifest);
+    packageError.clear();
+    expect(activateContentPackage(compatibleIndex, &packageError) &&
+           activeContentPackageManifest().gameData == "content-v2.json" &&
+           resolveContentPackageIdentity(legacyContainer, resolved, true, &packageError) &&
+           resolved.version == ClassicContentPackageVersion,
+           "a manifest must be able to declare compatibility with an older package version");
+
+    JsonObject invalidManifest = compatibleManifest;
+    invalidManifest.addInteger("schema", ContentPackageManifestSchema + 1);
+    JsonObject invalidIndex;
+    invalidIndex.addObject(ContentPackageIdentityKey, invalidManifest);
+    packageError.clear();
+    expect(!activateContentPackage(invalidIndex, &packageError) &&
+           activeContentPackageManifest().identity.version == 2,
+           "a rejected manifest must not replace the active content package");
+
+    JsonObject unsupportedContractManifest = compatibleManifest;
+    unsupportedContractManifest.addString("engineContract", "future-dynamic-v2");
+    JsonObject unsupportedContractIndex;
+    unsupportedContractIndex.addObject(ContentPackageIdentityKey,
+                                       unsupportedContractManifest);
+    packageError.clear();
+    expect(!activateContentPackage(unsupportedContractIndex, &packageError) &&
+           activeContentPackageManifest().identity.version == 2,
+           "an unsupported engine content contract must fail transactionally");
+
+    packageError.clear();
+    expect(activateContentPackage(classicIndex, &packageError) && packageError.empty(),
+           "content package tests must restore the Classic package");
 }
 
 void testRuneGameRoundFlowRuleset()
@@ -982,12 +1081,15 @@ void testActionReplay()
     const JsonObject journal = Replay::actionJournal(randomFinalState);
     AI::clearBehaviorProfileOverride();
     const JsonObject* journalRuleset = journal.getObject(RuneGameRulesetIdentityKey);
+    const JsonObject* journalPackage = journal.getObject(ContentPackageIdentityKey);
     expect(journal.getInteger("schema") == 3 &&
            journal.getString("aiBehaviorProfile") == "aggressive" &&
            journal.getInteger("actionCount") == 1 &&
            journal.getBoolean("contiguousToCheckpoint") &&
            journalRuleset && journalRuleset->getString("id") == ClassicRuneGameRulesetId &&
-           journalRuleset->getInteger("version") == ClassicRuneGameRulesetVersion,
+           journalRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
+           journalPackage && journalPackage->getString("id") == ClassicContentPackageId &&
+           journalPackage->getInteger("version") == ClassicContentPackageVersion,
            "forced AI doctrine must enter a contiguous versioned replay journal");
 
     replayError.clear();
@@ -997,13 +1099,16 @@ void testActionReplay()
            "replay journal must restore RNG state, AI doctrine and its caller scope");
 
     JsonObject legacyJournal = jsonObjectWithoutKey(journal, RuneGameRulesetIdentityKey);
+    legacyJournal = jsonObjectWithoutKey(legacyJournal, ContentPackageIdentityKey);
     const JsonObject* journalInitial = journal.getObject("initialState");
     expect(journalInitial != nullptr,
            "versioned replay journal must retain its initial state");
     if(journalInitial)
     {
-        legacyJournal.addObject("initialState",
-            jsonObjectWithoutKey(*journalInitial, RuneGameRulesetIdentityKey));
+        JsonObject legacyInitial =
+            jsonObjectWithoutKey(*journalInitial, RuneGameRulesetIdentityKey);
+        legacyInitial = jsonObjectWithoutKey(legacyInitial, ContentPackageIdentityKey);
+        legacyJournal.addObject("initialState", legacyInitial);
         replayError.clear();
         expect(Replay::run(legacyJournal, &replayError) &&
                Replay::authoritativeStateHash() == randomExpectedHash,
@@ -1026,6 +1131,16 @@ void testActionReplay()
     expect(!Replay::run(unavailableRulesetJournal, &replayError) &&
            replayError.find("removed-variant@3") != std::string::npos,
            "replay must reject an unavailable ruleset before applying any action");
+
+    JsonObject unavailablePackageJournal = journal;
+    JsonObject unavailablePackage;
+    unavailablePackage.addString("id", "removed-package");
+    unavailablePackage.addInteger("version", 4);
+    unavailablePackageJournal.addObject(ContentPackageIdentityKey, unavailablePackage);
+    replayError.clear();
+    expect(!Replay::run(unavailablePackageJournal, &replayError) &&
+           replayError.find("removed-package@4") != std::string::npos,
+           "replay must reject an unavailable content package before applying any action");
 
     JsonObject tamperedRandomState = randomInitialState;
     JsonObject tamperedRng = *randomInitialState.getObject("gameplayRng");
@@ -3470,6 +3585,11 @@ int runRecoverySelfTest()
         productionMetadata.getObject(RuneGameRulesetIdentityKey);
     const JsonObject* replayRuleset = replay ?
         replay->getObject(RuneGameRulesetIdentityKey) : nullptr;
+    const JsonObject* savedPackage = productionState.getObject(ContentPackageIdentityKey);
+    const JsonObject* metadataPackage =
+        productionMetadata.getObject(ContentPackageIdentityKey);
+    const JsonObject* replayPackage = replay ?
+        replay->getObject(ContentPackageIdentityKey) : nullptr;
     std::string replayError;
     valid = valid && productionState.isValid() &&
         productionState.getInteger("version") == FORMAT_VERSION_CURRENT &&
@@ -3490,12 +3610,20 @@ int runRecoverySelfTest()
         metadataRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
         replayRuleset->getString("id") == ClassicRuneGameRulesetId &&
         replayRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
+        savedPackage && metadataPackage && replayPackage &&
+        savedPackage->getString("id") == ClassicContentPackageId &&
+        savedPackage->getInteger("version") == ClassicContentPackageVersion &&
+        metadataPackage->getString("id") == ClassicContentPackageId &&
+        metadataPackage->getInteger("version") == ClassicContentPackageVersion &&
+        replayPackage->getString("id") == ClassicContentPackageId &&
+        replayPackage->getInteger("version") == ClassicContentPackageVersion &&
         replay && replay->getInteger("actionCount") == 1 &&
         replay->getBoolean("contiguousToCheckpoint") && Replay::run(*replay, &replayError) &&
         breadcrumbs && 0 < breadcrumbs->size();
 
     JsonObject legacyState = jsonObjectWithoutKey(productionState,
                                                    RuneGameRulesetIdentityKey);
+    legacyState = jsonObjectWithoutKey(legacyState, ContentPackageIdentityKey);
     std::string legacyError;
     valid = valid && Recovery::validateSaveState(legacyState, &legacyError) &&
         legacyError.empty() && GameData::restoreState(legacyState) &&
@@ -3514,6 +3642,20 @@ int runRecoverySelfTest()
         incompatibleError.find("removed-variant@3") != std::string::npos &&
         !GameData::restoreState(incompatibleState) &&
         GameData::authoritativeState().toString() == stateBeforeIncompatibleRestore;
+
+    JsonObject incompatiblePackageState = productionState;
+    JsonObject incompatiblePackage;
+    incompatiblePackage.addString("id", "removed-package");
+    incompatiblePackage.addInteger("version", 4);
+    incompatiblePackageState.addObject(ContentPackageIdentityKey, incompatiblePackage);
+    std::string incompatiblePackageError;
+    const std::string stateBeforeIncompatiblePackageRestore =
+        GameData::authoritativeState().toString();
+    valid = valid &&
+        !Recovery::validateSaveState(incompatiblePackageState, &incompatiblePackageError) &&
+        incompatiblePackageError.find("removed-package@4") != std::string::npos &&
+        !GameData::restoreState(incompatiblePackageState) &&
+        GameData::authoritativeState().toString() == stateBeforeIncompatiblePackageRestore;
 
     const std::filesystem::path manualDirectory = directory / "manual-saves";
     std::string manualFile;
@@ -3607,6 +3749,8 @@ int runRecoverySelfTest()
         inspected[0].aiDifficulty == "hard" &&
         inspected[0].runeGameRulesetId == ClassicRuneGameRulesetId &&
         inspected[0].runeGameRulesetVersion == ClassicRuneGameRulesetVersion &&
+        inspected[0].contentPackageId == ClassicContentPackageId &&
+        inspected[0].contentPackageVersion == ClassicContentPackageVersion &&
         !inspected[1].valid && !inspected[2].valid;
 
     const std::string promoted = (directory / "game.sav").string();
@@ -4746,7 +4890,15 @@ int main(int argc, char** argv)
 
     JsonContentFile indexFile(std::string(FOUR_WINDS_SOURCE_DIR) + "/themes/default/index.json");
     expect(indexFile.isValid(), "theme index JSON must parse");
-    expect(GameData::loadIndexes(indexFile.toObject()), "theme indexes must load");
+    std::string bootstrapPackageError;
+    expect(activateContentPackage(indexFile.toObject(), &bootstrapPackageError) &&
+           activeContentPackageManifest().engineContract == ClassicEngineContentContract &&
+           activeContentPackageManifest().gameData == "content.json",
+           "theme content package manifest must activate");
+    JsonContentFile contentFile(std::string(FOUR_WINDS_SOURCE_DIR) +
+        "/themes/default/content.json");
+    expect(contentFile.isValid(), "authoritative theme content JSON must parse");
+    expect(GameData::loadIndexes(contentFile.toObject()), "theme content indexes must load");
 
     JsonContentFile soundsFile(std::string(FOUR_WINDS_SOURCE_DIR) +
         "/themes/default/json/gamedata/sounds.json");
@@ -4916,6 +5068,7 @@ int main(int argc, char** argv)
 
     testDifficultyRules();
     testRuneGameRulesetIdentityContract();
+    testContentPackageIdentityContract();
     testRuneGameRoundFlowRuleset();
     testRuneGameSpellPointRuleset();
     testPolygonHitTesting();

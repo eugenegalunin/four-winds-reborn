@@ -28,6 +28,8 @@ namespace Recovery
         std::string aiDifficulty;
         std::string runeGameRulesetId;
         int         runeGameRulesetVersion = 0;
+        std::string contentPackageId;
+        int         contentPackageVersion = 0;
         int         stateBytes = 0;
     };
 

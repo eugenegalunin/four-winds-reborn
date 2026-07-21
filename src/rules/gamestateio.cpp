@@ -27,6 +27,7 @@
 #include "adventurecommands.h"
 #include "aiprofile.h"
 #include "battlesession.h"
+#include "contentpackage.h"
 #include "crashreport.h"
 #include "gamedata.h"
 #include "gameplayrng.h"
@@ -89,6 +90,8 @@ namespace GameData
         jo.addInteger("version", FORMAT_VERSION_CURRENT);
         jo.addObject(RuneGameRulesetIdentityKey,
                      runeGameRulesetIdentityJson(activeRuneGameRuleset()));
+        jo.addObject(ContentPackageIdentityKey,
+                     contentPackageIdentityJson(activeContentPackageManifest()));
         jo.addString("wind:round", roundWind.toString());
         jo.addString("wind:part", partWind.toString());
         jo.addString("wind:current", currentWind.toString());
@@ -348,6 +351,8 @@ namespace GameData
         metadata.addInteger("saveFormat", FORMAT_VERSION_CURRENT);
         metadata.addObject(RuneGameRulesetIdentityKey,
                            runeGameRulesetIdentityJson(activeRuneGameRuleset()));
+        metadata.addObject(ContentPackageIdentityKey,
+                           contentPackageIdentityJson(activeContentPackageManifest()));
         metadata.addString("savedAtEpoch", std::to_string(static_cast<long long>(std::time(nullptr))));
         metadata.addString("reason", reason);
         metadata.addString("platform", recoveryPlatform());

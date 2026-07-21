@@ -305,6 +305,63 @@ class ThemeValidator:
         if index is None:
             return
 
+        package = index.get("contentPackage")
+        if not isinstance(package, dict):
+            self.error(index_path, "contentPackage must be an object")
+        else:
+            schema = package.get("schema")
+            package_id = package.get("id")
+            version = package.get("version")
+            engine_contract = package.get("engineContract")
+            game_data_file = package.get("gameData")
+            compatible = package.get("compatibleVersions")
+            if schema != 1:
+                self.error(index_path, "contentPackage.schema must be 1")
+            if not isinstance(package_id, str) or not package_id.strip():
+                self.error(index_path, "contentPackage.id must be a non-empty string")
+            if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+                self.error(index_path, "contentPackage.version must be a positive integer")
+            if engine_contract != "four-winds-classic-v1":
+                self.error(index_path,
+                           "contentPackage.engineContract must be four-winds-classic-v1")
+            if (not isinstance(game_data_file, str) or not game_data_file.strip() or
+                    Path(game_data_file).name != game_data_file):
+                self.error(index_path,
+                           "contentPackage.gameData must be a local non-empty filename")
+            if (not isinstance(compatible, list) or not compatible or
+                    any(isinstance(item, bool) or not isinstance(item, int) or item < 1
+                        for item in compatible)):
+                self.error(index_path,
+                           "contentPackage.compatibleVersions must contain positive integers")
+            elif len(set(compatible)) != len(compatible):
+                self.error(index_path,
+                           "contentPackage.compatibleVersions must not contain duplicates")
+            elif isinstance(version, int) and version not in compatible:
+                self.error(index_path,
+                           "contentPackage.compatibleVersions must include the current version")
+
+        game_data_name = package.get("gameData") if isinstance(package, dict) else None
+        game_data_path = theme / game_data_name if isinstance(game_data_name, str) else theme / "content.json"
+        game_data = self.document(game_data_path, dict)
+        if game_data is None:
+            game_data = {}
+
+        authoritative_keys = {
+            *INDEX_TABLES.keys(), "bonus:start", "bonus:game", "bonus:kong",
+            "bonus:pung", "bonus:chao", "bonus:pass",
+        }
+        misplaced = sorted(authoritative_keys.intersection(index))
+        if misplaced:
+            self.error(index_path,
+                       "authoritative fields must live in contentPackage.gameData: " +
+                       ", ".join(misplaced))
+
+        for bonus in ("bonus:start", "bonus:game", "bonus:kong", "bonus:pung",
+                      "bonus:chao", "bonus:pass"):
+            value = game_data.get(bonus)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                self.error(game_data_path, f"{bonus} must be a non-negative integer")
+
         self.validate_encyclopedia(theme)
 
         data_root = theme / "json" / "gamedata"
@@ -314,25 +371,25 @@ class ThemeValidator:
         tables = {name: self.record_map(path) for name, path in paths.items()}
 
         for index_key, table_name in INDEX_TABLES.items():
-            declared = index.get(index_key)
+            declared = game_data.get(index_key)
             if not isinstance(declared, list):
-                self.error(index_path, f"{index_key} must be an array")
+                self.error(game_data_path, f"{index_key} must be an array")
                 continue
             if not declared or declared[0] != "none":
-                self.error(index_path, f"{index_key} must begin with the reserved 'none' id")
+                self.error(game_data_path, f"{index_key} must begin with the reserved 'none' id")
             if any(not isinstance(item, str) or not item for item in declared):
-                self.error(index_path, f"{index_key} must contain only non-empty string ids")
+                self.error(game_data_path, f"{index_key} must contain only non-empty string ids")
                 continue
             duplicates = sorted(item for item, count in Counter(declared).items() if count > 1)
             if duplicates:
-                self.error(index_path, f"{index_key} contains duplicate ids: {', '.join(duplicates)}")
+                self.error(game_data_path, f"{index_key} contains duplicate ids: {', '.join(duplicates)}")
 
             declared_ids = set(declared[1:])
             record_ids = set(tables[table_name])
             missing = sorted(declared_ids - record_ids)
             unknown = sorted(record_ids - declared_ids)
             if missing:
-                self.error(index_path, f"{index_key} has ids without {table_name}.json records: {', '.join(missing)}")
+                self.error(game_data_path, f"{index_key} has ids without {table_name}.json records: {', '.join(missing)}")
             if unknown:
                 self.error(paths[table_name], f"records are absent from {index_key}: {', '.join(unknown)}")
 

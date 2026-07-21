@@ -73,7 +73,7 @@ namespace GameData
                 idsList[index] = jo.getStdList<std::string>(id);
             else
             {
-                ERROR("index.json incorrect: " << id);
+                ERROR("content game data incorrect: " << id);
                 return false;
             }
 

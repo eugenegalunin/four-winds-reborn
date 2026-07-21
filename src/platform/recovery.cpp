@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "settings.h"
+#include "contentpackage.h"
 #include "runegameruleset.h"
 #include "swe/swe_systems.h"
 
@@ -169,6 +170,9 @@ bool Recovery::validateSaveState(const SWE::JsonObject & state, std::string* err
     RuneGameRulesetIdentity ruleset;
     if(!resolveRuneGameRulesetIdentity(state, ruleset, true, error)) return false;
 
+    ContentPackageIdentity package;
+    if(!resolveContentPackageIdentity(state, package, true, error)) return false;
+
     const SWE::JsonObject* myPerson = state.getObject("myperson");
     const SWE::JsonArray* players = state.getArray("players");
     if(!myPerson)
@@ -322,6 +326,17 @@ Recovery::CheckpointInfo Recovery::inspectCheckpoint(const std::string & directo
         return info;
     }
 
+    ContentPackageIdentity statePackage;
+    ContentPackageIdentity metadataPackage;
+    if(!resolveContentPackageIdentity(state, statePackage, true, &info.error) ||
+       !resolveContentPackageIdentity(metadata, metadataPackage, true, &info.error))
+        return info;
+    if(!sameContentPackage(statePackage, metadataPackage))
+    {
+        info.error = "save and recovery metadata use different content packages";
+        return info;
+    }
+
     info.stateBytes = metadata.getInteger("stateBytes");
     if(info.stateBytes != static_cast<int>(saveData.size()))
     {
@@ -355,6 +370,8 @@ Recovery::CheckpointInfo Recovery::inspectCheckpoint(const std::string & directo
     info.aiDifficulty = metadata.getString("aiDifficulty");
     info.runeGameRulesetId = stateRuleset.id;
     info.runeGameRulesetVersion = stateRuleset.version;
+    info.contentPackageId = statePackage.id;
+    info.contentPackageVersion = statePackage.version;
     info.valid = true;
     return info;
 }
