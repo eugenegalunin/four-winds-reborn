@@ -130,3 +130,24 @@ rules, map ownership or seat scheduling. Serialized strings do change, which
 intentionally changes authoritative state hashes and requires a fresh
 deterministic canary. `theme_data_validation` locks the canonical theme IDs and
 names; `gameplay_regressions` locks color output plus legacy named-alias loading.
+
+## RD-007: versioned Rune Game rulesets
+
+Status: accepted on 2026-07-21.
+
+Classic Rune Game behavior is identified as `classic@1`. New saves, recovery
+metadata, action replays, simulations and balance reports persist that exact
+id/version. An artifact naming an unavailable id or incompatible version is
+rejected instead of being opened under different rules.
+
+Old artifacts without ruleset metadata remain load-compatible and resolve to
+`classic@1` only. This fallback is deliberately load-only: every newly written
+artifact is explicit. Replay state hashes omit the separately validated
+identity field so historical Classic fixed-seed hashes remain stable; the
+journal and its initial state must still name the same available ruleset.
+
+Regression contract: `gameplay_regressions` covers explicit identity,
+legacy fallback, mismatched or unavailable rejection, save/recovery/replay
+round trips and simulation/report propagation. The controlled cohort manifest
+includes the emitted `classic@1` CSV columns while the remaining gameplay
+columns must stay byte-identical to the pre-persistence baseline.

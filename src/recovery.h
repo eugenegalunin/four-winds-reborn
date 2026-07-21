@@ -26,6 +26,8 @@ namespace Recovery
         std::string partWind;
         std::string currentWind;
         std::string aiDifficulty;
+        std::string runeGameRulesetId;
+        int         runeGameRulesetVersion = 0;
         int         stateBytes = 0;
     };
 

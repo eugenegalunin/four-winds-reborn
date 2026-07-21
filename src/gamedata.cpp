@@ -396,7 +396,7 @@ int GameData::nextBattleUnitId(void)
 
 bool GameData::isGameOver(void)
 {
-    return isGameOver(classicRuneGameRuleset());
+    return isGameOver(activeRuneGameRuleset());
 }
 
 bool GameData::isGameOver(const RuneGameRuleset & ruleset)
@@ -756,7 +756,7 @@ bool GameData::initPersons(const Persons & configured)
 
 bool GameData::initMahjong(void)
 {
-    return initMahjong(classicRuneGameRuleset());
+    return initMahjong(activeRuneGameRuleset());
 }
 
 bool GameData::initMahjong(const RuneGameRuleset & ruleset)
@@ -859,7 +859,7 @@ LocalPlayer & GameData::playerOfWind(const Wind & wind)
 bool GameData::mahjong2Client(const Avatar & avatar, ActionList & actions)
 {
     LocalPlayer & current = playerOfWind(currentWind);
-    const RuneGameRuleset & ruleset = classicRuneGameRuleset();
+    const RuneGameRuleset & ruleset = activeRuneGameRuleset();
     const auto runAutomatedTurn = [&](bool showGame, bool showKong)
     {
 	const WinRules & left = playerOfWind(prevWindCompass(currentWind)).rules;

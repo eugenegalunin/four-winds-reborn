@@ -19,6 +19,8 @@ namespace Tournament
         AI::Difficulty difficulty = AI::Difficulty::Normal;
         bool forceBehaviorProfile = false;
         AI::BehaviorProfile behaviorProfile = AI::BehaviorProfile::Balanced;
+        std::string runeGameRulesetId = ClassicRuneGameRulesetId;
+        int runeGameRulesetVersion = ClassicRuneGameRulesetVersion;
         std::size_t maximumTicks = 100000;
         std::size_t maximumUnchangedTicks = 4;
         std::size_t stateHashInterval = 64;

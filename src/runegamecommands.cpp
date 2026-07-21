@@ -19,14 +19,6 @@
 #include "replay.h"
 #include "runegameruleset.h"
 
-namespace
-{
-    const RuneGameRuleset & activeRuneGameRuleset(void)
-    {
-        return classicRuneGameRuleset();
-    }
-}
-
 namespace GameData
 {
     extern LocalPlayers gamers;

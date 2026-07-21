@@ -6,6 +6,7 @@
 #include "aiprofile.h"
 #include "gamedata.h"
 #include "recovery.h"
+#include "runegameruleset.h"
 
 namespace
 {
@@ -22,6 +23,41 @@ bool isAdventureAction(int type)
     return type == Action::ClientUnitMoved || type == Action::ClientLandClaim ||
            type == Action::ClientAdventureUndo || type == Action::ClientBattleReady ||
            type == Action::ClientBattleChoice;
+}
+
+JsonObject stateWithoutRulesetIdentity(const JsonObject & state)
+{
+    JsonObject result;
+    for(const std::string & key : state.keys())
+    {
+        if(key == RuneGameRulesetIdentityKey) continue;
+
+        const JsonValue* value = state.getValue(key);
+        if(!value) continue;
+        switch(value->getType())
+        {
+            case JsonType::Null: result.addNull(key); break;
+            case JsonType::Integer: result.addInteger(key, value->getInteger()); break;
+            case JsonType::Double: result.addDouble(key, value->getDouble()); break;
+            case JsonType::String: result.addString(key, value->getString()); break;
+            case JsonType::Boolean: result.addBoolean(key, value->getBoolean()); break;
+            case JsonType::Object:
+                result.addObject(key, static_cast<const JsonObject &>(*value));
+                break;
+            case JsonType::Array:
+                result.addArray(key, static_cast<const JsonArray &>(*value));
+                break;
+        }
+    }
+    return result;
+}
+
+std::string replayStateHash(const JsonObject & state)
+{
+    // The ruleset identity is validated separately by Replay::run. Keeping it
+    // outside the gameplay hash preserves existing Classic replay hashes while
+    // still rejecting unavailable or mismatched rulesets before playback.
+    return Recovery::stateHash(stateWithoutRulesetIdentity(state));
 }
 
 struct RecordingPause
@@ -123,7 +159,7 @@ std::unique_ptr<ClientMessage> Replay::clientMessageFromJson(const JsonObject & 
 std::string Replay::authoritativeStateHash(void)
 {
     const JsonObject state = GameData::authoritativeState();
-    return Recovery::stateHash(state);
+    return replayStateHash(state);
 }
 
 bool Replay::actionRecordingEnabled(void)
@@ -158,7 +194,7 @@ void Replay::recordAcceptedAction(const JsonObject & beforeState, const Avatar &
 {
     if(!recordingEnabled) return;
 
-    const std::string beforeHash = Recovery::stateHash(beforeState);
+    const std::string beforeHash = replayStateHash(beforeState);
     if(!journalInitialState.isValid() || journalTailHash != beforeHash ||
        (journalStepLimit && journalStepLimit <= journalSteps.size()))
     {
@@ -166,7 +202,7 @@ void Replay::recordAcceptedAction(const JsonObject & beforeState, const Avatar &
         journalSteps.clear();
     }
 
-    journalTailHash = Recovery::stateHash(afterState);
+    journalTailHash = replayStateHash(afterState);
     journalSteps.emplace_back(actor, JsonObject(action), journalTailHash);
 }
 
@@ -176,7 +212,7 @@ void Replay::recordSystemTransition(const JsonObject & beforeState,
 {
     if(!recordingEnabled || operation.empty()) return;
 
-    const std::string beforeHash = Recovery::stateHash(beforeState);
+    const std::string beforeHash = replayStateHash(beforeState);
     if(!journalInitialState.isValid() || journalTailHash != beforeHash ||
        (journalStepLimit && journalStepLimit <= journalSteps.size()))
     {
@@ -184,7 +220,7 @@ void Replay::recordSystemTransition(const JsonObject & beforeState,
         journalSteps.clear();
     }
 
-    journalTailHash = Recovery::stateHash(afterState);
+    journalTailHash = replayStateHash(afterState);
     journalSteps.emplace_back(operation, journalTailHash);
 }
 
@@ -213,14 +249,14 @@ bool Replay::recordSystemOperation(const std::string & operation,
         exception = std::current_exception();
     }
     const JsonObject afterState = GameData::authoritativeState();
-    const std::string beforeHash = Recovery::stateHash(beforeState);
+    const std::string beforeHash = replayStateHash(beforeState);
     if(!journalInitialState.isValid() || journalTailHash != beforeHash ||
        (journalStepLimit && journalStepLimit <= journalSteps.size()))
     {
         journalInitialState = beforeState;
         journalSteps.clear();
     }
-    journalTailHash = Recovery::stateHash(afterState);
+    journalTailHash = replayStateHash(afterState);
     journalSteps.emplace_back(operation, journalTailHash, accepted, exceptionText);
     if(exception) std::rethrow_exception(exception);
     return accepted;
@@ -233,12 +269,14 @@ JsonObject Replay::actionJournal(const JsonObject & checkpointState)
         [](const Step & step){ return step.isSystem(); });
     const bool forcedProfile = AI::behaviorProfileOverrideEnabled();
     result.addInteger("schema", forcedProfile ? 3 : (hasSystemOperations ? 2 : 1));
+    result.addObject(RuneGameRulesetIdentityKey,
+                     runeGameRulesetIdentityJson(activeRuneGameRuleset()));
     result.addString("aiBehaviorProfile", forcedProfile ?
         AI::behaviorProfileName(AI::behaviorProfileOverride()) : "native");
     result.addInteger("actionCount", static_cast<int>(journalSteps.size()));
     result.addBoolean("developerAssisted", GameData::developerAssisted());
 
-    const std::string checkpointHash = Recovery::stateHash(checkpointState);
+    const std::string checkpointHash = replayStateHash(checkpointState);
     result.addString("checkpointStateHash", checkpointHash);
     result.addString("tailStateHash", journalTailHash);
     result.addBoolean("contiguousToCheckpoint",
@@ -360,6 +398,17 @@ bool Replay::run(const JsonObject & journal, std::string* error)
     if(!initialState || !encodedSteps)
     {
         if(error) *error = "journal is missing initialState or steps";
+        return false;
+    }
+
+    RuneGameRulesetIdentity journalRuleset;
+    RuneGameRulesetIdentity stateRuleset;
+    if(!resolveRuneGameRulesetIdentity(journal, journalRuleset, true, error) ||
+       !resolveRuneGameRulesetIdentity(*initialState, stateRuleset, true, error))
+        return false;
+    if(!sameRuneGameRuleset(journalRuleset, stateRuleset))
+    {
+        if(error) *error = "journal and initial state use different Rune Game rulesets";
         return false;
     }
 

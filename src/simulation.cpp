@@ -66,6 +66,24 @@ public:
     }
 };
 
+class RuneGameRulesetScope
+{
+    RuneGameRulesetIdentity previous;
+
+public:
+    explicit RuneGameRulesetScope(const Simulation::MatchConfig & config) :
+        previous(runeGameRulesetIdentity(activeRuneGameRuleset()))
+    {
+        selectActiveRuneGameRuleset(config.runeGameRulesetId,
+                                    config.runeGameRulesetVersion);
+    }
+
+    ~RuneGameRulesetScope()
+    {
+        selectActiveRuneGameRuleset(previous.id, previous.version);
+    }
+};
+
 struct ObservedUnit
 {
     Avatar avatar;
@@ -242,6 +260,14 @@ bool recordedTransition(const std::string & operation, Operation apply)
 
 bool validConfiguration(const Simulation::MatchConfig & config, std::string* error)
 {
+    if(!findRuneGameRuleset(config.runeGameRulesetId,
+                            config.runeGameRulesetVersion))
+    {
+        if(error) *error = "Rune Game ruleset is unavailable or incompatible: " +
+            config.runeGameRulesetId + "@" +
+            std::to_string(config.runeGameRulesetVersion);
+        return false;
+    }
     if(config.persons.size() != winds_all.size())
     {
         if(error) *error = "a match requires exactly four players";
@@ -335,6 +361,8 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
 {
     MatchResult result;
     result.seed = config.seed;
+    result.runeGameRulesetId = config.runeGameRulesetId;
+    result.runeGameRulesetVersion = config.runeGameRulesetVersion;
 
     if(!validConfiguration(config, &result.error)) return result;
 
@@ -343,6 +371,7 @@ Simulation::MatchResult Simulation::runMatch(const MatchConfig & config)
         RecoverySuppression suppressRecovery;
         ReplayCaptureScope captureReplay(config.captureFullReplay);
         BehaviorProfileScope selectBehaviorProfile(config);
+        RuneGameRulesetScope selectRuleset(config);
         result.fullReplayCaptured = config.captureFullReplay;
         GameplayRng::seed(config.seed);
         GameData::setAIDifficulty(config.difficulty);

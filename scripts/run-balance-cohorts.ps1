@@ -163,6 +163,9 @@ function Read-CohortScenario([string]$Id, [string[]]$Roster) {
     if ($report.schema_version -ne 2 -or
         $report.difficulty -ne $Difficulty.ToLowerInvariant() -or
         $report.behavior_profile -ne $BehaviorProfile.ToLowerInvariant() -or
+        -not $report.runeGameRuleset -or
+        -not [string]$report.runeGameRuleset.id -or
+        [int]$report.runeGameRuleset.version -le 0 -or
         (@($report.roster) -join ",") -ne $requestedRoster -or
         [int]$report.legal_clan_assignments -ne 1 -or
         [int]$report.planned_matches -ne ($SeedCount * 4) -or
@@ -257,6 +260,14 @@ Write-Host ("Cohort scenarios complete in {0}." -f `
 
 $baselineScenario = $scenarioData | Where-Object { $_.id -eq "baseline" } |
     Select-Object -First 1
+$cohortRulesetId = [string]$baselineScenario.report.runeGameRuleset.id
+$cohortRulesetVersion = [int]$baselineScenario.report.runeGameRuleset.version
+foreach ($scenario in $scenarioData) {
+    if ([string]$scenario.report.runeGameRuleset.id -cne $cohortRulesetId -or
+        [int]$scenario.report.runeGameRuleset.version -ne $cohortRulesetVersion) {
+        throw "Cohort scenarios use different Rune Game rulesets."
+    }
+}
 $cells = @()
 $csvRows = @()
 foreach ($clan in $selectedClans) {
@@ -326,6 +337,8 @@ foreach ($clan in $selectedClans) {
             baseline_avatar = $baselineAvatar
             candidate_avatar = $candidate
             scenario = $scenario.id
+            ruleset_id = $cohortRulesetId
+            ruleset_version = $cohortRulesetVersion
             completed = [int]$summary.completed
             rank_one_finishes = [int]$summary.rank_one_finishes
             rank_one_rate = Format-Invariant $summary.rank_one_rate
@@ -365,6 +378,10 @@ $reportRoot = [ordered]@{
     seeds = @($baselineScenario.report.seeds)
     difficulty = $Difficulty.ToLowerInvariant()
     behavior_profile = $BehaviorProfile.ToLowerInvariant()
+    runeGameRuleset = [PSCustomObject][ordered]@{
+        id = $cohortRulesetId
+        version = $cohortRulesetVersion
+    }
     selected_clans = @($selectedClans | ForEach-Object { $clanNames[$_] })
     selected_clan_ids = $selectedClans
     clan_identity = @($clanNames.GetEnumerator() | ForEach-Object {
@@ -399,6 +416,7 @@ $textPath = Join-Path $outputPath "balance-cohorts.txt"
 $text = New-Object Text.StringBuilder
 [void]$text.AppendLine("Four Winds Reborn controlled avatar/clan cohorts")
 [void]$text.AppendLine("Seeds: $SeedCount; difficulty: $($Difficulty.ToLowerInvariant()); profile: $($BehaviorProfile.ToLowerInvariant())")
+[void]$text.AppendLine("Rune Game ruleset: $cohortRulesetId@$cohortRulesetVersion")
 [void]$text.AppendLine("Scenarios: $($scenarioData.Count); isolated matches: $($reportRoot.planned_matches)")
 [void]$text.AppendLine("Delta is candidate minus the baseline avatar in the same clan; lower mean-rank delta is better.")
 [void]$text.AppendLine()

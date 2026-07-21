@@ -19,13 +19,13 @@ namespace
     public:
         const std::string & id(void) const override
         {
-            static const std::string value("classic");
+            static const std::string value(ClassicRuneGameRulesetId);
             return value;
         }
 
         int version(void) const override
         {
-            return 1;
+            return ClassicRuneGameRulesetVersion;
         }
 
         const std::vector<int> & wallStoneIds(void) const override
@@ -183,4 +183,105 @@ const RuneGameRuleset & classicRuneGameRuleset(void)
 {
     static const ClassicRuneGameRuleset ruleset;
     return ruleset;
+}
+
+namespace
+{
+    const RuneGameRuleset*& selectedRuneGameRuleset(void)
+    {
+        static const RuneGameRuleset* selected = &classicRuneGameRuleset();
+        return selected;
+    }
+
+    std::string rulesetLabel(const std::string & id, int version)
+    {
+        return id + "@" + std::to_string(version);
+    }
+}
+
+const RuneGameRuleset & activeRuneGameRuleset(void)
+{
+    return *selectedRuneGameRuleset();
+}
+
+const RuneGameRuleset* findRuneGameRuleset(const std::string & id, int version)
+{
+    const RuneGameRuleset & classic = classicRuneGameRuleset();
+    return id == classic.id() && version == classic.version() ? &classic : nullptr;
+}
+
+RuneGameRulesetIdentity runeGameRulesetIdentity(const RuneGameRuleset & ruleset)
+{
+    return { ruleset.id(), ruleset.version() };
+}
+
+SWE::JsonObject runeGameRulesetIdentityJson(const RuneGameRuleset & ruleset)
+{
+    SWE::JsonObject result;
+    result.addString("id", ruleset.id());
+    result.addInteger("version", ruleset.version());
+    return result;
+}
+
+bool resolveRuneGameRulesetIdentity(const SWE::JsonObject & container,
+                                    RuneGameRulesetIdentity & identity,
+                                    bool allowLegacyClassic,
+                                    std::string* error)
+{
+    identity = RuneGameRulesetIdentity();
+    if(!container.hasKey(RuneGameRulesetIdentityKey))
+    {
+        if(!allowLegacyClassic)
+        {
+            if(error) *error = "Rune Game ruleset metadata is missing";
+            return false;
+        }
+        identity = runeGameRulesetIdentity(classicRuneGameRuleset());
+        if(error) error->clear();
+        return true;
+    }
+
+    const SWE::JsonObject* encoded = container.getObject(RuneGameRulesetIdentityKey);
+    if(!encoded || !encoded->isString("id") || !encoded->isInteger("version"))
+    {
+        if(error) *error = "Rune Game ruleset metadata is invalid";
+        return false;
+    }
+
+    identity.id = encoded->getString("id");
+    identity.version = encoded->getInteger("version");
+    if(!identity.isValid())
+    {
+        if(error) *error = "Rune Game ruleset metadata is invalid";
+        return false;
+    }
+    if(!findRuneGameRuleset(identity.id, identity.version))
+    {
+        if(error) *error = "Rune Game ruleset is unavailable or incompatible: " +
+            rulesetLabel(identity.id, identity.version);
+        return false;
+    }
+
+    if(error) error->clear();
+    return true;
+}
+
+bool selectActiveRuneGameRuleset(const std::string & id, int version, std::string* error)
+{
+    const RuneGameRuleset* selected = findRuneGameRuleset(id, version);
+    if(!selected)
+    {
+        if(error) *error = "Rune Game ruleset is unavailable or incompatible: " +
+            rulesetLabel(id, version);
+        return false;
+    }
+    selectedRuneGameRuleset() = selected;
+    if(error) error->clear();
+    return true;
+}
+
+bool sameRuneGameRuleset(const RuneGameRulesetIdentity & first,
+                         const RuneGameRulesetIdentity & second)
+{
+    return first.id == second.id && first.version == second.version;
 }

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "settings.h"
+#include "runegameruleset.h"
 #include "swe/swe_systems.h"
 
 namespace
@@ -165,6 +166,9 @@ bool Recovery::validateSaveState(const SWE::JsonObject & state, std::string* err
         return false;
     }
 
+    RuneGameRulesetIdentity ruleset;
+    if(!resolveRuneGameRulesetIdentity(state, ruleset, true, error)) return false;
+
     const SWE::JsonObject* myPerson = state.getObject("myperson");
     const SWE::JsonArray* players = state.getArray("players");
     if(!myPerson)
@@ -306,6 +310,18 @@ Recovery::CheckpointInfo Recovery::inspectCheckpoint(const std::string & directo
         return info;
     }
 
+    const SWE::JsonObject state = SWE::JsonContentString(saveData).toObject();
+    RuneGameRulesetIdentity stateRuleset;
+    RuneGameRulesetIdentity metadataRuleset;
+    if(!resolveRuneGameRulesetIdentity(state, stateRuleset, true, &info.error) ||
+       !resolveRuneGameRulesetIdentity(metadata, metadataRuleset, true, &info.error))
+        return info;
+    if(!sameRuneGameRuleset(stateRuleset, metadataRuleset))
+    {
+        info.error = "save and recovery metadata use different Rune Game rulesets";
+        return info;
+    }
+
     info.stateBytes = metadata.getInteger("stateBytes");
     if(info.stateBytes != static_cast<int>(saveData.size()))
     {
@@ -337,6 +353,8 @@ Recovery::CheckpointInfo Recovery::inspectCheckpoint(const std::string & directo
     info.partWind = metadata.getString("partWind");
     info.currentWind = metadata.getString("currentWind");
     info.aiDifficulty = metadata.getString("aiDifficulty");
+    info.runeGameRulesetId = stateRuleset.id;
+    info.runeGameRulesetVersion = stateRuleset.version;
     info.valid = true;
     return info;
 }

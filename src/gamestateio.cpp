@@ -33,6 +33,7 @@
 #include "recovery.h"
 #include "savegames.h"
 #include "replay.h"
+#include "runegameruleset.h"
 
 #ifndef FOUR_WINDS_VERSION
 #define FOUR_WINDS_VERSION "unknown"
@@ -86,6 +87,8 @@ namespace GameData
     {
         JsonObject jo;
         jo.addInteger("version", FORMAT_VERSION_CURRENT);
+        jo.addObject(RuneGameRulesetIdentityKey,
+                     runeGameRulesetIdentityJson(activeRuneGameRuleset()));
         jo.addString("wind:round", roundWind.toString());
         jo.addString("wind:part", partWind.toString());
         jo.addString("wind:current", currentWind.toString());
@@ -144,6 +147,13 @@ namespace GameData
 
         std::string validationError;
         if(!Recovery::validateSaveState(jo, &validationError))
+        {
+            ERROR("invalid saved game: " << validationError);
+            return false;
+        }
+
+        RuneGameRulesetIdentity loadedRuleset;
+        if(!resolveRuneGameRulesetIdentity(jo, loadedRuleset, true, &validationError))
         {
             ERROR("invalid saved game: " << validationError);
             return false;
@@ -285,6 +295,13 @@ namespace GameData
             GameplayRng::seedFromEntropy();
         }
 
+        if(!selectActiveRuneGameRuleset(loadedRuleset.id, loadedRuleset.version,
+                                        &validationError))
+        {
+            ERROR("invalid saved game: " << validationError);
+            return false;
+        }
+
         return true;
     }
 
@@ -329,6 +346,8 @@ namespace GameData
         JsonObject metadata;
         metadata.addInteger("schema", 1);
         metadata.addInteger("saveFormat", FORMAT_VERSION_CURRENT);
+        metadata.addObject(RuneGameRulesetIdentityKey,
+                           runeGameRulesetIdentityJson(activeRuneGameRuleset()));
         metadata.addString("savedAtEpoch", std::to_string(static_cast<long long>(std::time(nullptr))));
         metadata.addString("reason", reason);
         metadata.addString("platform", recoveryPlatform());

@@ -13,6 +13,12 @@
 #include <string>
 #include <vector>
 
+#include "swe/swe_json.h"
+
+constexpr const char RuneGameRulesetIdentityKey[] = "runeGameRuleset";
+constexpr const char ClassicRuneGameRulesetId[] = "classic";
+constexpr int ClassicRuneGameRulesetVersion = 1;
+
 enum class RuneGameCall
 {
     None,
@@ -83,8 +89,27 @@ public:
     virtual int maximumWinScore(void) const = 0;
 };
 
-// Existing games use Classic implicitly until ruleset identity is added to
-// the save/replay schemas in a later, separately gated slice.
+struct RuneGameRulesetIdentity
+{
+    std::string id;
+    int version = 0;
+
+    bool isValid(void) const { return !id.empty() && 0 < version; }
+};
+
 const RuneGameRuleset & classicRuneGameRuleset(void);
+const RuneGameRuleset & activeRuneGameRuleset(void);
+const RuneGameRuleset* findRuneGameRuleset(const std::string & id, int version);
+
+RuneGameRulesetIdentity runeGameRulesetIdentity(const RuneGameRuleset &);
+SWE::JsonObject runeGameRulesetIdentityJson(const RuneGameRuleset &);
+bool resolveRuneGameRulesetIdentity(const SWE::JsonObject & container,
+                                    RuneGameRulesetIdentity & identity,
+                                    bool allowLegacyClassic,
+                                    std::string* error = nullptr);
+bool selectActiveRuneGameRuleset(const std::string & id, int version,
+                                 std::string* error = nullptr);
+bool sameRuneGameRuleset(const RuneGameRulesetIdentity &,
+                         const RuneGameRulesetIdentity &);
 
 #endif

@@ -188,6 +188,83 @@ void expect(bool condition, const char* message)
     ++failures;
 }
 
+JsonObject jsonObjectWithoutKey(const JsonObject & source, const std::string & omittedKey)
+{
+    JsonObject result;
+    for(const std::string & key : source.keys())
+    {
+        if(key == omittedKey) continue;
+
+        const JsonValue* value = source.getValue(key);
+        if(!value) continue;
+        switch(value->getType())
+        {
+            case JsonType::Null: result.addNull(key); break;
+            case JsonType::Integer: result.addInteger(key, value->getInteger()); break;
+            case JsonType::Double: result.addDouble(key, value->getDouble()); break;
+            case JsonType::String: result.addString(key, value->getString()); break;
+            case JsonType::Boolean: result.addBoolean(key, value->getBoolean()); break;
+            case JsonType::Object:
+                result.addObject(key, static_cast<const JsonObject &>(*value));
+                break;
+            case JsonType::Array:
+                result.addArray(key, static_cast<const JsonArray &>(*value));
+                break;
+        }
+    }
+    return result;
+}
+
+void testRuneGameRulesetIdentityContract()
+{
+    std::string rulesetError;
+    expect(selectActiveRuneGameRuleset(ClassicRuneGameRulesetId,
+                                       ClassicRuneGameRulesetVersion,
+                                       &rulesetError) && rulesetError.empty(),
+           "the registered Classic Rune Game ruleset must be selectable");
+
+    const RuneGameRulesetIdentity classicIdentity =
+        runeGameRulesetIdentity(activeRuneGameRuleset());
+    const JsonObject encodedClassic =
+        runeGameRulesetIdentityJson(activeRuneGameRuleset());
+    expect(classicIdentity.id == ClassicRuneGameRulesetId &&
+           classicIdentity.version == ClassicRuneGameRulesetVersion &&
+           encodedClassic.getString("id") == ClassicRuneGameRulesetId &&
+           encodedClassic.getInteger("version") == ClassicRuneGameRulesetVersion,
+           "Classic ruleset identity must have one stable JSON representation");
+
+    RuneGameRulesetIdentity resolved;
+    const JsonObject legacyContainer;
+    rulesetError.clear();
+    expect(resolveRuneGameRulesetIdentity(legacyContainer, resolved, true, &rulesetError) &&
+           sameRuneGameRuleset(resolved, classicIdentity) && rulesetError.empty(),
+           "legacy artifacts without ruleset metadata must load as Classic");
+    rulesetError.clear();
+    expect(!resolveRuneGameRulesetIdentity(legacyContainer, resolved, false, &rulesetError) &&
+           rulesetError == "Rune Game ruleset metadata is missing",
+           "new artifacts must be able to require explicit ruleset metadata");
+
+    JsonObject malformed;
+    malformed.addString(RuneGameRulesetIdentityKey, "classic");
+    rulesetError.clear();
+    expect(!resolveRuneGameRulesetIdentity(malformed, resolved, true, &rulesetError) &&
+           rulesetError == "Rune Game ruleset metadata is invalid",
+           "malformed ruleset metadata must be rejected");
+
+    JsonObject unavailableIdentity;
+    unavailableIdentity.addString("id", "test-alternate-scoring");
+    unavailableIdentity.addInteger("version", 7);
+    JsonObject unavailable;
+    unavailable.addObject(RuneGameRulesetIdentityKey, unavailableIdentity);
+    rulesetError.clear();
+    expect(!resolveRuneGameRulesetIdentity(unavailable, resolved, true, &rulesetError) &&
+           rulesetError.find("test-alternate-scoring@7") != std::string::npos &&
+           !selectActiveRuneGameRuleset("test-alternate-scoring", 7, nullptr) &&
+           sameRuneGameRuleset(runeGameRulesetIdentity(activeRuneGameRuleset()),
+                               classicIdentity),
+           "unregistered rulesets must be rejected without changing the active ruleset");
+}
+
 void testRuneGameRoundFlowRuleset()
 {
     const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
@@ -904,10 +981,13 @@ void testActionReplay()
     AI::setBehaviorProfileOverride(AI::BehaviorProfile::Aggressive);
     const JsonObject journal = Replay::actionJournal(randomFinalState);
     AI::clearBehaviorProfileOverride();
+    const JsonObject* journalRuleset = journal.getObject(RuneGameRulesetIdentityKey);
     expect(journal.getInteger("schema") == 3 &&
            journal.getString("aiBehaviorProfile") == "aggressive" &&
            journal.getInteger("actionCount") == 1 &&
-           journal.getBoolean("contiguousToCheckpoint"),
+           journal.getBoolean("contiguousToCheckpoint") &&
+           journalRuleset && journalRuleset->getString("id") == ClassicRuneGameRulesetId &&
+           journalRuleset->getInteger("version") == ClassicRuneGameRulesetVersion,
            "forced AI doctrine must enter a contiguous versioned replay journal");
 
     replayError.clear();
@@ -916,12 +996,36 @@ void testActionReplay()
            !AI::behaviorProfileOverrideEnabled(),
            "replay journal must restore RNG state, AI doctrine and its caller scope");
 
+    JsonObject legacyJournal = jsonObjectWithoutKey(journal, RuneGameRulesetIdentityKey);
+    const JsonObject* journalInitial = journal.getObject("initialState");
+    expect(journalInitial != nullptr,
+           "versioned replay journal must retain its initial state");
+    if(journalInitial)
+    {
+        legacyJournal.addObject("initialState",
+            jsonObjectWithoutKey(*journalInitial, RuneGameRulesetIdentityKey));
+        replayError.clear();
+        expect(Replay::run(legacyJournal, &replayError) &&
+               Replay::authoritativeStateHash() == randomExpectedHash,
+               "legacy Classic replay without ruleset metadata must remain playable");
+    }
+
     JsonObject invalidProfileJournal = journal;
     invalidProfileJournal.addString("aiBehaviorProfile", "impossible");
     replayError.clear();
     expect(!Replay::run(invalidProfileJournal, &replayError) &&
            replayError.find("invalid AI behavior profile") != std::string::npos,
            "replay must reject an unknown AI doctrine instead of silently using Balanced");
+
+    JsonObject unavailableRulesetJournal = journal;
+    JsonObject unavailableRuleset;
+    unavailableRuleset.addString("id", "removed-variant");
+    unavailableRuleset.addInteger("version", 3);
+    unavailableRulesetJournal.addObject(RuneGameRulesetIdentityKey, unavailableRuleset);
+    replayError.clear();
+    expect(!Replay::run(unavailableRulesetJournal, &replayError) &&
+           replayError.find("removed-variant@3") != std::string::npos,
+           "replay must reject an unavailable ruleset before applying any action");
 
     JsonObject tamperedRandomState = randomInitialState;
     JsonObject tamperedRng = *randomInitialState.getObject("gameplayRng");
@@ -3361,6 +3465,11 @@ int runRecoverySelfTest()
     const JsonObject* metadataRng = productionMetadata.getObject("gameplayRng");
     const JsonObject* savedRng = productionState.getObject("gameplayRng");
     const JsonObject* replay = productionMetadata.getObject("replay");
+    const JsonObject* savedRuleset = productionState.getObject(RuneGameRulesetIdentityKey);
+    const JsonObject* metadataRuleset =
+        productionMetadata.getObject(RuneGameRulesetIdentityKey);
+    const JsonObject* replayRuleset = replay ?
+        replay->getObject(RuneGameRulesetIdentityKey) : nullptr;
     std::string replayError;
     valid = valid && productionState.isValid() &&
         productionState.getInteger("version") == FORMAT_VERSION_CURRENT &&
@@ -3374,9 +3483,37 @@ int runRecoverySelfTest()
         productionMetadata.getString("aiDifficulty") == "hard" &&
         metadataRng && savedRng && metadataRng->getString("algorithm") == GameplayRng::Algorithm &&
         metadataRng->getString("state") == savedRng->getString("state") &&
+        savedRuleset && metadataRuleset && replayRuleset &&
+        savedRuleset->getString("id") == ClassicRuneGameRulesetId &&
+        savedRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
+        metadataRuleset->getString("id") == ClassicRuneGameRulesetId &&
+        metadataRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
+        replayRuleset->getString("id") == ClassicRuneGameRulesetId &&
+        replayRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
         replay && replay->getInteger("actionCount") == 1 &&
         replay->getBoolean("contiguousToCheckpoint") && Replay::run(*replay, &replayError) &&
         breadcrumbs && 0 < breadcrumbs->size();
+
+    JsonObject legacyState = jsonObjectWithoutKey(productionState,
+                                                   RuneGameRulesetIdentityKey);
+    std::string legacyError;
+    valid = valid && Recovery::validateSaveState(legacyState, &legacyError) &&
+        legacyError.empty() && GameData::restoreState(legacyState) &&
+        activeRuneGameRuleset().id() == ClassicRuneGameRulesetId &&
+        activeRuneGameRuleset().version() == ClassicRuneGameRulesetVersion;
+
+    JsonObject incompatibleState = productionState;
+    JsonObject incompatibleRuleset;
+    incompatibleRuleset.addString("id", "removed-variant");
+    incompatibleRuleset.addInteger("version", 3);
+    incompatibleState.addObject(RuneGameRulesetIdentityKey, incompatibleRuleset);
+    std::string incompatibleError;
+    const std::string stateBeforeIncompatibleRestore =
+        GameData::authoritativeState().toString();
+    valid = valid && !Recovery::validateSaveState(incompatibleState, &incompatibleError) &&
+        incompatibleError.find("removed-variant@3") != std::string::npos &&
+        !GameData::restoreState(incompatibleState) &&
+        GameData::authoritativeState().toString() == stateBeforeIncompatibleRestore;
 
     const std::filesystem::path manualDirectory = directory / "manual-saves";
     std::string manualFile;
@@ -3468,6 +3605,8 @@ int runRecoverySelfTest()
         inspected[0].savedAtEpoch > 0 &&
         inspected[0].gamePart == Menu::AdventurePart &&
         inspected[0].aiDifficulty == "hard" &&
+        inspected[0].runeGameRulesetId == ClassicRuneGameRulesetId &&
+        inspected[0].runeGameRulesetVersion == ClassicRuneGameRulesetVersion &&
         !inspected[1].valid && !inspected[2].valid;
 
     const std::string promoted = (directory / "game.sav").string();
@@ -3802,9 +3941,12 @@ void testTournamentContract()
                {
                    return match.match.difficulty == AI::Difficulty::Hard &&
                           match.match.forceBehaviorProfile &&
-                          match.match.behaviorProfile == AI::BehaviorProfile::Economic;
+                          match.match.behaviorProfile == AI::BehaviorProfile::Economic &&
+                          match.match.runeGameRulesetId == ClassicRuneGameRulesetId &&
+                          match.match.runeGameRulesetVersion ==
+                              ClassicRuneGameRulesetVersion;
                }),
-           "every matrix cell must propagate difficulty and doctrine to every match");
+           "every matrix cell must propagate difficulty, doctrine and ruleset to every match");
 
     for(std::size_t seedIndex = 0; seedIndex < config.seeds.size(); ++seedIndex)
     {
@@ -3854,6 +3996,14 @@ void testTournamentContract()
     duplicate.avatars[1] = duplicate.avatars[0];
     expect(!Tournament::buildSchedule(duplicate).valid(),
            "duplicate tournament avatars must be rejected");
+
+    Tournament::Config unavailableRuleset = config;
+    unavailableRuleset.runeGameRulesetId = "removed-variant";
+    unavailableRuleset.runeGameRulesetVersion = 3;
+    expect(!Tournament::buildSchedule(unavailableRuleset).valid() &&
+           Tournament::buildSchedule(unavailableRuleset).error.find(
+               "removed-variant@3") != std::string::npos,
+           "tournament schedule must reject an unavailable ruleset");
 
     Tournament::Result synthetic;
     synthetic.config = config;
@@ -3909,21 +4059,30 @@ void testTournamentContract()
     const std::string csv = Tournament::toCsv(synthetic);
     const std::string text = Tournament::toText(synthetic);
     const JsonContentString parsed(json);
-    expect(parsed.isValid() && parsed.toObject().getInteger("schema_version") == 2 &&
-           parsed.toObject().getString("behavior_profile") == "control",
+    const JsonObject parsedTournament = parsed.toObject();
+    const JsonObject* exportedRuleset =
+        parsedTournament.getObject(RuneGameRulesetIdentityKey);
+    expect(parsed.isValid() && parsedTournament.getInteger("schema_version") == 2 &&
+           parsedTournament.getString("behavior_profile") == "control" &&
+           exportedRuleset && exportedRuleset->getString("id") ==
+               ClassicRuneGameRulesetId &&
+           exportedRuleset->getInteger("version") == ClassicRuneGameRulesetVersion,
            "balance JSON export must be valid and versioned");
     expect(csv.find("early_territory") != std::string::npos &&
            csv.find("behavior_profile") != std::string::npos &&
+           csv.find("ruleset_id,ruleset_version") != std::string::npos &&
            csv.find("spells_cast") != std::string::npos &&
            csv.find("avatar,clan,clan_id,wind") != std::string::npos &&
            csv.find(",Red,red,") != std::string::npos &&
+           csv.find(",classic,1,") != std::string::npos &&
            csv.find("synthetic") != std::string::npos,
            "balance CSV must contain canonical clan names, ids, telemetry and hashes");
     expect(json.find("\"clan\": \"red\"") != std::string::npos &&
            json.find("\"clan_name\": \"Red\"") != std::string::npos,
            "balance JSON must expose canonical clan ids and display names");
-    expect(text.find("95% Wilson") != std::string::npos,
-           "human balance report must label its uncertainty interval");
+    expect(text.find("95% Wilson") != std::string::npos &&
+           text.find("Rune Game ruleset: classic@1") != std::string::npos,
+           "human balance report must label its ruleset and uncertainty interval");
     expect(synthetic.summaries.size() == 4 && synthetic.summaries[0].completed == 1,
            "balance aggregation must retain every completed avatar result");
 
@@ -3975,7 +4134,14 @@ int runHeadlessMatchSelfTest()
     }
 
     std::string fullReplayError;
+    const JsonObject* fullReplayRuleset =
+        first.actionReplay.getObject(RuneGameRulesetIdentityKey);
     if(!first.fullReplayCaptured ||
+       first.runeGameRulesetId != ClassicRuneGameRulesetId ||
+       first.runeGameRulesetVersion != ClassicRuneGameRulesetVersion ||
+       !fullReplayRuleset ||
+       fullReplayRuleset->getString("id") != ClassicRuneGameRulesetId ||
+       fullReplayRuleset->getInteger("version") != ClassicRuneGameRulesetVersion ||
        first.actionReplay.getString("aiBehaviorProfile") != "aggressive" ||
        first.actionReplay.getInteger("actionCount") <= 64 ||
        !first.actionReplay.getBoolean("contiguousToCheckpoint") ||
@@ -4139,6 +4305,17 @@ int runHeadlessMatchSelfTest()
     if(rejected.status != Simulation::MatchStatus::InvalidConfiguration)
     {
         std::cerr << "FAIL: duplicate wind configuration was not rejected\n";
+        return 1;
+    }
+
+    Simulation::MatchConfig unavailableRuleset = config;
+    unavailableRuleset.runeGameRulesetId = "removed-variant";
+    unavailableRuleset.runeGameRulesetVersion = 3;
+    const Simulation::MatchResult unavailable = Simulation::runMatch(unavailableRuleset);
+    if(unavailable.status != Simulation::MatchStatus::InvalidConfiguration ||
+       unavailable.error.find("removed-variant@3") == std::string::npos)
+    {
+        std::cerr << "FAIL: unavailable Rune Game ruleset was not rejected\n";
         return 1;
     }
 
@@ -4723,6 +4900,7 @@ int main(int argc, char** argv)
     }
 
     testDifficultyRules();
+    testRuneGameRulesetIdentityContract();
     testRuneGameRoundFlowRuleset();
     testRuneGameSpellPointRuleset();
     testPolygonHitTesting();

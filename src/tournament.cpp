@@ -21,6 +21,14 @@ const char* behaviorProfileName(const Simulation::MatchConfig & config)
         AI::behaviorProfileName(config.behaviorProfile) : "native";
 }
 
+JsonObject encodedRuleset(const std::string & id, int version)
+{
+    JsonObject result;
+    result.addString("id", id);
+    result.addInteger("version", version);
+    return result;
+}
+
 int jsonInteger(std::size_t value)
 {
     return value <= static_cast<std::size_t>(std::numeric_limits<int>::max()) ?
@@ -155,6 +163,9 @@ JsonObject matchJson(const Tournament::MatchRecord & record, std::size_t run,
     match.addInteger("seat_rotation", jsonInteger(record.plan.seatRotation));
     match.addString("difficulty", AI::difficultyName(record.plan.match.difficulty));
     match.addString("behavior_profile", behaviorProfileName(record.plan.match));
+    match.addObject(RuneGameRulesetIdentityKey,
+                    encodedRuleset(record.result.runeGameRulesetId,
+                                   record.result.runeGameRulesetVersion));
     match.addString("status", Simulation::statusName(record.result.status));
     match.addInteger("ticks", jsonInteger(record.result.ticks));
     match.addInteger("unchanged_ticks", jsonInteger(record.result.unchangedTicks));
@@ -410,6 +421,14 @@ Avatars Tournament::baselineAvatars(void)
 Tournament::Schedule Tournament::buildSchedule(const Config & config)
 {
     Schedule schedule;
+    if(!findRuneGameRuleset(config.runeGameRulesetId,
+                            config.runeGameRulesetVersion))
+    {
+        schedule.error = "Rune Game ruleset is unavailable or incompatible: " +
+            config.runeGameRulesetId + "@" +
+            std::to_string(config.runeGameRulesetVersion);
+        return schedule;
+    }
     if(config.seeds.empty())
     {
         schedule.error = "at least one seed is required";
@@ -492,6 +511,8 @@ Tournament::Schedule Tournament::buildSchedule(const Config & config)
                 planned.match.difficulty = config.difficulty;
                 planned.match.forceBehaviorProfile = config.forceBehaviorProfile;
                 planned.match.behaviorProfile = config.behaviorProfile;
+                planned.match.runeGameRulesetId = config.runeGameRulesetId;
+                planned.match.runeGameRulesetVersion = config.runeGameRulesetVersion;
                 planned.match.maximumTicks = config.maximumTicks;
                 planned.match.maximumUnchangedTicks = config.maximumUnchangedTicks;
                 planned.match.stateHashInterval = config.stateHashInterval;
@@ -570,6 +591,10 @@ Tournament::Result Tournament::assemble(const Config & config,
            actual.match.seed != expected.match.seed ||
            actual.match.difficulty != expected.match.difficulty ||
            actual.match.forceBehaviorProfile != expected.match.forceBehaviorProfile ||
+           actual.match.runeGameRulesetId != expected.match.runeGameRulesetId ||
+           actual.match.runeGameRulesetVersion != expected.match.runeGameRulesetVersion ||
+           records[index].result.runeGameRulesetId != expected.match.runeGameRulesetId ||
+           records[index].result.runeGameRulesetVersion != expected.match.runeGameRulesetVersion ||
            (actual.match.forceBehaviorProfile &&
             actual.match.behaviorProfile != expected.match.behaviorProfile))
         {
@@ -719,12 +744,17 @@ bool Tournament::loadMatchRecord(const std::string & path, const PlannedMatch & 
 
     std::uint64_t seed = 0;
     Simulation::MatchStatus status;
+    RuneGameRulesetIdentity storedRuleset;
+    if(!resolveRuneGameRulesetIdentity(*match, storedRuleset, true, error))
+        return false;
     if(match->getInteger("run", -1) != jsonInteger(scheduleIndex) ||
        match->getInteger("seed_index", -1) != jsonInteger(expected.seedIndex) ||
        match->getInteger("clan_assignment", -1) != jsonInteger(expected.clanAssignment) ||
        match->getInteger("seat_rotation", -1) != jsonInteger(expected.seatRotation) ||
        match->getString("difficulty") != AI::difficultyName(expected.match.difficulty) ||
        match->getString("behavior_profile") != behaviorProfileName(expected.match) ||
+       storedRuleset.id != expected.match.runeGameRulesetId ||
+       storedRuleset.version != expected.match.runeGameRulesetVersion ||
        !parseUnsigned(match->getString("seed"), seed) || seed != expected.match.seed ||
        !parseStatus(match->getString("status"), status))
     {
@@ -736,6 +766,8 @@ bool Tournament::loadMatchRecord(const std::string & path, const PlannedMatch & 
     loaded.plan = expected;
     loaded.result.status = status;
     loaded.result.seed = seed;
+    loaded.result.runeGameRulesetId = storedRuleset.id;
+    loaded.result.runeGameRulesetVersion = storedRuleset.version;
     loaded.result.ticks = static_cast<std::size_t>(match->getInteger("ticks"));
     loaded.result.unchangedTicks =
         static_cast<std::size_t>(match->getInteger("unchanged_ticks"));
@@ -879,6 +911,9 @@ JsonObject Tournament::toJsonObject(const Result & tournament)
     root.addString("difficulty", AI::difficultyName(tournament.config.difficulty));
     root.addString("behavior_profile", tournament.config.forceBehaviorProfile ?
         AI::behaviorProfileName(tournament.config.behaviorProfile) : "native");
+    root.addObject(RuneGameRulesetIdentityKey,
+                   encodedRuleset(tournament.config.runeGameRulesetId,
+                                  tournament.config.runeGameRulesetVersion));
     root.addInteger("legal_clan_assignments",
                     jsonInteger(tournament.schedule.legalClanAssignments));
     root.addInteger("planned_matches", jsonInteger(tournament.schedule.matches.size()));
@@ -950,6 +985,7 @@ std::string Tournament::toCsv(const Result & tournament)
     std::ostringstream stream;
     stream.imbue(std::locale::classic());
     stream << "run,seed,seed_index,clan_assignment,seat_rotation,difficulty,behavior_profile,"
+              "ruleset_id,ruleset_version,"
               "status,avatar,clan,clan_id,wind,"
               "final_rank,total_score,summons,spells_cast,casualties,dismissals,peak_units,final_units";
     for(const char* category : categoryNames) stream << ',' << category;
@@ -975,6 +1011,8 @@ std::string Tournament::toCsv(const Result & tournament)
                    << record.plan.clanAssignment << ',' << record.plan.seatRotation << ','
                    << AI::difficultyName(record.plan.match.difficulty) << ','
                    << behaviorProfileName(record.plan.match) << ','
+                   << record.result.runeGameRulesetId << ','
+                   << record.result.runeGameRulesetVersion << ','
                    << Simulation::statusName(record.result.status) << ','
                    << person.avatar.toString() << ',' << person.clan.canonicalName() << ','
                    << person.clan.toString() << ',' << person.wind.toString() << ',';
@@ -1023,6 +1061,8 @@ std::string Tournament::toText(const Result & tournament)
            << "Difficulty: " << AI::difficultyName(tournament.config.difficulty) << '\n'
            << "Behavior profile: " << (tournament.config.forceBehaviorProfile ?
                 AI::behaviorProfileName(tournament.config.behaviorProfile) : "native") << '\n'
+           << "Rune Game ruleset: " << tournament.config.runeGameRulesetId << '@'
+           << tournament.config.runeGameRulesetVersion << '\n'
            << "Seeds: ";
     for(std::size_t index = 0; index < tournament.config.seeds.size(); ++index)
     {

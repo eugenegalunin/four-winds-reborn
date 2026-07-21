@@ -194,7 +194,11 @@ same clan slot; a negative mean-rank delta is an improvement. `native` is
 deliberately unavailable here because it would change doctrine together with
 the avatar and defeat the control. Machine-readable reports use the canonical
 IDs `red`, `yellow`, `aqua` and `purple`; the `clan` display column uses the
-corresponding capitalized names.
+corresponding capitalized names. Every new isolated match and aggregate JSON
+report also records the selected Rune Game ruleset id/version. Player CSV rows
+carry the same identity in `ruleset_id` and `ruleset_version`; resumed isolated
+records are rejected if that identity is unavailable or differs from the
+requested schedule.
 
 Long cohort runs support bounded parallel match processes, safe continuation and
 an automatic parity verdict. `-Jobs 2` runs two isolated fixtures at a time;
@@ -208,7 +212,8 @@ ones are rerun. Resume refuses a different binary, parameter set or roster.
 The tracked
 `tests/fixtures/balance-cohorts-15.6e-refactor.sha256.json` manifest records the
 SHA-256 contract for every scenario `balance-players.csv` plus the aggregate
-`balance-cohorts.csv`. It makes the refactor gate reproducible on a clean clone
+`balance-cohorts.csv`, including the explicit `classic@1` columns. It makes the
+refactor gate reproducible on a clean clone
 without committing the large diagnostic reports. The standalone comparison
 uses that manifest by default and fails unless every candidate CSV is
 byte-identical:

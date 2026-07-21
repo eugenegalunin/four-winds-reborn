@@ -11,6 +11,7 @@
 #include "aiprofile.h"
 #include "gamedata.h"
 #include "matchscore.h"
+#include "runegameruleset.h"
 
 namespace Simulation
 {
@@ -40,6 +41,8 @@ namespace Simulation
         AI::Difficulty difficulty = AI::Difficulty::Normal;
         bool forceBehaviorProfile = false;
         AI::BehaviorProfile behaviorProfile = AI::BehaviorProfile::Balanced;
+        std::string runeGameRulesetId = ClassicRuneGameRulesetId;
+        int runeGameRulesetVersion = ClassicRuneGameRulesetVersion;
         Persons persons;
         std::size_t maximumTicks = 100000;
         std::size_t maximumUnchangedTicks = 4;
@@ -90,6 +93,8 @@ namespace Simulation
 
         MatchStatus status = MatchStatus::InvalidConfiguration;
         std::uint64_t seed = 0;
+        std::string runeGameRulesetId = ClassicRuneGameRulesetId;
+        int runeGameRulesetVersion = ClassicRuneGameRulesetVersion;
         std::uint64_t rngDraws = 0;
         std::size_t ticks = 0;
         std::size_t unchangedTicks = 0;
