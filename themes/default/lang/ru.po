@@ -3403,3 +3403,83 @@ msgstr "%1 | фаза %2/%3 | действие %4/%5"
 #: src/ui/replayviewer.cpp
 msgid "Space: play/pause  Arrows: step  PgUp/PgDn: phase  +/-: speed"
 msgstr "Пробел: пуск/пауза  Стрелки: шаг  PgUp/PgDn: фаза  +/-: скорость"
+
+#: src/ui/replaybrowser.cpp
+msgid "Import"
+msgstr "Импорт"
+
+#: src/ui/replaybrowser.cpp
+msgid "Export"
+msgstr "Экспорт"
+
+#: src/ui/replaybrowser.cpp
+msgid "IMPORT REPLAY"
+msgstr "ИМПОРТ РЕПЛЕЯ"
+
+#: src/ui/replaybrowser.cpp
+msgid "EXPORT REPLAY"
+msgstr "ЭКСПОРТ РЕПЛЕЯ"
+
+#: src/ui/replaybrowser.cpp
+msgid "Enter or paste the full .fwr path"
+msgstr "Введите или вставьте полный путь к файлу .fwr"
+
+#: src/ui/replaybrowser.cpp
+msgid "Full replay path"
+msgstr "Полный путь к реплею"
+
+#: src/ui/replaybrowser.cpp
+msgid "Shift+Insert: paste"
+msgstr "Shift+Insert: вставить"
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay Import"
+msgstr "Импорт реплея"
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay Export"
+msgstr "Экспорт реплея"
+
+#: src/ui/replaybrowser.cpp
+msgid "The replay could not be imported: %1"
+msgstr "Не удалось импортировать реплей: %1"
+
+#: src/ui/replaybrowser.cpp
+msgid "The replay could not be exported: %1"
+msgstr "Не удалось экспортировать реплей: %1"
+
+#: src/ui/replaybrowser.cpp
+msgid "Imported replay into the library."
+msgstr "Реплей импортирован в библиотеку."
+
+#: src/ui/replaybrowser.cpp
+msgid "A replay already exists at that path. Replace it?"
+msgstr "По этому пути уже существует реплей. Заменить его?"
+
+#: src/ui/replaybrowser.cpp
+msgid ""
+"Exported replay to:\n"
+"%1"
+msgstr ""
+"Реплей экспортирован в:\n"
+"%1"
+
+#: src/ui/replayviewer.cpp
+msgid ""
+"Replay diverged at action %1.\n"
+"Expected state: %2\n"
+"Actual state: %3"
+msgstr ""
+"Реплей разошёлся на действии %1.\n"
+"Ожидаемое состояние: %2\n"
+"Фактическое состояние: %3"
+
+#: src/ui/replayviewer.cpp
+msgid ""
+"Replay diverged at action %1.\n"
+"Expected: %2\n"
+"Actual: %3"
+msgstr ""
+"Реплей разошёлся на действии %1.\n"
+"Ожидалось: %2\n"
+"Получено: %3"

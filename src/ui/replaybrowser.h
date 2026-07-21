@@ -30,6 +30,8 @@ class ReplayBrowserScreen : public JsonWindow
     Rect               panelArea;
     Rect               listArea;
     Rect               backArea;
+    Rect               importArea;
+    Rect               exportArea;
     Rect               deleteArea;
     Rect               detailsArea;
     Rect               playArea;
@@ -51,8 +53,11 @@ class ReplayBrowserScreen : public JsonWindow
     Color              selectedBorderColor;
 
     int                visibleCount(void) const;
+    void               reloadEntries(const std::string & selectedPath = {});
     void               layoutVisibleEntries(void);
     bool               selectNext(int);
+    bool               importReplay(void);
+    bool               exportSelected(void);
     bool               showDetails(void);
     bool               playSelected(void);
     bool               deleteSelected(void);

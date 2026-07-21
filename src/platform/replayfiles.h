@@ -36,6 +36,24 @@ namespace ReplayFiles
                                    std::string* error = nullptr);
     bool              deleteReplay(const std::string & file,
                                    std::string* error = nullptr);
+    bool              importReplay(const std::string & directory,
+                                   const std::string & source,
+                                   std::string* importedFile = nullptr,
+                                   std::string* error = nullptr);
+    bool              importReplay(const std::string & source,
+                                   std::string* importedFile = nullptr,
+                                   std::string* error = nullptr);
+    bool              exportReplay(const std::string & directory,
+                                   const std::string & file,
+                                   const std::string & destination,
+                                   bool overwrite,
+                                   std::string* exportedFile = nullptr,
+                                   std::string* error = nullptr);
+    bool              exportReplay(const std::string & file,
+                                   const std::string & destination,
+                                   bool overwrite,
+                                   std::string* exportedFile = nullptr,
+                                   std::string* error = nullptr);
 }
 
 #endif

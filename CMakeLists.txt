@@ -82,6 +82,7 @@ set(FOUR_WINDS_SOURCE
     src/gameobjects.cpp
 
     src/platform/crashreport.cpp
+    src/platform/filedialog.cpp
     src/platform/recovery.cpp
     src/platform/replayfiles.cpp
     src/platform/savegames.cpp
@@ -157,7 +158,7 @@ target_compile_definitions(four_winds_reborn PRIVATE ${FOUR_WINDS_BUILD_DEFINITI
 
 target_link_libraries(four_winds_reborn libswe)
 if(WIN32)
-    target_link_libraries(four_winds_reborn dbghelp)
+    target_link_libraries(four_winds_reborn dbghelp comdlg32)
 endif()
 set_target_properties(four_winds_reborn PROPERTIES
     OUTPUT_NAME four-winds-reborn
@@ -181,7 +182,7 @@ if(BUILD_TESTING)
         FOUR_WINDS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
     target_link_libraries(gameplay_regression_tests libswe)
     if(WIN32)
-        target_link_libraries(gameplay_regression_tests dbghelp)
+        target_link_libraries(gameplay_regression_tests dbghelp comdlg32)
     endif()
     add_test(NAME gameplay_regressions COMMAND gameplay_regression_tests)
     set_tests_properties(gameplay_regressions PROPERTIES

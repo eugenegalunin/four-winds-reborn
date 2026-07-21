@@ -166,8 +166,25 @@ BehaviorProfileReplayScope replayProfileScope(const std::string & selectedProfil
     return BehaviorProfileReplayScope(forceProfile, profile);
 }
 
-bool applyReplayStep(const Replay::Step & step, std::size_t index, std::string* error)
+bool applyReplayStep(const Replay::Step & step, std::size_t index, std::string* error,
+                     Replay::Failure* failure = nullptr)
 {
+    auto fail = [&](Replay::FailureKind kind, const std::string & expected,
+                    const std::string & actual, const std::string & detail,
+                    const std::string & message)
+    {
+        if(failure)
+        {
+            failure->kind = kind;
+            failure->step = index;
+            failure->expected = expected;
+            failure->actual = actual;
+            failure->detail = detail;
+        }
+        if(error) *error = message;
+        return false;
+    };
+
     bool accepted = false;
     if(step.isSystem())
     {
@@ -197,9 +214,10 @@ bool applyReplayStep(const Replay::Step & step, std::size_t index, std::string* 
             }
             else
             {
-                if(error) *error = "unknown system operation at step " +
-                    std::to_string(index);
-                return false;
+                return fail(Replay::FailureKind::UnknownSystemOperation,
+                    "known system operation", step.systemOperation,
+                    step.systemOperation, "unknown system operation at step " +
+                    std::to_string(index));
             }
         }
         catch(const std::exception & failure)
@@ -213,10 +231,13 @@ bool applyReplayStep(const Replay::Step & step, std::size_t index, std::string* 
 
         if(actualException != step.expectedException)
         {
-            if(error) *error = "system operation exception mismatch at step " +
+            return fail(Replay::FailureKind::SystemExceptionMismatch,
+                step.expectedException.empty() ? "no exception" : step.expectedException,
+                actualException.empty() ? "no exception" : actualException,
+                step.systemOperation,
+                "system operation exception mismatch at step " +
                 std::to_string(index) + ": expected=" + step.expectedException +
-                " actual=" + actualException;
-            return false;
+                " actual=" + actualException);
         }
     }
     else
@@ -224,8 +245,9 @@ bool applyReplayStep(const Replay::Step & step, std::size_t index, std::string* 
         std::unique_ptr<ClientMessage> action = Replay::clientMessageFromJson(step.action);
         if(!action)
         {
-            if(error) *error = "unknown action at step " + std::to_string(index);
-            return false;
+            return fail(Replay::FailureKind::UnknownAction, "known action",
+                step.action.toString(), std::string(),
+                "unknown action at step " + std::to_string(index));
         }
 
         ActionList emitted;
@@ -235,22 +257,25 @@ bool applyReplayStep(const Replay::Step & step, std::size_t index, std::string* 
     }
     if(step.isSystem() && accepted != step.expectedAccepted)
     {
-        if(error) *error = "system operation outcome mismatch at step " +
-            std::to_string(index);
-        return false;
+        return fail(Replay::FailureKind::SystemOutcomeMismatch,
+            step.expectedAccepted ? "accepted" : "rejected",
+            accepted ? "accepted" : "rejected", step.systemOperation,
+            "system operation outcome mismatch at step " + std::to_string(index));
     }
     if(!step.isSystem() && !accepted)
     {
-        if(error) *error = "action rejected at step " + std::to_string(index);
-        return false;
+        return fail(Replay::FailureKind::ActionRejected, "accepted", "rejected",
+            step.action.toString(), "action rejected at step " + std::to_string(index));
     }
 
     const std::string actualHash = Replay::authoritativeStateHash();
     if(actualHash != step.expectedStateHash)
     {
-        if(error) *error = "state hash mismatch at step " + std::to_string(index) +
-            ": expected=" + step.expectedStateHash + " actual=" + actualHash;
-        return false;
+        return fail(Replay::FailureKind::StateHashMismatch,
+            step.expectedStateHash, actualHash,
+            step.isSystem() ? step.systemOperation : step.action.toString(),
+            "state hash mismatch at step " + std::to_string(index) +
+            ": expected=" + step.expectedStateHash + " actual=" + actualHash);
     }
 
     return true;
@@ -587,6 +612,7 @@ Replay::Playback::~Playback()
 bool Replay::Playback::open(const JsonObject & journal, std::string* error)
 {
     close();
+    playbackFailure = Failure();
 
     JournalInfo info;
     if(!inspectJournal(journal, info, error)) return false;
@@ -624,7 +650,7 @@ bool Replay::Playback::open(const JsonObject & journal, std::string* error)
     int previousPart = GameData::loadedGamePart();
     for(std::size_t index = 0; index < steps.size(); ++index)
     {
-        if(!applyReplayStep(steps[index], index, error))
+        if(!applyReplayStep(steps[index], index, error, &playbackFailure))
         {
             restorePrevious();
             steps.clear();
@@ -675,6 +701,7 @@ void Replay::Playback::close(void)
     phasePositions.clear();
     behaviorProfile.clear();
     currentPosition = 0;
+    playbackFailure = Failure();
 }
 
 bool Replay::Playback::restoreInitial(std::string* error)
@@ -691,13 +718,13 @@ bool Replay::Playback::restoreInitial(std::string* error)
 }
 
 bool Replay::Playback::applyRange(std::size_t begin, std::size_t end,
-                                  std::string* error)
+                                  std::string* error, Failure* failure)
 {
     RecordingPause pause;
     auto profileScope = replayProfileScope(behaviorProfile);
     for(std::size_t index = begin; index < end; ++index)
     {
-        if(!applyReplayStep(steps[index], index, error)) return false;
+        if(!applyReplayStep(steps[index], index, error, failure)) return false;
         currentPosition = index + 1;
     }
     if(error) error->clear();
@@ -706,6 +733,7 @@ bool Replay::Playback::applyRange(std::size_t begin, std::size_t end,
 
 bool Replay::Playback::seek(std::size_t requestedPosition, std::string* error)
 {
+    playbackFailure = Failure();
     if(!opened)
     {
         if(error) *error = "replay playback is not open";
@@ -724,11 +752,13 @@ bool Replay::Playback::seek(std::size_t requestedPosition, std::string* error)
 
     const std::size_t previousPosition = currentPosition;
     if(requestedPosition < currentPosition && !restoreInitial(error)) return false;
-    if(applyRange(currentPosition, requestedPosition, error)) return true;
+    if(applyRange(currentPosition, requestedPosition, error, &playbackFailure)) return true;
 
     // Keep a failed seek from leaving the viewer on an undocumented partial state.
     std::string ignored;
-    if(restoreInitial(&ignored)) applyRange(0, previousPosition, &ignored);
+    Failure ignoredFailure;
+    if(restoreInitial(&ignored))
+        applyRange(0, previousPosition, &ignored, &ignoredFailure);
     return false;
 }
 

@@ -11,6 +11,28 @@
 
 namespace Replay
 {
+    enum class FailureKind
+    {
+        None,
+        UnknownSystemOperation,
+        SystemExceptionMismatch,
+        SystemOutcomeMismatch,
+        UnknownAction,
+        ActionRejected,
+        StateHashMismatch
+    };
+
+    struct Failure
+    {
+        FailureKind kind = FailureKind::None;
+        std::size_t step = 0;
+        std::string expected;
+        std::string actual;
+        std::string detail;
+
+        bool isValid(void) const { return kind != FailureKind::None; }
+    };
+
     struct JournalInfo
     {
         int         schema = 0;
@@ -63,8 +85,10 @@ namespace Replay
         bool                    previousSkipRepeatSay = false;
         bool                    previousStateValid = false;
         bool                    opened = false;
+        Failure                 playbackFailure;
 
-        bool applyRange(std::size_t begin, std::size_t end, std::string* error);
+        bool applyRange(std::size_t begin, std::size_t end, std::string* error,
+                        Failure* failure);
         bool restoreInitial(std::string* error);
         void restorePrevious(void);
 
@@ -87,6 +111,7 @@ namespace Replay
         std::size_t phaseIndex(void) const;
         std::size_t phaseCount(void) const { return phasePositions.size(); }
         int gamePart(void) const;
+        const Failure & failure(void) const { return playbackFailure; }
 
         bool seek(std::size_t, std::string* error = nullptr);
         bool stepForward(std::string* error = nullptr);

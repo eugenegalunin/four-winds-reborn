@@ -101,6 +101,21 @@ u32 ReplayViewerScreen::playbackDelay(void) const
     return static_cast<u32>(std::max(40, 50000 / ReplaySpeeds[speedIndex]));
 }
 
+std::string ReplayViewerScreen::playbackFailureMessage(const std::string & error) const
+{
+    const Replay::Failure & failure = playback.failure();
+    if(!failure.isValid())
+        return StringFormat(_("Playback stopped: %1")).arg(error);
+
+    const int action = static_cast<int>(failure.step + 1);
+    if(failure.kind == Replay::FailureKind::StateHashMismatch)
+        return StringFormat(_("Replay diverged at action %1.\nExpected state: %2\nActual state: %3"))
+            .arg(action).arg(failure.expected).arg(failure.actual);
+
+    return StringFormat(_("Replay diverged at action %1.\nExpected: %2\nActual: %3"))
+        .arg(action).arg(failure.expected).arg(failure.actual);
+}
+
 void ReplayViewerScreen::captureFrame(void)
 {
     MusicVolumeGuard quietPreview;
@@ -153,8 +168,7 @@ bool ReplayViewerScreen::applyPlaybackAction(
     if(!(playback.*action)(&error))
     {
         playing = false;
-        MessageBox(_("Replay Playback"),
-                   StringFormat(_("Playback stopped: %1")).arg(error),
+        MessageBox(_("Replay Playback"), playbackFailureMessage(error),
                    *this, false).exec();
         renderWindow();
         return true;
@@ -170,8 +184,7 @@ bool ReplayViewerScreen::seek(std::size_t position)
     if(!playback.seek(position, &error))
     {
         playing = false;
-        MessageBox(_("Replay Playback"),
-                   StringFormat(_("Playback stopped: %1")).arg(error),
+        MessageBox(_("Replay Playback"), playbackFailureMessage(error),
                    *this, false).exec();
         renderWindow();
         return true;

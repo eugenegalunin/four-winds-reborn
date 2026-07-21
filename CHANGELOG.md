@@ -25,6 +25,13 @@ Reborn work only; they do not claim authorship of inherited code or assets.
   developer-assisted status. Normal player sessions keep their full contiguous
   action history, while bounded test journals remain available to regression
   and headless tools.
+- Replays can now be imported from and exported to portable `.fwr` files. The
+  transfer path validates the complete journal before an atomic copy, avoids
+  accidental library overwrites and provides a native Windows file picker with
+  a portable path-entry fallback for Linux and macOS.
+- Deterministic playback failures now identify the first divergent action and
+  show the expected and actual outcome or state hash, making incompatible,
+  modified and damaged recordings diagnosable without reading the engine log.
 
 ### Added - content package identity
 

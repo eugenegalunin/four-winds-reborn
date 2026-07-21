@@ -52,6 +52,131 @@ bool replaceFile(const std::string & source, const std::string & destination)
 #endif
 }
 
+bool isDirectReplay(const std::string & directory, const std::string & file)
+{
+    std::error_code ec;
+    const fs::path directoryPath = fs::weakly_canonical(fs::u8path(directory), ec);
+    if(ec) return false;
+    const fs::path replayPath = fs::weakly_canonical(fs::u8path(file), ec);
+    return !ec && replayPath.parent_path() == directoryPath && endsWithReplay(file);
+}
+
+bool readValidatedReplay(const std::string & source, std::string & contents,
+                         Replay::JournalInfo & info, std::string* error)
+{
+    if(!Systems::isFile(source) || !endsWithReplay(source))
+    {
+        if(error) *error = "the selected file is not a .fwr replay";
+        return false;
+    }
+    if(!Systems::readFile2String(source, contents))
+    {
+        if(error) *error = "unable to read the replay file";
+        return false;
+    }
+
+    const JsonObject journal = JsonContentString(contents).toObject();
+    std::string validationError;
+    if(!journal.isValid() || !Replay::inspectJournal(journal, info, &validationError))
+    {
+        if(error) *error = journal.isValid() ? validationError :
+            "replay file is not valid JSON";
+        return false;
+    }
+    if(info.actionCount <= 0 || !info.contiguousToCheckpoint)
+    {
+        if(error) *error = "replay journal is empty or not contiguous";
+        return false;
+    }
+    return true;
+}
+
+std::string sanitizedReplayName(const std::string & source)
+{
+    std::string stem = fs::u8path(source).stem().u8string();
+    for(char & symbol : stem)
+    {
+        const unsigned char value = static_cast<unsigned char>(symbol);
+        if(value < 0x20 || symbol == '<' || symbol == '>' || symbol == ':' ||
+           symbol == '"' || symbol == '/' || symbol == '\\' || symbol == '|' ||
+           symbol == '?' || symbol == '*')
+            symbol = '-';
+    }
+    while(!stem.empty() && (stem.back() == ' ' || stem.back() == '.')) stem.pop_back();
+    if(stem.empty()) stem = "imported-replay";
+    return stem + ReplayExtension;
+}
+
+std::string uniqueReplayPath(const std::string & directory, const std::string & source)
+{
+    const fs::path name = fs::u8path(sanitizedReplayName(source));
+    fs::path candidate = fs::u8path(directory) / name;
+    for(int suffix = 2; fs::exists(candidate); ++suffix)
+        candidate = fs::u8path(directory) /
+            fs::u8path(name.stem().u8string() + "-" + std::to_string(suffix) + ReplayExtension);
+    return candidate.u8string();
+}
+
+bool writeValidatedCopy(const std::string & destination, const std::string & contents,
+                        bool overwrite, std::string* error)
+{
+    const fs::path destinationPath = fs::u8path(destination);
+    const fs::path parent = destinationPath.parent_path();
+    if(parent.empty())
+    {
+        if(error) *error = "the destination directory is missing";
+        return false;
+    }
+    if(!Systems::isDirectory(parent.u8string()) &&
+       !Systems::makeDirectory(parent.u8string()))
+    {
+        if(error) *error = "unable to create the destination directory";
+        return false;
+    }
+    if(fs::exists(destinationPath) && !overwrite)
+    {
+        if(error) *error = "the destination replay already exists";
+        return false;
+    }
+
+    const std::string temporary = destination + ".tmp";
+    std::error_code ec;
+    fs::remove(fs::u8path(temporary), ec);
+    if(!Systems::saveString2File(contents, temporary))
+    {
+        if(error) *error = "unable to write the temporary replay";
+        return false;
+    }
+
+    std::string writtenContents;
+    Replay::JournalInfo writtenInfo;
+    std::string validationError;
+    const bool bytesMatch = Systems::readFile2String(temporary, writtenContents) &&
+                            writtenContents == contents;
+    const JsonObject written = bytesMatch ?
+        JsonContentString(writtenContents).toObject() : JsonObject();
+    if(!bytesMatch || !written.isValid() ||
+       !Replay::inspectJournal(written, writtenInfo, &validationError) ||
+       writtenInfo.actionCount <= 0 || !writtenInfo.contiguousToCheckpoint)
+    {
+        fs::remove(fs::u8path(temporary), ec);
+        if(validationError.empty())
+            validationError = bytesMatch ? "replay file is not valid JSON" :
+                              "written bytes do not match the source replay";
+        if(error) *error = std::string("temporary replay validation failed: ") +
+                           validationError;
+        return false;
+    }
+
+    if(!replaceFile(temporary, destination))
+    {
+        fs::remove(fs::u8path(temporary), ec);
+        if(error) *error = "unable to replace the replay file";
+        return false;
+    }
+    return true;
+}
+
 std::string automaticPath(const std::string & directory,
                           const Replay::JournalInfo & info)
 {
@@ -175,14 +300,13 @@ bool ReplayFiles::writeAutomatic(const JsonObject & journal,
 bool ReplayFiles::deleteReplay(const std::string & directory, const std::string & file,
                                std::string* error)
 {
-    const fs::path directoryPath = fs::absolute(fs::u8path(directory)).lexically_normal();
-    const fs::path replayPath = fs::absolute(fs::u8path(file)).lexically_normal();
-    if(replayPath.parent_path() != directoryPath || !endsWithReplay(file))
+    if(!isDirectReplay(directory, file))
     {
         if(error) *error = "the selected file is outside the replay directory";
         return false;
     }
 
+    const fs::path replayPath = fs::u8path(file);
     std::error_code ec;
     if(!fs::remove(replayPath, ec) || ec)
     {
@@ -197,4 +321,75 @@ bool ReplayFiles::deleteReplay(const std::string & directory, const std::string 
 bool ReplayFiles::deleteReplay(const std::string & file, std::string* error)
 {
     return deleteReplay(defaultDirectory(), file, error);
+}
+
+bool ReplayFiles::importReplay(const std::string & directory, const std::string & source,
+                               std::string* importedFile, std::string* error)
+{
+    std::string contents;
+    Replay::JournalInfo info;
+    if(!readValidatedReplay(source, contents, info, error)) return false;
+
+    if(isDirectReplay(directory, source))
+    {
+        if(error) *error = "the selected replay is already in the library";
+        return false;
+    }
+
+    if(!Systems::isDirectory(directory) && !Systems::makeDirectory(directory))
+    {
+        if(error) *error = "unable to create the replay directory";
+        return false;
+    }
+
+    const std::string destination = uniqueReplayPath(directory, source);
+    if(!writeValidatedCopy(destination, contents, false, error)) return false;
+    if(importedFile) *importedFile = destination;
+    if(error) error->clear();
+    return true;
+}
+
+bool ReplayFiles::importReplay(const std::string & source, std::string* importedFile,
+                               std::string* error)
+{
+    return importReplay(defaultDirectory(), source, importedFile, error);
+}
+
+bool ReplayFiles::exportReplay(const std::string & directory, const std::string & file,
+                               const std::string & destination, bool overwrite,
+                               std::string* exportedFile, std::string* error)
+{
+    if(!isDirectReplay(directory, file))
+    {
+        if(error) *error = "the selected file is outside the replay directory";
+        return false;
+    }
+
+    std::string contents;
+    Replay::JournalInfo info;
+    if(!readValidatedReplay(file, contents, info, error)) return false;
+
+    std::string actualDestination = destination;
+    if(!endsWithReplay(actualDestination)) actualDestination += ReplayExtension;
+    std::error_code ec;
+    const fs::path sourcePath = fs::weakly_canonical(fs::u8path(file), ec);
+    const fs::path destinationPath = fs::absolute(fs::u8path(actualDestination)).lexically_normal();
+    if(!ec && sourcePath == destinationPath)
+    {
+        if(error) *error = "the export destination is the library replay itself";
+        return false;
+    }
+
+    if(!writeValidatedCopy(actualDestination, contents, overwrite, error)) return false;
+    if(exportedFile) *exportedFile = actualDestination;
+    if(error) error->clear();
+    return true;
+}
+
+bool ReplayFiles::exportReplay(const std::string & file,
+                               const std::string & destination, bool overwrite,
+                               std::string* exportedFile, std::string* error)
+{
+    return exportReplay(defaultDirectory(), file, destination, overwrite,
+                        exportedFile, error);
 }

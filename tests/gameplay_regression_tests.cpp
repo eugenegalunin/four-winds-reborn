@@ -1139,6 +1139,28 @@ void testActionReplay()
            !AI::behaviorProfileOverrideEnabled(),
            "closing replay playback must restore the caller's game and AI scope");
 
+    JsonObject divergentJournal = journal;
+    JsonArray divergentSteps;
+    if(const JsonArray* recordedSteps = journal.getArray("steps"))
+    {
+        for(std::size_t index = 0; index < recordedSteps->size(); ++index)
+        {
+            JsonObject step = *recordedSteps->getObject(index);
+            if(index == 0) step.addString("expectedStateHash", "0000000000000000");
+            divergentSteps.addObject(step);
+        }
+    }
+    divergentJournal.addArray("steps", divergentSteps);
+    Replay::Playback divergentPlayback;
+    replayError.clear();
+    expect(!divergentPlayback.open(divergentJournal, &replayError) &&
+           divergentPlayback.failure().isValid() &&
+           divergentPlayback.failure().kind == Replay::FailureKind::StateHashMismatch &&
+           divergentPlayback.failure().step == 0 &&
+           divergentPlayback.failure().expected == "0000000000000000" &&
+           !divergentPlayback.failure().actual.empty(),
+           "replay playback must expose the first deterministic mismatch as structured data");
+
     JsonObject legacyJournal = jsonObjectWithoutKey(journal, RuneGameRulesetIdentityKey);
     legacyJournal = jsonObjectWithoutKey(legacyJournal, ContentPackageIdentityKey);
     const JsonObject* journalInitial = journal.getObject("initialState");
@@ -3708,6 +3730,69 @@ int runRecoverySelfTest()
     const std::filesystem::path outsideReplay = directory / "outside.fwr";
     valid = valid && Systems::saveString2File(replay ? replay->toString() : "{}",
                                                outsideReplay.string());
+
+    const std::filesystem::path transferLibrary = directory / "transfer-library";
+    const std::filesystem::path transferOutput = directory / "transfer-output";
+    std::string importedReplay;
+    replayStorageError.clear();
+    valid = valid && ReplayFiles::importReplay(transferLibrary.string(),
+                                               outsideReplay.string(),
+                                               &importedReplay,
+                                               &replayStorageError) &&
+        replayStorageError.empty() && Systems::isFile(importedReplay) &&
+        ReplayFiles::inspect(transferLibrary.string()).size() == 1;
+
+    std::string duplicateImport;
+    replayStorageError.clear();
+    valid = valid && ReplayFiles::importReplay(transferLibrary.string(),
+                                               outsideReplay.string(),
+                                               &duplicateImport,
+                                               &replayStorageError) &&
+        replayStorageError.empty() && duplicateImport != importedReplay &&
+        Systems::isFile(duplicateImport) &&
+        ReplayFiles::inspect(transferLibrary.string()).size() == 2;
+
+    std::string exportedReplay;
+    replayStorageError.clear();
+    const std::filesystem::path exportWithoutExtension = transferOutput / "shared-session";
+    valid = valid && ReplayFiles::exportReplay(transferLibrary.string(), importedReplay,
+                                               exportWithoutExtension.string(), false,
+                                               &exportedReplay, &replayStorageError) &&
+        replayStorageError.empty() &&
+        std::filesystem::path(exportedReplay).extension() == ".fwr" &&
+        Systems::isFile(exportedReplay);
+    std::string importedContents;
+    std::string exportedContents;
+    valid = valid && Systems::readFile2String(importedReplay, importedContents) &&
+        Systems::readFile2String(exportedReplay, exportedContents) &&
+        importedContents == exportedContents;
+
+    replayStorageError.clear();
+    valid = valid && !ReplayFiles::exportReplay(transferLibrary.string(), importedReplay,
+                                                exportedReplay, false, nullptr,
+                                                &replayStorageError) &&
+        !replayStorageError.empty();
+    replayStorageError.clear();
+    valid = valid && ReplayFiles::exportReplay(transferLibrary.string(), importedReplay,
+                                               exportedReplay, true, nullptr,
+                                               &replayStorageError) &&
+        replayStorageError.empty();
+
+    const std::filesystem::path invalidImport = directory / "invalid-import.fwr";
+    valid = valid && Systems::saveString2File("not-json", invalidImport.string());
+    replayStorageError.clear();
+    valid = valid && !ReplayFiles::importReplay(transferLibrary.string(),
+                                                invalidImport.string(), nullptr,
+                                                &replayStorageError) &&
+        !replayStorageError.empty() &&
+        ReplayFiles::inspect(transferLibrary.string()).size() == 2;
+    replayStorageError.clear();
+    valid = valid && !ReplayFiles::exportReplay(transferLibrary.string(),
+                                                outsideReplay.string(),
+                                                (transferOutput / "outside-copy.fwr").string(),
+                                                false, nullptr, &replayStorageError) &&
+        !replayStorageError.empty();
+
     replayStorageError.clear();
     valid = valid && !ReplayFiles::deleteReplay(replayDirectory.string(),
                                                 outsideReplay.string(),

@@ -44,6 +44,7 @@ class ReplayViewerScreen : public JsonWindow
     std::string      phaseName(void) const;
     std::string      speedName(void) const;
     u32              playbackDelay(void) const;
+    std::string      playbackFailureMessage(const std::string &) const;
 
 protected:
     void             tickEvent(u32) override;
@@ -56,6 +57,8 @@ public:
     ReplayViewerScreen(const JsonObject &, std::string* error = nullptr);
 
     bool             ready(void) const { return readyState; }
+    std::string      failureMessage(const std::string & error) const
+                     { return playbackFailureMessage(error); }
     void             renderWindow(void) override;
 };
 

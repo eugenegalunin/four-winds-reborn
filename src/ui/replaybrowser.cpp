@@ -7,14 +7,197 @@
 #include <algorithm>
 #include <cctype>
 #include <ctime>
+#include <filesystem>
 
 #include "dialogs.h"
+#include "filedialog.h"
 #include "gametheme.h"
 #include "replayviewer.h"
+#include "swe/swe_systems.h"
 #include "swe/swe_tools.h"
 
 namespace
 {
+namespace fs = std::filesystem;
+
+class ReplayPathDialog : public DialogWindow
+{
+    std::string path;
+    std::string title;
+    std::string action;
+    Rect        inputArea;
+    Rect        acceptArea;
+    Rect        cancelArea;
+    std::string titleFont;
+    std::string inputFont;
+    std::string smallFont;
+    Color       inputColor;
+    Color       inputBorderColor;
+    Color       buttonColor;
+    Color       buttonBorderColor;
+    Color       mutedColor;
+
+    void eraseLastCodepoint(void)
+    {
+        if(path.empty()) return;
+        std::size_t position = path.size() - 1;
+        while(position && (static_cast<unsigned char>(path[position]) & 0xC0) == 0x80)
+            --position;
+        path.erase(position);
+    }
+
+    bool accept(void)
+    {
+        if(path.empty()) return true;
+        setResultCode(1);
+        JsonWindow::playSound("button");
+        actionDialogClose();
+        return true;
+    }
+
+protected:
+    bool keyPressEvent(const KeySym & key) override
+    {
+        switch(key.keycode())
+        {
+            case Key::BACKSPACE:
+                eraseLastCodepoint();
+                renderWindow();
+                return true;
+#ifndef SWE_SDL12
+            case Key::INSERT:
+                if(key.keymod().isShift() && SDL_HasClipboardText())
+                {
+                    char* clipboard = SDL_GetClipboardText();
+                    if(clipboard)
+                    {
+                        textInputEvent(clipboard);
+                        SDL_free(clipboard);
+                    }
+                    return true;
+                }
+                break;
+#endif
+            case Key::RETURN: return accept();
+            case Key::ESCAPE:
+                setResultCode(0);
+                actionDialogClose();
+                return true;
+            default: break;
+        }
+        return false;
+    }
+
+    bool textInputEvent(const std::string & value) override
+    {
+        if(value.empty() || 2048 <= path.size()) return true;
+        for(unsigned char symbol : value)
+            if(symbol < 0x20 || symbol == 0x7F) return true;
+        if(path.size() + value.size() <= 2048) path.append(value);
+        renderWindow();
+        return true;
+    }
+
+    bool mouseClickEvent(const ButtonsEvent & event) override
+    {
+        if(!event.isButtonLeft()) return false;
+        if(event.isClick(acceptArea)) return accept();
+        if(event.isClick(cancelArea))
+        {
+            setResultCode(0);
+            JsonWindow::playSound("button");
+            actionDialogClose();
+        }
+        return true;
+    }
+
+public:
+    ReplayPathDialog(const std::string & header, const std::string & actionLabel,
+                     const std::string & initialPath, Window & parent) :
+        DialogWindow("dialog_replaypath.json", parent), path(initialPath),
+        title(header), action(actionLabel)
+    {
+        inputArea = JsonUnpack::rect(jobject, "input:area");
+        acceptArea = JsonUnpack::rect(jobject, "button:accept");
+        cancelArea = JsonUnpack::rect(jobject, "button:cancel");
+        titleFont = jobject.getString("font:title", "dejavus26");
+        inputFont = jobject.getString("font:input", "dejavus16");
+        smallFont = jobject.getString("font:small", "dejavus14");
+        inputColor = GameTheme::jsonColor(jobject, "color:input");
+        inputBorderColor = GameTheme::jsonColor(jobject, "color:input_border");
+        buttonColor = GameTheme::jsonColor(jobject, "color:button");
+        buttonBorderColor = GameTheme::jsonColor(jobject, "color:button_border");
+        mutedColor = GameTheme::jsonColor(jobject, "color:muted");
+        setKeyHandle(true);
+        setResultCode(0);
+#ifndef SWE_SDL12
+        SDL_StartTextInput();
+#endif
+        setVisible(true);
+    }
+
+    ~ReplayPathDialog()
+    {
+#ifndef SWE_SDL12
+        SDL_StopTextInput();
+#endif
+    }
+
+    const std::string & selectedPath(void) const { return path; }
+
+    void renderWindow(void) override
+    {
+        renderColor(backgroundColor, rect());
+        renderRect(borderColor, rect());
+        const FontRender & heading = GameTheme::fontRender(titleFont);
+        const FontRender & input = GameTheme::fontRender(inputFont);
+        const FontRender & small = GameTheme::fontRender(smallFont);
+        renderText(heading, title, headerColor, Point(width() / 2, 20), AlignCenter);
+        renderText(small, _("Enter or paste the full .fwr path"), mutedColor,
+                   Point(inputArea.x, inputArea.y - 24));
+        renderColor(inputColor, inputArea);
+        renderRect(inputBorderColor, inputArea);
+
+        std::string shown = path.empty() ? std::string(_("Full replay path")) : path;
+        bool clipped = false;
+        while(!shown.empty() && input.stringSize(shown).w > inputArea.w - 24)
+        {
+            std::size_t count = 1;
+            const unsigned char first = static_cast<unsigned char>(shown.front());
+            if((first & 0xE0) == 0xC0) count = 2;
+            else if((first & 0xF0) == 0xE0) count = 3;
+            else if((first & 0xF8) == 0xF0) count = 4;
+            shown.erase(0, std::min(count, shown.size()));
+            clipped = true;
+        }
+        if(clipped) shown = "..." + shown;
+        const Color valueColor = path.empty() ? mutedColor : textColor;
+        const Rect rendered = renderText(input, shown, valueColor,
+            Point(inputArea.x + 12, inputArea.y + inputArea.h / 2),
+            AlignLeft, AlignCenter);
+        if(!path.empty())
+        {
+            const int cursorX = std::min(inputArea.x + inputArea.w - 10,
+                                         rendered.x + rendered.w + 2);
+            renderLine(textColor, Point(cursorX, inputArea.y + 9),
+                       Point(cursorX, inputArea.y + inputArea.h - 10));
+        }
+
+        auto drawButton = [&](const Rect & area, const std::string & label)
+        {
+            renderColor(buttonColor, area);
+            renderRect(buttonBorderColor, area);
+            renderText(input, label, textColor,
+                       Point(area.x + area.w / 2, area.y + area.h / 2),
+                       AlignCenter, AlignCenter);
+        };
+        drawButton(acceptArea, action);
+        drawButton(cancelArea, _("Cancel"));
+        renderText(small, _("Shift+Insert: paste"), mutedColor,
+                   Point(width() / 2, acceptArea.y - 24), AlignCenter);
+    }
+};
+
 std::string gamePartName(int part)
 {
     switch(part)
@@ -55,6 +238,15 @@ std::string displayValue(std::string value)
         std::toupper(static_cast<unsigned char>(value.front())));
     return value.empty() ? _("Unknown") : value;
 }
+
+std::string defaultExportPath(const std::string & filename)
+{
+    if(const char* home = Systems::environment("USERPROFILE"))
+        return Systems::concatePath(home, filename);
+    if(const char* home = Systems::environment("HOME"))
+        return Systems::concatePath(home, filename);
+    return filename;
+}
 }
 
 ReplayBrowserScreen::ReplayBrowserScreen() :
@@ -63,10 +255,12 @@ ReplayBrowserScreen::ReplayBrowserScreen() :
 {
     panelArea = JsonUnpack::rect(jobject, "panel:area", Rect(132, 54, 760, 660));
     listArea = JsonUnpack::rect(jobject, "list:area", Rect(176, 146, 672, 382));
-    backArea = JsonUnpack::rect(jobject, "button:back", Rect(176, 642, 150, 50));
-    deleteArea = JsonUnpack::rect(jobject, "button:delete", Rect(516, 642, 140, 50));
-    detailsArea = JsonUnpack::rect(jobject, "button:details", Rect(346, 642, 150, 50));
-    playArea = JsonUnpack::rect(jobject, "button:play", Rect(676, 642, 150, 50));
+    backArea = JsonUnpack::rect(jobject, "button:back", Rect(176, 642, 105, 50));
+    importArea = JsonUnpack::rect(jobject, "button:import", Rect(289, 642, 105, 50));
+    exportArea = JsonUnpack::rect(jobject, "button:export", Rect(402, 642, 105, 50));
+    detailsArea = JsonUnpack::rect(jobject, "button:details", Rect(515, 642, 105, 50));
+    deleteArea = JsonUnpack::rect(jobject, "button:delete", Rect(628, 642, 105, 50));
+    playArea = JsonUnpack::rect(jobject, "button:play", Rect(741, 642, 107, 50));
     itemHeight = jobject.getInteger("list:item_height", 82);
     itemGap = jobject.getInteger("list:item_gap", 12);
 
@@ -84,6 +278,18 @@ ReplayBrowserScreen::ReplayBrowserScreen() :
     itemBorderColor = GameTheme::jsonColor(jobject, "color:item_border");
     selectedBorderColor = GameTheme::jsonColor(jobject, "color:selected_border");
 
+    reloadEntries();
+
+    setMouseTrack(true);
+    setKeyHandle(true);
+    setVisible(true);
+}
+
+void ReplayBrowserScreen::reloadEntries(const std::string & selectedPath)
+{
+    entries.clear();
+    selected = -1;
+    firstVisible = 0;
     for(const ReplayFiles::Info & replay : ReplayFiles::inspect())
     {
         Entry entry;
@@ -109,12 +315,13 @@ ReplayBrowserScreen::ReplayBrowserScreen() :
                      std::string(" | ") + _("Developer assisted") : std::string()) :
             std::string(_("The file can be deleted but not opened"));
         entries.push_back(std::move(entry));
+        if(!selectedPath.empty() && replay.path == selectedPath)
+            selected = static_cast<int>(entries.size()) - 1;
     }
 
-    if(!entries.empty()) selected = 0;
-    setMouseTrack(true);
-    setKeyHandle(true);
-    setVisible(true);
+    if(selected < 0 && !entries.empty()) selected = 0;
+    lastClickedEntry = -1;
+    lastClickAt = 0;
 }
 
 int ReplayBrowserScreen::visibleCount(void) const
@@ -184,11 +391,13 @@ void ReplayBrowserScreen::renderWindow(void)
     {
         renderColor(enabled ? itemSelectedColor : itemColor, area);
         renderRect(enabled ? selectedBorderColor : itemBorderColor, area);
-        renderText(entryRender, label, enabled ? titleColor : mutedColor,
+        renderText(small, label, enabled ? titleColor : mutedColor,
                    Point(area.x + area.w / 2, area.y + area.h / 2),
                    AlignCenter, AlignCenter);
     };
     drawButton(backArea, _("Back"), true);
+    drawButton(importArea, _("Import"), true);
+    drawButton(exportArea, _("Export"), selectedInRange && entries[selected].info.valid);
     drawButton(deleteArea, _("Delete"), selectedInRange);
     drawButton(detailsArea, _("Details"), selectedInRange);
     drawButton(playArea, _("Play"), selectedInRange && entries[selected].info.valid &&
@@ -196,6 +405,116 @@ void ReplayBrowserScreen::renderWindow(void)
 
     renderText(small, _("Double-click a replay to watch its recorded session."),
                mutedColor, Point(width() / 2, 612), AlignCenter);
+}
+
+bool ReplayBrowserScreen::importReplay(void)
+{
+    std::string source;
+    std::string error;
+    FileDialog::Result result = FileDialog::openReplay(source, &error);
+    if(result == FileDialog::Result::Unavailable)
+    {
+        ReplayPathDialog dialog(_("IMPORT REPLAY"), _("Import"), std::string(), *this);
+        if(dialog.exec() != 1)
+        {
+            renderWindow();
+            return true;
+        }
+        source = dialog.selectedPath();
+        result = FileDialog::Result::Selected;
+    }
+    if(result == FileDialog::Result::Cancelled)
+    {
+        renderWindow();
+        return true;
+    }
+    if(result == FileDialog::Result::Failed)
+    {
+        MessageBox(_("Replay Import"),
+            StringFormat(_("The replay could not be imported: %1")).arg(error),
+            *this, false).exec();
+        renderWindow();
+        return true;
+    }
+
+    std::string imported;
+    if(!ReplayFiles::importReplay(source, &imported, &error))
+    {
+        MessageBox(_("Replay Import"),
+            StringFormat(_("The replay could not be imported: %1")).arg(error),
+            *this, false).exec();
+        renderWindow();
+        return true;
+    }
+    reloadEntries(imported);
+    MessageBox(_("Replay Import"), _("Imported replay into the library."),
+               *this, false).exec();
+    renderWindow();
+    return true;
+}
+
+bool ReplayBrowserScreen::exportSelected(void)
+{
+    if(selected < 0 || static_cast<std::size_t>(selected) >= entries.size()) return true;
+    const Entry & entry = entries[selected];
+    if(!entry.info.valid) return showDetails();
+
+    const std::string filename = fs::u8path(entry.info.path).filename().u8string();
+    std::string destination;
+    std::string error;
+    FileDialog::Result result = FileDialog::saveReplay(filename, destination, &error);
+    bool fallback = false;
+    if(result == FileDialog::Result::Unavailable)
+    {
+        fallback = true;
+        ReplayPathDialog dialog(_("EXPORT REPLAY"), _("Export"),
+                                defaultExportPath(filename), *this);
+        if(dialog.exec() != 1)
+        {
+            renderWindow();
+            return true;
+        }
+        destination = dialog.selectedPath();
+        result = FileDialog::Result::Selected;
+    }
+    if(result == FileDialog::Result::Cancelled)
+    {
+        renderWindow();
+        return true;
+    }
+    if(result == FileDialog::Result::Failed)
+    {
+        MessageBox(_("Replay Export"),
+            StringFormat(_("The replay could not be exported: %1")).arg(error),
+            *this, false).exec();
+        renderWindow();
+        return true;
+    }
+
+    if(fs::u8path(destination).extension().empty()) destination += ".fwr";
+    const bool exists = Systems::isFile(destination);
+    if(fallback && exists && !MessageBox(_("Replay Export"),
+        _("A replay already exists at that path. Replace it?"), *this).exec())
+    {
+        renderWindow();
+        return true;
+    }
+
+    std::string exported;
+    if(!ReplayFiles::exportReplay(entry.info.path, destination, exists,
+                                  &exported, &error))
+    {
+        MessageBox(_("Replay Export"),
+            StringFormat(_("The replay could not be exported: %1")).arg(error),
+            *this, false).exec();
+        renderWindow();
+        return true;
+    }
+    MessageBox(_("Replay Export"),
+        StringFormat(_("Exported replay to:\n%1")).arg(exported),
+        *this, false).exec();
+    renderWindow();
+    return true;
 }
 
 bool ReplayBrowserScreen::selectNext(int direction)
@@ -245,9 +564,8 @@ bool ReplayBrowserScreen::playSelected(void)
         ReplayViewerScreen viewer(journal, &error);
         if(!viewer.ready())
         {
-            MessageBox(_("Replay Playback"),
-                StringFormat(_("The replay could not be opened: %1")).arg(error),
-                *this, false).exec();
+            MessageBox(_("Replay Playback"), viewer.failureMessage(error),
+                       *this, false).exec();
         }
         else viewer.exec();
     }
@@ -313,6 +631,8 @@ bool ReplayBrowserScreen::mouseClickEvent(const ButtonsEvent & event)
 {
     if(!event.isButtonLeft()) return false;
     if(event.isClick(backArea)) return actionBack();
+    if(event.isClick(importArea)) return importReplay();
+    if(event.isClick(exportArea)) return exportSelected();
     if(event.isClick(deleteArea)) return deleteSelected();
     if(event.isClick(detailsArea)) return showDetails();
     if(event.isClick(playArea)) return playSelected();
