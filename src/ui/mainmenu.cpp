@@ -7,7 +7,8 @@
 #include "mainmenu.h"
 #include "runewars.h"
 
-MainMenuScreen::MainMenuScreen(bool saveExists, bool saveValid, bool recoveryExists) :
+MainMenuScreen::MainMenuScreen(bool saveExists, bool saveValid, bool recoveryExists,
+                               bool replayExists) :
     JsonWindow("screen_mainmenu.json", nullptr), hasSave(saveExists), selected(-1)
 {
     leftPanel = JsonUnpack::rect(jobject, "panel:left", Rect(0, 0, 224, 768));
@@ -38,6 +39,8 @@ MainMenuScreen::MainMenuScreen(bool saveExists, bool saveValid, bool recoveryExi
     const bool loadAvailable = saveExists || recoveryExists;
     addEntry(_("Load Game"), loadAvailable ? "" : _("NO SAVES"),
              Menu::LoadRecovery, loadAvailable);
+    addEntry(_("Replays"), replayExists ? "" : _("NO REPLAYS"),
+             Menu::ReplayLibrary, true);
     addEntry(_("Encyclopedia"), "", Menu::Encyclopedia, true);
     addEntry(_("Settings"), "", Menu::SettingsMenu, true);
     addEntry(_("Multiplayer"), _("PLANNED"), Menu::GameExit, false);

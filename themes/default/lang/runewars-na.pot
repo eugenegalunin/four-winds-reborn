@@ -3255,3 +3255,92 @@ msgstr ""
 #: src/settingsmenu.cpp
 msgid "Saved games are unchanged."
 msgstr ""
+
+#: src/ui/mainmenu.cpp
+msgid "Replays"
+msgstr ""
+
+#: src/ui/mainmenu.cpp
+msgid "NO REPLAYS"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Game session"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay %1"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Invalid replay"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Actions"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Developer assisted"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "The file can be deleted but not opened"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "REPLAY LIBRARY"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "RECORDED GAME SESSIONS"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "No recorded replay was found."
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Details"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Double-click a replay to inspect its recorded session."
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "This replay is incompatible or damaged: %1"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid ""
+"%1\n"
+"Actions: %2\n"
+"Content: %3 v%4\n"
+"Rules: %5 v%6\n"
+"Status: %7"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Ready for playback"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Incomplete"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay Details"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Delete Replay"
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "Delete this recorded replay? This cannot be undone from the game menu."
+msgstr ""
+
+#: src/ui/replaybrowser.cpp
+msgid "The replay could not be deleted: %1"
+msgstr ""

@@ -53,7 +53,8 @@ namespace Menu
         MainMenu = 10,
         LoadRecovery = 11,
         SettingsMenu = 12,
-        Encyclopedia = 13
+        Encyclopedia = 13,
+        ReplayLibrary = 14
     };
 }
 

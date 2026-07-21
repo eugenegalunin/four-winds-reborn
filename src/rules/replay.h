@@ -11,6 +11,22 @@
 
 namespace Replay
 {
+    struct JournalInfo
+    {
+        int         schema = 0;
+        int         actionCount = 0;
+        int         gamePart = 0;
+        long long   startedAtEpoch = 0;
+        long long   savedAtEpoch = 0;
+        std::string difficulty;
+        std::string rulesetId;
+        int         rulesetVersion = 0;
+        std::string contentPackageId;
+        int         contentPackageVersion = 0;
+        bool        contiguousToCheckpoint = false;
+        bool        developerAssisted = false;
+    };
+
     struct Step
     {
         Avatar avatar;
@@ -50,6 +66,8 @@ namespace Replay
     bool recordSystemOperation(const std::string & operation,
                                const std::function<bool(void)> & apply);
     JsonObject actionJournal(const JsonObject & checkpointState);
+    bool inspectJournal(const JsonObject & journal, JournalInfo & info,
+                        std::string* error = nullptr);
     bool run(const JsonObject & initialState, const std::vector<Step> & steps,
              std::string* error = nullptr);
     bool run(const JsonObject & journal, std::string* error = nullptr);

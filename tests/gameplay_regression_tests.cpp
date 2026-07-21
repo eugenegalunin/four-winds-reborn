@@ -27,6 +27,7 @@
 #include "intropart.h"
 #include "recovery.h"
 #include "replay.h"
+#include "replayfiles.h"
 #include "runegameruleset.h"
 #include "savegames.h"
 #include "settings.h"
@@ -1080,6 +1081,22 @@ void testActionReplay()
     AI::setBehaviorProfileOverride(AI::BehaviorProfile::Aggressive);
     const JsonObject journal = Replay::actionJournal(randomFinalState);
     AI::clearBehaviorProfileOverride();
+    Replay::JournalInfo journalInfo;
+    std::string journalInspectionError;
+    const std::string stateBeforeJournalInspection =
+        GameData::authoritativeState().toString();
+    expect(Replay::inspectJournal(journal, journalInfo, &journalInspectionError) &&
+           journalInspectionError.empty() && journalInfo.schema == 3 &&
+           journalInfo.actionCount == 1 &&
+           journalInfo.startedAtEpoch > 0 && journalInfo.savedAtEpoch > 0 &&
+           journalInfo.gamePart == Menu::MahjongPart &&
+           journalInfo.rulesetId == ClassicRuneGameRulesetId &&
+           journalInfo.rulesetVersion == ClassicRuneGameRulesetVersion &&
+           journalInfo.contentPackageId == ClassicContentPackageId &&
+           journalInfo.contentPackageVersion == ClassicContentPackageVersion &&
+           journalInfo.contiguousToCheckpoint &&
+           GameData::authoritativeState().toString() == stateBeforeJournalInspection,
+           "replay inspection must expose library metadata without mutating game state");
     const JsonObject* journalRuleset = journal.getObject(RuneGameRulesetIdentityKey);
     const JsonObject* journalPackage = journal.getObject(ContentPackageIdentityKey);
     expect(journal.getInteger("schema") == 3 &&
@@ -3620,6 +3637,41 @@ int runRecoverySelfTest()
         replay && replay->getInteger("actionCount") == 1 &&
         replay->getBoolean("contiguousToCheckpoint") && Replay::run(*replay, &replayError) &&
         breadcrumbs && 0 < breadcrumbs->size();
+
+    const std::filesystem::path replayDirectory = directory / "replays";
+    std::string replayFile;
+    std::string replayStorageError;
+    const bool replayWritten = replay && ReplayFiles::writeAutomatic(
+        replayDirectory.string(), *replay, &replayFile, &replayStorageError);
+    const std::vector<ReplayFiles::Info> storedReplays =
+        ReplayFiles::inspect(replayDirectory.string());
+    valid = valid && replayWritten && replayStorageError.empty() &&
+        Systems::isFile(replayFile) && storedReplays.size() == 1 &&
+        storedReplays[0].valid && storedReplays[0].path == replayFile &&
+        storedReplays[0].journal.actionCount == 1 &&
+        storedReplays[0].journal.difficulty == "hard" &&
+        storedReplays[0].journal.rulesetId == ClassicRuneGameRulesetId &&
+        storedReplays[0].journal.contentPackageId == ClassicContentPackageId;
+
+    const std::filesystem::path brokenReplay = replayDirectory / "broken.fwr";
+    valid = valid && Systems::saveString2File("not-json", brokenReplay.string());
+    const std::vector<ReplayFiles::Info> inspectedReplays =
+        ReplayFiles::inspect(replayDirectory.string());
+    valid = valid && inspectedReplays.size() == 2 && inspectedReplays[0].valid &&
+        !inspectedReplays[1].valid && !inspectedReplays[1].error.empty();
+
+    const std::filesystem::path outsideReplay = directory / "outside.fwr";
+    valid = valid && Systems::saveString2File(replay ? replay->toString() : "{}",
+                                               outsideReplay.string());
+    replayStorageError.clear();
+    valid = valid && !ReplayFiles::deleteReplay(replayDirectory.string(),
+                                                outsideReplay.string(),
+                                                &replayStorageError) &&
+        !replayStorageError.empty() && Systems::isFile(outsideReplay.string());
+    replayStorageError.clear();
+    valid = valid && ReplayFiles::deleteReplay(replayDirectory.string(), replayFile,
+                                                &replayStorageError) &&
+        replayStorageError.empty() && !Systems::isFile(replayFile);
 
     JsonObject legacyState = jsonObjectWithoutKey(productionState,
                                                    RuneGameRulesetIdentityKey);

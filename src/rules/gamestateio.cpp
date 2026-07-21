@@ -32,6 +32,7 @@
 #include "gamedata.h"
 #include "gameplayrng.h"
 #include "recovery.h"
+#include "replayfiles.h"
 #include "savegames.h"
 #include "replay.h"
 #include "runegameruleset.h"
@@ -68,6 +69,26 @@ namespace GameData
 #ifdef BUILD_DEBUG
     extern Avatar                       developerAutoplayAvatar;
 #endif
+
+    namespace
+    {
+        void archiveCurrentReplay(void)
+        {
+            if(Replay::actionJournalSize() == 0) return;
+
+            const JsonObject journal = Replay::actionJournal(GameData::authoritativeState());
+            if(!journal.getBoolean("contiguousToCheckpoint")) return;
+
+            std::string error;
+            std::string path;
+            if(!ReplayFiles::writeAutomatic(journal, &path, &error)) {
+                ERROR("automatic replay archive failed: " << error);
+            }
+            else {
+                VERBOSE("automatic replay archived: " << path);
+            }
+        }
+    }
     extern JsonObject                   stateGUI;
     extern std::vector<LandInfo>        landsInfo;
 
@@ -321,7 +342,12 @@ namespace GameData
         std::string error;
         const bool saved = SaveGames::writeAutosave(Settings::fileSaveGame(),
                                                     GameData::toJsonObject(gui), &error);
-        if(!saved) ERROR("autosave failed: " << error);
+        if(!saved) {
+            ERROR("autosave failed: " << error);
+        }
+        else {
+            archiveCurrentReplay();
+        }
         return saved;
     }
 
@@ -334,6 +360,7 @@ namespace GameData
 
         if(4 < savedFile.size() && savedFile.substr(savedFile.size() - 4) == ".sav")
             Display::renderScreenshot(savedFile.substr(0, savedFile.size() - 4) + ".png");
+        archiveCurrentReplay();
         return true;
     }
 

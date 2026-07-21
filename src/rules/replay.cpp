@@ -1,6 +1,7 @@
 #include "replay.h"
 
 #include <algorithm>
+#include <ctime>
 #include <exception>
 
 #include "aiprofile.h"
@@ -16,6 +17,7 @@ constexpr std::size_t MaximumJournalSteps = 64;
 JsonObject journalInitialState;
 std::vector<Replay::Step> journalSteps;
 std::string journalTailHash;
+long long journalStartedAtEpoch = 0;
 bool recordingEnabled = true;
 std::size_t journalStepLimit = MaximumJournalSteps;
 
@@ -24,6 +26,20 @@ bool isAdventureAction(int type)
     return type == Action::ClientUnitMoved || type == Action::ClientLandClaim ||
            type == Action::ClientAdventureUndo || type == Action::ClientBattleReady ||
            type == Action::ClientBattleChoice;
+}
+
+long long parseEpoch(const std::string & value)
+{
+    if(value.empty()) return 0;
+    try { return std::stoll(value); }
+    catch(...) { return 0; }
+}
+
+void beginJournal(const JsonObject & state)
+{
+    journalInitialState = state;
+    journalSteps.clear();
+    journalStartedAtEpoch = static_cast<long long>(std::time(nullptr));
 }
 
 JsonObject stateWithoutArtifactIdentity(const JsonObject & state)
@@ -183,6 +199,7 @@ void Replay::clearActionJournal(void)
     journalInitialState.clear();
     journalSteps.clear();
     journalTailHash.clear();
+    journalStartedAtEpoch = 0;
 }
 
 std::size_t Replay::actionJournalSize(void)
@@ -199,8 +216,7 @@ void Replay::recordAcceptedAction(const JsonObject & beforeState, const Avatar &
     if(!journalInitialState.isValid() || journalTailHash != beforeHash ||
        (journalStepLimit && journalStepLimit <= journalSteps.size()))
     {
-        journalInitialState = beforeState;
-        journalSteps.clear();
+        beginJournal(beforeState);
     }
 
     journalTailHash = replayStateHash(afterState);
@@ -217,8 +233,7 @@ void Replay::recordSystemTransition(const JsonObject & beforeState,
     if(!journalInitialState.isValid() || journalTailHash != beforeHash ||
        (journalStepLimit && journalStepLimit <= journalSteps.size()))
     {
-        journalInitialState = beforeState;
-        journalSteps.clear();
+        beginJournal(beforeState);
     }
 
     journalTailHash = replayStateHash(afterState);
@@ -254,8 +269,7 @@ bool Replay::recordSystemOperation(const std::string & operation,
     if(!journalInitialState.isValid() || journalTailHash != beforeHash ||
        (journalStepLimit && journalStepLimit <= journalSteps.size()))
     {
-        journalInitialState = beforeState;
-        journalSteps.clear();
+        beginJournal(beforeState);
     }
     journalTailHash = replayStateHash(afterState);
     journalSteps.emplace_back(operation, journalTailHash, accepted, exceptionText);
@@ -278,6 +292,10 @@ JsonObject Replay::actionJournal(const JsonObject & checkpointState)
         AI::behaviorProfileName(AI::behaviorProfileOverride()) : "native");
     result.addInteger("actionCount", static_cast<int>(journalSteps.size()));
     result.addBoolean("developerAssisted", GameData::developerAssisted());
+    result.addString("startedAtEpoch", std::to_string(journalStartedAtEpoch));
+    result.addString("savedAtEpoch", std::to_string(static_cast<long long>(std::time(nullptr))));
+    result.addInteger("gamePart", checkpointState.getInteger("gamepart"));
+    result.addString("difficulty", checkpointState.getString("ai:difficulty"));
 
     const std::string checkpointHash = replayStateHash(checkpointState);
     result.addString("checkpointStateHash", checkpointHash);
@@ -290,6 +308,88 @@ JsonObject Replay::actionJournal(const JsonObject & checkpointState)
     for(const Step & step : journalSteps) steps.addObject(step.toJsonObject());
     result.addArray("steps", steps);
     return result;
+}
+
+bool Replay::inspectJournal(const JsonObject & journal, JournalInfo & info,
+                            std::string* error)
+{
+    info = JournalInfo();
+    const JsonObject* initialState = journal.getObject("initialState");
+    const JsonArray* encodedSteps = journal.getArray("steps");
+    if(!initialState || !encodedSteps)
+    {
+        if(error) *error = "journal is missing initialState or steps";
+        return false;
+    }
+
+    const int schema = journal.getInteger("schema");
+    if(schema < 1 || 3 < schema)
+    {
+        if(error) *error = "journal uses an unsupported schema";
+        return false;
+    }
+
+    RuneGameRulesetIdentity journalRuleset;
+    RuneGameRulesetIdentity stateRuleset;
+    if(!resolveRuneGameRulesetIdentity(journal, journalRuleset, true, error) ||
+       !resolveRuneGameRulesetIdentity(*initialState, stateRuleset, true, error))
+        return false;
+    if(!sameRuneGameRuleset(journalRuleset, stateRuleset))
+    {
+        if(error) *error = "journal and initial state use different Rune Game rulesets";
+        return false;
+    }
+
+    ContentPackageIdentity journalPackage;
+    ContentPackageIdentity statePackage;
+    if(!resolveContentPackageIdentity(journal, journalPackage, true, error) ||
+       !resolveContentPackageIdentity(*initialState, statePackage, true, error))
+        return false;
+    if(!sameContentPackage(journalPackage, statePackage))
+    {
+        if(error) *error = "journal and initial state use different content packages";
+        return false;
+    }
+
+    if(journal.getInteger("actionCount", -1) != static_cast<int>(encodedSteps->size()))
+    {
+        if(error) *error = "journal action count does not match its step list";
+        return false;
+    }
+
+    for(std::size_t index = 0; index < encodedSteps->size(); ++index)
+    {
+        const JsonObject* encoded = encodedSteps->getObject(index);
+        const JsonObject* action = encoded ? encoded->getObject("action") : nullptr;
+        const std::string operation = encoded ?
+            encoded->getString("systemOperation") : std::string();
+        const Avatar actor(encoded ? encoded->getString("avatar") : std::string());
+        const std::string expected = encoded ?
+            encoded->getString("expectedStateHash") : std::string();
+        if(!encoded || expected.empty() ||
+           (operation.empty() && (!action || !actor.isValid())) ||
+           (!operation.empty() && action))
+        {
+            if(error) *error = "invalid journal step " + std::to_string(index);
+            return false;
+        }
+    }
+
+    info.schema = schema;
+    info.actionCount = static_cast<int>(encodedSteps->size());
+    info.gamePart = journal.getInteger("gamePart", initialState->getInteger("gamepart"));
+    info.startedAtEpoch = parseEpoch(journal.getString("startedAtEpoch"));
+    info.savedAtEpoch = parseEpoch(journal.getString("savedAtEpoch"));
+    info.difficulty = journal.getString("difficulty",
+                                        initialState->getString("ai:difficulty"));
+    info.rulesetId = journalRuleset.id;
+    info.rulesetVersion = journalRuleset.version;
+    info.contentPackageId = journalPackage.id;
+    info.contentPackageVersion = journalPackage.version;
+    info.contiguousToCheckpoint = journal.getBoolean("contiguousToCheckpoint");
+    info.developerAssisted = journal.getBoolean("developerAssisted");
+    if(error) error->clear();
+    return true;
 }
 
 bool Replay::run(const JsonObject & initialState, const std::vector<Step> & steps,
@@ -396,35 +496,11 @@ bool Replay::run(const JsonObject & initialState, const std::vector<Step> & step
 
 bool Replay::run(const JsonObject & journal, std::string* error)
 {
+    JournalInfo info;
+    if(!inspectJournal(journal, info, error)) return false;
+
     const JsonObject* initialState = journal.getObject("initialState");
     const JsonArray* encodedSteps = journal.getArray("steps");
-    if(!initialState || !encodedSteps)
-    {
-        if(error) *error = "journal is missing initialState or steps";
-        return false;
-    }
-
-    RuneGameRulesetIdentity journalRuleset;
-    RuneGameRulesetIdentity stateRuleset;
-    if(!resolveRuneGameRulesetIdentity(journal, journalRuleset, true, error) ||
-       !resolveRuneGameRulesetIdentity(*initialState, stateRuleset, true, error))
-        return false;
-    if(!sameRuneGameRuleset(journalRuleset, stateRuleset))
-    {
-        if(error) *error = "journal and initial state use different Rune Game rulesets";
-        return false;
-    }
-
-    ContentPackageIdentity journalPackage;
-    ContentPackageIdentity statePackage;
-    if(!resolveContentPackageIdentity(journal, journalPackage, true, error) ||
-       !resolveContentPackageIdentity(*initialState, statePackage, true, error))
-        return false;
-    if(!sameContentPackage(journalPackage, statePackage))
-    {
-        if(error) *error = "journal and initial state use different content packages";
-        return false;
-    }
 
     const std::string selectedProfile = journal.getString("aiBehaviorProfile", "native");
     AI::BehaviorProfile profile = AI::BehaviorProfile::Balanced;

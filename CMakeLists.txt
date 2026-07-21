@@ -83,6 +83,7 @@ set(FOUR_WINDS_SOURCE
 
     src/platform/crashreport.cpp
     src/platform/recovery.cpp
+    src/platform/replayfiles.cpp
     src/platform/savegames.cpp
     src/platform/settings.cpp
 
@@ -132,6 +133,7 @@ set(FOUR_WINDS_SOURCE
     src/ui/mahjongpart.cpp
     src/ui/mahjongsummarypart.cpp
     src/ui/mainmenu.cpp
+    src/ui/replaybrowser.cpp
     src/ui/runegameinput.cpp
     src/ui/runegamepresentation.cpp
     src/ui/runegametargetdialogs.cpp

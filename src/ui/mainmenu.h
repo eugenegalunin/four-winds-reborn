@@ -55,7 +55,7 @@ protected:
     bool                mouseMotionEvent(const Point &, u32) override;
 
 public:
-    MainMenuScreen(bool, bool, bool);
+    MainMenuScreen(bool, bool, bool, bool);
 
     void                renderWindow(void) override;
 };

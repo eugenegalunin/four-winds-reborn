@@ -13,6 +13,19 @@ Reborn work only; they do not claim authorship of inherited code or assets.
 
 ## [Unreleased]
 
+### Added - replay library
+
+- Added a player-facing replay library to the main menu with localized replay
+  metadata, compatibility status, scrolling, details and confirmed deletion.
+- Completed sessions are archived as standalone `.fwr` replay journals beside
+  saves. Replay discovery validates the journal, ruleset and content-package
+  identity without mutating the current game state, and safely reports broken
+  or incompatible files.
+- Replay journals now retain their start/save time, phase, difficulty and
+  developer-assisted status. Normal player sessions keep their full contiguous
+  action history, while bounded test journals remain available to regression
+  and headless tools.
+
 ### Added - content package identity
 
 - Added a versioned content-package manifest with a stable package identifier,

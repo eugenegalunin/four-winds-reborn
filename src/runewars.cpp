@@ -32,7 +32,10 @@
 #include "settingsmenu.h"
 #include "encyclopedia.h"
 #include "loadrecovery.h"
+#include "replaybrowser.h"
 #include "recovery.h"
+#include "replay.h"
+#include "replayfiles.h"
 #include "savegames.h"
 #include "selectperson.h"
 #include "showplayers.h"
@@ -162,6 +165,7 @@ const char* menuName(int menu)
         case Menu::LoadRecovery: return "LoadRecovery";
         case Menu::SettingsMenu: return "Settings";
         case Menu::Encyclopedia: return "Encyclopedia";
+        case Menu::ReplayLibrary: return "ReplayLibrary";
         default: return "Unknown";
     }
 }
@@ -324,6 +328,11 @@ bool RuneWarsClient::exec(void)
     }
     CrashReport::breadcrumb(std::string("Startup stage=theme_init status=ok theme=").append(theme));
 
+    // Player sessions retain their complete deterministic journal. Headless
+    // simulations and tests keep the bounded default unless they explicitly
+    // opt into full replay capture.
+    Replay::setActionJournalLimit(0);
+
     CrashReport::breadcrumb("Startup stage=translation_init status=begin");
     if(! translationInit())
 	{
@@ -405,7 +414,8 @@ bool RuneWarsClient::exec(void)
 		const bool saveExists = Systems::isFile(savefile);
 		const bool saveValid = saveExists && Recovery::validateSaveFile(savefile);
 		menu = MainMenuScreen(saveExists, saveValid,
-		                            recoveryExists || manualSaveExists).exec();
+		                            recoveryExists || manualSaveExists,
+		                            ReplayFiles::hasReplays()).exec();
 	    }
 	    break;
 
@@ -441,6 +451,10 @@ bool RuneWarsClient::exec(void)
 
 	    case Menu::Encyclopedia:
 		menu = EncyclopediaScreen().exec();
+	    break;
+
+	    case Menu::ReplayLibrary:
+		menu = ReplayBrowserScreen().exec();
 	    break;
 
 	    case Menu::SelectPerson:

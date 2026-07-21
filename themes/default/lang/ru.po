@@ -3269,3 +3269,97 @@ msgstr "ДЛЯ НОВЫХ ИГР"
 #: src/settingsmenu.cpp
 msgid "Saved games are unchanged."
 msgstr "Сохранения не изменяются."
+
+#: src/ui/mainmenu.cpp
+msgid "Replays"
+msgstr "Реплеи"
+
+#: src/ui/mainmenu.cpp
+msgid "NO REPLAYS"
+msgstr "НЕТ РЕПЛЕЕВ"
+
+#: src/ui/replaybrowser.cpp
+msgid "Game session"
+msgstr "Игровая сессия"
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay %1"
+msgstr "Реплей %1"
+
+#: src/ui/replaybrowser.cpp
+msgid "Invalid replay"
+msgstr "Повреждённый реплей"
+
+#: src/ui/replaybrowser.cpp
+msgid "Actions"
+msgstr "Действия"
+
+#: src/ui/replaybrowser.cpp
+msgid "Developer assisted"
+msgstr "С инструментами разработчика"
+
+#: src/ui/replaybrowser.cpp
+msgid "The file can be deleted but not opened"
+msgstr "Файл можно удалить, но нельзя открыть"
+
+#: src/ui/replaybrowser.cpp
+msgid "REPLAY LIBRARY"
+msgstr "БИБЛИОТЕКА РЕПЛЕЕВ"
+
+#: src/ui/replaybrowser.cpp
+msgid "RECORDED GAME SESSIONS"
+msgstr "ЗАПИСАННЫЕ ИГРОВЫЕ СЕССИИ"
+
+#: src/ui/replaybrowser.cpp
+msgid "No recorded replay was found."
+msgstr "Записанных реплеев пока нет."
+
+#: src/ui/replaybrowser.cpp
+msgid "Details"
+msgstr "Сведения"
+
+#: src/ui/replaybrowser.cpp
+msgid "Double-click a replay to inspect its recorded session."
+msgstr "Дважды щёлкните по реплею, чтобы посмотреть сведения о сессии."
+
+#: src/ui/replaybrowser.cpp
+msgid "This replay is incompatible or damaged: %1"
+msgstr "Этот реплей несовместим или повреждён: %1"
+
+#: src/ui/replaybrowser.cpp
+msgid ""
+"%1\n"
+"Actions: %2\n"
+"Content: %3 v%4\n"
+"Rules: %5 v%6\n"
+"Status: %7"
+msgstr ""
+"%1\n"
+"Действия: %2\n"
+"Контент: %3 v%4\n"
+"Правила: %5 v%6\n"
+"Статус: %7"
+
+#: src/ui/replaybrowser.cpp
+msgid "Ready for playback"
+msgstr "Готов к воспроизведению"
+
+#: src/ui/replaybrowser.cpp
+msgid "Incomplete"
+msgstr "Запись неполная"
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay Details"
+msgstr "Сведения о реплее"
+
+#: src/ui/replaybrowser.cpp
+msgid "Delete Replay"
+msgstr "Удалить реплей"
+
+#: src/ui/replaybrowser.cpp
+msgid "Delete this recorded replay? This cannot be undone from the game menu."
+msgstr "Удалить этот реплей? Отменить удаление из меню игры будет нельзя."
+
+#: src/ui/replaybrowser.cpp
+msgid "The replay could not be deleted: %1"
+msgstr "Не удалось удалить реплей: %1"
