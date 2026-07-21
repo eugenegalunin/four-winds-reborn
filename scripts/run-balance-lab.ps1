@@ -8,6 +8,8 @@ param(
     [string]$BehaviorProfile = "Native",
     [ValidateSet("Orachi", "Lakkho", "Dayla", "Ziag", "Niana", "Kierac", "Logun", "Nucrus", "Javed")]
     [string[]]$Roster = @("Nucrus", "Lakkho", "Ziag", "Dayla"),
+    [ValidateRange(1, 8)]
+    [int]$Jobs = 1,
     [switch]$KeepEngineLog,
     [switch]$KeepMatchRecords
 )
@@ -53,7 +55,7 @@ function Quote-NativeArgument([string]$Value) {
     return '"' + $Value.Replace('"', '\"') + '"'
 }
 
-function Invoke-BalanceProcess([string]$Arguments) {
+function Start-BalanceProcess([string]$Arguments) {
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
     $startInfo.FileName = $runner
     $startInfo.Arguments = $Arguments
@@ -68,13 +70,42 @@ function Invoke-BalanceProcess([string]$Arguments) {
     if (-not $process.Start()) {
         throw "Balance laboratory process did not start."
     }
-    $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
-    $standardErrorTask = $process.StandardError.ReadToEndAsync()
-    $process.WaitForExit()
     return [PSCustomObject]@{
-        ExitCode = $process.ExitCode
-        StandardOutput = $standardOutputTask.Result
-        StandardError = $standardErrorTask.Result
+        Process = $process
+        StandardOutputTask = $process.StandardOutput.ReadToEndAsync()
+        StandardErrorTask = $process.StandardError.ReadToEndAsync()
+    }
+}
+
+function Complete-BalanceProcess($RunningProcess) {
+    $process = $RunningProcess.Process
+    try {
+        $process.WaitForExit()
+        return [PSCustomObject]@{
+            ExitCode = $process.ExitCode
+            StandardOutput = $RunningProcess.StandardOutputTask.Result
+            StandardError = $RunningProcess.StandardErrorTask.Result
+        }
+    } finally {
+        $process.Dispose()
+    }
+}
+
+function Invoke-BalanceProcess([string]$Arguments) {
+    return Complete-BalanceProcess (Start-BalanceProcess $Arguments)
+}
+
+function Stop-BalanceProcess($RunningProcess) {
+    $process = $RunningProcess.Process
+    try {
+        if (-not $process.HasExited) {
+            $process.Kill()
+        }
+        $process.WaitForExit()
+    } catch {
+        Write-Warning "Could not stop an unfinished balance process: $($_.Exception.Message)"
+    } finally {
+        $process.Dispose()
     }
 }
 
@@ -102,23 +133,44 @@ try {
         $diagnosticsWritten = $true
         throw "Balance schedule is invalid. Diagnostics: $engineLog"
     }
-    Write-Host "Balance roster: $rosterArgument; scheduled matches: $matchCount"
-    for ($index = 0; $index -lt $matchCount; ++$index) {
-        $recordPath = Join-Path $recordsDirectory ("match-{0:D6}.json" -f $index)
-        $arguments = "--balance-match {0} {1} {2} {3} {4} {5}" -f `
-            (Quote-NativeArgument $recordPath), $SeedCount, $index, `
-            $difficultyArgument, $profileArgument, (Quote-NativeArgument $rosterArgument)
-        $result = Invoke-BalanceProcess $arguments
+    Write-Host "Balance roster: $rosterArgument; scheduled matches: $matchCount; jobs: $Jobs"
+    $activeMatches = New-Object System.Collections.ArrayList
+    $nextMatchIndex = 0
+    try {
+        while ($nextMatchIndex -lt $matchCount -or $activeMatches.Count -gt 0) {
+            while ($nextMatchIndex -lt $matchCount -and $activeMatches.Count -lt $Jobs) {
+                $recordPath = Join-Path $recordsDirectory `
+                    ("match-{0:D6}.json" -f $nextMatchIndex)
+                $arguments = "--balance-match {0} {1} {2} {3} {4} {5}" -f `
+                    (Quote-NativeArgument $recordPath), $SeedCount, $nextMatchIndex, `
+                    $difficultyArgument, $profileArgument, `
+                    (Quote-NativeArgument $rosterArgument)
+                [void]$activeMatches.Add([PSCustomObject]@{
+                    Index = $nextMatchIndex
+                    RunningProcess = Start-BalanceProcess $arguments
+                })
+                ++$nextMatchIndex
+            }
 
-        if ($KeepEngineLog -or $result.ExitCode -ne 0) {
-            Save-EngineDiagnostics ("isolated match {0}/{1}" -f ($index + 1), $matchCount) `
-                $result $diagnosticsWritten
-            $diagnosticsWritten = $true
+            $match = $activeMatches[0]
+            $result = Complete-BalanceProcess $match.RunningProcess
+            $activeMatches.RemoveAt(0)
+            if ($KeepEngineLog -or $result.ExitCode -ne 0) {
+                Save-EngineDiagnostics `
+                    ("isolated match {0}/{1}" -f ($match.Index + 1), $matchCount) `
+                    $result $diagnosticsWritten
+                $diagnosticsWritten = $true
+            }
+            if ($result.ExitCode -ne 0) {
+                throw "Isolated match $($match.Index + 1)/$matchCount failed with process exit code $($result.ExitCode). Diagnostics: $engineLog"
+            }
+            Write-Host ("Balance match {0}/{1}: isolated process complete" -f `
+                ($match.Index + 1), $matchCount)
         }
-        if ($result.ExitCode -ne 0) {
-            throw "Isolated match $($index + 1)/$matchCount failed with process exit code $($result.ExitCode). Diagnostics: $engineLog"
+    } finally {
+        foreach ($match in @($activeMatches)) {
+            Stop-BalanceProcess $match.RunningProcess
         }
-        Write-Host ("Balance match {0}/{1}: isolated process complete" -f ($index + 1), $matchCount)
     }
 
     $mergeArguments = "--balance-merge {0} {1} {2} {3} {4} {5}" -f `

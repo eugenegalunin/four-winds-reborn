@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "name": "15.6e refactor Normal/Balanced seed 363134977",
+  "seed_count": 1,
+  "difficulty": "normal",
+  "behavior_profile": "balanced",
+  "csv_contracts": [
+    { "path": "balance-cohorts.csv", "sha256": "6f7987a632be75b46f74ee234fe409f6a5823f4dcccd111aacd263a5b56e5d2c" },
+    { "path": "scenarios/aqua-kierac/balance-players.csv", "sha256": "c1570f5223ab5d143f51b60c2c634104de65090a5e6717543ab8fa494e8a960f" },
+    { "path": "scenarios/aqua-logun/balance-players.csv", "sha256": "5cb4360af90cef91d45b1118a1ddb742889d9df495547183f970afa6d244fe5b" },
+    { "path": "scenarios/aqua-niana/balance-players.csv", "sha256": "bb70a635e3869ef375216d7841e2717ebdfb6fc33eb23d972374111ea08101cb" },
+    { "path": "scenarios/baseline/balance-players.csv", "sha256": "c4733994cfd55ba2f03439f792f24ede4eefea16bc84d87f7a426eae9e19efeb" },
+    { "path": "scenarios/purple-kierac/balance-players.csv", "sha256": "1404c4c7e2570ed5e9506b9e7ab0a1c82e6a8dccc9b1bf7a8f73d5a3b6124a48" },
+    { "path": "scenarios/purple-logun/balance-players.csv", "sha256": "8ebe7da6998a31d9cd6331b0a3f841297d079a57b9c14b7a81e3762406281fb7" },
+    { "path": "scenarios/purple-orachi/balance-players.csv", "sha256": "a83c1feda5a4b9dfda7c885707337bc4d051beb3e04b41b1971487527d4a619b" },
+    { "path": "scenarios/red-javed/balance-players.csv", "sha256": "94031af9b9cb3d3d13312a0900a66beb945b7c7f45b4a76308c28d6745490c5d" },
+    { "path": "scenarios/red-logun/balance-players.csv", "sha256": "a80c71971bb96a960bf066feaf7594c53ea9cb7b35b51b884e5ef1723b0a2c87" },
+    { "path": "scenarios/red-orachi/balance-players.csv", "sha256": "119ea0e5ada36533c1744e801f47202a4cb32ef438f21075037394d6a3e31f0d" },
+    { "path": "scenarios/yellow-javed/balance-players.csv", "sha256": "56cab4ac5d8268a46c2cc2d0ddf92a96bd2bebb9003531871c2f6b34ff080ef4" },
+    { "path": "scenarios/yellow-logun/balance-players.csv", "sha256": "4d0f06e080e1e6b608cf58caff7a4e76de3d97f5b650e00aece8bb2d5ff1e35b" },
+    { "path": "scenarios/yellow-niana/balance-players.csv", "sha256": "f158727f8ba8c453a3f990c9f9b7b8e2cb53bed7d52fec2a2909d85b37ea17b3" }
+  ]
+}

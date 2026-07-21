@@ -184,6 +184,8 @@ forced doctrine, difficulty, seeds and seat rotations remain fixed:
 .\scripts\run-balance-cohorts.ps1
 .\scripts\run-balance-cohorts.ps1 -SeedCount 8 -OutputDirectory diagnostics\balance-cohorts-full
 .\scripts\run-balance-cohorts.ps1 -Clans Aqua -SeedCount 2
+.\scripts\run-balance-cohorts.ps1 -Jobs 2 `
+  -BaselineManifest tests\fixtures\balance-cohorts-15.6e-refactor.sha256.json
 ```
 
 The cohort root exports `balance-cohorts.json`, `balance-cohorts.csv` and
@@ -193,6 +195,54 @@ deliberately unavailable here because it would change doctrine together with
 the avatar and defeat the control. Machine-readable reports use the canonical
 IDs `red`, `yellow`, `aqua` and `purple`; the `clan` display column uses the
 corresponding capitalized names.
+
+Long cohort runs support bounded parallel match processes, safe continuation and
+an automatic parity verdict. `-Jobs 2` runs two isolated fixtures at a time;
+record filenames and merge order remain fixed, so this changes throughput rather
+than simulation order. A fresh run writes `cohort-run-contract.json`, keyed by
+the SHA-256 of `gameplay_regression_tests.exe`, the simulation parameters and
+the exact scenario rosters. If a run is interrupted, repeat the same command
+with `-Resume`. Completed valid scenarios are reused; missing or incomplete
+ones are rerun. Resume refuses a different binary, parameter set or roster.
+
+The tracked
+`tests/fixtures/balance-cohorts-15.6e-refactor.sha256.json` manifest records the
+SHA-256 contract for every scenario `balance-players.csv` plus the aggregate
+`balance-cohorts.csv`. It makes the refactor gate reproducible on a clean clone
+without committing the large diagnostic reports. The standalone comparison
+uses that manifest by default and fails unless every candidate CSV is
+byte-identical:
+
+```powershell
+.\scripts\compare-balance-cohorts.ps1 `
+  -CandidateDirectory diagnostics\balance-cohorts
+```
+
+`-BaselineDirectory` remains available as an explicit override when auditing a
+new candidate against a complete local report tree.
+
+For refactoring work, use the explicit gate wrapper:
+
+```powershell
+# Presentation-only or desktop input extraction: build/tests + 4 matches.
+.\scripts\run-refactor-gate.ps1 -Mode Quick -Jobs 2
+
+# Rules, AI, authoritative state, save/RNG/replay work and milestone closure:
+# build/tests + all 13 scenarios / 52 matches + baseline comparison.
+.\scripts\run-refactor-gate.ps1 -Mode Full -Jobs 2
+
+# Continue only the unfinished scenarios of an interrupted Full gate.
+.\scripts\run-refactor-gate.ps1 -Mode Full -Jobs 2 -Resume -SkipBuild
+```
+
+`Quick` compares the fixed Normal/Balanced baseline roster against the baseline
+scenario prefix in the tracked manifest. It is sufficient only when the changed
+code is outside authoritative simulation paths. `Full` remains required for
+behavior-affecting changes and before closing a refactoring milestone or a
+release. `-SkipBuild` is intended only when the current test executable has
+already been built and verified in the same working tree. Pass
+`-BaselineDirectory` to either mode only when intentionally replacing the
+tracked contract with a complete local report tree.
 
 Verify one retained replay, one scenario, or a complete matrix after the run:
 
