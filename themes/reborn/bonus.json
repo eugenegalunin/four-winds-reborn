@@ -1,0 +1,47 @@
+[
+    {
+	"name": "Three Little Dragons",
+	"bonus": 1,
+	"condition": {
+	    "stone": "dragon",
+	    "pair": true,
+	    "count": 2
+	}
+    },
+    {
+	"name": "ThreeBigDragons",
+	"bonus": 5,
+	"condition": {
+	    "stone": "dragon",
+	    "pair": false,
+	    "count": 3
+	}
+    },
+    {
+	"name": "Little Four Winds",
+	"bonus": 1,
+	"condition": {
+	    "stone": "wind",
+	    "pair": true,
+	    "count": 3
+	}
+    },
+    {
+	"name": "Big Four Winds",
+	"bonus": 5,
+	"condition": {
+	    "stone": "wind",
+	    "pair": false,
+	    "count": 4
+	}
+    },
+    {
+	"name": "Lucky Sets",
+	"bonus": 1,
+	"condition": {
+	    "rule": "pung",
+	    "pair": false,
+	    "count": 4
+	}
+    }
+]

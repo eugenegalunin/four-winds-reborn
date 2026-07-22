@@ -1,0 +1,140 @@
+{
+    "cursor":		"hardware",
+    "background":	{ "id": "screen4", "type": "file", "file": "map.png", "crop": [0, 0, 1024, 768], "colorkey": "#ffd2d2" },
+    "music":		[ "map" ],
+    "default:font":	"dejavus26",
+    "default:color":	"#efe4ae",
+
+    "color:stat_up":	"green",
+    "color:stat_down":	"red",
+    "color:cue_move": "#42c7e8",
+    "color:cue_attack": "#ff7043",
+    "color:cue_claim": "#ffd54f",
+
+    "delay:combatresult":  700,
+
+    "buttons":      [
+			{ "id": "but_close", "sprites": [ "but_close1", "but_close2" ], "position": [ 926, 710 ] },
+			{ "id": "but_cancel", "sprites": [ "but_cancel1", "but_cancel2" ], "position": [ 926, 710 ] },
+			{ "id": "but_done", "sprites": [ "but_done1", "but_done2" ], "position": [ 926, 710 ] },
+			{ "id": "but_order", "sprites": [ "but_order1", "but_order2" ], "position": [ 824, 588 ], "tooltip": "Order selected creatures" },
+			{ "id": "but_dismiss", "sprites": [ "but_dismiss1", "but_dismiss2" ], "position": [ 926, 588 ] },
+			{ "id": "but_info", "sprites": [ "but_info1", "but_info2" ], "position": [ 824, 648 ] },
+			{ "id": "but_undo", "sprites": [ "but_undo1", "but_undo2" ], "position": [ 926, 648 ] },
+			{ "id": "but_menu", "sprites": [ "but_menu1", "but_menu2" ], "position": [ 824, 710 ] }
+		],
+
+    "animation:town":	{
+		"delay": 300,
+		"loop": true,
+		"sprites": [
+			    { "id": "town_power1", "type": "file", "file": "map.png", "crop": [430, 1054, 41, 41], "colorkey": "#ffd2d2" },
+			    { "id": "town_power2", "type": "file", "file": "map.png", "crop": [471, 1054, 41, 41], "colorkey": "#ffd2d2" },
+			    { "id": "town_power3", "type": "file", "file": "map.png", "crop": [512, 1054, 41, 41], "colorkey": "#ffd2d2" },
+			    { "id": "town_power4", "type": "file", "file": "map.png", "crop": [553, 1054, 41, 41], "colorkey": "#ffd2d2" }
+		    ]
+		},
+
+    "animation:place":	{
+		"delay": 300,
+		"loop": true,
+		"sprites": [
+			    { "id": "place_creature1", "type": "file", "file": "map.png", "crop": [704, 1050, 80, 80], "colorkey": "#ffd2d2" },
+			    { "id": "place_creature2", "type": "file", "file": "map.png", "crop": [784, 1050, 80, 80], "colorkey": "#ffd2d2" },
+			    { "id": "place_creature3", "type": "file", "file": "map.png", "crop": [864, 1050, 80, 80], "colorkey": "#ffd2d2" },
+			    { "id": "place_creature4", "type": "file", "file": "map.png", "crop": [944, 1050, 80, 80], "colorkey": "#ffd2d2" }
+		    ]
+		},
+
+    "animation:maps1":   {
+		"delay": 300,
+		"loop": true,
+		"offset": [428, 328],
+		"sprites": [
+			{ "id": "lava11", "type": "file", "file": "map.png", "crop": [318, 1018, 32, 38] },
+			{ "id": "lava12", "type": "file", "file": "map.png", "crop": [350, 1018, 32, 38] },
+			{ "id": "lava13", "type": "file", "file": "map.png", "crop": [382, 1018, 32, 38] }
+		    ]
+		},
+
+    "animation:maps2":   {
+		"delay": 300,
+		"loop": true,
+		"offset": [402, 244],
+		"sprites": [
+			{ "id": "lava21", "type": "file", "file": "map.png", "crop": [318, 1056, 35, 35] },
+			{ "id": "lava22", "type": "file", "file": "map.png", "crop": [353, 1056, 35, 35] },
+			{ "id": "lava23", "type": "file", "file": "map.png", "crop": [388, 1056, 35, 35] }
+		    ]
+		},
+
+    "animation:maps3":   {
+		"delay": 300,
+		"loop": true,
+		"offset": [406, 206],
+		"sprites": [
+			{ "id": "lava31", "type": "file", "file": "map.png", "crop": [414, 1018, 23, 20] },
+			{ "id": "lava32", "type": "file", "file": "map.png", "crop": [437, 1018, 23, 20] },
+			{ "id": "lava33", "type": "file", "file": "map.png", "crop": [460, 1018, 23, 20] }
+		    ]
+		},
+
+    "animation:maps4":   {
+		"delay": 300,
+		"loop": true,
+		"offset": [372, 338],
+		"sprites": [
+			{ "id": "lava41", "type": "file", "file": "map.png", "crop": [414, 1038, 18, 16] },
+			{ "id": "lava42", "type": "file", "file": "map.png", "crop": [432, 1038, 18, 16] },
+			{ "id": "lava43", "type": "file", "file": "map.png", "crop": [450, 1038, 18, 16] }
+		    ]
+		},
+
+    "animation:maps5":   {
+		"delay": 300,
+		"loop": true,
+		"offset": [564, 240],
+		"sprites": [
+			{ "id": "land11", "type": "file", "file": "map.png", "crop": [0, 1018, 106, 77] },
+			{ "id": "land12", "type": "file", "file": "map.png", "crop": [106, 1018, 106, 77] },
+			{ "id": "land13", "type": "file", "file": "map.png", "crop": [212, 1018, 106, 77] }
+		    ]
+		},
+
+    "offset:topclan": [ 776, 116 ],
+    "offset:botclan": [ 776, 176 ],
+    "offset:nameland": [ 898, 10 ],
+    "offset:info1": [ 898, 428 ],
+    "offset:info2": [ 898, 484 ],
+    "offset:viewmap": [ 898, 542 ],
+    "textinfo:cue_legend": { "position": [ 898, 570 ], "font": "dejavus12", "color": "#c8b77a", "align": "center" },
+
+    "area:icon_portrait": [ 826, 260, 140, 140 ],
+    "area:spell_affected1": [ 782, 260, 28, 140 ],
+    "area:spell_affected2": [ 982, 260, 28, 140 ],
+
+    "battle:forecast": {
+        "textinfo:title": { "position": [ 898, 420 ], "font": "dejavus18", "color": "#efe4ae", "align": "center" },
+        "textinfo:capture": { "position": [ 800, 448 ], "font": "dejavus16", "color": "OrangeRed", "align": "left" },
+        "textinfo:survival": { "position": [ 800, 472 ], "font": "dejavus16", "color": "#efe4ae", "align": "left" },
+        "textinfo:forces": { "position": [ 800, 494 ], "font": "dejavus12", "color": "#efe4ae", "align": "left" },
+        "textinfo:scope": { "position": [ 800, 512 ], "font": "dejavus12", "color": "#c8b77a", "align": "left" }
+    },
+
+    "sprite:town_tower_winds": { "id": "town0", "type": "file", "file": "map.png", "crop": [984, 918, 24, 50], "colorkey": "#ffd2d2" },
+    "sprite:combat_fight": { "id": "combat_fight", "type": "file", "file": "map.png", "crop": [566, 975, 80, 46], "colorkey": "#ffd2d2" },
+
+    "sprite:stat11": { "id": "skill11", "type": "file", "file": "map.png", "crop": [288, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 782, 50 ] },
+    "sprite:stat12": { "id": "skill12", "type": "file", "file": "map.png", "crop": [314, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 860, 50 ] },
+    "sprite:stat13": { "id": "skill13", "type": "file", "file": "map.png", "crop": [340, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 942, 50 ] },
+    "sprite:stat14": { "id": "skill14", "type": "file", "file": "map.png", "crop": [366, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 782, 80 ] },
+    "sprite:stat15": { "id": "skill17", "type": "file", "file": "map.png", "crop": [444, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 860, 80 ] },
+    "sprite:stat16": { "id": "skill18", "type": "file", "file": "map.png", "crop": [470, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 942, 80 ] },
+
+    "sprite:stat21": { "id": "skill21", "type": "file", "file": "map.png", "crop": [288, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 782, 470 ] },
+    "sprite:stat22": { "id": "skill22", "type": "file", "file": "map.png", "crop": [314, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 860, 470 ] },
+    "sprite:stat23": { "id": "skill23", "type": "file", "file": "map.png", "crop": [340, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 942, 470 ] },
+    "sprite:stat24": { "id": "skill24", "type": "file", "file": "map.png", "crop": [366, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 782, 500 ] },
+    "sprite:stat25": { "id": "skill25", "type": "file", "file": "map.png", "crop": [392, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 860, 500 ] },
+    "sprite:stat26": { "id": "skill26", "type": "file", "file": "map.png", "crop": [418, 768, 26, 26], "colorkey": "#ffd2d2", "offset": [ 942, 500 ] }
+}

@@ -1,0 +1,33 @@
+{
+    "cursor":           "hardware",
+    "background":       { "id": "screen5", "type": "file", "file": "mapsummary.png", "colorkey": "#ffd2d2" },
+    "music":            [ "win" ],
+    "default:font":     "dejavus26",
+    "default:color":    "#efe4ae",
+    "clan:font_compact": "dejavus18",
+    "clan:font_tiny":    "dejavus16",
+    "clan:text_width":   112,
+
+    "buttons":      [
+                      { "id": "but_done", "position": [ 926, 710 ], "sprites": [ "but_done1", "but_done2" ] }
+                ],
+
+    "sprite:attack": "skill01",
+    "sprite:avatar_icon": { "id": "icon_avatar", "type": "file", "file": "map.png", "crop": [285, 912, 57, 57], "colorkey": "#ffd2d2", "offset": [ 150, 10 ] },
+
+    "offset:east": [ 10, 10 ],
+    "offset:south": [ 517, 10 ],
+    "offset:west": [ 10, 360 ],
+    "offset:north": [ 517, 360 ],
+
+    "offset:avatar_port": [ 0, 0 ],
+    "offset:avatar_text": [ 210, 20 ],
+    "offset:clan_icon": [ 320, 10 ],
+    "offset:clan_text": [ 380, 20 ],
+    "offset:army": [ 150, 75 ],
+    "offset:text_combat": [ 5, 145 ],
+    "offset:text_winners": [ 490, 145 ],
+
+    "area:font":    "dejavus18",
+    "area:history": [ 10, 200, 500, 150 ]
+}

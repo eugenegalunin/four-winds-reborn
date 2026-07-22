@@ -1,0 +1,9 @@
+[
+    { "id": "intro", "file": "introwt.mid" },
+    { "id": "map", "file": "mapwt.mid" },
+    { "id": "win", "file": "winwt.mid" },
+    { "id": "red", "file": "maithawt.mid" },
+    { "id": "yellow", "file": "karthawt.mid" },
+    { "id": "aqua", "file": "izwt.mid" },
+    { "id": "purple", "file": "marzwt.mid" }
+]

@@ -1,0 +1,16 @@
+{
+    "font": "dejavus22",
+    "size": [ 776, 236 ],
+    "background": "logs_background",
+    "width:border": 5,
+    "area:body": [ 10, 10, 758, 170 ],
+    "color:background": "darkslateblue",
+    "color:text": "palegoldenrod",
+    "color:last": "springgreen",
+
+    "scroll:color:rect": "darkslategray",
+    "scroll:color:fill": "darkslateblue",
+    "scroll:cursor:color:rect": "yellow",
+    "scroll:cursor:color:fill": "gray",
+    "scroll:cursor:size": [ 8, 30 ]
+}

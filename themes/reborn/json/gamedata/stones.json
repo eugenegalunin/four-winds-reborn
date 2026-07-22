@@ -1,0 +1,42 @@
+[
+    { "id": "empty", "name": "Empty Stone", "image1": "stone_large00", "image2": "stone_medium00", "image3": "stone_small00", "type": 0, "value": 0 },
+
+    { "id": "skull1", "name": "1 Skull", "image1": "stone_large11", "image2": "stone_medium11", "image3": "stone_small11", "type": 1, "value": 1 },
+    { "id": "skull2", "name": "2 Skulls", "image1": "stone_large12", "image2": "stone_medium12", "image3": "stone_small12", "type": 1, "value": 2 },
+    { "id": "skull3", "name": "3 Skulls", "image1": "stone_large13", "image2": "stone_medium13", "image3": "stone_small13", "type": 1, "value": 3 },
+    { "id": "skull4", "name": "4 Skulls", "image1": "stone_large14", "image2": "stone_medium14", "image3": "stone_small14", "type": 1, "value": 4 },
+    { "id": "skull5", "name": "5 Skulls", "image1": "stone_large15", "image2": "stone_medium15", "image3": "stone_small15", "type": 1, "value": 5 },
+    { "id": "skull6", "name": "6 Skulls", "image1": "stone_large16", "image2": "stone_medium16", "image3": "stone_small16", "type": 1, "value": 6 },
+    { "id": "skull7", "name": "7 Skulls", "image1": "stone_large17", "image2": "stone_medium17", "image3": "stone_small17", "type": 1, "value": 7 },
+    { "id": "skull8", "name": "8 Skulls", "image1": "stone_large18", "image2": "stone_medium18", "image3": "stone_small18", "type": 1, "value": 8 },
+    { "id": "skull9", "name": "9 Skulls", "image1": "stone_large19", "image2": "stone_medium19", "image3": "stone_small19", "type": 1, "value": 9 },
+
+    { "id": "sword1", "name": "1 Sword", "image1": "stone_large21", "image2": "stone_medium21", "image3": "stone_small21", "type": 2, "value": 1 },
+    { "id": "sword2", "name": "2 Swords", "image1": "stone_large22", "image2": "stone_medium22", "image3": "stone_small22", "type": 2, "value": 2 },
+    { "id": "sword3", "name": "3 Swords", "image1": "stone_large23", "image2": "stone_medium23", "image3": "stone_small23", "type": 2, "value": 3 },
+    { "id": "sword4", "name": "4 Swords", "image1": "stone_large24", "image2": "stone_medium24", "image3": "stone_small24", "type": 2, "value": 4 },
+    { "id": "sword5", "name": "5 Swords", "image1": "stone_large25", "image2": "stone_medium25", "image3": "stone_small25", "type": 2, "value": 5 },
+    { "id": "sword6", "name": "6 Swords", "image1": "stone_large26", "image2": "stone_medium26", "image3": "stone_small26", "type": 2, "value": 6 },
+    { "id": "sword7", "name": "7 Swords", "image1": "stone_large27", "image2": "stone_medium27", "image3": "stone_small27", "type": 2, "value": 7 },
+    { "id": "sword8", "name": "8 Swords", "image1": "stone_large28", "image2": "stone_medium28", "image3": "stone_small28", "type": 2, "value": 8 },
+    { "id": "sword9", "name": "9 Swords", "image1": "stone_large29", "image2": "stone_medium29", "image3": "stone_small29", "type": 2, "value": 9 },
+
+    { "id": "number1", "name": "1 Number", "image1": "stone_large31", "image2": "stone_medium31", "image3": "stone_small31", "type": 3, "value": 1 },
+    { "id": "number2", "name": "2 Numbers", "image1": "stone_large32", "image2": "stone_medium32", "image3": "stone_small32", "type": 3, "value": 2 },
+    { "id": "number3", "name": "3 Numbers", "image1": "stone_large33", "image2": "stone_medium33", "image3": "stone_small33", "type": 3, "value": 3 },
+    { "id": "number4", "name": "4 Numbers", "image1": "stone_large34", "image2": "stone_medium34", "image3": "stone_small34", "type": 3, "value": 4 },
+    { "id": "number5", "name": "5 Numbers", "image1": "stone_large35", "image2": "stone_medium35", "image3": "stone_small35", "type": 3, "value": 5 },
+    { "id": "number6", "name": "6 Numbers", "image1": "stone_large36", "image2": "stone_medium36", "image3": "stone_small36", "type": 3, "value": 6 },
+    { "id": "number7", "name": "7 Numbers", "image1": "stone_large37", "image2": "stone_medium37", "image3": "stone_small37", "type": 3, "value": 7 },
+    { "id": "number8", "name": "8 Numbers", "image1": "stone_large38", "image2": "stone_medium38", "image3": "stone_small38", "type": 3, "value": 8 },
+    { "id": "number9", "name": "9 Numbers", "image1": "stone_large39", "image2": "stone_medium39", "image3": "stone_small39", "type": 3, "value": 9 },
+
+    { "id": "wind1", "name": "East Wind", "image1": "stone_large41", "image2": "stone_medium41", "image3": "stone_small41", "type": 4, "value": 1 },
+    { "id": "wind2", "name": "South Wind", "image1": "stone_large42", "image2": "stone_medium42", "image3": "stone_small42", "type": 4, "value": 2 },
+    { "id": "wind3", "name": "West Wind", "image1": "stone_large43", "image2": "stone_medium43", "image3": "stone_small43", "type": 4, "value": 3 },
+    { "id": "wind4", "name": "Nord Wind", "image1": "stone_large44", "image2": "stone_medium44", "image3": "stone_small44", "type": 4, "value": 4 },
+
+    { "id": "dragon1", "name": "White Dragon", "image1": "stone_large51", "image2": "stone_medium51", "image3": "stone_small51", "type": 5, "value": 1 },
+    { "id": "dragon2", "name": "Green Dragon", "image1": "stone_large52", "image2": "stone_medium52", "image3": "stone_small52", "type": 5, "value": 2 },
+    { "id": "dragon3", "name": "Red Dragon", "image1": "stone_large53", "image2": "stone_medium53", "image3": "stone_small53", "type": 5, "value": 3 }
+]

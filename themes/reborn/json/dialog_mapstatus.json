@@ -1,0 +1,44 @@
+{
+    "font": "dejavus18",
+    "size": [ 1024, 768 ],
+    "background": "mapstatus_background",
+    "color:background": "black",
+    "color:text": "palegoldenrod",
+
+    "button:close": {
+                        "id":      "but_close",
+                        "hotkey":   "ESCAPE",
+                        "position": [ 930, 714 ],
+                        "tooltip":  "close window",
+                        "sprites":  [ "but_close1", "but_close2" ]
+		    },
+
+    "offset:orderplay": [ 15, 720 ],
+    "offset:youarepos": [ 510, 720 ],
+
+    "players:offset:wind_east": [ 10, 10 ],
+    "players:offset:wind_south": [ 10, 185 ],
+    "players:offset:wind_west": [ 10, 360 ],
+    "players:offset:wind_north": [ 10, 538 ],
+
+    "playerinfo:offset:portrait": [ 18, 14 ],
+    "playerinfo:offset:name": [ 246, 10 ],
+    "playerinfo:offset:point": [ 246, 120 ],
+    "playerinfo:offset:lands": [ 645, 10 ],
+    "playerinfo:offset:land_point": [ 645, 65 ],
+    "playerinfo:offset:land_power": [ 645, 120 ],
+    "playerinfo:offset:army": [ 415, 0 ],
+    "playerinfo:offset:clan_icon": [ 182, 55 ],
+    "playerinfo:offset:clan_name": [ 246, 65 ],
+
+    "playerinfo:offset:clan_icons": [ [ 815, 0 ], [ 815, 55 ], [ 815, 110 ] ],
+    "playerinfo:offset:clan_vals": [ [ 880, 10 ], [ 880, 65 ], [ 880, 120 ] ],
+
+    "playerinfo:sprites": [
+			    { "type": "file", "file": "map.png", "crop": [285, 912, 57, 57], "colorkey": "#ffd2d2", "offset": [ 182, 0 ] },
+			    { "type": "file", "file": "map.png", "crop": [342, 912, 57, 57], "colorkey": "#ffd2d2", "offset": [ 182, 110 ] },
+			    { "type": "file", "file": "map.png", "crop": [114, 912, 57, 57], "colorkey": "#ffd2d2", "offset": [ 580, 0 ] },
+			    { "type": "file", "file": "map.png", "crop": [171, 912, 57, 57], "colorkey": "#ffd2d2", "offset": [ 580, 55 ] },
+			    { "type": "file", "file": "map.png", "crop": [228, 912, 57, 57], "colorkey": "#ffd2d2", "offset": [ 580, 110 ] }
+			]
+}

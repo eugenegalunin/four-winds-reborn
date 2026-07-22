@@ -1,0 +1,87 @@
+{
+    "font": "dejavus34",
+    "size": [ 1024, 768 ],
+    "background": "combat_background",
+    "width:border": 5,
+
+    "delay:strike": 400,
+    "delay:combatscreen": 700,
+
+    "color:text": "palegoldenrod",
+    "color:alive": "lime",
+    "color:damage": "red",
+    "color:choice": "yellow",
+    "color:target": "red",
+    "color:selected": "lime",
+    "color:recommended": "deepskyblue",
+    "color:accepted": "lime",
+
+    "font:choice": "dejavus18",
+    "font:choice_status": "dejavus14",
+    "offset:choice_phase": [ 512, 112 ],
+    "offset:choice_timeline": [ 512, 142 ],
+    "offset:choice_status": [ 512, 170 ],
+    "delay:choice_status": 900,
+    "offset:choice_preview": [ 512, 662 ],
+    "offset:choice": [ 512, 690 ],
+    "area:auto": [ 402, 716, 220, 40 ],
+    "offset:auto": [ 512, 736 ],
+
+    "offset:playback_phase": [ 512, 112 ],
+    "offset:playback_timeline": [ 512, 142 ],
+    "area:pause": [ 330, 716, 160, 40 ],
+    "offset:pause": [ 410, 736 ],
+    "area:speed": [ 534, 716, 160, 40 ],
+    "offset:speed": [ 614, 736 ],
+
+    "offset:port1": [ 9, 8 ],
+    "offset:port2": [ 877, 8 ],
+
+    "offset:center1": [ 288, 70 ],
+    "offset:center2": [ 738, 70 ],
+
+    "sprite:cellfill": "combat_cellfill",
+    "sprite:lifestatus": "combat_lifestatus",
+
+    "offset:party11": [ 78, 198 ],
+    "offset:party12": [ 205, 394 ],
+    "offset:party13": [ 158, 589 ],
+    "offset:party21": [ 706, 192 ],
+    "offset:party22": [ 545, 393 ],
+    "offset:party23": [ 812, 595 ],
+    "offset:tower": [ 831, 393 ],
+
+    "animation:strike_melee": {
+			    "delay": 50,
+                            "sound": "battack",
+			    "sprites": [
+					    { "id": "combat_animation1", "type": "file", "file": "combat_animation1.png", "crop": [ 0, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation2", "type": "file", "file": "combat_animation1.png", "crop": [ 140, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation3", "type": "file", "file": "combat_animation1.png", "crop": [ 280, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation4", "type": "file", "file": "combat_animation1.png", "crop": [ 420, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation5", "type": "file", "file": "combat_animation1.png", "crop": [ 560, 0, 140, 140 ], "colorkey": "#ffd2d2" }
+				]
+			    },
+    "animation:strike_ranger": {
+			    "delay": 50,
+                            "sound": "branger",
+			    "sprites": [
+					    { "id": "combat_animation1", "type": "file", "file": "combat_animation2.png", "crop": [ 0, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation2", "type": "file", "file": "combat_animation2.png", "crop": [ 140, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation3", "type": "file", "file": "combat_animation2.png", "crop": [ 280, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation4", "type": "file", "file": "combat_animation2.png", "crop": [ 420, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation5", "type": "file", "file": "combat_animation2.png", "crop": [ 560, 0, 140, 140 ], "colorkey": "#ffd2d2" }
+				]
+			    },
+    "animation:fire_shield": {
+			    "delay": 50,
+                            "sound": "batfire",
+			    "sprites": [
+					    { "id": "combat_animation1", "type": "file", "file": "combat_animation3.png", "crop": [ 0, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation2", "type": "file", "file": "combat_animation3.png", "crop": [ 140, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation3", "type": "file", "file": "combat_animation3.png", "crop": [ 280, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation4", "type": "file", "file": "combat_animation3.png", "crop": [ 420, 0, 140, 140 ], "colorkey": "#ffd2d2" },
+					    { "id": "combat_animation5", "type": "file", "file": "combat_animation3.png", "crop": [ 560, 0, 140, 140 ], "colorkey": "#ffd2d2" }
+				]
+			    }
+}

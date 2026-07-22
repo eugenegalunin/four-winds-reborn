@@ -1,0 +1,9 @@
+{
+    "font": "dejavus18",
+    "size": [ 800, 585 ],
+    "width:border": 5,
+    "color:background": "gainsboro",
+    "color:header": "firebrick",
+    "color:text": "navy",
+    "color:border": "midnightblue"
+}

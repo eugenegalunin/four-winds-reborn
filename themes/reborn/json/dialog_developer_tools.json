@@ -1,0 +1,29 @@
+{
+    "size": [ 660, 700 ],
+    "font": "dejavus18",
+    "width:border": 1,
+    "color:background": "#0b0b0b",
+    "color:border": "#a88b4d",
+    "color:header": "#ead7a4",
+    "color:text": "#d9c9a7",
+
+    "entry:autoplay": [ 40, 76, 580, 52 ],
+    "entry:phase": [ 40, 134, 580, 52 ],
+    "entry:adventure": [ 40, 192, 580, 52 ],
+    "entry:battle": [ 40, 250, 580, 52 ],
+    "entry:final_rune": [ 40, 308, 580, 52 ],
+    "entry:final_adventure": [ 40, 366, 580, 52 ],
+    "entry:round": [ 40, 424, 580, 52 ],
+    "entry:game": [ 40, 482, 580, 52 ],
+    "entry:copy": [ 40, 540, 580, 52 ],
+    "entry:cancel": [ 40, 598, 580, 48 ],
+
+    "font:title": "dejavus26",
+    "font:entry": "dejavus20",
+    "font:small": "dejavus14",
+    "color:item": "#11100e",
+    "color:item_selected": "#2b2115",
+    "color:item_border": "#4c4130",
+    "color:selected_border": "#d0aa5d",
+    "color:muted": "#857b69"
+}

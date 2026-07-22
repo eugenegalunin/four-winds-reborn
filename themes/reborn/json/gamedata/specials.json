@@ -1,0 +1,100 @@
+[
+    {
+	"id": "swarm",
+	"name": "Swarm",
+	"description": "Creatures employing the ability to swarm may attack a full party instead of just the leader, overwhelming them with sheer numbers."
+    },
+    {
+	"id": "merge",
+	"name": "Merge",
+	"description": "This ability allows creatures of the same type to link together in battle, instilling a +1 melee and +1 defense to each of these creatures, instead of just the +1 melee usually granted for supporting creatures."
+    },
+    {
+	"id": "invisibility",
+	"name": "Invisibility",
+	"description": "Invisible creatures may move across the isle free from detection, only to appear in combat. Surprise!"
+    },
+    {
+	"id": "regeneration",
+	"name": "Regeneration",
+	"description": "Regenerating creatures are restored to maximum loyalty at the beginning of the map phase."
+    },
+    {
+	"id": "cast_hellblast",
+	"name": "Hell Blast",
+	"description": "The presence of the possessor of this ability sends even the bravest of souls into panic. This is reflected by the loss of -2 loyalty points to all that combat it."
+    },
+    {
+	"id": "magic_resistance",
+	"name": "Magic Resistance",
+	"description": "Those possessing Major Magic Resistence receive a %1% chance to ignore the effects of spells directed at them by any wizard."
+    },
+    {
+	"id": "mighty_blow",
+	"name": "Mighty Blow",
+	"description": "This fearsome ability gives the possessor a 25% chance to strike a devastating blow in combat. A succesful mighty blow boosts melee strength by +3, and guarantees that at least one damage is done, regardless of the opponents defense rating."
+    },
+    {
+	"id": "gate",
+	"name": "Gate",
+	"description": "This ability allows the unit to teleport into any friendly territory containing a summoning circle by calling on the portals of travel."
+    },
+    {
+	"id": "first_strike",
+	"name": "First Strike",
+	"description": "Those who possess this ability and lead their party into combat forego ranged combat, and are granted first strike in melee combat. This only applies to attacking parties."
+    },
+    {
+        "id": "see_invisible",
+	"name": "See Invisible",
+	"description": "Those blessed with this ability can see invisible units in adjacent territories."
+    },
+    {
+	"id": "ignore_missiles",
+	"name": "Ignore Missiles",
+	"description": "Creatures with this ability can avoid the effects of missile fire when in combat."
+    },
+    {
+	"id": "devotion",
+	"name": "Devotion",
+	"description": "Heals +2 loyalty before movement phase."
+    },
+    {
+	"id": "cast_draw_number",
+	"name": "Cast Draw Number"
+    },
+    {
+	"id": "cast_draw_sword",
+	"name": "Cast Draw Sword"
+    },
+    {
+	"id": "cast_draw_skull",
+	"name": "Cast Draw Skull"
+    },
+    {
+	"id": "fire_shield",
+	"name": "Fire Shield",
+	"description": "The fire shield reduces the loyalty of any creature that strikes its bearer in melee combat by one."
+    },
+    {
+	"id": "cast_random_discard",
+	"name": "Cast Random Discard"
+    },
+    {
+	"id": "cast_silence",
+	"name": "Cast Silence"
+    },
+    {
+	"id": "cast_scry_runes",
+	"name": "Cast Scry Runes"
+    },
+    {
+	"id": "cast_mana_fog",
+	"name": "Cast Mana Fog"
+    },
+    {
+	"id": "ranger_attack",
+	"name": "Ranger attack",
+	"description": "The ranger attack speciality"
+    }
+]

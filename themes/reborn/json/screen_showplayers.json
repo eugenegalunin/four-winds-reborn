@@ -1,0 +1,23 @@
+{
+    "cursor":       "hardware",
+    "background":   { "id": "screen2", "type": "file", "file": "menu.png" },
+    "buttons":      [
+                      {
+                        "id":      "but_start",
+		        "hotkey":   "RETURN",
+		        "position": [ 925, 707 ],
+		        "tooltip":  "start screen",
+                        "sprites":  [ "but_start1", "but_start2" ]
+                      },
+                      {
+                        "id":      "but_cancel",
+		        "hotkey":   "ESCAPE",
+		        "position": [ 10, 707 ],
+		        "tooltip":  "cancel screen",
+                        "sprites":  [ "but_cancel1", "but_cancel2" ]
+                      }
+		],
+    "default:font":	"dejavus34",
+    "color:other":	"#efe4ae",
+    "color:selected":	"OrangeRed"
+}

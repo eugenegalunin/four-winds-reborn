@@ -700,7 +700,149 @@ RUNTIME_DESCRIPTION_FILES = (
     "spells.json",
     "specials.json",
     "abilities.json",
+    "lands.json",
 )
+
+RUNTIME_LOCALIZED_FIELDS = ("name", "dignity", "description")
+
+TRANSLATIONS.update({
+    "Reborn Community Package (Preview)": "Пакет Reborn от сообщества (предпросмотр)",
+    "Morvane": "Морвейн",
+    "Grave Sovereign": "Повелитель Могил",
+    "Morvane hears counsel in the final breath of kings. He enters the war with patient cruelty, raising disciplined hosts from every forgotten battlefield.": "Морвейн слышит советы в последнем вздохе королей. Он вступает в войну с терпеливой жестокостью, поднимая дисциплинированные легионы на каждом забытом поле боя.",
+    "Aurel": "Аурель",
+    "Oathbound Marshal": "Маршал Клятвы",
+    "Aurel binds steel, law and magic into a single unbroken oath. He wins by building a force that can endure every setback and answer in kind.": "Аурель связывает сталь, закон и магию единой нерушимой клятвой. Он побеждает, создавая войско, способное пережить любой удар и ответить тем же.",
+    "Selka": "Селка",
+    "Tide Whisperer": "Шепчущая Приливам",
+    "Selka travels beneath river and reef, appearing where no army expects her. Quiet choices and precise timing make her more dangerous than louder rivals.": "Селка путешествует под реками и рифами, появляясь там, где её не ждёт ни одна армия. Тихие решения и безупречный расчёт делают её опаснее самых громких соперников.",
+    "Veyr": "Вейр",
+    "Glass-Eyed Strategist": "Стеклоглазый Стратег",
+    "Veyr studies war through an enchanted lens that reveals hidden companies. Every movement is a calculation, and every apparent retreat is another prepared trap.": "Вейр изучает войну через зачарованную линзу, открывающую скрытые отряды. Каждое движение для него — расчёт, а каждое отступление — подготовленная ловушка.",
+    "Ashara": "Ашара",
+    "Ember Exile": "Изгнанница Углей",
+    "Ashara carries the last flame of a vanished homeland. Her anger can erase whole ranks, but she has learned to aim it with a survivor's discipline.": "Ашара несёт последнее пламя исчезнувшей родины. Её гнев способен стереть целые ряды, но она научилась направлять его с дисциплиной выжившей.",
+    "Morrow": "Морроу",
+    "Many-Faced Sage": "Многоликий Мудрец",
+    "Morrow has borrowed a thousand faces and learned something from every life. No summoning tradition is closed to this patient collector of forbidden forms.": "Морроу примерил тысячу лиц и из каждой жизни вынес новый урок. Для этого терпеливого собирателя запретных форм не существует закрытой школы призыва.",
+    "Rill": "Рилл",
+    "Wandering Cantor": "Странствующий Певец",
+    "Rill remembers every road as a song. His verses restore courage to weary allies and turn a scattered company into a loyal host.": "Рилл помнит каждую дорогу как песню. Его куплеты возвращают храбрость усталым союзникам и превращают разрозненный отряд в верное войско.",
+    "Nix": "Никс",
+    "Laughing Gambler": "Смеющийся Игрок",
+    "Nix treats fate as a table where the rules change with every throw. What looks like recklessness is often a wager made several turns in advance.": "Никс считает судьбу игровым столом, где правила меняются после каждого броска. То, что кажется безрассудством, часто оказывается ставкой, сделанной за несколько ходов вперёд.",
+    "Cael": "Каэль",
+    "Storm-Born Seer": "Рождённый Бурей Провидец",
+    "Cael listens to thoughts carried by the high winds. Silence cannot close that inner sky, and no hidden intention remains hidden for long.": "Каэль слышит мысли, которые несут высотные ветра. Безмолвие не способно закрыть это внутреннее небо, и ни один замысел не остаётся тайной надолго.",
+    "Unknown Wanderer": "Неизвестный Странник",
+
+    "Bonebound Host": "Связанный Костями Легион",
+    "Nightshade": "Ночная Тень",
+    "Web Reaver": "Паутинный Жнец",
+    "Hollow Cavalier": "Полый Всадник",
+    "Pale Echo": "Бледное Эхо",
+    "Horned Tyrant": "Рогатый Тиран",
+    "Oathguard": "Страж Клятвы",
+    "Gatewarden": "Хранитель Врат",
+    "Maze Bull": "Лабиринтный Бык",
+    "Free Company": "Вольный Отряд",
+    "Cinder Giant": "Угольный Великан",
+    "Crowned Drake": "Коронованный Дракон",
+    "Dune Phantom": "Призрак Дюн",
+    "Stone Colossus": "Каменный Колосс",
+    "Tide Siren": "Сирена Прилива",
+    "Stormwing": "Бурекрыл",
+    "Cloud Serpent": "Облачный Змей",
+    "Sky Titan": "Небесный Титан",
+    "Frost Drake": "Ледяной Дракон",
+    "Verdant Drake": "Изумрудный Дракон",
+    "Ember Drake": "Огненный Дракон",
+    "Cinder Elemental": "Элементаль Углей",
+    "Stoneheart Elemental": "Камнесердный Элементаль",
+    "Aether Elemental": "Элементаль Эфира",
+    "Tide Elemental": "Элементаль Прилива",
+    "Iron Behemoth": "Железный Исполин",
+    "Living Tempest": "Живая Буря",
+    "Griffin": "Грифон",
+    "Veil Stalker": "Незримый Охотник",
+
+    "War Trance": "Боевой Транс",
+    "Reckless Oath": "Безрассудная Клятва",
+    "Radiant Burst": "Сияющая Вспышка",
+    "Dark Command": "Тёмный Приказ",
+    "Unravel": "Развеивание",
+    "Blinding Dust": "Слепящая Пыль",
+    "Aegis": "Эгида",
+    "Guiding Star": "Путеводная Звезда",
+    "Mend": "Исцеление",
+    "Inferno": "Инферно",
+    "Valiant Heart": "Доблестное Сердце",
+    "Storm Lance": "Копьё Бури",
+    "Arcane Mantle": "Магическая Мантия",
+    "Great Unraveling": "Великое Развеивание",
+    "Dread Wave": "Волна Ужаса",
+    "Wellspring": "Источник",
+    "Wellspring of Might": "Источник Силы",
+    "Wellspring of Reach": "Источник Дальности",
+    "Wellspring of Vigor": "Источник Стойкости",
+    "Binding Sigil": "Сковывающий Знак",
+    "Withering Mark": "Метка Увядания",
+    "Veil of Smoke": "Дымовая Завеса",
+    "Waystep": "Шаг Сквозь Пространство",
+    "Essence Haze": "Туман Эссенции",
+    "Shatter Rune": "Раскол Руны",
+    "Rune Sight": "Рунное Зрение",
+    "Hush": "Безмолвие",
+    "Call Number Rune": "Призыв Руны Числа",
+    "Call Bone Rune": "Призыв Руны Кости",
+    "Call Blade Rune": "Призыв Руны Клинка",
+
+    "Ashen Point": "Пепельный Мыс",
+    "Azure Reach": "Лазурный Предел",
+    "Goldwatch": "Золотой Дозор",
+    "Bleak Narrows": "Мрачные Теснины",
+    "Brackenwall": "Папоротниковый Вал",
+    "Starwood": "Звёздный Лес",
+    "Charfall": "Угольный Пад",
+    "Whispering Expanse": "Шепчущий Простор",
+    "Cloudrest": "Облачный Приют",
+    "Coralmere": "Коралловое Озеро",
+    "Blackwater": "Чёрные Воды",
+    "Firwatch": "Еловый Дозор",
+    "Gambler's Run": "Тропа Игрока",
+    "Stonejaw": "Каменная Пасть",
+    "Mossbarrow": "Мшистый Курган",
+    "Gorsehold": "Терновая Крепь",
+    "Hexwood": "Колдовской Лес",
+    "Iron Oath": "Железная Клятва",
+    "Cairnfall": "Падение Курганов",
+    "Oathhaven": "Пристань Клятвы",
+    "Moonreed": "Лунные Камыши",
+    "Redhaven": "Красная Гавань",
+    "Mirebridge": "Болотный Мост",
+    "Tinker's Hollow": "Лощина Мастера",
+    "Bloomwater Bay": "Цветущая Бухта",
+    "Pyre Reach": "Огненный Предел",
+    "Crown Peaks": "Коронные Пики",
+    "Rimebank": "Инеевый Берег",
+    "Riftstead": "Поселение Разлома",
+    "Reedmarch": "Камышовый Рубеж",
+    "Ashfang": "Пепельный Клык",
+    "Stillwind Plains": "Равнины Тихого Ветра",
+    "Windglass Chute": "Ущелье Ветрового Стекла",
+    "Sablemere": "Соболиное Озеро",
+    "Sunward": "Солнечный Край",
+    "Sunwell": "Солнечный Колодец",
+    "Sunscar": "Солнечный Шрам",
+    "Talon Reach": "Когтистый Предел",
+    "Shellback Isle": "Панцирный Остров",
+    "Crosswind Citadel": "Цитадель Перекрёстных Ветров",
+    "Scale Ford": "Чешуйчатый Брод",
+    "High Banner": "Высокое Знамя",
+    "Ember Coast": "Тлеющий Берег",
+    "Springmere": "Весеннее Озеро",
+    "Thornfield": "Терновое Поле",
+})
 
 
 for number in range(1, 10):
@@ -759,10 +901,22 @@ def translation_for(msgid: str) -> str | None:
     )
 
 
-def runtime_descriptions() -> dict[str, list[str]]:
+def runtime_messages(catalog: Path) -> dict[str, list[str]]:
     root = Path(__file__).resolve().parents[1]
-    data_dir = root / "themes" / "default" / "json" / "gamedata"
+    theme = catalog.resolve().parent.parent
+    data_dir = theme / "json" / "gamedata"
     messages: dict[str, list[str]] = {}
+
+    index_path = theme / "index.json"
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        index = {}
+    description = index.get("description") if isinstance(index, dict) else None
+    if isinstance(description, str) and description:
+        messages.setdefault(description, []).append(
+            index_path.relative_to(root).as_posix()
+        )
 
     for filename in RUNTIME_DESCRIPTION_FILES:
         path = data_dir / filename
@@ -775,9 +929,10 @@ def runtime_descriptions() -> dict[str, list[str]]:
         for row in rows:
             if not isinstance(row, dict):
                 continue
-            description = row.get("description", "")
-            if description:
-                messages.setdefault(description, []).append(reference)
+            for field in RUNTIME_LOCALIZED_FIELDS:
+                message = row.get(field, "")
+                if message:
+                    messages.setdefault(message, []).append(reference)
 
     return messages
 
@@ -838,7 +993,7 @@ def main() -> int:
         updated += int(changed)
 
     added = 0
-    for msgid, references in runtime_descriptions().items():
+    for msgid, references in runtime_messages(catalog).items():
         if msgid in existing:
             continue
         translation = "" if is_template else (translation_for(msgid) or "")

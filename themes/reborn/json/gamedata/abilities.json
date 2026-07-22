@@ -1,0 +1,27 @@
+[
+    {
+	"id": "monacle",
+	"name": "Monocle",
+	"description": "%1's monocle allows him to see all invisible units on the map."
+    },
+    {
+	"id": "catasrophic",
+	"name": "Catastrophic",
+	"description": "%1's catastrophic Hell Blast can wipe out entire army lines and is unique to her."
+    },
+    {
+	"id": "bard",
+	"name": "Bard",
+	"description": "Being a bard, %1 is loved by all people and creatures around him. His songs inspire bravery which cause his creatures to regain 2 loyalty each round."
+    },
+    {
+	"id": "luck",
+	"name": "Luck",
+	"description": "%1 possesses uncanny luck in the Rune Game. On each unforced turn draw, he sees two runes and keeps one; the other returns to the bottom of the wall. Directed draw spells take precedence."
+    },
+    {
+	"id": "telepath",
+	"name": "Telepath",
+	"description": "%1 is a telepath. This allows him to chose, pung, kong, game and cast spells even when silence has been cast."
+    }
+]

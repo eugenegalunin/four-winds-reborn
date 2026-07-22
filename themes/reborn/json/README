@@ -1,0 +1,80 @@
+2. Image sprite object:
+    id:string		- sprite cache id
+    type:string		- file
+    file:string		- filename in image source (see index.json)
+    file:ru:string	- optional Russian image source selected with the runtime language
+    colorkey:string	- color format '#RRGGBB' or 'color name' (SDL_SetColorKey)
+
+    offset:point	- sprite offset
+    crop:rect		- crop sprite
+    alpha:int		- alpha value (SDL_SetTextureAlphaMod)
+    halign:string	- center,left,right (default: left, depends from offset)
+    valign:string	- center,top,bottom (default: top, depends from offset)
+
+    Cached if ids defined. Key format: [ids]
+
+3. CompositeSprite object:
+    id:string		- sprite cache id
+    type:string		- composite
+    size:size		- sprite size
+    background:string	- sprite default background
+    background:object	- sprite object
+    tiles:array		- sprites
+
+    offset:point	- sprite offset
+    crop:rect		- crop sprite
+    alpha:int		- alpha value (SDL_SetTextureAlphaMod)
+    halign:string	- center,left,right (default: left, depends from offset)
+    valign:string	- center,top,bottom (default: top, depends from offset)
+
+    Cached if ids defined. Key format: [ids]
+
+4. TextSprite object:
+    id:string		- sprite cache id
+    type:string		- text
+    font:object		- font object
+    color:string	- color
+    text:string		- body
+
+    offset:point	- sprite offset
+    crop:rect		- crop sprite
+    alpha:int		- alpha value (SDL_SetTextureAlphaMod)
+    halign:string	- center,left,right (default: left, depends from offset)
+    valign:string	- center,top,bottom (default: top, depends from offset)
+
+    Cached if ids defined. Key format: [ids]
+
+5. RectSprite object:
+    id:string		- sprite cache id
+    type:string		- rect
+    size:size		- sprite size
+    color:string	- border color
+    depth:int		- border size
+    fill:string		- filled color
+
+    offset:point	- sprite offset
+    crop:rect		- crop sprite
+    alpha:int		- alpha value (SDL_SetTextureAlphaMod)
+    halign:string	- center,left,right (default: left, depends from offset)
+    valign:string	- center,top,bottom (default: top, depends from offset)
+
+    Cached if ids defined. Key format: [ids]
+
+6. Font object:
+    file:string		- font file
+    color:string	- font color
+    size:int		- font size
+    blend:string	- value: solid, blended, shaded
+    style:array		- style [ "bold", "italic", "underline", "strikethrough" ]
+    hinting:string	- value: normal, light, mono, none
+
+7. String object:	- load external json resource as reference to sprite object, "json/compositesprite.json"
+
+8. Button object:
+    id:string		- button id
+    tooltip:string	- tool tips
+    action:string	-
+    hotkey:string	- hot key
+    cursors:array	- cursor theme [ focus, press ]
+    position:point	- position
+    sprites:array	- sprites [ release, press, focus ]

@@ -1,0 +1,20 @@
+{
+    "font": "dejavus18",
+    "size": [ 300, 200 ],
+    "area:body": [ 10, 40, 280, 90 ],
+    "width:border": 5,
+    "color:background": "gainsboro",
+    "color:header": "darkred",
+    "color:text": "navy",
+    "color:border": "midnightblue",
+    "sprite:ok1": "but_ok1",
+    "sprite:ok2": "but_ok2",
+    "sprite:cancel1": "but_cancel1",
+    "sprite:cancel2": "but_cancel2",
+
+    "scroll:color:rect": "darkgray",
+    "scroll:color:fill": "lightslategray",
+    "scroll:cursor:color:rect": "silver",
+    "scroll:cursor:color:fill": "gray",
+    "scroll:cursor:size": [ 8, 30 ]
+}

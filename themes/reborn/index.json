@@ -1,0 +1,21 @@
+{
+    "name":		"reborn",
+    "description":	"Reborn Community Package (Preview)",
+    "author":		"Four Winds Reborn contributors",
+    "size":		[ 1024, 768 ],
+    "contentPackage":	{
+			    "schema": 1,
+			    "id": "reborn-community",
+			    "version": 1,
+			    "engineContract": "four-winds-classic-v1",
+			    "gameData": "content.json",
+			    "compatibleVersions": [ 1 ]
+			},
+
+    "tooltips":		{
+			    "bgcolor":	"wheat",
+			    "fncolor":	"midnightblue",
+			    "rtcolor":	"black",
+			    "font":	"tooltips"
+			}
+}

@@ -1,0 +1,27 @@
+{
+    "schema": 1,
+    "status": "preview",
+    "sourceTheme": "default",
+    "sourcePackage": "classic-original",
+    "mediaExtensions": [ ".png", ".jpg", ".jpeg", ".ogg", ".mid", ".wav", ".ttf", ".otf" ],
+    "narrativeTables": [ "avatars", "creatures", "spells", "lands" ],
+    "thirdPartyAssets": [
+        {
+            "name": "Forum",
+            "source": "https://github.com/google/fonts/tree/main/ofl/forum",
+            "license": "SIL Open Font License 1.1",
+            "licenseFile": "licenses/Forum-OFL.txt"
+        },
+        {
+            "name": "PT Serif",
+            "source": "https://github.com/google/fonts/tree/main/ofl/ptserif",
+            "license": "SIL Open Font License 1.1",
+            "licenseFile": "licenses/PT-Serif-OFL.txt"
+        }
+    ],
+    "standaloneRequires": {
+        "identicalMediaFiles": 0,
+        "identicalNarrativeFields": 0
+    },
+    "note": "This package is an in-development preview. It must not be described as standalone until the automated provenance audit reports no inherited media or narrative fields."
+}

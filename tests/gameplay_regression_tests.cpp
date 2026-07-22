@@ -388,6 +388,21 @@ void testInstalledContentCatalog()
                                        "default", &error) && error.empty(),
            "the installed Classic package must pass catalog validation");
 
+    const auto reborn = std::find_if(installed.begin(), installed.end(),
+        [](const InstalledContentPackage & package)
+        {
+            return package.theme == "reborn";
+        });
+    error.clear();
+    expect(reborn != installed.end() && reborn->compatible &&
+           reborn->manifest.identity.id == "reborn-community" &&
+           reborn->manifest.identity.version == 1 &&
+           reborn->displayName() == "Reborn Community Package (Preview)" &&
+           ContentCatalog::isAvailable(sourceProgram,
+                                       "four-winds-catalog-source-test",
+                                       "reborn", &error) && error.empty(),
+           "the installed Reborn preview package must pass catalog validation");
+
     const std::filesystem::path fixtureRoot =
         std::filesystem::temp_directory_path() / "four-winds-content-catalog-test";
     std::error_code filesystemError;
