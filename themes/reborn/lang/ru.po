@@ -4122,4 +4122,240 @@ msgstr "Терновое Поле"
 
 #: themes/reborn/index.json
 msgid "Reborn Community Package (Preview)"
-msgstr "Пакет Reborn от сообщества (предпросмотр)"
+msgstr "Reborn (предпросмотр)"
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Veterans of a dozen border wars fight beneath the Free Company's patched banner. Their scouts expose invisible enemies in neighboring lands, while the company itself brings balanced steel and missile fire."
+msgstr "Ветераны десятка пограничных войн сражаются под латаным знаменем Вольного Отряда. Их разведчики обнаруживают невидимых врагов в соседних землях, а сам отряд сочетает надёжный ближний бой и стрельбу."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "A living knot of high wind, the Aether Elemental crosses the map with unnatural speed. Missiles pass through its body, and its presence grants the summoner the power to silence a rival wizard."
+msgstr "Живой узел высотных ветров, Элементаль Эфира движется по карте с неестественной быстротой. Снаряды проходят сквозь его тело, а его присутствие дарует призывателю силу лишить соперника голоса."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Gatewarden carries keys to roads that do not exist on any map. She may step between friendly summoning circles, and an attacking company under her command seizes the first action in melee."
+msgstr "Хранительница Врат носит ключи от дорог, которых нет ни на одной карте. Она может переходить между дружественными кругами призыва, а ведомый ею атакующий отряд получает первое действие в ближнем бою."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Veil Stalker bends color and shadow around its scales before loosing a careful shot. It remains invisible while traveling and restores itself at the opening of every map phase."
+msgstr "Незримый Охотник изгибает свет и тень вокруг своей чешуи, прежде чем сделать точный выстрел. Он остаётся невидимым в пути и полностью восстанавливается в начале каждой фазы карты."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Web Reavers pin prey with barbed threads before closing on hooked limbs. They possess no arcane trick, relying instead on unusually strong melee backed by a precise opening shot."
+msgstr "Паутинные Жнецы опутывают добычу колючими нитями, а затем сходятся в ближнем бою. У них нет магических уловок — только необычайно сильная атака и точный первый выстрел."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Stone and root close every wound in the Stoneheart Elemental when the map phase begins. Its deep memory also teaches its summoner Rune Sight, revealing a rival's concealed hand."
+msgstr "Камень и корни залечивают каждую трещину Камнесердного Элементаля в начале фазы карты. Его древняя память также открывает призывателю Рунное Зрение и скрытую руку соперника."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Cinder Elemental answers every melee blow with a lick of punishing flame. While it endures, its summoner may fracture an enemy rune through the Shatter Rune spell."
+msgstr "Элементаль Углей отвечает языком карающего пламени на каждый удар в ближнем бою. Пока он существует, призыватель может расколоть вражескую руну заклинанием Раскол Руны."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "A Cinder Giant hurls furnace-hot stone before wading into battle. High defense and loyalty let it hold the line after its powerful opening volley has landed."
+msgstr "Угольный Великан швыряет раскалённые камни, а затем вступает в бой. Высокая защита и верность позволяют ему держать строй после мощного начального залпа."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Verdant Drake abandons ranged combat for overwhelming claws and relentless speed. Its bond with forged weapons lets its summoner call a Blade rune from the wall."
+msgstr "Изумрудный Дракон отказался от стрельбы ради сокрушительных когтей и стремительного движения. Его связь с кованым оружием позволяет призывателю вызвать из стены Руну Клинка."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Griffins patrol two lands at a stride and spot companies hidden from ordinary eyes. When several fight together, their disciplined formation improves both attack and defense."
+msgstr "Грифоны проходят две земли за один ход и замечают отряды, скрытые от обычного взгляда. Сражаясь вместе, они строятся в единый строй и повышают как атаку, так и защиту."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Iron Behemoth advances slowly, but few defenders can stop it once battle begins. Its massive frame strikes hard, absorbs punishment and repairs itself before each movement phase."
+msgstr "Железный Исполин движется медленно, но остановить его в бою почти невозможно. Огромное тело наносит тяжёлые удары, выдерживает урон и восстанавливается перед каждой фазой движения."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Cloud Serpent coils through volleys as though arrows were rain. Strong attack, deep loyalty and swift movement make it dangerous even without a missile strike of its own."
+msgstr "Облачный Змей проходит сквозь залпы, словно стрелы — это дождь. Сильная атака, высокая верность и скорость делают его опасным даже без собственной стрельбы."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Only hoofprints and a hollow rattle announce the Hollow Cavalier. Invisible on the map and solid in close combat, it is an ideal blade for an ambush or an enchanted assault."
+msgstr "О Полом Всаднике предупреждают лишь следы копыт и пустой грохот. Невидимый на карте и крепкий в ближнем бою, он идеально подходит для засады или усиленной заклинаниями атаки."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Crowned Drake is a fortress with wings folded around it. Magic may fail against its hide, and every melee attack carries a chance to become a devastating Mighty Blow."
+msgstr "Коронованный Дракон подобен крепости со сложенными крыльями. Магия может рассеяться о его шкуру, а каждый удар способен превратиться в сокрушительный Могучий Удар."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "An Oathguard is inexpensive, disciplined and far more dangerous than its modest strength suggests. Each melee attack has a chance to erupt into a Mighty Blow."
+msgstr "Страж Клятвы дёшев, дисциплинирован и гораздо опаснее, чем кажется по его скромной силе. Каждый удар в ближнем бою может стать Могучим Ударом."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Tide Siren's first note steals a defender's moment to react. When she leads an attack, her company skips the missile exchange and acts first in melee."
+msgstr "Первая нота Сирены Прилива лишает защитника времени на ответ. Когда она ведёт атаку, её отряд пропускает обмен залпами и первым действует в ближнем бою."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Horned Tyrant breaks armies by presence alone. Its crushing attack is protected by resistance to hostile magic, while Inferno scorches every enemy that dares share its battlefield."
+msgstr "Рогатый Тиран ломает армии одним своим присутствием. Сопротивление вражеской магии защищает его сокрушительную атаку, а Инферно обжигает каждого врага на поле боя."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Maze Bull needs neither enchantment nor subtlety. Reliable attack, defense and loyalty make this straightforward fighter a dependable core for an early company."
+msgstr "Лабиринтному Быку не нужны ни чары, ни хитрости. Надёжные атака, защита и верность делают его крепкой основой раннего отряда."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Ember Drake opens battle with a long torrent of fire, then closes with fang and claw. Its affinity with death lets its summoner call a Bone rune from the wall."
+msgstr "Огненный Дракон начинает бой длинной струёй пламени, а затем пускает в ход клыки и когти. Его связь со смертью позволяет призывателю вызвать из стены Руну Кости."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Dune Phantom travels as a stain of moving sand, unseen until combat begins. Its defenses are fragile, but secrecy makes it a useful escort, scout and surprise attacker."
+msgstr "Призрак Дюн движется невидимым пятном песка и появляется лишь в бою. Его защита хрупка, но скрытность делает его полезным разведчиком, спутником и внезапным нападающим."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Nightshades cross the island unseen and grow stronger when gathered into one company. Their Merge discipline improves both attack and defense for every matching companion."
+msgstr "Ночные Тени незримо пересекают остров и становятся сильнее, собравшись в одном отряде. Их Слияние повышает атаку и защиту каждого одинакового союзника."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Sky Titan combines speed, missile power and immense loyalty in a single towering ally. Its Devotion restores two loyalty before movement, keeping it ready for the next campaign."
+msgstr "Небесный Титан сочетает скорость, стрельбу и огромную верность. Его Преданность восстанавливает две единицы верности перед движением, готовя его к следующему походу."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "A Bonebound Host is weak one warrior at a time and terrifying as a tide. When it attacks, Swarm spreads its assault across the entire opposing company instead of only the leader."
+msgstr "Каждый воин Связанного Костями Легиона слаб по отдельности, но вместе они превращаются в ужасный прилив. Рой распределяет их атаку по всему вражескому отряду, а не только по лидеру."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Stone Colossus is cheap to summon and stubborn to remove. Chips and fractures seal before movement, allowing this regenerating guardian to return to full loyalty."
+msgstr "Каменный Колосс дёшев в призыве и упрямо держится в бою. Сколы и трещины затягиваются перед движением, полностью восстанавливая верность этого стража."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Stormwing dives across two lands and announces battle with a bolt from the clouds. Balanced attack and high loyalty make it a flexible mid-cost creature."
+msgstr "Бурекрыл пролетает две земли и начинает бой ударом из облаков. Сбалансированная атака и высокая верность делают его гибким существом средней цены."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Living Tempest rolls over two lands at a time, carrying a durable core inside its storm wall. Enemy missiles vanish into the gale before they can select it as a target."
+msgstr "Живая Буря проходит две земли за ход, скрывая прочное ядро за стеной ветра. Вражеские снаряды исчезают в вихре, не успев выбрать её целью."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Tide Elemental divides into grasping currents that can strike an entire enemy company. Its summoner also gains Essence Haze, suppressing ordinary magic and summoning across the table."
+msgstr "Элементаль Прилива разделяется на цепкие потоки, способные атаковать весь вражеский отряд. Его призыватель также получает Туман Эссенции, подавляющий обычную магию и призыв за столом."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Frost Drake is swift, fiercely loyal and difficult to break. Its crystalline breath carries a Number rune's pattern, allowing its summoner to call one from the wall."
+msgstr "Ледяной Дракон быстр, необычайно верен и с трудом поддаётся натиску. Узоры в его ледяном дыхании позволяют призывателю вызвать из стены Руну Числа."
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Pale Echo is an aggressive spirit that crosses two lands before striking. Whatever loyalty it loses is restored before movement, making repeated battles its natural rhythm."
+msgstr "Бледное Эхо — агрессивный дух, способный пройти две земли перед ударом. Потерянная верность восстанавливается перед движением, поэтому череда боёв для него естественна."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "War Trance permanently grants one friendly creature +1 Attack."
+msgstr "Боевой Транс навсегда даёт одному дружественному существу +1 к Атаке."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Reckless Oath permanently grants one friendly creature +1 Attack and +1 Missile, but reduces its maximum Loyalty by 2."
+msgstr "Безрассудная Клятва навсегда даёт одному дружественному существу +1 к Атаке и +1 к Стрельбе, но снижает его максимальную Верность на 2."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Radiant Burst permanently reduces one enemy creature's Defense by 1."
+msgstr "Сияющая Вспышка навсегда снижает Защиту одного вражеского существа на 1."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Dark Command permanently raises one friendly creature's maximum Loyalty by 1."
+msgstr "Тёмный Приказ навсегда повышает максимальную Верность одного дружественного существа на 1."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Unravel removes every spell enchantment from one creature, friendly or enemy. Innate special abilities remain."
+msgstr "Развеивание снимает все наложенные заклинания с одного дружественного или вражеского существа. Врождённые особенности сохраняются."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Blinding Dust permanently reduces one enemy creature's Attack by 1."
+msgstr "Слепящая Пыль навсегда снижает Атаку одного вражеского существа на 1."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Aegis permanently reduces missile and territory-fire damage against one friendly creature by 1."
+msgstr "Эгида навсегда уменьшает на 1 урон от стрельбы и огня территории по одному дружественному существу."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Guiding Star permanently grants one friendly creature +1 Missile."
+msgstr "Путеводная Звезда навсегда даёт одному дружественному существу +1 к Стрельбе."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Mend restores 2 current Loyalty to one friendly creature, never above its maximum."
+msgstr "Исцеление восстанавливает одному дружественному существу 2 текущей Верности, но не выше максимума."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Inferno immediately deals 2 Loyalty damage to every creature in one enemy company."
+msgstr "Инферно немедленно наносит 2 урона Верности каждому существу в одном вражеском отряде."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Valiant Heart permanently grants one friendly creature +1 Attack and +1 maximum Loyalty."
+msgstr "Доблестное Сердце навсегда даёт одному дружественному существу +1 к Атаке и +1 к максимальной Верности."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Storm Lance immediately deals 1 Loyalty damage to one enemy creature."
+msgstr "Копьё Бури немедленно наносит 1 урон Верности одному вражескому существу."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Arcane Mantle permanently grants one friendly creature +1 Defense."
+msgstr "Магическая Мантия навсегда даёт одному дружественному существу +1 к Защите."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Great Unraveling removes every spell enchantment from all creatures in the selected land. Innate special abilities remain."
+msgstr "Великое Развеивание снимает все наложенные заклинания со всех существ в выбранной земле. Врождённые особенности сохраняются."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Dread Wave permanently reduces the maximum Loyalty of every creature in one enemy company by 1."
+msgstr "Волна Ужаса навсегда снижает максимальную Верность каждого существа в одном вражеском отряде на 1."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Wellspring permanently grants one friendly creature a random +1 bonus to Attack, Missile or maximum Loyalty."
+msgstr "Источник навсегда даёт одному дружественному существу случайный бонус +1 к Атаке, Стрельбе или максимальной Верности."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Wellspring of Might is the Attack outcome of Wellspring and permanently grants +1 Attack."
+msgstr "Источник Силы — исход Источника, навсегда дающий +1 к Атаке."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Wellspring of Reach is the Missile outcome of Wellspring and permanently grants +1 Missile."
+msgstr "Источник Дальности — исход Источника, навсегда дающий +1 к Стрельбе."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Wellspring of Vigor is the Loyalty outcome of Wellspring and permanently grants +1 maximum Loyalty."
+msgstr "Источник Стойкости — исход Источника, навсегда дающий +1 к максимальной Верности."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Binding Sigil prevents one enemy creature from acting for one battle turn."
+msgstr "Сковывающий Знак не позволяет одному вражескому существу действовать в течение одного хода боя."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Withering Mark permanently reduces one enemy creature's Attack and Defense by 1."
+msgstr "Метка Увядания навсегда снижает Атаку и Защиту одного вражеского существа на 1."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Veil of Smoke permanently reduces one enemy creature's Missile by 1, to a minimum effective value of zero."
+msgstr "Дымовая Завеса навсегда снижает Стрельбу одного вражеского существа на 1, но не ниже нуля."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Waystep moves one friendly creature directly to any friendly land."
+msgstr "Шаг Сквозь Пространство перемещает одно дружественное существо прямо в любую дружественную землю."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Essence Haze affects every wizard and prevents ordinary spell casting and creature summoning for 3 turns."
+msgstr "Туман Эссенции действует на всех колдунов и запрещает обычные заклинания и призыв существ на 3 хода."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Shatter Rune forces one rival wizard to discard a random rune during their next turn."
+msgstr "Раскол Руны заставляет одного соперника сбросить случайную руну в течение его следующего хода."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Rune Sight reveals one rival's concealed hand to the caster for 5 turns."
+msgstr "Рунное Зрение на 5 ходов открывает заклинателю скрытую руку одного соперника."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Hush prevents one rival from calling Chao, Pung, Kong or Game and from casting or summoning for 3 turns. Telepaths are immune."
+msgstr "Безмолвие на 3 хода запрещает одному сопернику объявлять Чоу, Панг, Конг или Маджонг, а также колдовать и призывать. Телепаты невосприимчивы."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Call Number Rune directs your next draw to a Number rune if one remains in the wall."
+msgstr "Призыв Руны Числа направляет ваш следующий добор к Руне Числа, если такая осталась в стене."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Call Bone Rune directs your next draw to a Bone rune if one remains in the wall."
+msgstr "Призыв Руны Кости направляет ваш следующий добор к Руне Кости, если такая осталась в стене."
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Call Blade Rune directs your next draw to a Blade rune if one remains in the wall."
+msgstr "Призыв Руны Клинка направляет ваш следующий добор к Руне Клинка, если такая осталась в стене."

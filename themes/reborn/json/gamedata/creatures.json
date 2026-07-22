@@ -14,7 +14,7 @@
 	    "specials": [ "see_invisible" ],
 	    "stones": [ "sword1", "sword4", "sword7" ],
 	    "unique": false,
-	    "description": "The adventure party is a wise magical investment. It combines a formidable ground and air assault with a stalwart defense. Its ability to see the invisible can foil enemy plans."
+	    "description": "Veterans of a dozen border wars fight beneath the Free Company's patched banner. Their scouts expose invisible enemies in neighboring lands, while the company itself brings balanced steel and missile fire."
 	},
 	{
 	    "id": "air_elemental",
@@ -32,7 +32,7 @@
 	    "specials": [ "cast_silence", "ignore_missiles" ],
 	    "stones": [ "wind4", "wind4" ],
 	    "unique": true,
-	    "description": "The Air Elemental proves to be the greatest combatant af all the elements. Summoners calling upon this element gain the favor of the silence spell, an annoyance to all wizards who are stricken with it."
+	    "description": "A living knot of high wind, the Aether Elemental crosses the map with unnatural speed. Missiles pass through its body, and its presence grants the summoner the power to silence a rival wizard."
 	},
 	{
 	    "id": "great_carol",
@@ -49,7 +49,7 @@
 	    "specials": [ "gate", "first_strike" ],
 	    "stones": [ "sword3", "sword7" ],
 	    "unique": true,
-	    "description": "Carol is a versatile addition to any summoner that can call her to battle. Her pendant allows her to gate to friendly summoning circles and gives her army first strike if she leads them into battle by using the short range displacement ability of her pendant."
+	    "description": "The Gatewarden carries keys to roads that do not exist on any map. She may step between friendly summoning circles, and an attacking company under her command seizes the first action in melee."
 	},
 	{
 	    "id": "chameleon",
@@ -66,7 +66,7 @@
 	    "specials": [ "invisibility", "regeneration" ],
 	    "stones": [ "sword8", "dragon2" ],
 	    "unique": false,
-	    "description": "Chameleons are stealthy archers of the lizard persuasion. Their hearty nature and loyalty to Ziag allow them to recuperate quickly. This is the only invisible unit with ranged attack capability."
+	    "description": "The Veil Stalker bends color and shadow around its scales before loosing a careful shot. It remains invisible while traveling and restores itself at the opening of every map phase."
 	},
 	{
 	    "id": "durlock",
@@ -83,7 +83,7 @@
 	    "specials": [],
 	    "stones": [ "skull2", "skull8" ],
 	    "unique": false,
-	    "description": "A valued member of the skull summoning realm, the Durlock provides an initial foundation for a strong force with its missile fire and robust attack."
+	    "description": "Web Reavers pin prey with barbed threads before closing on hooked limbs. They possess no arcane trick, relying instead on unusually strong melee backed by a precise opening shot."
 	},
 	{
 	    "id": "earth_elemental",
@@ -100,7 +100,7 @@
 	    "specials": [ "cast_scry_runes", "regeneration" ],
 	    "stones": [ "wind1", "wind1" ],
 	    "unique": true,
-	    "description": "Born from the ground beneath, the Earth Elemental is another consistent battle force. The one who controls it receives the ability to peek at his or her opponents hands with the scry runes spell."
+	    "description": "Stone and root close every wound in the Stoneheart Elemental when the map phase begins. Its deep memory also teaches its summoner Rune Sight, revealing a rival's concealed hand."
 	},
 	{
 	    "id": "fire_elemental",
@@ -117,7 +117,7 @@
 	    "specials": [ "cast_random_discard", "fire_shield" ],
 	    "stones": [ "wind2", "wind2" ],
 	    "unique": true,
-	    "description": "The Fire Elemental is a particularly volatile creature. A potent attack force that employs a solid melee and ranged attack, its ability to grant the random discard spell is its real burn."
+	    "description": "The Cinder Elemental answers every melee blow with a lick of punishing flame. While it endures, its summoner may fracture an enemy rune through the Shatter Rune spell."
 	},
 	{
 	    "id": "fire_giant",
@@ -134,7 +134,7 @@
 	    "specials": [],
 	    "stones": [ "sword3", "sword6", "sword9" ],
 	    "unique": false,
-	    "description": "This high range creature is strong in all facets of combat like most sword creatures. Its initial ranged strike is followed by a potent melee attack."
+	    "description": "A Cinder Giant hurls furnace-hot stone before wading into battle. High defense and loyalty let it hold the line after its powerful opening volley has landed."
 	},
 	{
 	    "id": "green_dragon",
@@ -152,7 +152,7 @@
 	    "specials": [ "cast_draw_sword" ],
 	    "stones": [ "dragon2", "dragon2", "dragon2" ],
 	    "unique": true,
-	    "description": "The Green Dragon is a very hostile and aggressive beast. Its lack of a missile strike is supplemented by a fearsome attack strength and a high loyalty. When in play, this Dragon grants its controller the ability to draw a sword rune."
+	    "description": "The Verdant Drake abandons ranged combat for overwhelming claws and relentless speed. Its bond with forged weapons lets its summoner call a Blade rune from the wall."
 	},
 	{
 	    "id": "griffon",
@@ -170,7 +170,7 @@
 	    "specials": [ "merge", "see_invisible" ],
 	    "stones": [ "wind1", "number1", "number9" ],
 	    "unique": false,
-	    "description": "The griffon is a credible strategic unit. Its ability to merge and see the invisible along with its capable combat properties makes it a useful low range creature. An excellent scout with its high movement."
+	    "description": "Griffins patrol two lands at a stride and spot companies hidden from ordinary eyes. When several fight together, their disciplined formation improves both attack and defense."
 	},
 	{
 	    "id": "juggernaut",
@@ -187,7 +187,7 @@
 	    "specials": [ "regeneration" ],
 	    "stones": [ "skull4", "sword4", "number4" ],
 	    "unique": true,
-	    "description": "This creature leads its category on the battlefield. It combines strength, resilience, and broad movement. The Juggernaut is indeed a powerful summons."
+	    "description": "The Iron Behemoth advances slowly, but few defenders can stop it once battle begins. Its massive frame strikes hard, absorbs punishment and repairs itself before each movement phase."
 	},
 	{
 	    "id": "ki_lin",
@@ -205,7 +205,7 @@
 	    "specials": [ "ignore_missiles" ],
 	    "stones": [ "number3", "number6", "number9" ],
 	    "unique": false,
-	    "description": "This fearsome serpent like beast has no visible weaknesses. Its lack of a ranged attack is offset by its ability to ignore missiles while its other abilities are very impressive."
+	    "description": "The Cloud Serpent coils through volleys as though arrows were rain. Strong attack, deep loyalty and swift movement make it dangerous even without a missile strike of its own."
 	},
 	{
 	    "id": "kilor_celsbane",
@@ -222,7 +222,7 @@
 	    "specials": [ "invisibility" ],
 	    "stones": [ "skull1", "skull4", "skull7" ],
 	    "unique": true,
-	    "description": "The invisible undead knight is a formidable adversary to any mid-range unit. With the addition of supplemental enchantments, Kilor becomes a potent foe to any opponent."
+	    "description": "Only hoofprints and a hollow rattle announce the Hollow Cavalier. Invisible on the map and solid in close combat, it is an ideal blade for an ambush or an enchanted assault."
 	},
 	{
 	    "id": "king_drago",
@@ -239,7 +239,7 @@
 	    "specials": [ "magic_resistance", "mighty_blow" ],
 	    "stones": [ "sword2", "sword5", "sword5", "sword8" ],
 	    "unique": true,
-	    "description": "King Drago is the jewel of the realm of swords. His consistencies in the art of war are bolstered by his resistance to magic. Add his mastery of the fearsome mighty blow and you have an awesome fighting machine. Unfortunately he is difficult to heal."
+	    "description": "The Crowned Drake is a fortress with wings folded around it. Magic may fail against its hide, and every melee attack carries a chance to become a devastating Mighty Blow."
 	},
 	{
 	    "id": "knight_templar",
@@ -256,7 +256,7 @@
 	    "specials": [ "mighty_blow" ],
 	    "stones": [ "sword1", "sword4" ],
 	    "unique": false,
-	    "description": "The Knight Templar is a solid low range summoning. He has the ability to combat any low to mid-range opponent with his impressive mighty blow."
+	    "description": "An Oathguard is inexpensive, disciplined and far more dangerous than its modest strength suggests. Each melee attack has a chance to erupt into a Mighty Blow."
 	},
 	{
 	    "id": "learra_siren",
@@ -273,7 +273,7 @@
 	    "specials": [ "first_strike" ],
 	    "stones": [ "number2", "number6", "number8" ],
 	    "unique": true,
-	    "description": "A hauntingly gorgeous individual, Learra's hypnotic song freezes opponents in combat when she leads an attacking party, providing her with the first strike. A good melee property makes this strike quite nasty."
+	    "description": "The Tide Siren's first note steals a defender's moment to react. When she leads an attack, her company skips the missile exchange and acts first in melee."
 	},
 	{
 	    "id": "maz_ra",
@@ -290,7 +290,7 @@
 	    "specials": [ "cast_hellblast", "magic_resistance" ],
 	    "stones": [ "skull6", "skull6", "skull6" ],
 	    "unique": true,
-	    "description": "The Demon Lord known as Maz'Ra may well be the most fearsome creature available to summoners. It can single handedly dispatch many capable armies with its overwhelming attack strength and intimidating Hellblast ability."
+	    "description": "The Horned Tyrant breaks armies by presence alone. Its crushing attack is protected by resistance to hostile magic, while Inferno scorches every enemy that dares share its battlefield."
 	},
 	{
 	    "id": "minotaur",
@@ -307,7 +307,7 @@
 	    "specials": [],
 	    "stones": [ "sword2", "sword6", "sword8" ],
 	    "unique": true,
-	    "description": "Extremely resilient, the minotaur is an excellent choice for summoners. It possesses solid battle attributes at a reasonable cost."
+	    "description": "The Maze Bull needs neither enchantment nor subtlety. Reliable attack, defense and loyalty make this straightforward fighter a dependable core for an early company."
 	},
 	{
 	    "id": "red_dragon",
@@ -325,7 +325,7 @@
 	    "specials": [ "cast_draw_skull" ],
 	    "stones": [ "dragon3", "dragon3", "dragon3" ],
 	    "unique": true,
-	    "description": "The Red Dragon has a particular affinity to the skull realm, allowing its summoner the ability to draw a rune of skulls. It has an intense ranged breath attack and a capable defense making it another powerful minion to do your bidding."
+	    "description": "The Ember Drake opens battle with a long torrent of fire, then closes with fang and claw. Its affinity with death lets its summoner call a Bone rune from the wall."
 	},
 	{
 	    "id": "sand_wraith",
@@ -342,7 +342,7 @@
 	    "specials": [ "invisibility" ],
 	    "stones": [ "number1", "number4" ],
 	    "unique": false,
-	    "description": "The sand wraith is an exceptional strategic unit because of its invisibility. Pair off a sand wraith or two with a mid range creature and watch the overconfident big ones fall."
+	    "description": "The Dune Phantom travels as a stain of moving sand, unseen until combat begins. Its defenses are fragile, but secrecy makes it a useful escort, scout and surprise attacker."
 	},
 	{
 	    "id": "shadow",
@@ -359,7 +359,7 @@
 	    "specials": [ "merge", "invisibility" ],
 	    "stones": [ "skull3", "skull7" ],
 	    "unique": false,
-	    "description": "Shadows are a useful staple in the skull realm. Their ability to merge amongst themselves and maintain invisibility greatly enhances their attacking prowess."
+	    "description": "Nightshades cross the island unseen and grow stronger when gathered into one company. Their Merge discipline improves both attack and defense for every matching companion."
 	},
 	{
 	    "id": "shanahan",
@@ -376,7 +376,7 @@
 	    "specials": [ "devotion" ],
 	    "stones": [ "number2", "number5", "number5", "number8" ],
 	    "unique": true,
-	    "description": "Shanahan the Cloud Giant is the pinnacle of the number realm. There are many options available to the commander of this big boy. Overwhelm most anything by itself, or attach it to a party and wreak havoc across the Isle."
+	    "description": "The Sky Titan combines speed, missile power and immense loyalty in a single towering ally. Its Devotion restores two loyalty before movement, keeping it ready for the next campaign."
 	},
 	{
 	    "id": "skeleton_horde",
@@ -393,7 +393,7 @@
 	    "specials": [ "swarm" ],
 	    "stones": [ "skull1", "skull4" ],
 	    "unique": false,
-	    "description": "Foot soldiers of the skull summoning chain, the skeleton horde provides support. Their sheer numbers allow them to swarm, attacking every member of an opposing army."
+	    "description": "A Bonebound Host is weak one warrior at a time and terrifying as a tide. When it attacks, Swarm spreads its assault across the entire opposing company instead of only the leader."
 	},
 	{
 	    "id": "stone_golem",
@@ -410,7 +410,7 @@
 	    "specials": [ "regeneration" ],
 	    "stones": [ "number3", "number7" ],
 	    "unique": false,
-	    "description": "With its exceptional resilience and regeneration, the stone golem makes for a solid low range creature ideal for support."
+	    "description": "The Stone Colossus is cheap to summon and stubborn to remove. Chips and fractures seal before movement, allowing this regenerating guardian to return to full loyalty."
 	},
 	{
 	    "id": "thunder_bird",
@@ -428,7 +428,7 @@
 	    "specials": [],
 	    "stones": [ "number1", "number4", "number7" ],
 	    "unique": false,
-	    "description": "The thunder bird introduces a ranged attack to the number realm. Couple this with hearty melee and loyalty values and you have a powerful mid-range unit."
+	    "description": "Stormwing dives across two lands and announces battle with a bolt from the clouds. Balanced attack and high loyalty make it a flexible mid-cost creature."
 	},
 	{
 	    "id": "tornado",
@@ -446,7 +446,7 @@
 	    "specials": [ "ignore_missiles" ],
 	    "stones": [ "wind1", "wind2", "wind3", "wind4" ],
 	    "unique": false,
-	    "description": "A wizard must draw upon the power of the winds to summon a tornado. Astronge mid-ranged being, the tornado offers immunity to missile attacks and consistent battle attributes."
+	    "description": "The Living Tempest rolls over two lands at a time, carrying a durable core inside its storm wall. Enemy missiles vanish into the gale before they can select it as a target."
 	},
 	{
 	    "id": "water_elemental",
@@ -463,7 +463,7 @@
 	    "specials": [ "cast_mana_fog", "swarm" ],
 	    "stones": [ "wind3", "wind3" ],
 	    "unique": true,
-	    "description": "The Water Elemental is a powerful force on the Isle, and in the Rune Game. Fog is the strategic annoyance granted to the commander of this element."
+	    "description": "The Tide Elemental divides into grasping currents that can strike an entire enemy company. Its summoner also gains Essence Haze, suppressing ordinary magic and summoning across the table."
 	},
 	{
 	    "id": "white_dragon",
@@ -481,7 +481,7 @@
 	    "specials": [ "cast_draw_number" ],
 	    "stones": [ "dragon1", "dragon1", "dragon1" ],
 	    "unique": true,
-	    "description": "The White Dragon is extremely resilient and loyal by nature. Factor in its ability to allow the summoner to draw a character rune and its consistent battle characteristics and you have a top notch unit at your command."
+	    "description": "The Frost Drake is swift, fiercely loyal and difficult to break. Its crystalline breath carries a Number rune's pattern, allowing its summoner to call one from the wall."
 	},
 	{
 	    "id": "wraith",
@@ -499,6 +499,6 @@
 	    "specials": [ "regeneration" ],
 	    "stones": [ "skull3", "skull5", "skull9" ],
 	    "unique": false,
-	    "description": "Wraiths provide the most bang for the buck in the skull regime. Regeneration supplies durability in combat allowing the wraith to clean up any low to mid-range enemies and territories."
+	    "description": "The Pale Echo is an aggressive spirit that crosses two lands before striking. Whatever loyalty it loses is restored before movement, making repeated battles its natural rhythm."
 	}
 ]

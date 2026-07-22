@@ -4020,7 +4020,243 @@ msgstr ""
 msgid "Thornfield"
 msgstr ""
 
-
 #: themes/reborn/index.json
 msgid "Reborn Community Package (Preview)"
+msgstr ""
+
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Veterans of a dozen border wars fight beneath the Free Company's patched banner. Their scouts expose invisible enemies in neighboring lands, while the company itself brings balanced steel and missile fire."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "A living knot of high wind, the Aether Elemental crosses the map with unnatural speed. Missiles pass through its body, and its presence grants the summoner the power to silence a rival wizard."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Gatewarden carries keys to roads that do not exist on any map. She may step between friendly summoning circles, and an attacking company under her command seizes the first action in melee."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Veil Stalker bends color and shadow around its scales before loosing a careful shot. It remains invisible while traveling and restores itself at the opening of every map phase."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Web Reavers pin prey with barbed threads before closing on hooked limbs. They possess no arcane trick, relying instead on unusually strong melee backed by a precise opening shot."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Stone and root close every wound in the Stoneheart Elemental when the map phase begins. Its deep memory also teaches its summoner Rune Sight, revealing a rival's concealed hand."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Cinder Elemental answers every melee blow with a lick of punishing flame. While it endures, its summoner may fracture an enemy rune through the Shatter Rune spell."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "A Cinder Giant hurls furnace-hot stone before wading into battle. High defense and loyalty let it hold the line after its powerful opening volley has landed."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Verdant Drake abandons ranged combat for overwhelming claws and relentless speed. Its bond with forged weapons lets its summoner call a Blade rune from the wall."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Griffins patrol two lands at a stride and spot companies hidden from ordinary eyes. When several fight together, their disciplined formation improves both attack and defense."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Iron Behemoth advances slowly, but few defenders can stop it once battle begins. Its massive frame strikes hard, absorbs punishment and repairs itself before each movement phase."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Cloud Serpent coils through volleys as though arrows were rain. Strong attack, deep loyalty and swift movement make it dangerous even without a missile strike of its own."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Only hoofprints and a hollow rattle announce the Hollow Cavalier. Invisible on the map and solid in close combat, it is an ideal blade for an ambush or an enchanted assault."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Crowned Drake is a fortress with wings folded around it. Magic may fail against its hide, and every melee attack carries a chance to become a devastating Mighty Blow."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "An Oathguard is inexpensive, disciplined and far more dangerous than its modest strength suggests. Each melee attack has a chance to erupt into a Mighty Blow."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Tide Siren's first note steals a defender's moment to react. When she leads an attack, her company skips the missile exchange and acts first in melee."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Horned Tyrant breaks armies by presence alone. Its crushing attack is protected by resistance to hostile magic, while Inferno scorches every enemy that dares share its battlefield."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Maze Bull needs neither enchantment nor subtlety. Reliable attack, defense and loyalty make this straightforward fighter a dependable core for an early company."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Ember Drake opens battle with a long torrent of fire, then closes with fang and claw. Its affinity with death lets its summoner call a Bone rune from the wall."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Dune Phantom travels as a stain of moving sand, unseen until combat begins. Its defenses are fragile, but secrecy makes it a useful escort, scout and surprise attacker."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Nightshades cross the island unseen and grow stronger when gathered into one company. Their Merge discipline improves both attack and defense for every matching companion."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Sky Titan combines speed, missile power and immense loyalty in a single towering ally. Its Devotion restores two loyalty before movement, keeping it ready for the next campaign."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "A Bonebound Host is weak one warrior at a time and terrifying as a tide. When it attacks, Swarm spreads its assault across the entire opposing company instead of only the leader."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Stone Colossus is cheap to summon and stubborn to remove. Chips and fractures seal before movement, allowing this regenerating guardian to return to full loyalty."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "Stormwing dives across two lands and announces battle with a bolt from the clouds. Balanced attack and high loyalty make it a flexible mid-cost creature."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Living Tempest rolls over two lands at a time, carrying a durable core inside its storm wall. Enemy missiles vanish into the gale before they can select it as a target."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Tide Elemental divides into grasping currents that can strike an entire enemy company. Its summoner also gains Essence Haze, suppressing ordinary magic and summoning across the table."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Frost Drake is swift, fiercely loyal and difficult to break. Its crystalline breath carries a Number rune's pattern, allowing its summoner to call one from the wall."
+msgstr ""
+
+#: themes/reborn/json/gamedata/creatures.json
+msgid "The Pale Echo is an aggressive spirit that crosses two lands before striking. Whatever loyalty it loses is restored before movement, making repeated battles its natural rhythm."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "War Trance permanently grants one friendly creature +1 Attack."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Reckless Oath permanently grants one friendly creature +1 Attack and +1 Missile, but reduces its maximum Loyalty by 2."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Radiant Burst permanently reduces one enemy creature's Defense by 1."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Dark Command permanently raises one friendly creature's maximum Loyalty by 1."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Unravel removes every spell enchantment from one creature, friendly or enemy. Innate special abilities remain."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Blinding Dust permanently reduces one enemy creature's Attack by 1."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Aegis permanently reduces missile and territory-fire damage against one friendly creature by 1."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Guiding Star permanently grants one friendly creature +1 Missile."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Mend restores 2 current Loyalty to one friendly creature, never above its maximum."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Inferno immediately deals 2 Loyalty damage to every creature in one enemy company."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Valiant Heart permanently grants one friendly creature +1 Attack and +1 maximum Loyalty."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Storm Lance immediately deals 1 Loyalty damage to one enemy creature."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Arcane Mantle permanently grants one friendly creature +1 Defense."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Great Unraveling removes every spell enchantment from all creatures in the selected land. Innate special abilities remain."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Dread Wave permanently reduces the maximum Loyalty of every creature in one enemy company by 1."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Wellspring permanently grants one friendly creature a random +1 bonus to Attack, Missile or maximum Loyalty."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Wellspring of Might is the Attack outcome of Wellspring and permanently grants +1 Attack."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Wellspring of Reach is the Missile outcome of Wellspring and permanently grants +1 Missile."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Wellspring of Vigor is the Loyalty outcome of Wellspring and permanently grants +1 maximum Loyalty."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Binding Sigil prevents one enemy creature from acting for one battle turn."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Withering Mark permanently reduces one enemy creature's Attack and Defense by 1."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Veil of Smoke permanently reduces one enemy creature's Missile by 1, to a minimum effective value of zero."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Waystep moves one friendly creature directly to any friendly land."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Essence Haze affects every wizard and prevents ordinary spell casting and creature summoning for 3 turns."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Shatter Rune forces one rival wizard to discard a random rune during their next turn."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Rune Sight reveals one rival's concealed hand to the caster for 5 turns."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Hush prevents one rival from calling Chao, Pung, Kong or Game and from casting or summoning for 3 turns. Telepaths are immune."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Call Number Rune directs your next draw to a Number rune if one remains in the wall."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Call Bone Rune directs your next draw to a Bone rune if one remains in the wall."
+msgstr ""
+
+#: themes/reborn/json/gamedata/spells.json
+msgid "Call Blade Rune directs your next draw to a Blade rune if one remains in the wall."
 msgstr ""
