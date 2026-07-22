@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "contentcatalog.h"
 #include "gamedata.h"
 
 class SettingsMenuScreen : public JsonWindow
@@ -15,6 +16,7 @@ class SettingsMenuScreen : public JsonWindow
     {
         AIDifficulty,
         Language,
+        ContentPackage,
         GameSpeed,
         MusicVolume,
         EffectsVolume,
@@ -35,6 +37,9 @@ class SettingsMenuScreen : public JsonWindow
     std::vector<Entry> entries;
     int                selected;
     std::string        language;
+    std::string        initialContentTheme;
+    std::vector<InstalledContentPackage> contentPackages;
+    int                contentPackageIndex;
     std::string        gameSpeed;
     AI::Difficulty     aiDifficulty;
     int                musicVolume;
@@ -86,7 +91,7 @@ protected:
     bool               mouseMotionEvent(const Point &, u32) override;
 
 public:
-    SettingsMenuScreen();
+    explicit SettingsMenuScreen(const std::string & program);
 
     void               renderWindow(void) override;
 };

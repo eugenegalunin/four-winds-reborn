@@ -38,6 +38,7 @@ namespace
     bool guardianRulesSound = true;
     std::string lang;
     std::string speed = "classic";
+    std::string selectedContentTheme = "default";
     AI::Difficulty defaultAiDifficulty = AI::Difficulty::Normal;
 
     int normalizedVolume(int value)
@@ -68,6 +69,16 @@ namespace
 	return "classic";
     }
 
+    std::string normalizedContentTheme(const std::string & value,
+                                       const std::string & fallback = "default")
+    {
+	if(value.empty() || value == "." || value == ".." ||
+	   value.find('/') != std::string::npos ||
+	   value.find('\\') != std::string::npos)
+	    return fallback;
+	return value;
+    }
+
     std::string userSettingsFile(void)
     {
 	if(const char* overrideFile = Systems::environment("FOUR_WINDS_SETTINGS_FILE"))
@@ -88,6 +99,7 @@ bool Settings::read(void)
     lang = normalizedLanguage(Systems::messageLocale(1));
     speed = "classic";
     defaultAiDifficulty = AI::Difficulty::Normal;
+    selectedContentTheme = "default";
 
     JsonObject jo = GameTheme::jsonResource("config.json").toObject();
 
@@ -129,6 +141,8 @@ bool Settings::read(void)
 	speed = normalizedGameSpeed(user.getString("game:speed", speed));
 	defaultAiDifficulty = AI::difficultyFromString(
 	    user.getString("ai:difficulty", AI::difficultyName(defaultAiDifficulty)));
+	selectedContentTheme = normalizedContentTheme(
+	    user.getString("content:theme", selectedContentTheme));
     }
 
     return true;
@@ -156,6 +170,7 @@ bool Settings::write(std::string* error)
     jo.addBoolean("sound:guardianrules", guardianRulesSound);
     jo.addString("game:speed", speed);
     jo.addString("ai:difficulty", AI::difficultyName(defaultAiDifficulty));
+    jo.addString("content:theme", selectedContentTheme);
 
     if(!Systems::saveString2File(jo.toString(), file))
     {
@@ -185,6 +200,23 @@ std::string Settings::gameSpeed(void)
 void Settings::setGameSpeed(const std::string & value)
 {
     speed = normalizedGameSpeed(value);
+}
+
+std::string Settings::contentTheme(void)
+{
+    return selectedContentTheme;
+}
+
+void Settings::setContentTheme(const std::string & value)
+{
+    selectedContentTheme = normalizedContentTheme(value);
+}
+
+std::string Settings::preferredContentTheme(const std::string & fallback)
+{
+    const JsonObject user = JsonContentFile(userSettingsFile()).toObject();
+    if(!user.isValid() || !user.hasKey("content:theme")) return fallback;
+    return normalizedContentTheme(user.getString("content:theme"), fallback);
 }
 
 AI::Difficulty Settings::aiDifficulty(void)

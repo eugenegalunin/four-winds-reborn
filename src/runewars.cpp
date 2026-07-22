@@ -25,6 +25,7 @@
 #include <exception>
 
 #include "gameplayrng.h"
+#include "contentcatalog.h"
 #include "gametheme.h"
 #include "settings.h"
 #include "intropart.h"
@@ -171,7 +172,9 @@ const char* menuName(int menu)
 }
 }
 
-RuneWarsClient::RuneWarsClient(int argc, char** argv) : Application(argv[0], false, Size(0, 0), "default"), part(0)
+RuneWarsClient::RuneWarsClient(int argc, char** argv) :
+    Application(argv[0], false, Size(0, 0), "default"), part(0),
+    themeCommandOverride(false)
 {
     CrashReport::breadcrumb("Startup stage=engine_log_init status=begin");
     LogWrapper::init(domain(), argv[0]);
@@ -181,11 +184,28 @@ RuneWarsClient::RuneWarsClient(int argc, char** argv) : Application(argv[0], fal
 #ifdef RUNEWARS_THEME
     theme = RUNEWARS_THEME;
 #endif
+    theme = Settings::preferredContentTheme(theme);
     if(Systems::environment("RUNEWARS_THEME"))
+	{
 	theme = Systems::environment("RUNEWARS_THEME");
+	themeCommandOverride = true;
+	}
 
     savefile = Settings::fileSaveGame();
     parseCommandOptions(argc, argv);
+
+    // A stale user preference must never make the game unbootable. Explicit
+    // command-line/environment themes remain strict diagnostic overrides.
+    if(!themeCommandOverride)
+    {
+	std::string error;
+	if(!ContentCatalog::isAvailable(program, domain(), theme, &error))
+	{
+	    ERROR("stored content package unavailable: " << theme << ": " << error
+	          << "; falling back to default");
+	    theme = "default";
+	}
+    }
 }
 
 void RuneWarsClient::parseCommandOptions(int argc, char** argv)
@@ -201,7 +221,10 @@ void RuneWarsClient::parseCommandOptions(int argc, char** argv)
 
         case 't':
 	    if(Systems::GetOptionsArgument())
+	    {
 		theme = Systems::GetOptionsArgument();
+		themeCommandOverride = true;
+	    }
             break;
 #ifdef BUILD_DEBUG
         case 'p':
@@ -434,7 +457,7 @@ bool RuneWarsClient::exec(void)
 	    case Menu::SettingsMenu:
 	    {
 		const std::string previousLanguage = Settings::language();
-		menu = SettingsMenuScreen().exec();
+		menu = SettingsMenuScreen(std::string(program ? program : "")).exec();
 		if(previousLanguage != Settings::language())
 		{
 		    if(!translationInit())

@@ -82,6 +82,7 @@ set(FOUR_WINDS_SOURCE
     src/gameobjects.cpp
 
     src/platform/crashreport.cpp
+    src/platform/contentcatalog.cpp
     src/platform/filedialog.cpp
     src/platform/recovery.cpp
     src/platform/replayfiles.cpp

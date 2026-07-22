@@ -54,9 +54,10 @@ namespace
     }
 }
 
-SettingsMenuScreen::SettingsMenuScreen() :
+SettingsMenuScreen::SettingsMenuScreen(const std::string & program) :
     JsonWindow("screen_settings.json", nullptr), selected(0),
-    language(Settings::language()), gameSpeed(Settings::gameSpeed()),
+    language(Settings::language()), initialContentTheme(Settings::contentTheme()),
+    contentPackageIndex(0), gameSpeed(Settings::gameSpeed()),
     aiDifficulty(Settings::aiDifficulty()),
     musicVolume(Settings::musicVolume()), effectsVolume(Settings::effectsVolume()),
     voiceVolume(Settings::voiceVolume()),
@@ -106,8 +107,20 @@ SettingsMenuScreen::SettingsMenuScreen() :
         for(const int candidate : windowScales)
             if(candidate <= Settings::windowScale()) windowScale = candidate;
     }
+
+    for(InstalledContentPackage & package :
+        ContentCatalog::discover(program, Application::domain()))
+    {
+        if(package.compatible) contentPackages.push_back(std::move(package));
+        else VERBOSE("content package ignored: " << package.theme << ": " << package.error);
+    }
+    for(size_t index = 0; index < contentPackages.size(); ++index)
+        if(contentPackages[index].theme == initialContentTheme)
+            contentPackageIndex = static_cast<int>(index);
+
     addEntry(AIDifficulty);
     addEntry(Language);
+    addEntry(ContentPackage);
     addEntry(GameSpeed);
     addEntry(MusicVolume);
     addEntry(EffectsVolume);
@@ -144,6 +157,7 @@ std::string SettingsMenuScreen::entryLabel(EntryKind kind) const
     {
         case AIDifficulty: return _("AI Difficulty");
         case Language: return _("Language");
+        case ContentPackage: return _("Content Package");
         case GameSpeed: return _("Game Speed");
         case MusicVolume: return _("Music");
         case EffectsVolume: return _("Sound Effects");
@@ -163,6 +177,11 @@ std::string SettingsMenuScreen::entryValue(EntryKind kind) const
     {
         case AIDifficulty: return difficultyLabel(aiDifficulty);
         case Language: return language == "ru" ? _("Russian") : _("English");
+        case ContentPackage:
+            if(0 <= contentPackageIndex &&
+               contentPackageIndex < static_cast<int>(contentPackages.size()))
+                return _(contentPackages[contentPackageIndex].displayName().c_str());
+            return _("Unavailable");
         case GameSpeed:
             if(gameSpeed == "classic") return _("Classic");
             if(gameSpeed == "fast") return _("Fast");
@@ -356,6 +375,13 @@ bool SettingsMenuScreen::adjustSelected(int direction)
         setVolumeValue(kind, volumeValue(kind) + (direction < 0 ? -10 : 10));
     else if(kind == Language)
         language = language == "ru" ? "en" : "ru";
+    else if(kind == ContentPackage)
+    {
+        if(contentPackages.empty()) return false;
+        contentPackageIndex = (contentPackageIndex + (direction < 0 ? -1 : 1) +
+            static_cast<int>(contentPackages.size())) %
+            static_cast<int>(contentPackages.size());
+    }
     else if(kind == GameSpeed)
     {
         static const std::vector<std::string> speeds = { "classic", "normal", "fast" };
@@ -394,6 +420,7 @@ bool SettingsMenuScreen::activateSelected(void)
     switch(entries[selected].kind)
     {
         case Language:
+        case ContentPackage:
         case AIDifficulty:
         case GameSpeed:
         case MusicVolume:
@@ -430,6 +457,9 @@ bool SettingsMenuScreen::activateSelected(void)
             }
 
             Settings::setLanguage(language);
+            if(0 <= contentPackageIndex &&
+               contentPackageIndex < static_cast<int>(contentPackages.size()))
+                Settings::setContentTheme(contentPackages[contentPackageIndex].theme);
             Settings::setGameSpeed(gameSpeed);
             Settings::setAIDifficulty(aiDifficulty);
             Settings::setMusicVolume(musicVolume);
@@ -447,6 +477,13 @@ bool SettingsMenuScreen::activateSelected(void)
                            *this, false).exec();
                 renderWindow();
                 return true;
+            }
+
+            if(Settings::contentTheme() != initialContentTheme)
+            {
+                MessageBox(_("Content Package"),
+                           _("Restart the game to activate the selected content package."),
+                           *this, false).exec();
             }
 
 #ifndef SWE_DISABLE_AUDIO
@@ -535,6 +572,7 @@ bool SettingsMenuScreen::mouseClickEvent(const ButtonsEvent & coords)
                 switch(entries[ii].kind)
                 {
                     case Language:
+                    case ContentPackage:
                     case AIDifficulty:
                     case GameSpeed:
                     case GuardianVoices:

@@ -21,6 +21,18 @@ msgstr ""
 msgid "Original Theme"
 msgstr ""
 
+#: src\ui\settingsmenu.cpp
+msgid "Content Package"
+msgstr ""
+
+#: src\ui\settingsmenu.cpp
+msgid "Unavailable"
+msgstr ""
+
+#: src\ui\settingsmenu.cpp
+msgid "Restart the game to activate the selected content package."
+msgstr ""
+
 #: src\strings.cpp:5
 msgid "Select Wizard & Clan"
 msgstr ""

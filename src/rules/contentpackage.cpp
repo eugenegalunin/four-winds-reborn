@@ -24,9 +24,11 @@ ContentPackageManifest & selectedContentPackage(void)
     return selected;
 }
 
-bool parseManifest(const SWE::JsonObject & themeIndex,
-                   ContentPackageManifest & manifest,
-                   std::string* error)
+}
+
+bool parseContentPackageManifest(const SWE::JsonObject & themeIndex,
+                                 ContentPackageManifest & manifest,
+                                 std::string* error)
 {
     const SWE::JsonObject* encoded = themeIndex.getObject(ContentPackageIdentityKey);
     if(!encoded)
@@ -84,7 +86,6 @@ bool parseManifest(const SWE::JsonObject & themeIndex,
     manifest = std::move(parsed);
     return true;
 }
-}
 
 bool ContentPackageManifest::isValid(void) const
 {
@@ -140,7 +141,7 @@ SWE::JsonObject contentPackageIdentityJson(const ContentPackageManifest & manife
 bool activateContentPackage(const SWE::JsonObject & themeIndex, std::string* error)
 {
     ContentPackageManifest parsed;
-    if(!parseManifest(themeIndex, parsed, error)) return false;
+    if(!parseContentPackageManifest(themeIndex, parsed, error)) return false;
 
     selectedContentPackage() = std::move(parsed);
     if(error) error->clear();

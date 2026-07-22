@@ -47,6 +47,7 @@ class RuneWarsClient : public Application
 {
     int			part;
     std::string		savefile;
+    bool                themeCommandOverride;
 
     void		parseCommandOptions(int argc, char** argv);
     void		loadResources(void);

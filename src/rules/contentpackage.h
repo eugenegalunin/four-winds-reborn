@@ -46,6 +46,12 @@ const ContentPackageManifest & activeContentPackageManifest(void);
 ContentPackageIdentity contentPackageIdentity(const ContentPackageManifest &);
 SWE::JsonObject contentPackageIdentityJson(const ContentPackageManifest &);
 
+// Parses and validates a package manifest without changing the active
+// package. Discovery uses this before a theme can be offered to the player.
+bool parseContentPackageManifest(const SWE::JsonObject & themeIndex,
+                                 ContentPackageManifest & manifest,
+                                 std::string* error = nullptr);
+
 // Reads the mandatory contentPackage manifest embedded in a theme index and
 // activates it only after the complete manifest has passed validation.
 bool activateContentPackage(const SWE::JsonObject & themeIndex,

@@ -179,6 +179,10 @@ bool GameTheme::init(const Application & app)
         .append(" contract=").append(contentManifest.engineContract));
 
     Settings::read();
+    // The package accepted by the startup validator is authoritative for this
+    // process. This repairs the in-memory preference after a safe fallback
+    // without rewriting unrelated settings.
+    Settings::setContentTheme(app.theme);
 
     // load caches
     if(! loadJson<ImageInfo>("images.json", mapImagesInfo))

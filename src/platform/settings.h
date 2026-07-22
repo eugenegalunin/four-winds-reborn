@@ -43,6 +43,11 @@ namespace Settings
     void                setLanguage(const std::string &);
     std::string         gameSpeed(void);
     void                setGameSpeed(const std::string &);
+    std::string         contentTheme(void);
+    void                setContentTheme(const std::string &);
+    // Bootstrap read used before GameTheme is initialized. Theme defaults are
+    // unavailable at that point, so only the per-user preference is read.
+    std::string         preferredContentTheme(const std::string & fallback = "default");
     AI::Difficulty      aiDifficulty(void);
     void                setAIDifficulty(AI::Difficulty);
     int                 presentationDelay(int);

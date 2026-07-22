@@ -16,6 +16,7 @@
 #include "adventurehints.h"
 #include "avatar_balance_tests.h"
 #include "battle.h"
+#include "contentcatalog.h"
 #include "contentpackage.h"
 #include "crashreport.h"
 #ifdef BUILD_DEBUG
@@ -363,6 +364,66 @@ void testContentPackageIdentityContract()
     packageError.clear();
     expect(activateContentPackage(classicIndex, &packageError) && packageError.empty(),
            "content package tests must restore the Classic package");
+}
+
+void testInstalledContentCatalog()
+{
+    const std::string sourceRoot = FOUR_WINDS_SOURCE_DIR;
+    const std::string sourceProgram =
+        (std::filesystem::path(sourceRoot) / "four-winds-catalog-test.exe").string();
+    const std::vector<InstalledContentPackage> installed =
+        ContentCatalog::discover(sourceProgram, "four-winds-catalog-source-test");
+    const auto original = std::find_if(installed.begin(), installed.end(),
+        [](const InstalledContentPackage & package)
+        {
+            return package.theme == "default";
+        });
+    std::string error;
+    expect(original != installed.end() && original->compatible &&
+           original->manifest.identity.id == ClassicContentPackageId &&
+           original->manifest.identity.version == ClassicContentPackageVersion &&
+           original->displayName() == "Original Theme" &&
+           ContentCatalog::isAvailable(sourceProgram,
+                                       "four-winds-catalog-source-test",
+                                       "default", &error) && error.empty(),
+           "the installed Classic package must pass catalog validation");
+
+    const std::filesystem::path fixtureRoot =
+        std::filesystem::temp_directory_path() / "four-winds-content-catalog-test";
+    std::error_code filesystemError;
+    std::filesystem::remove_all(fixtureRoot, filesystemError);
+    std::filesystem::create_directories(fixtureRoot / "themes" / "broken",
+                                        filesystemError);
+    const std::string sourceIndex =
+        (std::filesystem::path(sourceRoot) / "themes" / "default" / "index.json").string();
+    std::string indexText;
+    const std::string brokenIndex =
+        (fixtureRoot / "themes" / "broken" / "index.json").string();
+    const bool fixtureWritten = Systems::readFile2String(sourceIndex, indexText) &&
+        Systems::saveString2File(indexText, brokenIndex);
+    const std::string fixtureProgram = (fixtureRoot / "game.exe").string();
+    const std::vector<InstalledContentPackage> broken =
+        ContentCatalog::discover(fixtureProgram, "four-winds-catalog-broken-test");
+    const auto rejected = std::find_if(broken.begin(), broken.end(),
+        [](const InstalledContentPackage & package)
+        {
+            return package.theme == "broken";
+        });
+    error.clear();
+    expect(fixtureWritten && rejected != broken.end() && !rejected->compatible &&
+           rejected->error.find("content.json") != std::string::npos &&
+           !ContentCatalog::isAvailable(fixtureProgram,
+                                        "four-winds-catalog-broken-test",
+                                        "broken", &error) &&
+           error.find("content.json") != std::string::npos,
+           "incomplete packages must remain visible to diagnostics but unavailable");
+    error.clear();
+    expect(!ContentCatalog::isAvailable(sourceProgram,
+                                        "four-winds-catalog-source-test",
+                                        "missing", &error) &&
+           error.find("not installed") != std::string::npos,
+           "an absent stored package must produce a safe fallback diagnostic");
+    std::filesystem::remove_all(fixtureRoot, filesystemError);
 }
 
 void testRuneGameRoundFlowRuleset()
@@ -1448,6 +1509,7 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("ru_RU");
     Settings::setGameSpeed("fast");
+    Settings::setContentTheme("alternate");
     Settings::setAIDifficulty(AI::Difficulty::Unfair);
     Settings::setMusicVolume(35);
     Settings::setEffectsVolume(60);
@@ -1464,6 +1526,7 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("en");
     Settings::setGameSpeed("normal");
+    Settings::setContentTheme("default");
     Settings::setAIDifficulty(AI::Difficulty::Easy);
     Settings::setMusicVolume(100);
     Settings::setEffectsVolume(100);
@@ -1472,6 +1535,7 @@ int runSettingsPersistenceSelfTest()
     Settings::setFullscreen(false);
     Settings::setWindowScale(100);
     if(!Settings::read() || Settings::language() != "ru" || Settings::gameSpeed() != "fast" ||
+       Settings::contentTheme() != "alternate" ||
        Settings::aiDifficulty() != AI::Difficulty::Unfair ||
        !Settings::music() || Settings::musicVolume() != 35 ||
        !Settings::sound() || Settings::effectsVolume() != 60 || Settings::voiceVolume() != 85 ||
@@ -1485,6 +1549,7 @@ int runSettingsPersistenceSelfTest()
     const JsonObject saved = JsonContentFile(settingsFile).toObject();
     if(!saved.isValid() || saved.getString("language") != "ru" ||
        saved.getString("game:speed") != "fast" ||
+       saved.getString("content:theme") != "alternate" ||
        saved.getString("ai:difficulty") != "unfair" ||
        !saved.getBoolean("music", false) || saved.getInteger("music:volume", -1) != 35 ||
        !saved.getBoolean("sound", false) || saved.getInteger("sound:volume", -1) != 60 ||
@@ -1505,6 +1570,7 @@ int runSettingsPersistenceSelfTest()
        Settings::musicVolume() != 0 || Settings::effectsVolume() != 0 ||
        Settings::voiceVolume() != 0 || Settings::music() || Settings::sound() ||
        Settings::windowScale() != 100 ||
+       Settings::contentTheme() != "default" ||
        Settings::aiDifficulty() != AI::Difficulty::Normal)
     {
         std::cerr << "FAIL: legacy boolean audio settings are not load compatible\n";
@@ -4649,6 +4715,13 @@ int runHeadlessMatchSelfTest()
         return 1;
     }
 
+    Settings::setContentTheme("../unsafe");
+    if(Settings::contentTheme() != "default")
+    {
+        std::cerr << "FAIL: unsafe content theme names must fall back to default\n";
+        return 1;
+    }
+
     Simulation::MatchConfig unavailableRuleset = config;
     unavailableRuleset.runeGameRulesetId = "removed-variant";
     unavailableRuleset.runeGameRulesetVersion = 3;
@@ -5254,6 +5327,7 @@ int main(int argc, char** argv)
     testDifficultyRules();
     testRuneGameRulesetIdentityContract();
     testContentPackageIdentityContract();
+    testInstalledContentCatalog();
     testRuneGameRoundFlowRuleset();
     testRuneGameSpellPointRuleset();
     testPolygonHitTesting();
