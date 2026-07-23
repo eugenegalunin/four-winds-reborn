@@ -110,6 +110,16 @@ void MahjongPartScreen::tickEvent(u32 ms)
 	    renderWindow();
     }
 
+    // Consume expiry in the same presentation tick, before polling or draining
+    // authoritative actions.  A queued SDL event could otherwise arrive after
+    // AI turns have advanced and press a control belonging to a later choice.
+    if(turnTimeoutPending)
+    {
+	turnTimeoutPending = false;
+	actionOutOfTime();
+	return;
+    }
+
     if(playerReady && tt.check(ms, Settings::presentationDelay(100)))
     {
 	// Presentation actions can deliberately remain queued while an animation runs.
@@ -214,19 +224,12 @@ void MahjongPartScreen::tickEvent(u32 ms)
 bool MahjongPartScreen::actionMahjongLoadData(void)
 {
     ld = GameData::toLocalData(myAvatar);
-    const LocalPlayer & player = ld.myPlayer();
-
     // A completed Chao clears the authoritative discard before its data
     // refresh reaches the screen. Do not keep rendering a now-invalid Chao
     // variant against that cleared discard.
     if(!ld.dropStone.isValid()) variantSelected = -1;
 
-    iconAffectedSkull.setVisible(player.isAffectedSpell(Spell::DrawSkull));
-    iconAffectedSword.setVisible(player.isAffectedSpell(Spell::DrawSword));
-    iconAffectedNumber.setVisible(player.isAffectedSpell(Spell::DrawNumber));
-    iconAffectedDiscard.setVisible(player.isAffectedSpell(Spell::RandomDiscard));
-    iconAffectedSilence.setVisible(player.isAffectedSpell(Spell::Silence));
-    iconAffectedScry.setVisible(player.isAffectedSpell(Spell::ScryRunes));
+    syncAffectedSpellIndicators();
 
     return true;
 }
@@ -278,7 +281,7 @@ bool MahjongPartScreen::actionMahjongEnd(const ActionMessage & v)
     // The authoritative round end invalidates any countdown that belonged to
     // the last local turn.  Leaving it active can emit a stale timeout while
     // the end-of-round presentation is running.
-    animationTurn.setEnabled(false);
+    retireTurnTimeout();
 
 #ifdef BUILD_DEBUG
     // A visible AI takeover is intentionally scoped to one complete phase.
@@ -303,7 +306,7 @@ bool MahjongPartScreen::actionMahjongBegin(const ActionMessage & v)
     ld.roundWind = action.roundWind();
 
     // A new part must never inherit the final countdown from the previous one.
-    animationTurn.setEnabled(false);
+    retireTurnTimeout();
 
     playSound("begin");
     playSoundWait();
@@ -328,9 +331,7 @@ bool MahjongPartScreen::actionMahjongTurn(const ActionMessage & v)
     ld.currentWind = action.currentWind();
 
     // Every authoritative turn change retires the previous local countdown.
-    // Previously a submitted move left the animation ticking through later AI
-    // turns until it raised MahjongOutOfTime with no remaining choice to make.
-    animationTurn.setEnabled(false);
+    retireTurnTimeout();
 
     stoneSelected = -1;
     variantSelected = -1;

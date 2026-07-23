@@ -26,7 +26,9 @@ bool MahjongPartScreen::userEvent(int act, void* data)
     switch(act)
     {
         case Action::MahjongGameQuit: actionQuit(); break;
-        case Action::MahjongOutOfTime: actionOutOfTime(); break;
+        // Countdown expiry is consumed synchronously by tickEvent.  Ignore
+        // legacy queued events so they cannot act on a newer choice window.
+        case Action::MahjongOutOfTime: DEBUG("stale Mahjong timeout ignored"); break;
         case Action::MahjongDropSelected: actionDropSelected(); break;
 
         case Action::ButtonCast: actionButtonShowCast(); break;
@@ -169,6 +171,29 @@ bool MahjongPartScreen::mouseClickEvent(const ButtonsEvent & coords)
 
 void MahjongPartScreen::actionOutOfTime(void)
 {
+    turnTimeoutPending = false;
+
+    const bool hasChoice =
+        buttonLocalReady.isVisible() ||
+        buttonGame->isVisible() ||
+        buttonKong->isVisible() ||
+        buttonPung->isVisible() ||
+        buttonChao->isVisible() ||
+        buttonPass->isVisible() ||
+        0 <= variantSelected ||
+        0 <= stoneSelected ||
+        ld.myPlayer().newStone.isValid();
+
+    if(!hasChoice)
+    {
+        DEBUG("stale Mahjong timeout ignored: no active choice");
+        return;
+    }
+
+    // A timeout owns exactly one local choice.  Retire its countdown before
+    // scheduling the button/drop action, whose engine callback is delayed.
+    animationTurn.setEnabled(false);
+
     if(buttonLocalReady.isVisible())
         buttonLocalReady.setClicked();
     else if(buttonGame->isVisible())
@@ -185,11 +210,6 @@ void MahjongPartScreen::actionOutOfTime(void)
         pushEventAction(Action::MahjongDropSelected, this, nullptr);
     else if(0 <= stoneSelected || ld.myPlayer().newStone.isValid())
         pushEventAction(Action::MahjongDropSelected, this, nullptr);
-    else
-    {
-        ERROR("unknown reason");
-        VERBOSE("json: " << toJsonObject().toString());
-    }
 }
 
 void MahjongPartScreen::actionButtonLocalReady(void)
@@ -205,6 +225,12 @@ bool MahjongPartScreen::submitHumanAction(const ClientMessage & action)
 
     showActionRejection(rejection);
     return false;
+}
+
+void MahjongPartScreen::retireTurnTimeout(void)
+{
+    turnTimeoutPending = false;
+    animationTurn.setEnabled(false);
 }
 
 void MahjongPartScreen::showActionRejection(const ActionRejection & rejection)
@@ -257,31 +283,32 @@ void MahjongPartScreen::actionButtonPass(int rule)
 
     buttonLocalReady.setVisible(false);
     bool sendPass = false;
+    bool choiceCompleted = false;
 
     if(fastLogText.text.size()) fastLogText.text.clear();
 
     if(rule == WinRule::Game)
     {
         if(submitHumanAction(ClientSayGame()))
-            submitHumanAction(ClientButtonGame());
+            choiceCompleted = submitHumanAction(ClientButtonGame());
     }
     else if(rule == WinRule::Kong)
     {
         if(ld.yourTurn())
         {
             if(submitHumanAction(ClientSayKong(2)))
-                submitHumanAction(ClientButtonKong2());
+                choiceCompleted = submitHumanAction(ClientButtonKong2());
         }
         else
         {
             if(submitHumanAction(ClientSayKong(1)))
-                submitHumanAction(ClientButtonKong1());
+                choiceCompleted = submitHumanAction(ClientButtonKong1());
         }
     }
     else if(rule == WinRule::Pung)
     {
         if(submitHumanAction(ClientSayPung()))
-            submitHumanAction(ClientButtonPung());
+            choiceCompleted = submitHumanAction(ClientButtonPung());
     }
     else if(rule == WinRule::Chao)
     {
@@ -297,7 +324,7 @@ void MahjongPartScreen::actionButtonPass(int rule)
                 DEBUG("chao multiple variant");
             }
             else
-                submitHumanAction(ClientChaoVariant(0));
+                choiceCompleted = submitHumanAction(ClientChaoVariant(0));
 
             renderWindow();
         }
@@ -308,7 +335,10 @@ void MahjongPartScreen::actionButtonPass(int rule)
         sendPass = true;
 
     if(sendPass)
-        submitHumanAction(ClientButtonPass());
+        choiceCompleted = submitHumanAction(ClientButtonPass());
+
+    if(choiceCompleted)
+        retireTurnTimeout();
 }
 
 void MahjongPartScreen::actionDropSelected(void)
@@ -317,11 +347,15 @@ void MahjongPartScreen::actionDropSelected(void)
     buttonLocalKong.setVisible(false);
 
     if(0 <= variantSelected)
-        submitHumanAction(ClientChaoVariant(variantSelected));
+    {
+        if(submitHumanAction(ClientChaoVariant(variantSelected)))
+            retireTurnTimeout();
+    }
     else if(0 <= stoneSelected)
     {
         if(submitHumanAction(ClientDropIndex(stoneSelected)))
         {
+            retireTurnTimeout();
             buttonPass->setClicked();
             stoneSelected = -1;
         }

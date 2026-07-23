@@ -139,7 +139,7 @@ MahjongPartScreen::MahjongPartScreen() : JsonWindow("screen_mahjongpart.json", n
     animationDropDelay(12), animationDealDelay(55), dealingInitialHand(false), dealtStoneCount(0),
     animatingDrawStone(false), iconAffectedSkull(this), iconAffectedSword(this), iconAffectedNumber(this),
     iconAffectedDiscard(this), iconAffectedSilence(this), iconAffectedScry(this), playerReady(false),
-    resolvingLuckChoice(false)
+    resolvingLuckChoice(false), turnTimeoutPending(false)
 {
     ld = GameData::toLocalData(myAvatar);
     playMusic(GameData::myPerson().clan.toString());
@@ -289,6 +289,10 @@ MahjongPartScreen::MahjongPartScreen() : JsonWindow("screen_mahjongpart.json", n
     const JsonObject & savedState = GameData::jsonGUI();
     if(savedState.isValid()) fromJsonObject(savedState);
 
+    // Affected-spell icons are derived from the authoritative player state.
+    // Never let stale GUI data from a save briefly resurrect expired effects.
+    syncAffectedSpellIndicators();
+
     DEBUG("start");
 }
 
@@ -352,7 +356,10 @@ void MahjongPartScreen::renderWindow(void)
 	if(animationTurn.isLastSprite())
 	{
 	    animationTurn.setEnabled(false);
-	    pushEventAction(Action::MahjongOutOfTime, this, nullptr);
+	    // Do not put an unscoped timeout into the shared SDL event queue.
+	    // Authoritative Mahjong actions may advance several turns before that
+	    // event is delivered, allowing it to act on a later choice window.
+	    turnTimeoutPending = true;
 	}
     }
     else
@@ -406,6 +413,18 @@ bool MahjongPartScreen::checkCastInformer(void) const
     return false;
 }
 
+void MahjongPartScreen::syncAffectedSpellIndicators(void)
+{
+    const LocalPlayer & player = ld.myPlayer();
+
+    iconAffectedSkull.setVisible(player.isAffectedSpell(Spell::DrawSkull));
+    iconAffectedSword.setVisible(player.isAffectedSpell(Spell::DrawSword));
+    iconAffectedNumber.setVisible(player.isAffectedSpell(Spell::DrawNumber));
+    iconAffectedDiscard.setVisible(player.isAffectedSpell(Spell::RandomDiscard));
+    iconAffectedSilence.setVisible(player.isAffectedSpell(Spell::Silence));
+    iconAffectedScry.setVisible(player.isAffectedSpell(Spell::ScryRunes));
+}
+
 void MahjongPartScreen::actionQuit(void)
 {
 #ifndef SWE_DISABLE_AUDIO
@@ -448,13 +467,6 @@ JsonObject MahjongPartScreen::toJsonObject(void)
     jo.addBoolean("playerReady", playerReady);
     jo.addArray("gameLogs", JsonPack::stringList(gameLogs.toStringList()));
 
-    jo.addBoolean("affected:skull", iconAffectedSkull.isVisible());
-    jo.addBoolean("affected:sword", iconAffectedSword.isVisible());
-    jo.addBoolean("affected:number", iconAffectedNumber.isVisible());
-    jo.addBoolean("affected:discard", iconAffectedDiscard.isVisible());
-    jo.addBoolean("affected:silence", iconAffectedSilence.isVisible());
-    jo.addBoolean("affected:scry", iconAffectedScry.isVisible());
-
     return jo;
 }
 
@@ -479,13 +491,6 @@ bool MahjongPartScreen::fromJsonObject(const JsonObject & jo)
 	buttonLocalReady.setJsonInfo(jo.getObject("buttonLocalReady"));
 	buttonLocalKong.setJsonInfo(jo.getObject("buttonLocalKong"));
 	buttonLocalGame.setJsonInfo(jo.getObject("buttonLocalGame"));
-
-	iconAffectedSkull.setVisible(jo.getBoolean("affected:skull", false));
-	iconAffectedSword.setVisible(jo.getBoolean("affected:sword", false));
-	iconAffectedNumber.setVisible(jo.getBoolean("affected:number", false));
-	iconAffectedDiscard.setVisible(jo.getBoolean("affected:discard", false));
-	iconAffectedSilence.setVisible(jo.getBoolean("affected:silence", false));
-	iconAffectedScry.setVisible(jo.getBoolean("affected:scry", false));
 
 	playerReady = jo.getBoolean("playerReady", false);
 	gameLogs = jo.getStdList<std::string>("gameLogs");

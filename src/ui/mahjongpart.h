@@ -135,12 +135,14 @@ class MahjongPartScreen : public JsonWindow
 
     bool		playerReady;
     bool		resolvingLuckChoice;
+    bool                turnTimeoutPending;
     ActionList		actions;
     TickTrigger		tt;
 
     void		actionButtonLocalReady(void);
     bool                submitHumanAction(const ClientMessage &);
     void                showActionRejection(const ActionRejection &);
+    void                retireTurnTimeout(void);
     void		actionButtonLocalKong(void);
     void		actionButtonLocalGame(void);
     void		actionOutOfTime(void);
@@ -201,6 +203,7 @@ class MahjongPartScreen : public JsonWindow
     bool		actionMahjongInfo(const ActionMessage &);
 
     bool		checkCastInformer(void) const;
+    void                syncAffectedSpellIndicators(void);
 
 protected:
     bool		userEvent(int, void*) override;
