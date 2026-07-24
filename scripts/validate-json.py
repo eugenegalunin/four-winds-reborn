@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gettext
+import hashlib
 import json
 import sys
 from collections import Counter, defaultdict
@@ -112,12 +113,38 @@ RUSSIAN_SOUND_RESOURCE_IDS = {
     "round_north": 1204,
 }
 
+HERO_CALL_SOUND_IDS = tuple(
+    f"{avatar}_{call}"
+    for avatar in (
+        "orachi", "lakkho", "dayla", "ziag", "niana",
+        "kierac", "logun", "nucrus", "javed",
+    )
+    for call in ("chao", "pung", "kong", "game")
+)
+
+REBORN_ANNOUNCER_SOUND_IDS = {
+    "begin": 1,
+    "round_east": 2,
+    "round_south": 3,
+    "round_west": 4,
+    "round_north": 5,
+    **{name: 6 + offset for offset, name in enumerate((
+        "orachi_name", "lakkho_name", "dayla_name", "ziag_name", "niana_name",
+        "kierac_name", "logun_name", "nucrus_name", "javed_name",
+    ))},
+    "red_name": 15,
+    "yellow_name": 16,
+    "aqua_name": 17,
+    "purple_name": 18,
+}
+
 
 class ThemeValidator:
     def __init__(self, repository: Path, documents: dict[Path, object]):
         self.repository = repository
         self.documents = documents
         self.errors: list[str] = []
+        self.audit_notes: list[str] = []
 
     def relative(self, path: Path) -> str:
         return path.relative_to(self.repository).as_posix()
@@ -299,11 +326,280 @@ class ThemeValidator:
         if missing_guides:
             self.error(path, f"missing player guide articles: {', '.join(missing_guides)}")
 
+    @staticmethod
+    def file_digest(path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as source:
+            for block in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(block)
+        return digest.hexdigest()
+
+    def validate_provenance(self, theme: Path, index: dict) -> None:
+        package_id = None
+        package = index.get("contentPackage")
+        package_id = package.get("id") if isinstance(package, dict) else None
+        if package_id == "classic-original":
+            return
+
+        path = theme / "provenance.json"
+        provenance = self.document(path, dict)
+        if provenance is None:
+            return
+
+        if provenance.get("schema") != 1:
+            self.error(path, "schema must be 1")
+        status = provenance.get("status")
+        if status not in {"preview", "release", "standalone"}:
+            self.error(path, "status must be preview, release or standalone")
+
+        source_name = provenance.get("sourceTheme")
+        if (not isinstance(source_name, str) or not source_name or
+                Path(source_name).name != source_name or source_name == theme.name):
+            self.error(path, "sourceTheme must name another local theme directory")
+            return
+        source_theme = theme.parent / source_name
+        source_index = self.document(source_theme / "index.json", dict)
+        if source_index is None:
+            return
+        source_package = source_index.get("contentPackage")
+        actual_source_id = source_package.get("id") if isinstance(source_package, dict) else None
+        if provenance.get("sourcePackage") != actual_source_id:
+            self.error(path, "sourcePackage does not match sourceTheme content package id")
+
+        third_party_assets = provenance.get("thirdPartyAssets", [])
+        if not isinstance(third_party_assets, list):
+            self.error(path, "thirdPartyAssets must be an array")
+            third_party_assets = []
+        asset_names: Counter[str] = Counter()
+        for offset, asset in enumerate(third_party_assets, start=1):
+            if not isinstance(asset, dict):
+                self.error(path, f"thirdPartyAssets entry #{offset} must be an object")
+                continue
+            name = asset.get("name")
+            source = asset.get("source")
+            license_name = asset.get("license")
+            license_file = asset.get("licenseFile")
+            if not isinstance(name, str) or not name:
+                self.error(path, f"thirdPartyAssets entry #{offset} has no name")
+            else:
+                asset_names[name] += 1
+            if not isinstance(source, str) or not source.startswith("https://"):
+                self.error(path, f"thirdPartyAssets entry #{offset} must use an HTTPS source")
+            if not isinstance(license_name, str) or not license_name:
+                self.error(path, f"thirdPartyAssets entry #{offset} has no license")
+            if (not isinstance(license_file, str) or not license_file or
+                    Path(license_file).is_absolute() or ".." in Path(license_file).parts):
+                self.error(path, f"thirdPartyAssets entry #{offset} has an unsafe licenseFile")
+            else:
+                resolved_license = theme / license_file
+                if not resolved_license.is_file() or resolved_license.stat().st_size == 0:
+                    self.error(path, f"thirdPartyAssets entry #{offset} licenseFile does not exist")
+        duplicates = sorted(name for name, count in asset_names.items() if count > 1)
+        if duplicates:
+            self.error(path, "thirdPartyAssets contains duplicate names: " + ", ".join(duplicates))
+
+        extensions = provenance.get("mediaExtensions")
+        if (not isinstance(extensions, list) or not extensions or
+                any(not isinstance(item, str) or not item.startswith(".")
+                    for item in extensions)):
+            self.error(path, "mediaExtensions must contain file extensions")
+            extensions = []
+        extensions = {item.lower() for item in extensions}
+
+        shared_identical = provenance.get("sharedIdenticalMedia", [])
+        if not isinstance(shared_identical, list):
+            self.error(path, "sharedIdenticalMedia must be an array")
+            shared_identical = []
+        shared_names: Counter[str] = Counter()
+        valid_shared: set[str] = set()
+        for offset, item in enumerate(shared_identical, start=1):
+            if (not isinstance(item, str) or not item or "\\" in item or
+                    Path(item).is_absolute() or ".." in Path(item).parts):
+                self.error(path, f"sharedIdenticalMedia entry #{offset} "
+                           "must be a safe theme-relative POSIX path")
+                continue
+            normalized = Path(item).as_posix()
+            if normalized != item:
+                self.error(path, f"sharedIdenticalMedia entry #{offset} "
+                           "must be a normalized theme-relative POSIX path")
+                continue
+            shared_names[item] += 1
+            valid_shared.add(item)
+        duplicates = sorted(name for name, count in shared_names.items() if count > 1)
+        if duplicates:
+            self.error(path, "sharedIdenticalMedia contains duplicate paths: " +
+                       ", ".join(duplicates))
+
+        retained_compatibility = provenance.get("retainedCompatibilityMedia", [])
+        if not isinstance(retained_compatibility, list):
+            self.error(path, "retainedCompatibilityMedia must be an array")
+            retained_compatibility = []
+        retained_names: Counter[str] = Counter()
+        valid_retained: set[str] = set()
+        for offset, item in enumerate(retained_compatibility, start=1):
+            if (not isinstance(item, str) or not item or "\\" in item or
+                    Path(item).is_absolute() or ".." in Path(item).parts):
+                self.error(path, f"retainedCompatibilityMedia entry #{offset} "
+                           "must be a safe theme-relative POSIX path")
+                continue
+            normalized = Path(item).as_posix()
+            if normalized != item:
+                self.error(path, f"retainedCompatibilityMedia entry #{offset} "
+                           "must be a normalized theme-relative POSIX path")
+                continue
+            if Path(item).suffix.lower() not in {".ogg", ".wav", ".mid"}:
+                self.error(path, f"retainedCompatibilityMedia entry #{offset} "
+                           "must be an audio file")
+                continue
+            retained_names[item] += 1
+            valid_retained.add(item)
+        duplicates = sorted(name for name, count in retained_names.items() if count > 1)
+        if duplicates:
+            self.error(path, "retainedCompatibilityMedia contains duplicate paths: " +
+                       ", ".join(duplicates))
+        overlap = sorted(valid_shared & valid_retained)
+        if overlap:
+            self.error(path, "media paths cannot be both shared and retained compatibility: " +
+                       ", ".join(overlap))
+
+        source_media: defaultdict[str, list[str]] = defaultdict(list)
+        for media in source_theme.rglob("*"):
+            if media.is_file() and media.suffix.lower() in extensions:
+                source_media[self.file_digest(media)].append(
+                    media.relative_to(source_theme).as_posix())
+
+        identical_media: list[str] = []
+        for media in theme.rglob("*"):
+            if not media.is_file() or media.suffix.lower() not in extensions:
+                continue
+            if self.file_digest(media) in source_media:
+                identical_media.append(media.relative_to(theme).as_posix())
+
+        identical_media_set = set(identical_media)
+        invalid_shared = sorted(valid_shared - identical_media_set)
+        if invalid_shared:
+            self.error(path, "sharedIdenticalMedia paths must exist in both themes "
+                       "with byte-identical content: " + ", ".join(invalid_shared))
+        invalid_retained = sorted(valid_retained - identical_media_set)
+        if invalid_retained:
+            self.error(path, "retainedCompatibilityMedia paths must exist in both themes "
+                       "with byte-identical content: " + ", ".join(invalid_retained))
+        inherited_media = [
+            item for item in identical_media
+            if item not in valid_shared and item not in valid_retained
+        ]
+
+        narrative_tables = provenance.get("narrativeTables")
+        if (not isinstance(narrative_tables, list) or
+                any(not isinstance(item, str) or not item for item in narrative_tables)):
+            self.error(path, "narrativeTables must be an array of table names")
+            narrative_tables = []
+
+        identical_narrative: list[str] = []
+        for table in narrative_tables:
+            current_path = theme / "json" / "gamedata" / f"{table}.json"
+            source_path = source_theme / "json" / "gamedata" / f"{table}.json"
+            current_records = self.record_map(current_path)
+            source_records = self.record_map(source_path)
+            for record_id, current in current_records.items():
+                source = source_records.get(record_id, {})
+                for field in ("name", "dignity", "description"):
+                    value = current.get(field)
+                    if isinstance(value, str) and value and value == source.get(field):
+                        identical_narrative.append(f"{table}.{record_id}.{field}")
+
+        requirements = provenance.get("standaloneRequires")
+        if not isinstance(requirements, dict):
+            self.error(path, "standaloneRequires must be an object")
+            requirements = {}
+        if requirements.get("identicalMediaFiles") != 0:
+            self.error(path, "standaloneRequires.identicalMediaFiles must be 0")
+        if requirements.get("identicalNarrativeFields") != 0:
+            self.error(path, "standaloneRequires.identicalNarrativeFields must be 0")
+
+        self.audit_notes.append(
+            f"{theme.name}: provenance status={status}, inherited media="
+            f"{len(inherited_media)}, shared identical media="
+            f"{len(valid_shared)}, retained compatibility media="
+            f"{len(valid_retained)}, inherited narrative fields="
+            f"{len(identical_narrative)}")
+        if status in {"release", "standalone"} and inherited_media:
+            sample = ", ".join(inherited_media[:5])
+            self.error(path, f"{status} package retains {len(inherited_media)} "
+                       f"unclassified inherited media files (for example: {sample})")
+        if status in {"release", "standalone"} and identical_narrative:
+            sample = ", ".join(identical_narrative[:5])
+            self.error(path, f"{status} package retains {len(identical_narrative)} "
+                       f"inherited narrative fields (for example: {sample})")
+        if status == "standalone" and valid_retained:
+            sample = ", ".join(sorted(valid_retained)[:5])
+            self.error(path, f"standalone package retains {len(valid_retained)} "
+                       f"compatibility media files (for example: {sample})")
+
     def validate_theme(self, theme: Path) -> None:
         index_path = theme / "index.json"
         index = self.document(index_path, dict)
         if index is None:
             return
+
+        self.validate_provenance(theme, index)
+
+        package = index.get("contentPackage")
+        if not isinstance(package, dict):
+            self.error(index_path, "contentPackage must be an object")
+        else:
+            schema = package.get("schema")
+            package_id = package.get("id")
+            version = package.get("version")
+            engine_contract = package.get("engineContract")
+            game_data_file = package.get("gameData")
+            compatible = package.get("compatibleVersions")
+            if schema != 1:
+                self.error(index_path, "contentPackage.schema must be 1")
+            if not isinstance(package_id, str) or not package_id.strip():
+                self.error(index_path, "contentPackage.id must be a non-empty string")
+            if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+                self.error(index_path, "contentPackage.version must be a positive integer")
+            if engine_contract != "four-winds-classic-v1":
+                self.error(index_path,
+                           "contentPackage.engineContract must be four-winds-classic-v1")
+            if (not isinstance(game_data_file, str) or not game_data_file.strip() or
+                    Path(game_data_file).name != game_data_file):
+                self.error(index_path,
+                           "contentPackage.gameData must be a local non-empty filename")
+            if (not isinstance(compatible, list) or not compatible or
+                    any(isinstance(item, bool) or not isinstance(item, int) or item < 1
+                        for item in compatible)):
+                self.error(index_path,
+                           "contentPackage.compatibleVersions must contain positive integers")
+            elif len(set(compatible)) != len(compatible):
+                self.error(index_path,
+                           "contentPackage.compatibleVersions must not contain duplicates")
+            elif isinstance(version, int) and version not in compatible:
+                self.error(index_path,
+                           "contentPackage.compatibleVersions must include the current version")
+
+        game_data_name = package.get("gameData") if isinstance(package, dict) else None
+        game_data_path = theme / game_data_name if isinstance(game_data_name, str) else theme / "content.json"
+        game_data = self.document(game_data_path, dict)
+        if game_data is None:
+            game_data = {}
+
+        authoritative_keys = {
+            *INDEX_TABLES.keys(), "bonus:start", "bonus:game", "bonus:kong",
+            "bonus:pung", "bonus:chao", "bonus:pass",
+        }
+        misplaced = sorted(authoritative_keys.intersection(index))
+        if misplaced:
+            self.error(index_path,
+                       "authoritative fields must live in contentPackage.gameData: " +
+                       ", ".join(misplaced))
+
+        for bonus in ("bonus:start", "bonus:game", "bonus:kong", "bonus:pung",
+                      "bonus:chao", "bonus:pass"):
+            value = game_data.get(bonus)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                self.error(game_data_path, f"{bonus} must be a non-negative integer")
 
         self.validate_encyclopedia(theme)
 
@@ -314,30 +610,66 @@ class ThemeValidator:
         tables = {name: self.record_map(path) for name, path in paths.items()}
 
         for index_key, table_name in INDEX_TABLES.items():
-            declared = index.get(index_key)
+            declared = game_data.get(index_key)
             if not isinstance(declared, list):
-                self.error(index_path, f"{index_key} must be an array")
+                self.error(game_data_path, f"{index_key} must be an array")
                 continue
             if not declared or declared[0] != "none":
-                self.error(index_path, f"{index_key} must begin with the reserved 'none' id")
+                self.error(game_data_path, f"{index_key} must begin with the reserved 'none' id")
             if any(not isinstance(item, str) or not item for item in declared):
-                self.error(index_path, f"{index_key} must contain only non-empty string ids")
+                self.error(game_data_path, f"{index_key} must contain only non-empty string ids")
                 continue
             duplicates = sorted(item for item, count in Counter(declared).items() if count > 1)
             if duplicates:
-                self.error(index_path, f"{index_key} contains duplicate ids: {', '.join(duplicates)}")
+                self.error(game_data_path, f"{index_key} contains duplicate ids: {', '.join(duplicates)}")
 
             declared_ids = set(declared[1:])
             record_ids = set(tables[table_name])
             missing = sorted(declared_ids - record_ids)
             unknown = sorted(record_ids - declared_ids)
             if missing:
-                self.error(index_path, f"{index_key} has ids without {table_name}.json records: {', '.join(missing)}")
+                self.error(game_data_path, f"{index_key} has ids without {table_name}.json records: {', '.join(missing)}")
             if unknown:
                 self.error(paths[table_name], f"records are absent from {index_key}: {', '.join(unknown)}")
 
         ids = {name: set(records) for name, records in tables.items()}
         clan_ids = ids["clans"] | {"none"}
+
+        mahjong_screen_path = theme / "json" / "screen_mahjongpart.json"
+        mahjong_screen = self.document(mahjong_screen_path, dict)
+        if mahjong_screen is not None:
+            music_keys = sorted(
+                key for key in mahjong_screen
+                if isinstance(key, str) and key.startswith("music:")
+            )
+            for key in music_keys:
+                playlist = mahjong_screen.get(key)
+                if (not isinstance(playlist, list) or not playlist or
+                        any(not isinstance(track, str) or not track for track in playlist)):
+                    self.error(mahjong_screen_path,
+                               f"{key} must be a non-empty array of music ids")
+                    continue
+                duplicates = sorted(
+                    track for track, count in Counter(playlist).items() if count > 1
+                )
+                if duplicates:
+                    self.error(mahjong_screen_path,
+                               f"{key} contains duplicate music ids: {', '.join(duplicates)}")
+                unknown = sorted(set(playlist) - ids["musics"])
+                if unknown:
+                    self.error(mahjong_screen_path,
+                               f"{key} references unknown music ids: {', '.join(unknown)}")
+
+            if theme.name == "reborn":
+                required_music_keys = {
+                    "music:common", "music:red", "music:yellow",
+                    "music:aqua", "music:purple",
+                }
+                missing_music_keys = sorted(required_music_keys - set(music_keys))
+                if missing_music_keys:
+                    self.error(mahjong_screen_path,
+                               "reborn Mahjong playlists are missing: "
+                               + ", ".join(missing_music_keys))
 
         tooltips = index.get("tooltips")
         if not isinstance(tooltips, dict):
@@ -496,7 +828,19 @@ class ThemeValidator:
             elif not tables["creatures"][grantors[0]].get("unique"):
                 self.error(creature_path, f"{speciality} grantor '{grantors[0]}' must be a unique creature")
 
-        if theme.name == "default":
+        translation_contracts: dict[str, tuple[str, ...]] = {}
+        if theme.name == "classic":
+            translation_contracts = {
+                table_name: ("description",)
+                for table_name in ("avatars", "creatures", "spells", "specials", "abilities")
+            }
+        elif package_id == "reborn-community":
+            translation_contracts = {
+                table_name: ("name", "dignity", "description")
+                for table_name in ("avatars", "creatures", "spells", "lands")
+            }
+
+        if translation_contracts:
             russian_catalog_path = theme / "lang" / "ru.mo"
             try:
                 with russian_catalog_path.open("rb") as source:
@@ -506,17 +850,47 @@ class ThemeValidator:
                 russian_catalog = None
 
             if russian_catalog is not None:
-                for table_name in ("avatars", "creatures", "spells", "specials", "abilities"):
+                for table_name, localized_fields in translation_contracts.items():
                     table_path = paths[table_name]
                     for record_id, record in tables[table_name].items():
-                        description = record.get("description")
-                        if isinstance(description, str) and description and russian_catalog.gettext(description) == description:
-                            self.error(
-                                table_path,
-                                f"{record_id}.description has no exact Russian runtime translation",
-                            )
+                        for field in localized_fields:
+                            value = record.get(field)
+                            if isinstance(value, str) and value and russian_catalog.gettext(value) == value:
+                                self.error(
+                                    table_path,
+                                    f"{record_id}.{field} has no exact Russian runtime translation",
+                                )
 
-            intro_path = theme / "json" / "screen_intro.json"
+        intro_path = theme / "json" / "screen_intro.json"
+        if intro_path.is_file():
+            intro = self.document(intro_path, dict)
+            if intro is not None:
+                tail_hold = intro.get("frame:tail_hold_ms", 0)
+                if isinstance(tail_hold, bool) or not isinstance(tail_hold, int) or tail_hold < 0:
+                    self.error(
+                        intro_path,
+                        "frame:tail_hold_ms must be a non-negative integer",
+                    )
+
+                frames = intro.get("frames")
+                if isinstance(frames, list):
+                    for offset, frame in enumerate(frames, start=1):
+                        if not isinstance(frame, dict):
+                            continue
+
+                        fallback = frame.get("duration_ms")
+                        for language in ("en", "ru"):
+                            key = f"duration_ms:{language}"
+                            duration = frame.get(key, fallback)
+                            if isinstance(duration, bool) or not isinstance(duration, int) or duration < 1000:
+                                self.error(
+                                    intro_path,
+                                    f"intro frame #{offset}.{key} (or duration_ms fallback) "
+                                    "must be an integer of at least 1000",
+                                )
+
+        if theme.name == "classic":
+
             intro = self.document(intro_path, dict)
             if intro is not None:
                 frames = intro.get("frames")
@@ -611,6 +985,43 @@ class ThemeValidator:
             if tables["avatars"].get("ziag", {}).get("ability") != "monacle":
                 self.error(avatar_path, "Ziag must retain the documented Monocle ability")
 
+        if theme.name == "reborn":
+            localized_sounds = {
+                record_id: record.get("file:ru")
+                for record_id, record in tables["sounds"].items()
+                if record.get("file:ru") is not None
+            }
+            expected_localized_sounds = {
+                record_id: f"announcer_ru_{scene:02d}.ogg"
+                for record_id, scene in REBORN_ANNOUNCER_SOUND_IDS.items()
+            }
+            expected_localized_sounds.update({
+                f"creature{scene:02d}": f"creature_name_ru_{scene:02d}.ogg"
+                for scene in range(1, 30)
+            })
+            expected_localized_sounds.update({
+                record_id: f"hero_ru_{record_id}.ogg"
+                for record_id in HERO_CALL_SOUND_IDS
+            })
+            if localized_sounds != expected_localized_sounds:
+                missing = sorted(set(expected_localized_sounds) - set(localized_sounds))
+                stale = sorted(set(localized_sounds) - set(expected_localized_sounds))
+                wrong = sorted(
+                    record_id for record_id in set(localized_sounds) & set(expected_localized_sounds)
+                    if localized_sounds[record_id] != expected_localized_sounds[record_id]
+                )
+                details = []
+                if missing:
+                    details.append(f"missing: {', '.join(missing)}")
+                if stale:
+                    details.append(f"unexpected: {', '.join(stale)}")
+                if wrong:
+                    details.append(f"wrong file: {', '.join(wrong)}")
+                self.error(
+                    paths["sounds"],
+                    "Reborn Russian localized sound contract differs (" + "; ".join(details) + ")",
+                )
+
 
 def main() -> int:
     repository = Path(__file__).resolve().parents[1]
@@ -635,6 +1046,19 @@ def main() -> int:
     for theme in theme_roots:
         validator.validate_theme(theme)
 
+    package_owners: defaultdict[str, list[Path]] = defaultdict(list)
+    for theme in theme_roots:
+        index = documents.get(theme / "index.json")
+        package = index.get("contentPackage") if isinstance(index, dict) else None
+        package_id = package.get("id") if isinstance(package, dict) else None
+        if isinstance(package_id, str) and package_id:
+            package_owners[package_id].append(theme / "index.json")
+    for package_id, owners in package_owners.items():
+        if len(owners) > 1:
+            joined = ", ".join(validator.relative(path) for path in owners)
+            for path in owners:
+                validator.error(path, f"contentPackage.id '{package_id}' is also declared by: {joined}")
+
     errors = syntax_errors + validator.errors
     if errors:
         for error in errors:
@@ -642,6 +1066,8 @@ def main() -> int:
         print(f"Theme JSON validation failed with {len(errors)} error(s).", file=sys.stderr)
         return 1
 
+    for note in validator.audit_notes:
+        print(f"Content audit: {note}")
     print(f"Validated {len(json_files)} theme JSON files and semantic contracts for {len(theme_roots)} theme(s).")
     return 0
 

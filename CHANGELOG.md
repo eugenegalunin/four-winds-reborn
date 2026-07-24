@@ -13,6 +13,128 @@ Reborn work only; they do not claim authorship of inherited code or assets.
 
 ## [Unreleased]
 
+_No changes yet._
+
+## [0.3.0] - 2026-07-24
+
+This release completes the v0.3.0 player-facing slice: deterministic replay
+recording and playback, versioned content packages, the complete optional
+Reborn presentation, expanded difficulty and developer-testing support,
+clearer combat and final screens, and the R1-R12 architecture refactor.
+
+### Added - Reborn content package
+
+- Expanded the optional Reborn package into a substantially complete alternate presentation
+  that can be installed beside Classic and selected from Settings without
+  changing the fixed gameplay contract.
+- Added package-specific wizard and creature identities, lore, English and
+  Russian localization, narrated intro, announcer and hero voices.
+- Replaced the major inherited presentation with Reborn avatar and creature
+  art, Guardians and combat animation, rune and wind symbols, clan emblems,
+  map and town art, intro scenes, combat UI, score summaries and victory
+  screens.
+- Added an eight-track OGG soundtrack covering the menu, Rune Game, clans,
+  Adventure map and final presentation.
+- Moved Reborn runtime media into semantic `assets/images`, `assets/audio`,
+  `assets/music` and `assets/fonts` directories, with editable sources and
+  reproducible preparation helpers kept outside the shipped package.
+- Added machine-readable provenance auditing for inherited media and narrative
+  fields. Reborn is release-ready; its remaining generic non-voice effects are
+  an explicit compatibility layer rather than unfinished presentation work.
+
+### Changed - Reborn media audit
+
+- Removed 203 unused byte-identical Classic files from Reborn: 170 OGG files,
+  all 16 inherited MIDI tracks and 17 PNG files.
+- Redirected 47 default announcer fallbacks to the Reborn English voice set, so
+  unknown locales no longer require the inherited Classic announcements.
+- Removed the final 10 legacy UI/atlas dependencies. The only retained Classic
+  compatibility media are 25 explicitly allowlisted generic gameplay effects.
+  Five newer package-neutral difficulty portraits are shared by both packages
+  and verified byte-identical. Reborn now has zero unclassified inherited media
+  and zero inherited narrative fields.
+- A decoded-media follow-up found no additional Classic images hidden by
+  re-encoding and no Classic audio hidden behind alternate OGG compression.
+
+### Changed - theme naming and default
+
+- Renamed the inherited `default` theme to `classic` and reorganized its
+  runtime media into the same semantic `assets/images`, `assets/audio`,
+  `assets/music` and `assets/fonts` layout used by Reborn.
+- Classic remains the default presentation for v0.3.0. Reborn is a complete
+  opt-in package selected from Settings; changing the initial default is
+  deferred until the public screenshots are refreshed and player feedback is
+  available.
+- Existing user settings and command lines that request `default` migrate
+  transparently to `classic`. The stable `classic-original` content identity
+  is unchanged, preserving save and replay compatibility.
+
+### Added - replay library
+
+- Added a player-facing replay library to the main menu with localized replay
+  metadata, compatibility status, scrolling, details and confirmed deletion.
+- Completed sessions are archived as standalone `.fwr` replay journals beside
+  saves. Replay discovery validates the journal, ruleset and content-package
+  identity without mutating the current game state, and safely reports broken
+  or incompatible files.
+- Replay journals now retain their start/save time, phase, difficulty and
+  developer-assisted status. Normal player sessions keep their full contiguous
+  action history, while bounded test journals remain available to regression
+  and headless tools.
+- Replays can now be imported from and exported to portable `.fwr` files. The
+  transfer path validates the complete journal before an atomic copy, avoids
+  accidental library overwrites and provides a native Windows file picker with
+  a portable path-entry fallback for Linux and macOS.
+- Deterministic playback failures now identify the first divergent action and
+  show the expected and actual outcome or state hash, making incompatible,
+  modified and damaged recordings diagnosable without reading the engine log.
+
+### Added - content package identity
+
+- Added a versioned content-package manifest with a stable package identifier,
+  package version, compatible-version list and an explicit engine content
+  contract.
+- New saves, recovery checkpoints and deterministic replay journals now record
+  their content-package identity. Incompatible or unavailable packages are
+  rejected before state is changed, while pre-manifest Classic artifacts remain
+  load-compatible.
+
+### Changed - theme and game-data separation
+
+- Moved authoritative gameplay bonuses and indexed object tables out of the
+  presentation theme manifest into its declared `content.json` payload.
+- Extended theme validation and regression coverage so incomplete packages,
+  mixed presentation/gameplay manifests and unsupported engine contracts fail
+  clearly instead of being loaded partially.
+
+### Added - difficulty and developer testing
+
+- Added peaceful Training and openly unfair challenge difficulties alongside
+  Easy, Normal and Hard, with deliberately different spell, economy, combat
+  and expansion behavior while preserving honest RNG and hidden information.
+- Added near-end, phase and generated-battle developer fixtures so manual
+  Mahjong, Adventure, combat and final-screen regressions can be reached
+  without replaying a complete campaign.
+- Added observer-safe Adventure battle forecasts that explain visible-force
+  assumptions without exposing hidden defenders.
+
+### Added - battle and final presentation
+
+- Clarified manual battle interaction with localized action counters,
+  accepted-choice feedback and stable target selection.
+- Added explicit joint-winner handling, per-winner victory art and a readable
+  final summary that identifies the winning wizard or tied winners before the
+  score table.
+
+### Changed - architecture and regression gate
+
+- Completed the R1-R12 mechanical refactor of battle, Adventure, Rune Game,
+  state I/O, rules, AI, UI and platform seams without changing save, replay,
+  RNG or fixed-seed outcomes.
+- Added a resumable Quick/Full cohort gate with deterministic contracts,
+  parallel isolated matches and byte-for-byte comparison of all 13 scenarios
+  and the aggregate result.
+
 ## [0.2.0] - 2026-07-18
 
 This release completes the stable post-`v0.1.0` player-facing slice before the

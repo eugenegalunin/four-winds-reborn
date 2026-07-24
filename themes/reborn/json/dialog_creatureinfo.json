@@ -1,0 +1,14 @@
+{
+    "font": "dejavus18",
+    "size": [ 400, 485 ],
+    "width:border": 5,
+    "color:background": "gainsboro",
+    "color:header": "navy",
+    "color:text": "navy",
+    "color:border": "midnightblue",
+    "sprite:attack": "skill01",
+    "sprite:ranger": "skill02",
+    "sprite:defense": "skill03",
+    "sprite:loyalty": "skill04",
+    "sprite:move": "skill06"
+}

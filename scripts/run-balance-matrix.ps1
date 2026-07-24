@@ -4,7 +4,7 @@ param(
     [string]$OutputDirectory = "diagnostics\balance-matrix",
     [ValidateSet("Native", "Balanced", "Aggressive", "Economic", "Control")]
     [string[]]$Profiles = @("Native", "Balanced", "Aggressive", "Economic", "Control"),
-    [ValidateSet("Easy", "Normal", "Hard")]
+    [ValidateSet("Training", "Easy", "Normal", "Hard", "Unfair")]
     [string[]]$Difficulties = @("Easy", "Normal", "Hard"),
     [switch]$KeepEngineLog,
     [switch]$KeepMatchRecords

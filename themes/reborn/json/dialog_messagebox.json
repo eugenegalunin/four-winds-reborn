@@ -1,0 +1,20 @@
+{
+    "font": "dejavus18",
+    "size": [ 360, 220 ],
+    "area:body": [ 15, 46, 330, 105 ],
+    "width:border": 4,
+    "color:background": "#11191a",
+    "color:header": "#d8b875",
+    "color:text": "#efe4ae",
+    "color:border": "#9f7d41",
+    "sprite:ok1": "but_ok1",
+    "sprite:ok2": "but_ok2",
+    "sprite:cancel1": "but_cancel1",
+    "sprite:cancel2": "but_cancel2",
+
+    "scroll:color:rect": "#263335",
+    "scroll:color:fill": "#121a1b",
+    "scroll:cursor:color:rect": "#b08a4d",
+    "scroll:cursor:color:fill": "#665234",
+    "scroll:cursor:size": [ 8, 30 ]
+}

@@ -1,0 +1,57 @@
+{
+    "cursor":           "hardware",
+    "background":       { "id": "screen2", "type": "file", "file": "menu.png" },
+    "music":            [ "win" ],
+    "default:font":     "dejavus18",
+    "default:color":    "#efe4ae",
+
+    "buttons":      [
+                      { "id": "but_done", "position": [ 928, 712 ], "sprites": [ "but_done1", "but_done2" ] }
+                ],
+
+    "sprite:selected1": { "id": "stone_selected1", "type": "file", "file": "all.png", "crop": [952, 838, 26, 70], "colorkey": "#ffd2d2" },
+    "sprite:selected2": { "id": "stone_selected2", "type": "file", "file": "all.png", "crop": [984, 838, 26, 70], "colorkey": "#ffd2d2" },
+    "sprite:luck1": 	{ "id": "luck1", "type": "file", "file": "all.png", "crop": [726, 1160, 50, 58], "colorkey": "#ffd2d2" },
+    "sprite:luck2":	{ "id": "luck2", "type": "file", "file": "all.png", "crop": [778, 1154, 60, 70], "colorkey": "#ffd2d2" },
+
+    "offset:winrune":	[ 50, 35 ],
+    "offset:winrunes":	[ 50, 200 ],
+    "offset:doubles":   [ 50, 0 ],
+
+    "offset:winstone":  [ 50, 40 ],
+    "offset:winrule1":  [ 50, 198 ],
+    "offset:winrule2":  [ 50, 274 ],
+    "offset:winrule3":  [ 50, 350 ],
+    "offset:winrule4":  [ 50, 502 ],
+    "offset:winpair":   [ 50, 426 ],
+
+    "textinfo:winrune": { "position": [ 75, 120 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:sets":	{ "position": [ 50, 160 ], "align": "left", "font": "dejavus26", "color": "#efe4ae" },
+    "textinfo:points":	{ "position": [ 390, 160 ], "align": "right", "font": "dejavus26", "color": "#efe4ae" },
+    "textinfo:doubles":	{ "position": [ 500, 160 ], "align": "left", "font": "dejavus22", "color": "#efe4ae" },
+    "textinfo:basescore": { "position": [ 50, 580 ], "align": "left", "font": "dejavus26", "color": "#efe4ae" },
+    "textinfo:totalpoints": { "position": [ 50, 680 ], "align": "left", "font": "dejavus26", "color": "#efe4ae" },
+    "textinfo:multiplier": { "position": [ 500, 350 ], "align": "left", "font": "dejavus26", "color": "#efe4ae" },
+    "textinfo:totalscore": { "position": [ 500, 380 ], "align": "left", "font": "dejavus26", "color": "#efe4ae" },
+    "textinfo:fines": { "position": [ 550, 410 ], "align": "left", "font": "dejavus18", "color": "#efe4ae" },
+
+    "textinfo:landclaims": { "position": [ 645, 500 ], "align": "left", "font": "dejavus26", "color": "#efe4ae", "text": "Land Claims" },
+    "textinfo:spellpoints": { "position": [ 605, 672 ], "align": "right", "font": "dejavus26", "color": "#efe4ae", "text": "Spell Points" },
+    "textinfo:deal": { "position": [ 512, 45 ], "align": "center", "font": "dejavus26", "color": "#efe4ae" },
+    "textinfo:drawn": { "position": [ 512, 100 ], "align": "center", "font": "dejavus26", "color": "#efe4ae" },
+
+    "textinfo:avatar1": { "position": [ 674, 545 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:avatar2": { "position": [ 774, 545 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:avatar3": { "position": [ 874, 545 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:avatar4": { "position": [ 974, 545 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+
+    "textinfo:clan1": { "position": [ 605, 574 ], "align": "right", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:clan2": { "position": [ 605, 598 ], "align": "right", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:clan3": { "position": [ 605, 622 ], "align": "right", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:clan4": { "position": [ 605, 646 ], "align": "right", "font": "dejavus18", "color": "#efe4ae" },
+
+    "textinfo:spell1": { "position": [ 674, 684 ], "align": "right", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:spell2": { "position": [ 774, 684 ], "align": "right", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:spell3": { "position": [ 874, 684 ], "align": "right", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:spell4": { "position": [ 974, 684 ], "align": "right", "font": "dejavus18", "color": "#efe4ae" }
+}

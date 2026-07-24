@@ -1,0 +1,10 @@
+[
+    { "id": "intro", "file": "rune-war-overture.ogg" },
+    { "id": "map", "file": "ashen-tide-atlas.ogg" },
+    { "id": "win", "file": "crown-of-ashes.ogg" },
+    { "id": "rune-common", "file": "dice-of-olympus.ogg" },
+    { "id": "red", "file": "iron-banner-march.ogg" },
+    { "id": "yellow", "file": "austere-oath-hall.ogg" },
+    { "id": "aqua", "file": "iz-clan-tides.ogg" },
+    { "id": "purple", "file": "marz-memory-deep.ogg" }
+]

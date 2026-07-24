@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(FourWindsReborn VERSION 0.2.0)
+project(FourWindsReborn VERSION 0.3.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -77,48 +77,89 @@ set(FOUR_WINDS_BUILD_DEFINITIONS
     FOUR_WINDS_ENGINE_REVISION="${FOUR_WINDS_ENGINE_REVISION}")
 
 set(FOUR_WINDS_SOURCE
-    src/crashreport.cpp
-    src/gameplayrng.cpp
-    src/matchscore.cpp
-    src/recovery.cpp
-    src/savegames.cpp
-    src/replay.cpp
-    src/simulation.cpp
-    src/strings.cpp
     src/gamedata.cpp
     src/runewars.cpp
-    src/intropart.cpp
-    src/mainmenu.cpp
-    src/encyclopedia.cpp
-    src/settingsmenu.cpp
-    src/loadrecovery.cpp
-    src/gametheme.cpp
     src/gameobjects.cpp
-    src/settings.cpp
-    src/aiturn.cpp
-    src/aiprofile.cpp
-    src/aistrategy.cpp
-    src/aiadventure.cpp
-    src/aibattle.cpp
-    src/aispell.cpp
-    src/battle.cpp
-    src/dialogs.cpp
-    src/adventurepart.cpp
-    src/battlesummarypart.cpp
-    src/mahjongsummarypart.cpp
-    src/gamesummarypart.cpp
-    src/mahjongpart.cpp
-    src/jsongui.cpp
-    src/showplayers.cpp
-    src/selectperson.cpp)
 
-include_directories(engine src)
+    src/platform/crashreport.cpp
+    src/platform/contentcatalog.cpp
+    src/platform/filedialog.cpp
+    src/platform/recovery.cpp
+    src/platform/replayfiles.cpp
+    src/platform/savegames.cpp
+    src/platform/settings.cpp
+
+    src/rules/actionvalidation.cpp
+    src/rules/adventurecommands.cpp
+    src/rules/contentpackage.cpp
+    src/rules/creaturestate.cpp
+    src/rules/developerfixtures.cpp
+    src/rules/gamestateio.cpp
+    src/rules/gameplayrng.cpp
+    src/rules/matchscore.cpp
+    src/rules/playerstate.cpp
+    src/rules/replay.cpp
+    src/rules/runegamecommands.cpp
+    src/rules/runegameruleset.cpp
+    src/rules/runegamescoring.cpp
+    src/rules/runegamestate.cpp
+
+    src/battle/battle.cpp
+    src/battle/battlecommands.cpp
+    src/battle/battleentities.cpp
+    src/battle/battlesession.cpp
+    src/battle/battlestate.cpp
+
+    src/ai/aiadventure.cpp
+    src/ai/aibattle.cpp
+    src/ai/aiprofile.cpp
+    src/ai/aispell.cpp
+    src/ai/aistrategy.cpp
+    src/ai/aiturn.cpp
+    src/ai/simulation.cpp
+
+    src/ui/adventurehints.cpp
+    src/ui/adventureinput.cpp
+    src/ui/adventurepart.cpp
+    src/ui/battlechoicedialog.cpp
+    src/ui/battlesummarypart.cpp
+    src/ui/battleuitext.cpp
+    src/ui/developertools.cpp
+    src/ui/dialogs.cpp
+    src/ui/encyclopedia.cpp
+    src/ui/gamesummarypart.cpp
+    src/ui/gametheme.cpp
+    src/ui/intropart.cpp
+    src/ui/jsongui.cpp
+    src/ui/loadrecovery.cpp
+    src/ui/mahjongpart.cpp
+    src/ui/mahjongsummarypart.cpp
+    src/ui/mainmenu.cpp
+    src/ui/replaybrowser.cpp
+    src/ui/replayviewer.cpp
+    src/ui/runegameinput.cpp
+    src/ui/runegamepresentation.cpp
+    src/ui/runegametargetdialogs.cpp
+    src/ui/runegamewidgets.cpp
+    src/ui/selectperson.cpp
+    src/ui/settingsmenu.cpp
+    src/ui/showplayers.cpp
+    src/ui/strings.cpp)
+
+include_directories(
+    engine
+    src
+    src/ai
+    src/battle
+    src/platform
+    src/rules
+    src/ui)
 add_executable(four_winds_reborn ${FOUR_WINDS_SOURCE})
 target_compile_definitions(four_winds_reborn PRIVATE ${FOUR_WINDS_BUILD_DEFINITIONS})
 
 target_link_libraries(four_winds_reborn libswe)
 if(WIN32)
-    target_link_libraries(four_winds_reborn dbghelp)
+    target_link_libraries(four_winds_reborn dbghelp comdlg32)
 endif()
 set_target_properties(four_winds_reborn PROPERTIES
     OUTPUT_NAME four-winds-reborn
@@ -134,7 +175,7 @@ if(BUILD_TESTING)
     add_executable(gameplay_regression_tests
         tests/gameplay_regression_tests.cpp
         tests/avatar_balance_tests.cpp
-        src/tournament.cpp
+        src/ai/tournament.cpp
         ${FOUR_WINDS_SOURCE})
     target_compile_definitions(gameplay_regression_tests PRIVATE
         RUNEWARS_NO_MAIN
@@ -142,7 +183,7 @@ if(BUILD_TESTING)
         FOUR_WINDS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
     target_link_libraries(gameplay_regression_tests libswe)
     if(WIN32)
-        target_link_libraries(gameplay_regression_tests dbghelp)
+        target_link_libraries(gameplay_regression_tests dbghelp comdlg32)
     endif()
     add_test(NAME gameplay_regressions COMMAND gameplay_regression_tests)
     set_tests_properties(gameplay_regressions PROPERTIES

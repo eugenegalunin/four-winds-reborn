@@ -25,6 +25,7 @@
 #include <exception>
 
 #include "gameplayrng.h"
+#include "contentcatalog.h"
 #include "gametheme.h"
 #include "settings.h"
 #include "intropart.h"
@@ -32,7 +33,10 @@
 #include "settingsmenu.h"
 #include "encyclopedia.h"
 #include "loadrecovery.h"
+#include "replaybrowser.h"
 #include "recovery.h"
+#include "replay.h"
+#include "replayfiles.h"
 #include "savegames.h"
 #include "selectperson.h"
 #include "showplayers.h"
@@ -82,7 +86,6 @@ protected:
                                StringFormat(_("The checkpoint was loaded, but the current autosave could not be replaced: %1"))
                                    .arg(error), *this, false).exec();
             }
-            MessageTop(_("Info"), _("Game data rendering..."), *this);
 	    CrashReport::breadcrumb(std::string("Game load stage=end status=ok source=").append(sourceFile));
 	    setResultCode(1);
         }
@@ -162,12 +165,20 @@ const char* menuName(int menu)
         case Menu::LoadRecovery: return "LoadRecovery";
         case Menu::SettingsMenu: return "Settings";
         case Menu::Encyclopedia: return "Encyclopedia";
+        case Menu::ReplayLibrary: return "ReplayLibrary";
         default: return "Unknown";
     }
 }
+
+std::string normalizedThemeAlias(const std::string & value)
+{
+    return String::toLower(value) == "default" ? "classic" : value;
+}
 }
 
-RuneWarsClient::RuneWarsClient(int argc, char** argv) : Application(argv[0], false, Size(0, 0), "default"), part(0)
+RuneWarsClient::RuneWarsClient(int argc, char** argv) :
+    Application(argv[0], false, Size(0, 0), "classic"), part(0),
+    themeCommandOverride(false)
 {
     CrashReport::breadcrumb("Startup stage=engine_log_init status=begin");
     LogWrapper::init(domain(), argv[0]);
@@ -177,11 +188,29 @@ RuneWarsClient::RuneWarsClient(int argc, char** argv) : Application(argv[0], fal
 #ifdef RUNEWARS_THEME
     theme = RUNEWARS_THEME;
 #endif
+    theme = Settings::preferredContentTheme(theme);
     if(Systems::environment("RUNEWARS_THEME"))
+	{
 	theme = Systems::environment("RUNEWARS_THEME");
+	themeCommandOverride = true;
+	}
 
     savefile = Settings::fileSaveGame();
     parseCommandOptions(argc, argv);
+    theme = normalizedThemeAlias(theme);
+
+    // A stale user preference must never make the game unbootable. Explicit
+    // command-line/environment themes remain strict diagnostic overrides.
+    if(!themeCommandOverride)
+    {
+	std::string error;
+	if(!ContentCatalog::isAvailable(program, domain(), theme, &error))
+	{
+	    ERROR("stored content package unavailable: " << theme << ": " << error
+	          << "; falling back to classic");
+	    theme = "classic";
+	}
+    }
 }
 
 void RuneWarsClient::parseCommandOptions(int argc, char** argv)
@@ -197,7 +226,10 @@ void RuneWarsClient::parseCommandOptions(int argc, char** argv)
 
         case 't':
 	    if(Systems::GetOptionsArgument())
+	    {
 		theme = Systems::GetOptionsArgument();
+		themeCommandOverride = true;
+	    }
             break;
 #ifdef BUILD_DEBUG
         case 'p':
@@ -324,6 +356,11 @@ bool RuneWarsClient::exec(void)
     }
     CrashReport::breadcrumb(std::string("Startup stage=theme_init status=ok theme=").append(theme));
 
+    // Player sessions retain their complete deterministic journal. Headless
+    // simulations and tests keep the bounded default unless they explicitly
+    // opt into full replay capture.
+    Replay::setActionJournalLimit(0);
+
     CrashReport::breadcrumb("Startup stage=translation_init status=begin");
     if(! translationInit())
 	{
@@ -353,7 +390,6 @@ bool RuneWarsClient::exec(void)
     std::string pendingLoadFile = savefile;
     bool promoteRecovery = false;
     Person selectedPerson;
-    AI::Difficulty selectedDifficulty = AI::Difficulty::Normal;
 
 #ifdef BUILD_DEBUG
     if(part)
@@ -406,7 +442,8 @@ bool RuneWarsClient::exec(void)
 		const bool saveExists = Systems::isFile(savefile);
 		const bool saveValid = saveExists && Recovery::validateSaveFile(savefile);
 		menu = MainMenuScreen(saveExists, saveValid,
-		                            recoveryExists || manualSaveExists).exec();
+		                            recoveryExists || manualSaveExists,
+		                            ReplayFiles::hasReplays()).exec();
 	    }
 	    break;
 
@@ -425,7 +462,7 @@ bool RuneWarsClient::exec(void)
 	    case Menu::SettingsMenu:
 	    {
 		const std::string previousLanguage = Settings::language();
-		menu = SettingsMenuScreen().exec();
+		menu = SettingsMenuScreen(std::string(program ? program : "")).exec();
 		if(previousLanguage != Settings::language())
 		{
 		    if(!translationInit())
@@ -444,6 +481,10 @@ bool RuneWarsClient::exec(void)
 		menu = EncyclopediaScreen().exec();
 	    break;
 
+	    case Menu::ReplayLibrary:
+		menu = ReplayBrowserScreen().exec();
+	    break;
+
 	    case Menu::SelectPerson:
 	    {
 		SelectPersonScreen scr;
@@ -453,12 +494,14 @@ bool RuneWarsClient::exec(void)
 		    .append(GameplayRng::Algorithm)
 		    .append(" state=").append(std::to_string(GameplayRng::state())));
 		selectedPerson = fixedEmptyPerson(scr.selectedPerson());
-		selectedDifficulty = scr.selectedDifficulty();
 	    }
 	    break;
 
 	    case Menu::ShowPlayers:
-		GameData::setAIDifficulty(selectedDifficulty);
+		// Settings stores the default for future games. Once initialization
+		// completes, the selected value lives in the save and is not changed
+		// by later edits to settings.json.
+		GameData::setAIDifficulty(Settings::aiDifficulty());
 		GameData::initPersons(selectedPerson);
 		menu = ShowPlayersScreen().exec();
 	    break;

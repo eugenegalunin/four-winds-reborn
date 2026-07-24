@@ -1,0 +1,3493 @@
+# Russian translation for Four Winds Reborn.
+# Derived from the classic localized Rune War resources and revised for the restored UI.
+# This file is distributed under the same license as Four Winds Reborn.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Four Winds Reborn 0.2.0\n"
+"Report-Msgid-Bugs-To: https://github.com/jaskes/four-winds-reborn/issues\n"
+"POT-Creation-Date: 2026-07-17 03:02+0300\n"
+"PO-Revision-Date: 2026-07-17 01:45+0300\n"
+"Last-Translator: Four Winds Reborn community\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: src\ui\settingsmenu.cpp
+msgid "Content Package"
+msgstr "Контент-пакет"
+
+#: src\ui\settingsmenu.cpp
+msgid "Unavailable"
+msgstr "Недоступно"
+
+#: src\ui\settingsmenu.cpp
+msgid "Restart the game to activate the selected content package."
+msgstr "Перезапустите игру, чтобы включить выбранный контент-пакет."
+
+#: src\strings.cpp:5
+msgid "Select Wizard & Clan"
+msgstr "Колдун и Клан"
+
+#: src\strings.cpp:6
+msgid "Wizard:"
+msgstr "Колдун:"
+
+#: src\strings.cpp:7
+msgid "Clan:"
+msgstr "Клан:"
+
+#: src\strings.cpp:8
+msgid "Epithet:"
+msgstr "Титул:"
+
+#: src\strings.cpp:9
+msgid "Clans:"
+msgstr "Кланы:"
+
+#: src\strings.cpp:10
+msgid "Creature:"
+msgstr "Существа:"
+
+#: src\strings.cpp:12
+msgid "Empty Stone"
+msgstr "Пустая руна"
+
+#: src\strings.cpp:13
+msgid "1 Skull"
+msgstr "1 Черепов"
+
+#: src\strings.cpp:14
+msgid "2 Skulls"
+msgstr "2 Черепов"
+
+#: src\strings.cpp:15
+msgid "3 Skulls"
+msgstr "3 Черепов"
+
+#: src\strings.cpp:16
+msgid "4 Skulls"
+msgstr "4 Черепов"
+
+#: src\strings.cpp:17
+msgid "5 Skulls"
+msgstr "5 Черепов"
+
+#: src\strings.cpp:18
+msgid "6 Skulls"
+msgstr "6 Черепов"
+
+#: src\strings.cpp:19
+msgid "7 Skulls"
+msgstr "7 Черепов"
+
+#: src\strings.cpp:20
+msgid "8 Skulls"
+msgstr "8 Черепов"
+
+#: src\strings.cpp:21
+msgid "9 Skulls"
+msgstr "9 Черепов"
+
+#: src\strings.cpp:22
+msgid "1 Sword"
+msgstr "1 Клинков"
+
+#: src\strings.cpp:23
+msgid "2 Swords"
+msgstr "2 Клинков"
+
+#: src\strings.cpp:24
+msgid "3 Swords"
+msgstr "3 Клинков"
+
+#: src\strings.cpp:25
+msgid "4 Swords"
+msgstr "4 Клинков"
+
+#: src\strings.cpp:26
+msgid "5 Swords"
+msgstr "5 Клинков"
+
+#: src\strings.cpp:27
+msgid "6 Swords"
+msgstr "6 Клинков"
+
+#: src\strings.cpp:28
+msgid "7 Swords"
+msgstr "7 Клинков"
+
+#: src\strings.cpp:29
+msgid "8 Swords"
+msgstr "8 Клинков"
+
+#: src\strings.cpp:30
+msgid "9 Swords"
+msgstr "9 Клинков"
+
+#: src\strings.cpp:31
+msgid "1 Number"
+msgstr "1 Циферок"
+
+#: src\strings.cpp:32
+msgid "2 Numbers"
+msgstr "2 Циферок"
+
+#: src\strings.cpp:33
+msgid "3 Numbers"
+msgstr "3 Циферок"
+
+#: src\strings.cpp:34
+msgid "4 Numbers"
+msgstr "4 Циферок"
+
+#: src\strings.cpp:35
+msgid "5 Numbers"
+msgstr "5 Циферок"
+
+#: src\strings.cpp:36
+msgid "6 Numbers"
+msgstr "6 Циферок"
+
+#: src\strings.cpp:37
+msgid "7 Numbers"
+msgstr "7 Циферок"
+
+#: src\strings.cpp:38
+msgid "8 Numbers"
+msgstr "8 Циферок"
+
+#: src\strings.cpp:39
+msgid "9 Numbers"
+msgstr "9 Циферок"
+
+#: src\strings.cpp:40
+msgid "East Wind"
+msgstr "Восточный ветер"
+
+#: src\strings.cpp:41
+msgid "South Wind"
+msgstr "Южный ветер"
+
+#: src\strings.cpp:42
+msgid "West Wind"
+msgstr "Западный ветер"
+
+#: src\strings.cpp:43
+msgid "Nord Wind"
+msgstr "Северный ветер"
+
+#: src\strings.cpp:44 src\strings.cpp:79
+msgid "White Dragon"
+msgstr "Белый Дракон"
+
+#: src\strings.cpp:45 src\strings.cpp:80
+msgid "Green Dragon"
+msgstr "Зелёный Дракон"
+
+#: src\strings.cpp:46 src\strings.cpp:81
+msgid "Red Dragon"
+msgstr "Красный Дракон"
+
+#: src\strings.cpp:48
+msgid "East"
+msgstr "Восток"
+
+#: src\strings.cpp:49
+msgid "South"
+msgstr "Юг"
+
+#: src\strings.cpp:50
+msgid "West"
+msgstr "Запад"
+
+#: src\strings.cpp:51
+msgid "North"
+msgstr "Север"
+
+#: src\strings.cpp:53
+msgid "Red"
+msgstr "Красный"
+
+#: src\strings.cpp:54
+msgid "Yellow"
+msgstr "Жёлтый"
+
+#: src\strings.cpp:55
+msgid "Aqua"
+msgstr "Бирюзовый"
+
+#: src\strings.cpp:56
+msgid "Purple"
+msgstr "Фиолетовый"
+
+#: src\strings.cpp:58
+msgid "Skeleton Horde"
+msgstr "Орда Скелетов"
+
+#: src\strings.cpp:59
+msgid "Shadow"
+msgstr "Гнильё"
+
+#: src\strings.cpp:60
+msgid "Durlock"
+msgstr "Драйдер"
+
+#: src\strings.cpp:61
+msgid "Wraith"
+msgstr "Чучело"
+
+#: src\strings.cpp:62
+msgid "Maz'Ra"
+msgstr "Маз'Ра"
+
+#: src\strings.cpp:63
+msgid "Knight Templar"
+msgstr "Отряд Рыцарей"
+
+#: src\strings.cpp:64
+msgid "Minotaur"
+msgstr "Минотавр"
+
+#: src\strings.cpp:65
+msgid "Adventure Party"
+msgstr "Приключенцы"
+
+#: src\strings.cpp:66
+msgid "Fire Giant"
+msgstr "Пламенник"
+
+#: src\strings.cpp:67
+msgid "Sand Wraith"
+msgstr "Дух Пустыни"
+
+#: src\strings.cpp:68
+msgid "Stone Golem"
+msgstr "Каменный Голем"
+
+#: src\strings.cpp:69
+msgid "Thunder Bird"
+msgstr "Птица Молний"
+
+#: src\strings.cpp:70
+msgid "Ki-Lin"
+msgstr "Ки-Рин"
+
+#: src\strings.cpp:71
+msgid "Tornado"
+msgstr "Торнадо"
+
+#: src\strings.cpp:72
+msgid "Griffon"
+msgstr "Грифон"
+
+#: src\strings.cpp:73
+msgid "Chameleon"
+msgstr "Хамелеон"
+
+#: src\strings.cpp:74
+msgid "Kilor Celsbane"
+msgstr "Килор Вурмбэйн"
+
+#: src\strings.cpp:75
+msgid "Carol the Great"
+msgstr "Великий Профосс"
+
+#: src\strings.cpp:76
+msgid "King Drago"
+msgstr "Король Уго"
+
+#: src\strings.cpp:77
+msgid "Learra the Siren"
+msgstr "Сирена Ниеннах"
+
+#: src\strings.cpp:78
+msgid "Shanahan"
+msgstr "Шаннаган"
+
+#: src\strings.cpp:82
+msgid "Fire Elemental"
+msgstr "Элементаль Огня"
+
+#: src\strings.cpp:83
+msgid "Earth Elemental"
+msgstr "Элементаль Земли"
+
+#: src\strings.cpp:84
+msgid "Air Elemental"
+msgstr "Элементаль Эфира"
+
+#: src\strings.cpp:85
+msgid "Water Elemental"
+msgstr "Элементаль Воды"
+
+#: src\strings.cpp:86
+msgid "Juggernaut"
+msgstr "Джагернаут"
+
+#: src\strings.cpp:88
+msgid "Smoke"
+msgstr "Туман"
+
+#: src\strings.cpp:89
+msgid "Demonic Compulsion"
+msgstr "Влияние Демонишек"
+
+#: src\strings.cpp:90
+msgid "Mass Panic"
+msgstr "Общий Ужас"
+
+#: src\strings.cpp:91
+msgid "Paralyze"
+msgstr "Паралич"
+
+#: src\strings.cpp:92
+msgid "Reduction"
+msgstr "Редукция"
+
+#: src\strings.cpp:93
+msgid "Battle Fury"
+msgstr "Ярость Боя"
+
+#: src\strings.cpp:94
+msgid "Guidance"
+msgstr "Наведение"
+
+#: src\strings.cpp:95
+msgid "Force Shield"
+msgstr "Силовой Щит"
+
+#: src\strings.cpp:96
+msgid "Dust Cloud"
+msgstr "Облако Пыли"
+
+#: src\strings.cpp:97
+msgid "Heroism"
+msgstr "Героизм"
+
+#: src\strings.cpp:98
+msgid "Mystical Fountain"
+msgstr "Мистический Ручей"
+
+#: src\strings.cpp:99
+msgid "Blind Ambition"
+msgstr "Слепая Амбиция"
+
+#: src\strings.cpp:100
+msgid "Brilliant Lights"
+msgstr "Яркое Свечение"
+
+#: src\strings.cpp:101
+msgid "Magical Aura"
+msgstr "Аура Волшбы"
+
+#: src\strings.cpp:102 src\adventurepart.cpp:980
+msgid "Teleport"
+msgstr "Телепорт"
+
+#: src\strings.cpp:103
+msgid "Dispel Magic"
+msgstr "Разрушение Магии"
+
+#: src\strings.cpp:104
+msgid "Lightning Bolt"
+msgstr "Шаровая Молния"
+
+#: src\strings.cpp:105
+msgid "Healing"
+msgstr "Лечение"
+
+#: src\strings.cpp:106
+msgid "Hell Blast"
+msgstr "Взрыв Огня"
+
+#: src\strings.cpp:107
+msgid "Summon Skull Rune"
+msgstr "Вызвать Руну Черепа"
+
+#: src\strings.cpp:108
+msgid "Summon Sword Rune"
+msgstr "Вызвать Руну Меча"
+
+#: src\strings.cpp:109
+msgid "Summon Number Rune"
+msgstr "Вызвать Руну Чисел"
+
+#: src\strings.cpp:110
+msgid "Random Discard"
+msgstr "Случайная Ставка"
+
+#: src\strings.cpp:111
+msgid "Scry Runes"
+msgstr "Ясновидение"
+
+#: src\strings.cpp:112
+msgid "Silence"
+msgstr "Тишина"
+
+#: src\strings.cpp:113
+msgid "Mana Fog"
+msgstr "Дым Маны"
+
+#: src\strings.cpp:114
+msgid "Mass Dispel Magic"
+msgstr "Общее Разрушение Магии"
+
+#: src\strings.cpp:116
+msgid "Orachi"
+msgstr "Орачин"
+
+#: src\strings.cpp:117
+msgid "Lakkho"
+msgstr "Лакхор"
+
+#: src\strings.cpp:118
+msgid "Dayla"
+msgstr "Дайла"
+
+#: src\strings.cpp:119
+msgid "Ziag"
+msgstr "Зиаг"
+
+#: src\strings.cpp:120
+msgid "Niana"
+msgstr "Ниана"
+
+#: src\strings.cpp:121
+msgid "Kierac"
+msgstr "Киерак"
+
+#: src\strings.cpp:122
+msgid "Logun"
+msgstr "Логун"
+
+#: src\strings.cpp:123
+msgid "Nucrus"
+msgstr "Нукрус"
+
+#: src\strings.cpp:124
+msgid "Javed"
+msgstr "Жавед"
+
+#: src\strings.cpp:126
+msgid "%1's monocle allows him to see all invisible units on the map."
+msgstr "Монокль %1 позволяет ему видеть все невидимые отряды на карте."
+
+#: src\strings.cpp:127
+msgid ""
+"%1's catastrophic Hell Blast can wipe out entire army lines and is unique to "
+"her."
+msgstr "Катастрофический Взрыв Огня %1 способен уничтожать целые ряды армий; этой силой владеет только она."
+
+#: src\strings.cpp:128
+msgid ""
+"Being a bard, %1 is loved by all people and creatures around him. His songs "
+"inspire bravery which cause his creatures to regain 2 loyalty each round."
+msgstr "Как бард, %1 любим всеми людьми и существами вокруг. Его песни вселяют отвагу, поэтому его существа восстанавливают 2 Верности каждый раунд."
+
+#: src\strings.cpp:129
+msgid ""
+"%1 possesses uncanny luck in the Rune Game. On each unforced turn draw, he "
+"sees two runes and keeps one; the other returns to the bottom of the wall. "
+"Directed draw spells take precedence."
+msgstr "%1 обладает невероятной удачей в Игре Рун. При каждом обычном доборе в свой ход он видит две руны и оставляет одну; другая возвращается под стену. Заклинания направленного добора имеют приоритет."
+
+#: src\strings.cpp:130
+msgid ""
+"%1 is a telepath. This allows him to chose, pung, kong, game and cast spells "
+"even when silence has been cast."
+msgstr "%1 — телепат. Это позволяет ему объявлять Чоу, Панг, Конг и Маджонг, а также применять заклинания даже под действием Тишины."
+
+#: src\strings.cpp:132
+msgid "Lord of the Dead"
+msgstr "Владыка Смертей"
+
+#: src\strings.cpp:133
+msgid "High Lord Templar"
+msgstr "Король-Тамплиер"
+
+#: src\strings.cpp:134
+msgid "Sea Princess"
+msgstr "Королева Вод"
+
+#: src\strings.cpp:135
+msgid "The Tactician"
+msgstr "Богдо-Гэгэн"
+
+#: src\strings.cpp:136
+msgid "Enchantress of Fire"
+msgstr "Огненная Волшебница"
+
+#: src\strings.cpp:137
+msgid "The Shapeshifter"
+msgstr "Изменяющий Плоть"
+
+#: src\strings.cpp:138
+msgid "Minstrel of Magic"
+msgstr "Менестрель Магии"
+
+#: src\strings.cpp:139
+msgid "The Trickster"
+msgstr "Чёрный Трюкач"
+
+#: src\strings.cpp:140
+msgid "Master of the Skies"
+msgstr "Небесный Повелитель"
+
+#: src\strings.cpp:142
+msgid ""
+"\tThe spawn of all that is evil and callous is the necromancer called %1. "
+"The Isle of Four winds knows no individual as ruthless as he, the one "
+"without emotion. Sadness, fear, anger, joy, jealousy and greed are "
+"sensations that do not clutter his being, making him the most focused and "
+"feared of all wizards. Death and decay are all that are required to fuel his "
+"existence, they are his conscience. His aspect is a composition of energy "
+"from this arcane persuasion. When looking into his shadowy eyes you can "
+"almost see the tortured souls of those who have crossed his path. It is said "
+"that when you meet %1, you have met death.\n"
+"\tThe nature of %1's existence revolves around the magic that is found "
+"within the realm of skulls. He is singularly in tune with death as a source "
+"of magical essence. It is the fabric of his being. %1's unearthly aura "
+"pulsates with the dark fire of death. This has become his only link to the "
+"Isle of the Four Winds and for this reason %1 is limited to the use of Skull "
+"magic as his source of summoning and enchantment. However, due to his "
+"proximity to death, %1 is also attuned to the most destructive creatures "
+"found on the Isle. He has managed to call upon the Red Dragon, the Fire "
+"Elemental, and Maz'Ra the Demon Lord to do his bidding, and will not "
+"hesitate to call on them throughout the next competition.\n"
+"\t%1 is a true mercenary, not native to any of the races which vie for "
+"control of the Isle of Four Winds. He will choose to side with races only to "
+"suit his own needs, and to fortify his intensely evil magical essence. The "
+"Maitha and the Marz are the only communities brave enough to have managed to "
+"secure the use of %1 as an instrument in past Rune Wars. %1 will again side "
+"with one of these two clans in hopes to achieve total dominance and escalate "
+"his diabolic vitality.\n"
+"\t%1 is somewhat of an unknown. Although he is very much alive, considerable "
+"folklore has been attached to his movements. Natives to all the races on the "
+"Isle have cited many reasons for his existence and continue to speculate. "
+"Some say that he is an overlord to rival the Gods through constant killing "
+"sprees.His wanderings across the countryside have left it dark and "
+"destitute. Others believe that he is an incarnation of all that is evil. "
+"What is agreed upon is that %1 is most certainly the most bizarre and most "
+"fearsome individual on the island. If a wizard is to defeat him in the "
+"coming competition, he or she will have to have an iron will and a heart of "
+"stone, for %1 does not let up."
+msgstr "\tВоплощение всего злого и бессердечного — некромант по имени %1. На Острове Четырёх Ветров нет существа безжалостнее этого лишённого чувств колдуна. Печаль, страх, гнев, радость, зависть и жадность не тревожат его и потому делают самым сосредоточенным и пугающим из всех магов. Смерть и разложение питают его существование и заменяют ему совесть. В тёмных глазах %1 будто видны измученные души тех, кто пересёк ему дорогу. Говорят, встретить %1 — значит встретить саму смерть.\n\tСущность %1 неразрывно связана с магией царства Черепов. Смерть служит ему источником магии и самой тканью его бытия. Неземная аура %1 пульсирует тёмным пламенем смерти; это его единственная связь с Островом Четырёх Ветров, поэтому для призыва и чар он пользуется главным образом магией Черепов. Но близость к смерти роднит его и с самыми разрушительными существами острова. Красный Дракон, Элементаль Огня и владыка демонов Маз'Ра уже исполняли его волю и наверняка будут призваны вновь.\n\t%1 — настоящий наёмник, не принадлежащий ни к одному из народов, борющихся за остров. Он выбирает союзников лишь ради собственной выгоды и укрепления своей зловещей магической сущности. Только Красный и Фиолетовый кланы оказались достаточно смелы, чтобы воспользоваться им как орудием в прежних Войнах Рун. В новой войне %1 снова поддержит один из них в надежде добиться полного господства и умножить свою дьявольскую силу.\n\tПроисхождение %1 остаётся загадкой. Он несомненно жив, но каждое его появление окружено легендами. Все народы острова спорят о причине его существования. Одни считают его владыкой, бросившим вызов богам бесконечными убийствами: после его странствий земли остаются мрачными и опустошёнными. Другие видят в нём воплощение мирового зла. Все сходятся лишь в одном: %1 — самое странное и страшное существо острова. Чтобы победить его, колдуну потребуются железная воля и каменное сердце — %1 не знает пощады."
+
+#: src\strings.cpp:146
+msgid ""
+"\t%1 of the Kartha stands by the chivalric code of the honorable knight. All "
+"that he accomplishes or attempts is for the good of his nation. His piety "
+"and conviction to his people is unmatched by any other figure throughout the "
+"land. %1 truly believes that there is much to be gained through patience and "
+"virtue. His commitment to ethics is not a byproduct of his religious "
+"beliefs, moreover, it comes from within his magical fabric. %1's dedication "
+"and perseverance has allowed him to harvest his magical aura and detach "
+"himself from a mundane existence. This separates him from mere ordinary "
+"knights or crusaders of a church. The magic he possesses has become an "
+"extension of his blade, and it flourishes within him as hones his skills as "
+"a master swordsman and conjurer of good.\n"
+"\tThe intense studies of the Knighthood have allowed %1 to discover a "
+"greater understanding of the magic that lies deep within his soul. His "
+"patience has become instinct as in the case of most Kartha clansfolk, "
+"however, %1 has most certainly fortified this attribute through his machine-"
+"like conviction. His magical nature lies within the power of the sword, "
+"therefore all that is summoned and enchanted by %1 is attached to this "
+"realm. Quite often, %1 is seen conjuring the aid of reputable heroes like "
+"Carol the Great and King Drago. He especially enjoys the company of these "
+"individuals because they share the sanctity that he so desperately "
+"cherishes. %1 finds strength in his summonings, and for this reason, is "
+"rarely seen alone.\n"
+"\t%1 is misunderstood by the other races native to the Isle of Four Winds. "
+"He is often considered a soft hearted individual willing to take pity on "
+"those that are deemed to be less fortunate. This, however, is the wrong "
+"angle to take when facing him in competition. While other wizards may expect "
+"him to limit the prize of his victory, he will pursue utter dominance. His "
+"absolute dedication to his people has instilled in him the will to claim a "
+"landslide victory. He intends to lead his people to glory. His strength of "
+"mind coupled with his unparallel sense of patience will make him a worthy "
+"opponent in the coming Rune War."
+msgstr "\t%1 из Жёлтого клана следует рыцарскому кодексу чести. Всё, что он делает, служит благу его народа. Никто на острове не сравнится с его верой и преданностью соотечественникам. %1 убеждён, что терпение и добродетель приносят великую награду. Его нравственные принципы порождены не только религией — они вплетены в саму его магическую природу. Упорство позволило %1 обуздать ауру и подняться над обыденным существованием. Поэтому он не просто рыцарь или церковный крестоносец: магия стала продолжением его клинка и крепнет вместе с мастерством мечника и чародея света.\n\tГоды изучения рыцарских искусств открыли %1 магию, скрытую глубоко в его душе. Терпение, свойственное Жёлтому клану, благодаря почти машинной целеустремлённости стало его инстинктом. Магическая природа %1 заключена в силе Меча, и все его призывы и чары связаны с этим царством. Он часто обращается за помощью к прославленным героям — Великому Профоссу и Королю Уго. Они разделяют святые идеалы, которыми он дорожит. %1 черпает силу в призванных союзниках и потому редко появляется один.\n\tДругие народы Острова Четырёх Ветров часто неверно понимают %1, считая мягкосердечным защитником несчастных. В Войне Рун такая ошибка опасна. Соперники могут ожидать, что он удовольствуется скромной победой, но %1 стремится к полному господству. Безграничная преданность народу заставляет его добиваться сокрушительного результата и вести своих людей к славе. Сильный разум и непревзойдённое терпение делают %1 достойным противником."
+
+#: src\strings.cpp:149
+msgid ""
+"\tThere is a point in the development of a powerful wizard when a teacher "
+"realizes his pupil is truly gifted. %1, a disciple of Kierac, never attained "
+"this peak. Kierac recognized her potential early, and acknowledges her as a "
+"competent, if unspectacular wizard, never to be seen within the confines of "
+"the Mage Tower for a rune war though.\n"
+"\tNo one can pinpoint the moment when she became a legitimate contender "
+"within the marz wizard hierarchy to be their preferred rune war mage. Her "
+"best quality seems to be the fact that she is constantly underestimated. Her "
+"tactics and spells are unspectacular for the most part, but in the end she "
+"always delivers a very strong impression.\n"
+"\tBeing full blooded marz means that she is a dual breather, and fully "
+"amphibious. Being underwater gives her lots of freedom. The entire island is "
+"littered with channels and rivers so it is easy for her to get around "
+"quietly and secretly. Her stealth rivals that of Kierac himself, though this "
+"is a very little known fact."
+msgstr "\tВ обучении сильного колдуна наступает миг, когда наставник понимает: перед ним настоящий талант. Ученица Киерака %1 так и не достигла подобной вершины. Киерак рано заметил её способности и считает её умелой, хотя и не блистательной волшебницей — из тех, кого прежде не ожидали увидеть в Башне Магов среди участников Войны Рун.\n\tНикто не знает, когда именно %1 заняла законное место среди колдунов Фиолетового клана и стала претенденткой на роль его избранницы. Её главное достоинство в том, что соперники постоянно её недооценивают. Тактика и заклинания %1 редко выглядят эффектно, но итог неизменно оказывается впечатляющим.\n\tКак урождённая представительница Фиолетового клана, %1 способна дышать и воздухом, и под водой. Водная стихия дарит ей свободу: остров изрезан каналами и реками, по которым она перемещается тихо и незаметно. В скрытности %1 не уступает самому Киераку, хотя об этом почти никому не известно."
+
+#: src\strings.cpp:152
+msgid ""
+"\tAccording to %1, conditions for his victory are extremely ripe. His clan "
+"has become somewhat negligible in the eyes the other races due to the "
+"failure of past leaders to achieve success in previous Rune Wars. %1 is "
+"extremely determined to surprise the other wizards at the next competition. "
+"He has learned from past failure and has cited self betterment as the only "
+"possible course of action that will undo what has been done to his sorry "
+"nation. %1 has traveled the four corners of the Isle in order to obtain "
+"delicate magical information to quench his thirst for victory. Most of his "
+"magical essence is by choice self taught, having decided not to take on a "
+"mentor because of the pathetic pool of past leaders and wizards. %1 is very "
+"much in touch with the tides of magic which wash within his soul. He has "
+"learned to tap the innate magical nature of his clansfolk. Through intense "
+"magical study, %1 has discovered a way to harness the magical energy of his "
+"peoples desires. He will use this as a flagship of power to exact revenge "
+"over all the nations which call him weak.\n"
+"\tThere is a distinct property of war which %1 holds in high regard which "
+"may make him a potent foe in the next Rune War competition. %1 is a tactical "
+"genius and through intense study, thought and magic, %1 has become a master "
+"of tactical application. %1 has trained himself to sort and apply strategy "
+"with calculating speed. He has repeated his training methods so often that "
+"it has become instinct for him to adapt to different scenarios effectively. "
+"%1 prides himself on lightning quick thought, and will definitely outclass "
+"his opponents in this area of cerebral battle. His controversial monocle "
+"reveals every invisible creature on the map.\n"
+"\tThe nature of %1's magic is inherently versatile. Although the focus of "
+"his summoning is based in the realm of skulls, he utilizes all areas of "
+"tactical spell casting, enchanting his creatures with a full complement of "
+"supplemental spells. %1 is never seen hoarding or saving the power that may "
+"come his way during a competition. He is constantly expending his power "
+"attempting to bolster his army with the various spells he has at his "
+"command. %1 is a very flashy fighter who relies on speed and finesse rather "
+"than pure power. He does not allow himself to be overwhelmed or overmatched. "
+"His intense grasp of enchantment magic demonstrates this.\n"
+"\t%1's crusade for knowledge has certainly raised the hopes of his people. "
+"He can feel their excitement as the magical energies flow through his blood. "
+"%1's ability to harness the hopes of his nation will make him a match for "
+"all wizards, especially those who regard the Iz as nothing more than a petty "
+"annoyance."
+msgstr "\tПо мнению %1, обстоятельства как никогда благоприятствуют его победе. После неудач прежних вождей в прошлых Войнах Рун другие народы почти перестали считаться с Бирюзовым кланом. %1 намерен удивить соперников. Он изучил прежние поражения и решил, что лишь постоянное самосовершенствование способно вернуть униженному народу уважение. В поисках редких магических знаний %1 обошёл все уголки острова. Он сознательно отказался от наставника, не найдя достойного учителя среди прежних вождей и колдунов. Чутко ощущая магические приливы собственной души и врождённую силу своего народа, %1 научился превращать надежды бирюзовых в оружие мести всем, кто называл их слабыми.\n\tОсобенно высоко %1 ценит ту сторону войны, которая способна сделать его опаснейшим участником состязания: тактику. Благодаря упорным занятиям, размышлениям и магии он стал мастером стратегического применения сил. Бесчисленные повторения научили его молниеносно оценивать обстановку и инстинктивно приспосабливаться к любому сценарию. В интеллектуальной битве %1 рассчитывает превзойти всех соперников, а его знаменитый монокль открывает каждое невидимое существо на карте.\n\tМагия %1 необычайно гибка. Хотя его призывы главным образом связаны с царством Черепов, он владеет всем спектром тактических чар и усиливает существ множеством дополнительных заклинаний. %1 никогда не копит доставшуюся ему силу: он постоянно расходует её, укрепляя армию. Это эффектный боец, предпочитающий скорость и тонкий расчёт грубой мощи. Глубокое знание чар помогает ему не позволять врагам окружить или подавить себя.\n\tПоход %1 за знаниями вернул надежду его народу. Он чувствует воодушевление бирюзовых в потоке магии, проходящем сквозь его кровь. Способность обратить надежды клана в силу позволит %1 сразиться на равных с любым колдуном — особенно с теми, кто всё ещё считает Бирюзовый клан досадной мелочью."
+
+#: src\strings.cpp:156
+msgid ""
+"\t%1 is another foreigner to the Isle of Four Winds, a human. Her intense "
+"aversion to the forces of evil have attracted her to the Isle. She has been "
+"following the legacy of a certain wizard in hopes of one day facing this "
+"individual and banishing him from the land of the living. Orachi is the one, "
+"the source of the raging tempest that blows within her passionate soul. "
+"Relentless in her pursuit, %1 has finally pinpointed the whereabouts of her "
+"arch nemesis and feels that she is finally ready to face him. She will take "
+"on any commission in the coming Rune War just to oppose Orachi. Although she "
+"will meet the needs of the clan who calls her, she is set on another "
+"purpose. %1 wants revenge.\n"
+"\tLong ago, %1 was a very passive woman, living in a small town far away "
+"from the Isle of Four Winds. She pursued the study of magic half-heartedly "
+"because she did not have the resources available to truly harness such "
+"power. Her town was extremely mundane, a small farming reserve beside a "
+"great river which the townsfolk had built their lives around. %1 was content "
+"with her life, dedicated to her family and her town until one fateful day. "
+"The skies suddenly darkened as an intense storm rose up and shook the "
+"foundations of the town. Following the storm, an army of corpses and demons "
+"entered the town, killing and spreading its curse to everything. At the "
+"heart of the army was a tortured soul, a twisted man that did not show "
+"emotion, Orachi the Necromancer. The town was consumed within minutes and "
+"all that was once living had transformed into living dead. Orachi left as "
+"quickly as he came, leaving the small farming town in ruins. %1 managed to "
+"escape the torment by hiding in a small cave at the bank of the river. When "
+"the sun came out and the blue sky returned she went back to town. There was "
+"nothing left, even the chirping birds had been stolen by this heartless "
+"being. %1 broke into a frenzy, she shed all that was pure and dedicated "
+"herself to revenge. Her only course of action was to pursue the art of "
+"summoning and enchantment. She turned to the only source of magic known to "
+"her lands, the Demon Lord. She struck a pact with him. %1 gave him her soul "
+"and in return was granted the gift of knowledge. She loathed her decision "
+"but her anger cluttered her judgement, all she wanted was revenge. She had "
+"become reborn as a child of fire.\n"
+"\tIntense study and magical manipulation was %1's way. She nurtured the fire "
+"the Demon had planted within her. Through ritual meditation, %1 fed the fire "
+"of knowledge. What was once a small blaze was transformed into a hellblast "
+"capable of consuming entire armies. Because of her aversion to the skull "
+"magic of Orachi, the magic within her guided itself. It took on the form of "
+"the sword and the number. As a result of this, %1 has become a summoner and "
+"an enchanter of these two realms, and a potent force in the coming Rune War."
+msgstr "\t%1 — ещё одна чужеземка на Острове Четырёх Ветров, человек. Ненависть к силам зла привела её сюда. Долгие годы она шла по следу одного колдуна, мечтая встретить его и изгнать из мира живых. Имя этого врага — Орачин, источник бури, бушующей в её душе. Неустанные поиски наконец открыли %1 убежище заклятого противника, и теперь она готова сразиться с ним. В новой Войне Рун она примет предложение любого клана, лишь бы выступить против Орачина. Служа нанимателям, %1 не забывает своей истинной цели — мести.\n\tКогда-то %1 была тихой женщиной и жила в маленьком земледельческом поселении далеко от острова. Она понемногу изучала магию, но не располагала знаниями и средствами, чтобы раскрыть настоящий дар. Её жизнь принадлежала семье и городку у великой реки — пока не настал роковой день. Небо потемнело, страшная буря сотрясла дома, а вслед за ней пришла армия мертвецов и демонов, убивавшая всё живое и обращавшая его в проклятую нежить. Во главе шёл лишённый чувств Орачин-некромант. За несколько минут поселение погибло, и Орачин исчез так же внезапно, как появился. %1 спаслась в маленькой пещере на речном берегу. Когда вернулись солнце и синее небо, она увидела лишь руины и мёртвую тишину. Отбросив прежнюю чистоту, %1 посвятила себя мести. Единственным путём стали призыв и чары. Она обратилась к единственному известному в тех землях источнику магии — Владыке Демонов — и заключила с ним договор: душа в обмен на знание. %1 ненавидела свой выбор, но гнев затмил рассудок. Она переродилась дитём огня.\n\tС тех пор её путь — суровое обучение и магические опыты. %1 взращивала пламя, посеянное демоном, и ритуальными медитациями питала огонь знания. Маленькая искра превратилась во Взрыв Огня, способный поглощать целые армии. Отвращение к магии Черепов Орачина направило её силу к Мечам и Числам. Так %1 стала грозной призывательницей и повелительницей чар двух царств — силой, с которой придётся считаться в новой Войне Рун."
+
+#: src\strings.cpp:159
+msgid ""
+"\t\"The absolute master of summoning\" is a title that describes %1. He is "
+"thought to be the oldest wizard on the Isle of Four Winds because of his "
+"intense grasp of the main summoning circles. Great mystery surrounds %1 much "
+"the same as it does Orachi except that %1 has not achieved his notoriety "
+"through mass torment and destruction. Rather, %1 has attained fame through "
+"his ability to alter his appearance via personal genetic manipulation. It is "
+"virtually impossible to chart his past movements. Therefore, very little is "
+"known about the age and background of %1, all is left to speculation.\n"
+"\tMany tales echo the name %1. One tale in particular has been agreed upon "
+"by many scholars and natives alike. %1 has participated in several Rune War "
+"competitions for the Marz and Iz clans. %1 says he favors these groups "
+"because they are considered somewhat alien. Throughout past competitions %1 "
+"has baffled his opponents with his ability to summon powerful creatures from "
+"all the main realms of magic; skulls, swords, and numbers. By drawing "
+"various entities from each realm he can form a decidedly deadly force. This "
+"leaves many opposing wizards scratching their collective heads, wondering "
+"how he could have possibly mastered such summoning.\n"
+"\tIt has been proposed that %1 must have studied under the masters of each "
+"realm of summoning. But how did he do this? None of the masters have "
+"admitted to teaching him. It was then discovered that he was indeed a "
+"shapeshifter. From this discovery it has been assumed that the great masters "
+"taught him unknowingly.\n"
+"\t%1 could care less about the methods he uses to obtain knowledge. He will "
+"use anything at his disposal to achieve total mastery of summoning, and to "
+"bring victory to those who call for him to represent them in the Rune War.\n"
+"\t%1 has an unmatched thirst and capacity to learn the art of summoning, "
+"causing him to be unaligned. His one motivation in life is summoning. So "
+"long as there is knowledge to be gathered %1 will pursue it using any means. "
+"He has dedicated his life to acquiring all available summoning knowledge, "
+"and from this, has become the most celebrated Rune War wizard of all time. "
+"He does not waste time with what he calls trivial supplemental magic. He "
+"claims victory by employing absolute brute force, summoning the strongest, "
+"meanest creatures. Once again %1 has to be looked upon as the frontrunner in "
+"the coming Rune War competition. Perhaps he will not compete. Only time will "
+"tell."
+msgstr "\t«Абсолютный мастер призыва» — лучшее определение для %1. Благодаря глубочайшему знанию главных Кругов Призыва его считают старейшим колдуном острова. %1 окружён тайнами почти так же, как Орачин, но славу ему принесли не мучения и разрушение, а умение изменять собственное тело. Отследить его прежние обличья и странствия почти невозможно, поэтому возраст и происхождение %1 остаются предметом догадок.\n\tИмя %1 звучит во множестве легенд. Учёные и жители сходятся в том, что он участвовал в нескольких Войнах Рун на стороне Фиолетового и Бирюзового кланов, которые привлекают его своей чуждостью. В прошлых состязаниях %1 поражал врагов способностью призывать могучих существ из всех главных царств — Черепов, Мечей и Чисел. Комбинируя их силы, он создавал смертоносные армии и заставлял соперников гадать, как один колдун мог овладеть столь разными школами.\n\tПредполагали, что %1 учился у мастеров каждого царства, но ни один из них не признавался, что наставлял его. Ответ появился, когда раскрылась его природа Изменяющего Плоть: великие учителя передавали ему знания, не понимая, кому на самом деле преподают.\n\t%1 безразлично, какими средствами добывать знания. Он использует всё доступное, чтобы достичь полного мастерства призыва и принести победу тем, кто наймёт его на Войну Рун.\n\tНенасытная жажда и редчайшая способность к обучению не оставили %1 места среди одного клана. Единственная цель его жизни — призыв. Пока в мире остаётся знание, он будет искать его любыми способами. Посвятив себя всем школам призыва, %1 стал самым прославленным колдуном Войн Рун. Он презирает «пустячную» дополнительную магию и добивается победы грубой силой, вызывая самых могучих и жестоких существ. Поэтому %1 снова считается главным фаворитом — если, конечно, решит участвовать. Это покажет лишь время."
+
+#: src\strings.cpp:164
+msgid ""
+"\tAlthough %1 is a new face on the Isle of Four Winds, his participation in "
+"the coming Rune War is much anticipated. Not resident to the isle, %1 is a "
+"distinct type of faerie, foreign to all the native races. %1 is similar to "
+"Nucrus in that he shares no affiliation to a magical realm. However, his "
+"summoning skills are extremely potent. %1 has come into favor of the dragons "
+"and can summon all types of these devastating creatures. He has also "
+"discovered the secret of the Juggernaut and will most certainly call upon it "
+"to wreak absolute mayhem.\n"
+"\t%1, a mercenary in the truest sense, will lend his service to any clan "
+"that wishes to have him. Parables of his incredible summoning power have "
+"circulated throughout the land causing him to be the target of much interest "
+"by all the clans. Being of the bardly persuasion, %1 traversed the Isle of "
+"Four Winds on a self promotional tour, entertaining natives with songs and "
+"poems boasting of his fantastic powers. People have fallen in love with this "
+"enchanted performer. He has become their choice in the coming Rune War thus "
+"increasing his marketability amongst clan leaders. %1 will have many options "
+"available to him when it comes time to decide who he wishes to represent. "
+"People of all types back this charismatic hero, which many clan leaders have "
+"recognized. He is a representative of the common folk, the one to share a "
+"drink and a laugh with. Because many of the other wizards are feared for "
+"their anomalies, %1 is particularly adored for his jovial and charismatic "
+"nature. He has gained the enthusiasm of the natives and intends to feed from "
+"this. The sign of a great performer is a large crowd.\n"
+"\tA drawback to %1 is his lack of a supplemental spell realm. This may or "
+"may not expose a weakness, depending on how the runes fall for %1. This "
+"brash and persuasive character need only to look towards the dragons as a "
+"source of victory. %1 will be one to watch for this reason alone."
+msgstr "\tХотя %1 недавно появился на Острове Четырёх Ветров, его участия в Войне Рун ждут с большим интересом. Он не принадлежит к местным народам и представляет редкий вид фей. Подобно Нукрусу, %1 не связан с отдельным магическим царством, зато обладает огромным талантом призывателя. Он снискал расположение драконов и способен вызывать все разновидности этих разрушительных созданий. Кроме того, %1 раскрыл тайну Джагернаута и наверняка призовёт его, чтобы посеять полный хаос.\n\tКак истинный наёмник, %1 предложит услуги любому клану. Рассказы о его невероятной силе разошлись по всему острову и привлекли внимание всех правителей. По натуре бард, %1 устроил настоящее представление: путешествовал по землям, развлекая жителей песнями и стихами о собственном могуществе. Народы полюбили зачарованного артиста и захотели видеть его участником Войны Рун, чем резко подняли его ценность для вождей. %1 сможет выбирать из множества предложений. Его поддерживают простые жители всех народов — те, кто готов разделить с ним кружку и смех. Других колдунов боятся за их странности, а %1 любят за весёлый нрав и обаяние. Он намерен питаться восторгом толпы: великому артисту нужна большая публика.\n\tСлабость %1 — отсутствие собственной школы дополнительных заклинаний. Станет ли это проблемой, зависит от выпавших рун. Дерзкому и убедительному барду достаточно обратиться к драконам как к источнику победы. Уже поэтому за %1 стоит внимательно следить."
+
+#: src\strings.cpp:167
+msgid ""
+"\tTouted as the elite Rune War contestant, %1 is a representative of the "
+"Maitha clan. A veteran of past competition, %1 is the purest student of the "
+"actual game itself. He relies heavily on his ability to play the game rather "
+"than the magic contained within the runes. %1 is somewhat of a utility "
+"summoner and spell caster, only able to call upon the elements and minor "
+"beings to aid him in the battle process. He has no affiliation to any "
+"particular realm of magic, which certainly hinders his ability to employ a "
+"formidable legion. For this reason, %1 has had to move in a direction "
+"uncommon to most wizards.\n"
+"\t%1 has adopted a strategy that is extremely effective and quite "
+"frustrating to his opponents. Knowing that he can not overwhelm other "
+"wizards by summoning creatures, %1 has shifted his attention to widespread "
+"movement and land defense. %1 maximizes land acquisition through expert "
+"play. In addition, %1 employs the teleport spell to quickly shift his "
+"minions for hit and run attacks on lands which have been left penetrable by "
+"unsuspecting adversaries. The nature of his magic allows him the luxury of "
+"not having to divide his attention between tactical movement and gameplay. "
+"%1 can then concentrate his efforts on burying his opponents through "
+"advanced rune battle strategy. The Maitha adore his approach, as they are "
+"quite passive and profoundly intellectual. They have relied on %1 for many "
+"years and continue to have confidence in him. %1 has little room for error "
+"because his people will not tolerate failure. Impulsive by nature, the "
+"Maitha will not hesitate to dissolve their pact with %1 if he wavers from "
+"total success.\n"
+"\t%1 enjoys the pressures of being Maitha. They think very highly of their "
+"race and pride themselves on quick thinking and troubleshooting. It has "
+"become a common sight to see %1 dazzling his opponents with brilliant play "
+"and decision making, almost toying with them. %1 carries himself with a "
+"cocky swagger, knowing that his play has rarely been matched in the past. He "
+"very much looks forward to the coming Rune War so he can once again teach "
+"the veterans a lesson and embarrass any new comers to the event."
+msgstr "\t%1 считается элитным участником Войны Рун и представляет Красный клан. Ветеран прежних состязаний, он прежде всего мастер самой Игры Рун и полагается на умение играть сильнее, чем на заключённую в рунах магию. %1 — универсальный, но ограниченный призыватель: он способен вызывать стихий и младших существ, однако не связан ни с одним главным царством и потому не может собрать обычный могучий легион. Это заставило его избрать путь, непохожий на стратегии большинства колдунов.\n\tТактика %1 чрезвычайно эффективна и выводит соперников из себя. Понимая, что не сможет подавить врагов числом призванных существ, он сосредоточился на подвижности и защите земель. Искусная игра позволяет %1 быстро расширять владения, а Телепорт переносит существ для внезапных ударов по землям, которые неосторожные враги оставили уязвимыми. Его магическая природа не требует делить внимание между тактикой на карте и Игрой Рун, поэтому %1 может сокрушать противников продвинутой стратегией за столом. Спокойный и рассудительный Красный клан высоко ценит такой подход и много лет доверяет своему избраннику. Но права на ошибку у %1 почти нет: гордый народ не простит провала и расторгнет договор, если победа окажется под угрозой.\n\t%1 нравится давление, связанное с ролью красного колдуна. Этот народ высоко ценит себя, быстроту мысли и умение решать сложные задачи. Соперники привыкли видеть, как %1 ослепляет их блестящей игрой и решениями, будто забавляясь. Он держится с самоуверенной ухмылкой, зная, что прежде мало кто мог сравниться с его мастерством. %1 с нетерпением ждёт новой Войны Рун, чтобы снова проучить ветеранов и поставить новичков в неловкое положение."
+
+#: src\strings.cpp:170
+msgid ""
+"%1's affiliation to a clan is torn due to his lack of a true birthright. He "
+"is born of native persuasion, however, he shares the blood of two races. "
+"%1's mother was a Maithan Elder and his father was a dedicated Karthan "
+"Crusader, making %1 the offspring of two high ranking individuals of "
+"conflicting races. While %1 received the favor of both races, sharp Maithan "
+"intellect and intense Karthan dedication, he became a source of great "
+"conflict. He was an incredible specimen, bred for wizardry and participation "
+"in coming Rune Wars. The leaders of each of his clans recognized this and as "
+"a result began vying for control of him. %1 left his home, a neutral "
+"township between the two clan regions, to seek peace and to concentrate on "
+"summoning and enchantment. By putting distance between himself and the "
+"clans, %1 forced the leaders to take action in hopes of resolving this "
+"issue. It was thought by each clan that if he were to have only one living "
+"parent then %1 would become partisan to the clan of the survivor. The "
+"Maithans and Karthans agreed to pit the two against each other in a mock "
+"Rune War, with the loser to be put to death.. %1, still away in training, "
+"did not learn of this event and continued his studies. His mother and father "
+"decided it their way. They poisoned themselves and ended this horrible "
+"conflict in tragedy. To this day it has been kept secret to %1 and the two "
+"nations have resolved to fairly commission %1 when the Rune War comes.\n"
+"\t%1's magical aura was shaped when he left his home. He sought refuge in "
+"the mountains where he became one with the crisp mountain air. He dipped "
+"into the magic of the air and learned to harness and control the wonders "
+"contained within it. Therefore, without knowledge of a distinct realm, all "
+"his summonings are related to flight and the winds. %1 became the self "
+"taught master of the air, able to call upon such mystical beings as the Ki-"
+"Lin, Griffon, and Air Elemental. His supplemental magic was shaped from a "
+"genetic trait given to him by his father. The Karthan dedication to the "
+"sword was strong within him so %1 focused on it, allowing it to bubble "
+"within him, creating the substance for his enchantments.\n"
+"\tIt is not known as to which clan %1 will be representing in the coming "
+"Rune War. His ignorance towards the fate of his parents protects his "
+"relationship with his two native clans. Until %1 discovers the truth he will "
+"remain loyal to these clans, having to decide which one he will unite with. "
+"If %1 is to learn of the demise of his parents, no one knows what will come "
+"of the rage that will boil inside him."
+msgstr "%1 разрывается между двумя кланами, поскольку не имеет единственного наследия. Он родился на острове, но в его жилах течёт кровь двух народов: мать была старейшиной Красного клана, отец — преданным крестоносцем Жёлтого. %1 унаследовал острый ум красных и неукротимую целеустремлённость жёлтых, став редчайшим дарованием, словно созданным для магии и Войн Рун. Правители обоих кланов поняли это и начали бороться за право распоряжаться им. Желая покоя и возможности изучать призыв и чары, %1 покинул родной нейтральный городок между двумя землями. Его уход заставил вождей искать страшное решение: каждый клан решил, что после смерти одного родителя %1 выберет народ выжившего. Мать и отца заставили сойтись в учебной Войне Рун, проигравшего ожидала казнь. Находившийся далеко в обучении %1 ничего не знал. Родители приняли собственное решение: вместе выпили яд и завершили спор трагедией. Истину до сих пор скрывают от %1, а два народа договорились честно делить право приглашать его на Войну Рун.\n\tМагическая аура %1 сформировалась после ухода из дома. Он нашёл убежище в горах и слился с чистым воздухом вершин, научившись чувствовать и направлять заключённую в нём магию. Не принадлежа отдельному царству, %1 связывает все призывы с полётом и ветрами. Он самостоятельно стал мастером воздуха и вызывает таких существ, как Ки-Рин, Грифон и Элементаль Эфира. Дополнительные чары выросли из наследия отца: жёлтая преданность Мечу жила в его крови, и %1 позволил этой силе стать основой своих заклинаний.\n\tНикто не знает, какой клан %1 представит в новой Войне Рун. Незнание судьбы родителей пока сохраняет его связь с обоими народами, и он должен лишь выбрать одного из них. Но если %1 узнает правду об их гибели, никто не способен предсказать, во что превратится закипающая в нём ярость."
+
+#: src\strings.cpp:174
+msgid "Tower of 4 Winds"
+msgstr "Башня 4 Ветров"
+
+#: src\strings.cpp:175
+msgid "Maithaius"
+msgstr "Майтхаеус"
+
+#: src\strings.cpp:176
+msgid "Baliphon"
+msgstr "Балифонг"
+
+#: src\strings.cpp:177
+msgid "Vermille"
+msgstr "Вермилле"
+
+#: src\strings.cpp:178
+msgid "Sulanthia"
+msgstr "Сулантирг"
+
+#: src\strings.cpp:179
+msgid "Trojensek"
+msgstr "Троженсец"
+
+#: src\strings.cpp:180
+msgid "Talon"
+msgstr "Налот"
+
+#: src\strings.cpp:181
+msgid "Siramak"
+msgstr "Камарис"
+
+#: src\strings.cpp:182
+msgid "Ronzinol"
+msgstr "Ронзинол"
+
+#: src\strings.cpp:183
+msgid "Corzen"
+msgstr "Горзен"
+
+#: src\strings.cpp:184
+msgid "Greenbaw"
+msgstr "Редлохиб"
+
+#: src\strings.cpp:185
+msgid "Zubrus"
+msgstr "Сурраг"
+
+#: src\strings.cpp:186
+msgid "Corimar"
+msgstr "Рутьлек"
+
+#: src\strings.cpp:187
+msgid "Inkartha"
+msgstr "Алькарот"
+
+#: src\strings.cpp:188
+msgid "Hexan"
+msgstr "Стурц"
+
+#: src\strings.cpp:189
+msgid "Firland"
+msgstr "Тарланд"
+
+#: src\strings.cpp:190
+msgid "Vesna"
+msgstr "Сприн"
+
+#: src\strings.cpp:191
+msgid "Kern"
+msgstr "Карн"
+
+#: src\strings.cpp:192
+msgid "Regency Peaks"
+msgstr "Пик Регентств"
+
+#: src\strings.cpp:193
+msgid "Knighthaven"
+msgstr "Найтхейвен"
+
+#: src\strings.cpp:194
+msgid "Rikter"
+msgstr "Риктер"
+
+#: src\strings.cpp:195
+msgid "Gorok"
+msgstr "Корог"
+
+#: src\strings.cpp:196
+msgid "Suntura"
+msgstr "Сунтуро"
+
+#: src\strings.cpp:197
+msgid "Bertram"
+msgstr "Бертрам"
+
+#: src\strings.cpp:198
+msgid "Mastenbroek"
+msgstr "Мастенброек"
+
+#: src\strings.cpp:199
+msgid "Reisse"
+msgstr "Реиссе"
+
+#: src\strings.cpp:200
+msgid "Cirrus"
+msgstr "Квакус"
+
+#: src\strings.cpp:201
+msgid "Grosek"
+msgstr "Хэбэйк"
+
+#: src\strings.cpp:202
+msgid "Chahrr"
+msgstr "Чахарр"
+
+#: src\strings.cpp:203
+msgid "Saugrezz"
+msgstr "Саугрезз"
+
+#: src\strings.cpp:204
+msgid "Mahnjeet"
+msgstr "Махагонс"
+
+#: src\strings.cpp:205
+msgid "Trassk"
+msgstr "Денвер"
+
+#: src\strings.cpp:206
+msgid "Bechnarr"
+msgstr "Бехнарро"
+
+#: src\strings.cpp:207
+msgid "Azuria"
+msgstr "Азурак"
+
+#: src\strings.cpp:208
+msgid "Pyramus Reach"
+msgstr "Йотунсхейм"
+
+#: src\strings.cpp:209
+msgid "Serenity Plains"
+msgstr "Степи Молчания"
+
+#: src\strings.cpp:210
+msgid "Sunspot"
+msgstr "Суданг"
+
+#: src\strings.cpp:211
+msgid "Charmers Expanse"
+msgstr "Гьялархейм"
+
+#: src\strings.cpp:212
+msgid "Gambit's Run"
+msgstr "Перекатиполе"
+
+#: src\strings.cpp:213
+msgid "Ash Point"
+msgstr "Кейп-Нон"
+
+#: src\strings.cpp:214
+msgid "Orchid Bay"
+msgstr "Бейкочинос"
+
+#: src\strings.cpp:215
+msgid "Mocklebury"
+msgstr "Моклесбери"
+
+#: src\strings.cpp:216
+msgid "Celestial Wood"
+msgstr "Заросли Небес"
+
+#: src\strings.cpp:217
+msgid "Tortoise Isle"
+msgstr "Тортуга-Ислет"
+
+#: src\strings.cpp:218
+msgid "Siphon's Chute"
+msgstr "Гиппогриффланд"
+
+#: src\strings.cpp:220
+msgid ""
+"Creatures employing the ability to swarm may attack a full party instead of "
+"just the leader, overwhelming them with sheer numbers."
+msgstr "Существа со способностью «Рой» могут атаковать весь отряд, а не только лидера, подавляя противника числом."
+
+#: src\strings.cpp:221
+msgid ""
+"This ability allows creatures of the same type to link together in battle, "
+"instilling a +1 melee and +1 defense to each of these creatures, instead of "
+"just the +1 melee usually granted for supporting creatures."
+msgstr "Эта способность позволяет существам одного типа объединяться в бою: каждое из них получает +1 к Атаке и +1 к Защите вместо обычного +1 к Атаке за поддержку."
+
+#: src\strings.cpp:222
+msgid ""
+"Invisible creatures may move across the isle free from detection, only to "
+"appear in combat. Surprise!"
+msgstr "Невидимые существа могут перемещаться по острову незамеченными и появляться лишь в бою. Сюрприз!"
+
+#: src\strings.cpp:223
+msgid ""
+"Regenerating creatures are restored to maximum loyalty at the beginning of "
+"the map phase."
+msgstr "Существа с Регенерацией восстанавливают Верность до максимума в начале фазы карты."
+
+#: src\strings.cpp:224
+msgid ""
+"The presence of the possessor of this ability sends even the bravest of "
+"souls into panic. This is reflected by the loss of 2 loyalty points to all "
+"that combat it."
+msgstr "Присутствие обладателя этой способности повергает в ужас даже храбрейших: все сражающиеся с ним теряют 2 Верности."
+
+#: src\strings.cpp:225
+#, c-format
+msgid ""
+"Those possessing Major Magic Resistence receive a %%{percent} chance to "
+"ignore the effects of spells directed at them by any wizard."
+msgstr "Обладатели Высшего Сопротивления Магии с вероятностью %%{percent} игнорируют направленные на них заклинания любого колдуна."
+
+#: src\strings.cpp:226
+msgid ""
+"This fearsome ability gives the possessor a %25 chance to strike a "
+"devastating blow in combat. A succesful mighty blow boosts melee strength by "
+"3, and guarantees that at least one damage is done, regardless of the "
+"opponents defense rating."
+msgstr "Эта грозная способность даёт 25% шанс нанести Мощный Удар. Успешный удар повышает Атаку на 3 и гарантирует не менее 1 урона независимо от Защиты противника."
+
+#: src\strings.cpp:227
+msgid ""
+"This ability allows the unit to teleport into any friendly territory "
+"containing a summoning circle by calling on the portals of travel."
+msgstr "Эта способность позволяет существу через врата переместиться в любую дружественную землю с Кругом Призыва."
+
+#: src\strings.cpp:228
+msgid ""
+"Those who possess this ability and lead their party into combat forego "
+"ranged combat, and are granted first strike in melee combat. This only "
+"applies to attacking parties."
+msgstr "Если обладатель этой способности ведёт атакующий отряд в бой, существа пропускают залп, но получают Первый Удар в ближнем бою. Для обороняющихся отрядов способность не действует."
+
+#: src\strings.cpp:229
+msgid ""
+"Those blessed with this ability can see invisible units in adjacent "
+"territories."
+msgstr "Обладатель этой способности видит невидимые отряды на соседних землях."
+
+#: src\strings.cpp:230
+msgid ""
+"Creatures with this ability can avoid the effects of missile fire when in "
+"combat."
+msgstr "Существа с этой способностью невосприимчивы к стрелковому огню в бою."
+
+#: src\strings.cpp:231
+msgid "Shannahan heals 2 loyalty before movement phase."
+msgstr "Шаннаган восстанавливает 2 верности перед фазой движения."
+
+#: src\strings.cpp:232
+msgid ""
+"The fire shield reduces the loyalty of any creature that strikes its bearer "
+"in melee combat by one."
+msgstr "Огненный Щит отнимает 1 Верность у любого существа, ударившего его владельца в ближнем бою."
+
+#: src\strings.cpp:234
+msgid ""
+"\tFoot soldiers of the skull summoning chain, the skeleton horde provides "
+"support. Their sheer numbers allow them to swarm, attacking every member of "
+"an opposing army."
+msgstr "\tОрда Скелетов — пехота царства Черепов и надёжная поддержка. Благодаря численности она может нападать Роем, атакуя каждого участника вражеского отряда."
+
+#: src\strings.cpp:235
+msgid ""
+"\tShadows are a useful staple in the skull realm. Their ability to merge "
+"amongst themselves and maintain invisibility greatly enhances their "
+"attacking prowess."
+msgstr "\tГнильё — полезная основа армии Черепов. Способности к Слиянию и Невидимости заметно усиливают его в атаке."
+
+#: src\strings.cpp:236
+msgid ""
+"\tA valued member of the skull summoning realm, the Durlock provides an "
+"initial foundation for a strong force with its missile fire and robust "
+"attack."
+msgstr "\tДрайдер — ценный воин царства Черепов. Его стрелковый удар и крепкая Атака служат хорошей основой сильного отряда."
+
+#: src\strings.cpp:237
+msgid ""
+"\tWraiths provide the most bang for the buck in the skull regime. "
+"Regeneration supplies durability in combat allowing the wraith to clean up "
+"any low to mid-range enemies and territories."
+msgstr "\tЧучело исключительно выгодно для царства Черепов. Регенерация делает его живучим и позволяет расправляться со слабыми и средними противниками и землями."
+
+#: src\strings.cpp:238
+msgid ""
+"\tThe Knight Templar is a solid low range summoning. He has the ability to "
+"combat any low to mid-range opponent with his impressive mighty blow."
+msgstr "\tОтряд Рыцарей — надёжный недорогой призыв. Благодаря Мощному Удару он способен справиться со многими слабыми и средними противниками."
+
+#: src\strings.cpp:239
+msgid ""
+"\tExtremely resilient, the minotaur is an excellent choice for summoners. It "
+"possesses solid battle attributes at a reasonable cost."
+msgstr "\tМинотавр чрезвычайно живуч и станет отличным выбором для призывателя: за умеренную цену он предлагает уверенные боевые характеристики."
+
+#: src\strings.cpp:240
+msgid ""
+"\tThe adventure party is a wise magical investment. It combines a formidable "
+"ground and air assault with a stalwart defense. Its ability to see the "
+"invisible can foil enemy plans."
+msgstr "\tПриключенцы — разумное вложение магии. Они сочетают мощную наземную и воздушную атаку с крепкой защитой, а способность видеть невидимое может разрушить планы врага."
+
+#: src\strings.cpp:241
+msgid ""
+"\tThis high range creature is strong in all facets of combat like most sword "
+"creatures. Its initial ranged strike is followed by a potent melee attack."
+msgstr "\tПламенник силён во всех видах боя, как и многие существа Мечей. За мощным начальным выстрелом следует серьёзная атака в ближнем бою."
+
+#: src\strings.cpp:242
+msgid ""
+"\tThe sand wraith is an exceptional strategic unit because of its "
+"invisibility. Pair off a sand wraith or two with a mid range creature and "
+"watch the overconfident big ones fall."
+msgstr "\tДух Пустыни — ценное стратегическое существо благодаря Невидимости. Добавьте одного-двух духов к бойцу среднего уровня — и самоуверенные великаны начнут падать."
+
+#: src\strings.cpp:243
+msgid ""
+"\tWith its exceptional resilience and regeneration, the stone golem makes "
+"for a solid low range creature ideal for support."
+msgstr "\tКаменный Голем очень живуч и владеет Регенерацией, поэтому отлично подходит на роль недорогого существа поддержки."
+
+#: src\strings.cpp:244
+msgid ""
+"\tThe thunder bird introduces a ranged attack to the number realm. Couple "
+"this with hearty melee and loyalty values and you have a powerful mid-range "
+"unit."
+msgstr "\tПтица Молний приносит стрелковую атаку в царство Чисел. В сочетании с хорошей Атакой и Верностью это делает её сильным существом среднего уровня."
+
+#: src\strings.cpp:245
+msgid ""
+"\tThis fearsome serpent like beast has no visible weaknesses. Its lack of a "
+"ranged attack is offset by its ability to ignore missiles while its other "
+"abilities are very impressive."
+msgstr "\tУ этого грозного змееподобного зверя нет явных слабостей. Отсутствие собственной Стрельбы компенсируется невосприимчивостью к снарядам и внушительными остальными характеристиками."
+
+#: src\strings.cpp:246
+msgid ""
+"\tA wizard must draw upon the power of the winds to summon a tornado. "
+"Astronge mid-ranged being, the tornado offers immunity to missile attacks "
+"and consistent battle attributes."
+msgstr "\tЧтобы призвать Торнадо, колдун обращается к силе ветров. Это крепкое существо среднего уровня с ровными боевыми характеристиками и невосприимчивостью к стрелковым атакам."
+
+#: src\strings.cpp:247
+msgid ""
+"\tThe griffon is a credible strategic unit. Its ability to merge and see the "
+"invisible along with its capable combat properties makes it a useful low "
+"range creature. An excellent scout with its high movement."
+msgstr "\tГрифон — полезное стратегическое существо. Слияние, способность видеть невидимое и достойные боевые качества делают его хорошим недорогим бойцом, а высокая подвижность — отличным разведчиком."
+
+#: src\strings.cpp:248
+msgid ""
+"\tChameleons are stealthy archers of the lizard persuasion. Their hearty "
+"nature and loyalty to Ziag allow them to recuperate quickly. This is the "
+"only invisible unit with ranged attack capability."
+msgstr "\tХамелеоны — скрытные стрелки из племени ящеров. Живучесть и верность Зиагу помогают им быстро восстанавливаться. Это единственное невидимое существо со Стрельбой."
+
+#: src\strings.cpp:249
+msgid ""
+"\tThe invisible undead knight is a formidable adversary to any mid-range "
+"unit. With the addition of supplemental enchantments, Kilor becomes a potent "
+"foe to any opponent."
+msgstr "\tНевидимый рыцарь-нежить опасен для любого существа среднего уровня. Усиленный дополнительными чарами, Килор становится грозным противником для любой армии."
+
+#: src\strings.cpp:250
+msgid ""
+"\tThe Demon Lord known as Maz'Ra may well be the most fearsome creature "
+"available to summoners. It can single handedly dispatch many capable armies "
+"with its overwhelming attack strength and intimidating Hellblast ability."
+msgstr "\tВладыка Демонов Маз'Ра, возможно, самое страшное существо, доступное призывателям. Его сокрушительная Атака и устрашающий Взрыв Огня позволяют в одиночку уничтожать сильные армии."
+
+#: src\strings.cpp:251
+msgid ""
+"\tCarol is a versatile addition to any summoner that can call her to battle. "
+"Her pendant allows her to gate to friendly summoning circles and gives her "
+"army first strike if she leads them into battle by using the short range "
+"displacement ability of her pendant."
+msgstr "\tВеликий Профосс — универсальное подкрепление. Его кулон открывает врата к дружественным Кругам Призыва и даёт ведомой им атакующей армии Первый Удар."
+
+#: src\strings.cpp:252
+msgid ""
+"\tKing Drago is the jewel of the realm of swords. His consistencies in the "
+"art of war are bolstered by his resistance to magic. Add his mastery of the "
+"fearsome mighty blow and you have an awesome fighting machine. Unfortunately "
+"he is difficult to heal."
+msgstr "\tКороль Уго — жемчужина царства Мечей. Его мастерство войны дополняют Сопротивление Магии и грозный Мощный Удар. Это превосходная боевая машина, которую, увы, трудно лечить."
+
+#: src\strings.cpp:253
+msgid ""
+"\tA hauntingly gorgeous individual, Learra's hypnotic song freezes opponents "
+"in combat when she leads an attacking party, providing her with the first "
+"strike. A good melee property makes this strike quite nasty."
+msgstr "\tЗавораживающе прекрасная Сирена Ниеннах гипнотической песней сковывает врагов, когда ведёт атакующий отряд, и получает Первый Удар. Её высокая Атака делает этот удар особенно опасным."
+
+#: src\strings.cpp:254
+msgid ""
+"\tShanahan the Cloud Giant is the pinnacle of the number realm. There are "
+"many options available to the commander of this big boy. Overwhelm most "
+"anything by itself, or attach it to a party and wreak havoc across the Isle."
+msgstr "\tОблачный великан Шаннаган — вершина царства Чисел. Он способен сокрушить почти любого врага в одиночку или присоединиться к отряду и сеять хаос по всему острову."
+
+#: src\strings.cpp:255
+msgid ""
+"\tThe White Dragon is extremely resilient and loyal by nature. Factor in its "
+"ability to allow the summoner to draw a character rune and its consistent "
+"battle characteristics and you have a top notch unit at your command."
+msgstr "\tБелый Дракон от природы чрезвычайно живуч и верен. Он позволяет призывателю получить руну Чисел, а ровные боевые характеристики делают его первоклассным бойцом."
+
+#: src\strings.cpp:256
+msgid ""
+"\tThe Green Dragon is a very hostile and aggressive beast. Its lack of a "
+"missile strike is supplemented by a fearsome attack strength and a high "
+"loyalty. When in play, this Dragon grants its controller the ability to draw "
+"a sword rune."
+msgstr "\tЗелёный Дракон — свирепый и агрессивный зверь. Отсутствие Стрельбы компенсируют огромная Атака и высокая Верность; пока он в игре, хозяин может получить руну Мечей."
+
+#: src\strings.cpp:257
+msgid ""
+"\tThe Red Dragon has a particular affinity to the skull realm, allowing its "
+"summoner the ability to draw a rune of skulls. It has an intense ranged "
+"breath attack and a capable defense making it another powerful minion to do "
+"your bidding."
+msgstr "\tКрасный Дракон связан с царством Черепов и позволяет призывателю получить руну Черепа. Мощное дыхание дальнего боя и крепкая Защита делают его опасным слугой."
+
+#: src\strings.cpp:258
+msgid ""
+"\tThe Fire Elemental is a particularly volatile creature. A potent attack "
+"force that employs a solid melee and ranged attack, its ability to grant the "
+"random discard spell is its real burn."
+msgstr "\tЭлементаль Огня крайне непредсказуем. Он сочетает сильные ближнюю и стрелковую атаки, но его главный дар — заклинание «Случайная Ставка»."
+
+#: src\strings.cpp:259
+msgid ""
+"\tBorn from the ground beneath, the Earth Elemental is another consistent "
+"battle force. The one who controls it receives the ability to peek at his or "
+"her opponents hands with the scry runes spell."
+msgstr "\tРождённый в глубинах земли Элементаль Земли — надёжная боевая сила. Его владелец получает заклинание «Ясновидение», позволяющее заглянуть в руки противников."
+
+#: src\strings.cpp:260
+msgid ""
+"\tThe Air Elemental proves to be the greatest combatant af all the elements. "
+"Summoners calling upon this element gain the favor of the silence spell, an "
+"annoyance to all wizards who are stricken with it."
+msgstr "\tЭлементаль Эфира — сильнейший боец среди стихий. Призвавший его колдун получает «Тишину» — заклинание, способное серьёзно досадить любому сопернику."
+
+#: src\strings.cpp:261
+msgid ""
+"\tThe Water Elemental is a powerful force on the Isle, and in the Rune Game. "
+"Fog is the strategic annoyance granted to the commander of this element."
+msgstr "\tЭлементаль Воды силён и на острове, и в Игре Рун. Его командир получает «Дым Маны» — весьма неприятное стратегическое заклинание."
+
+#: src\strings.cpp:262
+msgid ""
+"\tThis creature leads its category on the battlefield. It combines strength, "
+"resilience, and broad movement. The Juggernaut is indeed a powerful summons."
+msgstr "\tДжагернаут — один из лучших бойцов своего класса. Он сочетает огромную силу, живучесть и высокую подвижность и полностью оправдывает затраты на призыв."
+
+#: src\strings.cpp:264
+msgid ""
+"\tA cloud of billowing smoke surrounds one enemy creature limiting its "
+"visibility. This will reduce or negate the target's ability to make a ranged "
+"attack."
+msgstr "\tКлубы Тумана окутывают одно вражеское существо и ограничивают его видимость, уменьшая или полностью лишая его Стрельбы."
+
+#: src\strings.cpp:265
+msgid ""
+"\tThe caster draws upon the power of the demons to bolster the loyalty of "
+"one of his minions."
+msgstr "\tКолдун обращается к силе демонов, чтобы повысить Верность одного из своих существ."
+
+#: src\strings.cpp:266
+msgid ""
+"\tThe summoner directs the face of fear at an enemy army group, sending them "
+"into panic and reducing their loyalty."
+msgstr "\tПризыватель обрушивает воплощённый страх на вражеский отряд, повергая его в панику и снижая Верность."
+
+#: src\strings.cpp:267
+msgid ""
+"\tAnother mind altering spell, paralyzing fear ceases the movement of one "
+"enemy creature for one turn as it becomes wracked with terror."
+msgstr "\tПарализующий страх сковывает разум одного вражеского существа и лишает его возможности двигаться в течение одного хода."
+
+#: src\strings.cpp:268
+msgid ""
+"\tWith this spell the summoner is able to harness the power of the skull "
+"realm to drain the will of one enemy creature, reducing its combat "
+"characteristics."
+msgstr "\tПризыватель использует силу царства Черепов, чтобы подавить волю одного вражеского существа и снизить его боевые характеристики."
+
+#: src\strings.cpp:269
+msgid ""
+"\tAn intense bloodlust flows through the veins of the recipient of this "
+"spell, making it a more fierce attacker."
+msgstr "\tЖажда крови наполняет зачарованное существо и делает его гораздо свирепее в атаке."
+
+#: src\strings.cpp:270
+msgid ""
+"\tThis spell sharpens the vision of one friendly creature with ranged combat "
+"ability, enabling it to pinpoint its ranged attack."
+msgstr "\tЗаклинание обостряет зрение дружественного стрелка и позволяет ему точнее наносить дальние удары."
+
+#: src\strings.cpp:271
+msgid ""
+"\tThe caster of this spell is able to conjure a shield of energy around a "
+"single friendly creature, reducing the effectiveness of missile and "
+"territory fire against it."
+msgstr "\tКолдун окружает одно дружественное существо энергетическим щитом, ослабляющим стрелковый огонь существ и территорий."
+
+#: src\strings.cpp:272
+msgid ""
+"\tSwirling winds surround the target of this spell kicking up dust and other "
+"debris. The target becomes distracted and unable to fully defend itself."
+msgstr "\tВихревые ветры поднимают вокруг цели пыль и обломки. Существо теряет концентрацию и хуже защищается."
+
+#: src\strings.cpp:273
+msgid ""
+"\tThe target of this spell becomes inspired by visions of mighty warriors "
+"cutting down their enemies. This greatly enhances the combat ability of the "
+"enchanted."
+msgstr "\tВидения великих воинов, сокрушающих врагов, вдохновляют цель и значительно повышают её боевую мощь."
+
+#: src\strings.cpp:274
+msgid ""
+"\tThe waters of a great mystical fountain are sprinkled upon the recipient "
+"of this spell giving it a random bonus. The target receives +Melee, +Loyalty "
+"or +Ranged."
+msgstr "\tВоды Мистического Ручья даруют выбранному существу случайное усиление: Атаку, Верность или Стрельбу."
+
+#: src\strings.cpp:275
+msgid ""
+"\tWhen a friendly creature is enchanted with this spell it becomes extremely "
+"eager for battle, sacrificing loyalty for the lust of battle."
+msgstr "\tЗачарованное дружественное существо рвётся в бой и жертвует Верностью ради усиления Атаки."
+
+#: src\strings.cpp:276
+msgid ""
+"\tExtremely bright lights appear and dance around the target of this spell, "
+"distracting it from battle and reducing its ability to defend itself."
+msgstr "\tЯркие огни танцуют вокруг цели, отвлекают её от боя и снижают способность защищаться."
+
+#: src\strings.cpp:277
+msgid ""
+"\tThe magic of this enchantment consumes its target, making it feel more "
+"confident in its abilities. As a result, the creature touched by this gains "
+"in defense."
+msgstr "\tМагическая аура придаёт цели уверенность в собственных силах и повышает её Защиту."
+
+#: src\strings.cpp:278
+msgid ""
+"\tAn excellent utility spell, teleport allows the caster to call upon the "
+"gates of travel to shift any one of his or her minions to any friendly "
+"territory."
+msgstr "\tТелепорт открывает врата перемещения и переносит одно дружественное существо на любую союзную землю."
+
+#: src\strings.cpp:279
+msgid ""
+"\tRemoves all enchantments from the target creature. Does not affect any "
+"special abilities."
+msgstr "\tСнимает с выбранного существа все наложенные чары, не затрагивая его врождённые способности."
+
+#: src\strings.cpp:280
+msgid ""
+"\tThe caster of this spell summons the power of the skies to strike an enemy "
+"creature with a lightning bolt. Shocking!"
+msgstr "\tКолдун призывает силу небес и поражает вражеское существо Шаровой Молнией. Громко и эффектно!"
+
+#: src\strings.cpp:281
+msgid ""
+"\tAn important supplementary spell, healing restores two loyalty to a "
+"friendly unit. Loyalty will be added up to the target's maximum."
+msgstr "\tЛечение восстанавливает дружественному существу 2 Верности, но не выше его максимума."
+
+#: src\strings.cpp:282
+msgid ""
+"\tThe most destructive spell in the lands, hellblast surrounds a targeted "
+"enemy army with a searing hot firestorm causing some major damage."
+msgstr "\tВзрыв Огня — самое разрушительное заклинание острова. Оно окружает выбранную вражескую армию обжигающим огненным штормом и наносит тяжёлый урон."
+
+#: src\strings.cpp:284 src\mahjongpart.cpp:173
+msgid "Luck: choose a rune"
+msgstr "Удача: Выберите Руну"
+
+#: src\strings.cpp:285 src\mahjongpart.cpp:185
+msgid "The other rune returns to the wall."
+msgstr "Другая руна вернётся в стену."
+
+#: src\strings.cpp:286 src\mahjongsummarypart.cpp:86
+msgid "Land Claims"
+msgstr "Запросы на Землю"
+
+#: src\strings.cpp:287 src\mahjongsummarypart.cpp:89
+msgid "Spell Points"
+msgstr "Очки Магии"
+
+#: src\strings.cpp:288 src\mahjongsummarypart.cpp:80
+msgid "Win Rune"
+msgstr "Победная Руна"
+
+#: src\strings.cpp:289 src\mahjongsummarypart.cpp:83
+msgid "Sets:"
+msgstr "Наборы:"
+
+#: src\strings.cpp:290 src\mahjongsummarypart.cpp:182
+msgid "Points:"
+msgstr "Очки:"
+
+#: src\strings.cpp:291 src\mahjongsummarypart.cpp:237
+msgid "Doubles:"
+msgstr "Множители:"
+
+#: src\strings.cpp:293
+msgid "Combat"
+msgstr "Битва"
+
+#: src\strings.cpp:294
+msgid "Summary"
+msgstr "Итоги"
+
+#: src\strings.cpp:295 src\dialogs.cpp:1527 src\battlesummarypart.cpp:93
+msgid "Winner is"
+msgstr "Побеждает"
+
+#: src\strings.cpp:297 src\gamesummarypart.cpp:34
+msgid "Category"
+msgstr "Категория"
+
+#: src\strings.cpp:298 src\strings.cpp:300 src\gamesummarypart.cpp:37
+#: src\gamesummarypart.cpp:40 src\gamesummarypart.cpp:43
+#: src\gamesummarypart.cpp:46
+msgid "Score"
+msgstr "Счёт"
+
+#: src\strings.cpp:299 src\gamesummarypart.cpp:49 src\gamesummarypart.cpp:52
+#: src\gamesummarypart.cpp:55 src\gamesummarypart.cpp:58
+msgid "Rank"
+msgstr "Ранг"
+
+#: src\strings.cpp:301 src\gamesummarypart.cpp:61
+msgid "Territory Score"
+msgstr "Очки Территорий"
+
+#: src\strings.cpp:302 src\gamesummarypart.cpp:64
+msgid "Summon Circle Score"
+msgstr "Очки Кругов Призыва"
+
+#: src\strings.cpp:303 src\gamesummarypart.cpp:67
+msgid "Unit Score"
+msgstr "Очки Войск"
+
+#: src\strings.cpp:304 src\gamesummarypart.cpp:70
+msgid "Spell Point Score"
+msgstr "Очки Магии"
+
+#: src\strings.cpp:305 src\gamesummarypart.cpp:73
+msgid "Land Claim Score"
+msgstr "Поземельные Очки"
+
+#: src\strings.cpp:306 src\gamesummarypart.cpp:76
+msgid "Total Score"
+msgstr "Общий Счёт"
+
+#: src\showplayers.cpp:72 src\runewars.cpp:84
+msgid "Info"
+msgstr "Инфо"
+
+#: src\showplayers.cpp:72 src\runewars.cpp:84
+msgid "Game data rendering..."
+msgstr "Подготовка игры..."
+
+#: src\settingsmenu.cpp:66
+msgid "Language"
+msgstr "Язык"
+
+#: src\settingsmenu.cpp:67
+msgid "Game Speed"
+msgstr "Скорость Игры"
+
+#: src\settingsmenu.cpp:68
+msgid "Music"
+msgstr "Музыка"
+
+#: src\settingsmenu.cpp:69
+msgid "Sound Effects"
+msgstr "Игровые Звуки"
+
+#: src\settingsmenu.cpp:72
+msgid "Voices"
+msgstr "Озвучка"
+
+#: src\settingsmenu.cpp:70
+msgid "Guardian Voices"
+msgstr "Голоса Стражей"
+
+#: src\settingsmenu.cpp:71
+msgid "Display Mode"
+msgstr "Режим Экрана"
+
+#: src\settingsmenu.cpp
+msgid "Window Size"
+msgstr "Размер Окна"
+
+#: src\settingsmenu.cpp:72
+msgid "Apply"
+msgstr "Применить"
+
+#: src\settingsmenu.cpp:73 src\loadrecovery.cpp:271
+msgid "Back"
+msgstr "Назад"
+
+#: src\settingsmenu.cpp:82
+msgid "Russian"
+msgstr "Русский"
+
+#: src\settingsmenu.cpp:82
+msgid "English"
+msgstr "Английский"
+
+#: src\settingsmenu.cpp:84
+msgid "Classic"
+msgstr "Классика"
+
+#: src\settingsmenu.cpp:85
+msgid "Fast"
+msgstr "Быстро"
+
+#: src\settingsmenu.cpp:86 src\selectperson.cpp:197
+msgid "Normal"
+msgstr "Норма"
+
+#: src\settingsmenu.cpp:87 src\settingsmenu.cpp:88 src\settingsmenu.cpp:89
+msgid "ON"
+msgstr "ВКЛ"
+
+#: src\settingsmenu.cpp:87 src\settingsmenu.cpp:88 src\settingsmenu.cpp:89
+msgid "OFF"
+msgstr "ВЫКЛ"
+
+#: src\settingsmenu.cpp:90
+msgid "Fullscreen"
+msgstr "Полный Экран"
+
+#: src\settingsmenu.cpp:90
+msgid "Windowed"
+msgstr "В Окне"
+
+#: src\settingsmenu.cpp:118 src\mainmenu.cpp:80
+msgid "THE RUNE WAR"
+msgstr "ВОЙНА РУН"
+
+#: src\settingsmenu.cpp:119 src\mainmenu.cpp:81
+msgid "FOUR"
+msgstr "FOUR"
+
+#: src\settingsmenu.cpp:120 src\mainmenu.cpp:82
+msgid "WINDS"
+msgstr "WINDS"
+
+#: src\settingsmenu.cpp:121 src\mainmenu.cpp:83
+msgid "REBORN"
+msgstr "REBORN"
+
+#: src\settingsmenu.cpp:123 src\mainmenu.cpp:85
+msgid "OLD RUNES,"
+msgstr "СТАРЫЕ РУНЫ,"
+
+#: src\settingsmenu.cpp:124 src\mainmenu.cpp:86
+msgid "A NEW WAR"
+msgstr "НОВАЯ ВОЙНА"
+
+#: src\settingsmenu.cpp:126 src\mainmenu.cpp:88
+msgid "COMMUNITY RESTORATION"
+msgstr "ВОЗРОЖДЕНО СООБЩЕСТВОМ"
+
+#: src\settingsmenu.cpp:128 src\mainmenu.cpp:90
+msgid "OF THE ORIGINAL GAME"
+msgstr "ПО МОТИВАМ ОРИГИНАЛА"
+
+#: src\settingsmenu.cpp:131
+msgid "SETTINGS"
+msgstr "НАСТРОЙКИ"
+
+#: src\settingsmenu.cpp:167
+msgid "Changes apply immediately"
+msgstr "Изменения применяются сразу"
+
+#: src\settingsmenu.cpp:209
+msgid "LEFT / RIGHT TO ADJUST"
+msgstr "← / → — ГРОМКОСТЬ"
+
+#: src\settingsmenu.cpp:202 src\settingsmenu.cpp:218 src\mainmenu.cpp:42
+msgid "Settings"
+msgstr "Настройки"
+
+#: src\settingsmenu.cpp:202
+msgid "Could not switch display mode."
+msgstr "Не удалось переключить режим экрана."
+
+#: src\settingsmenu.cpp
+msgid "Could not resize the game window."
+msgstr "Не удалось изменить размер окна игры."
+
+#: src\settingsmenu.cpp:219
+msgid "Could not save settings: %1"
+msgstr "Не удалось сохранить настройки: %1"
+
+#: src\selectperson.cpp:198
+msgid "Easy"
+msgstr "Легко"
+
+#: src\selectperson.cpp:199
+msgid "Hard"
+msgstr "Сложно"
+
+#: src\selectperson.cpp:213
+msgid "Random"
+msgstr "Случай"
+
+#: src\selectperson.cpp:248
+msgid "Supplemental Spells:"
+msgstr "Добавочные Заклятья:"
+
+#: src\selectperson.cpp:277
+msgid "Special Abilities:"
+msgstr "Специальные Силы:"
+
+#: src\runewars.cpp:80
+msgid "Recovery Warning"
+msgstr "Внимание: Восстановление"
+
+#: src\runewars.cpp:81
+msgid ""
+"The checkpoint was loaded, but the current autosave could not be replaced: %1"
+msgstr "Точка восстановления загружена, но заменить текущее автосохранение не удалось: %1"
+
+#: src\runewars.cpp:91 src\mainmenu.cpp:39
+msgid "Load Game"
+msgstr "Загрузить Игру"
+
+#: src\runewars.cpp:91
+msgid "The saved game could not be loaded. The file was left untouched."
+msgstr "Не удалось загрузить игру. Файл остался нетронутым."
+
+#: src\runewars.cpp:318 src\adventurepart.cpp:964 src\adventurepart.cpp:988
+#: src\adventurepart.cpp:1014 src\adventurepart.cpp:1415
+msgid "Error"
+msgstr "Ошибка"
+
+#: src\runewars.cpp:318
+msgid "load theme error, see log for details"
+msgstr "Не удалось загрузить тему. Подробности в журнале."
+
+#: src\mainmenu.cpp:34
+msgid "Continue"
+msgstr "Продолжить"
+
+#: src\mainmenu.cpp:35
+msgid "INVALID SAVE"
+msgstr "СОХРАНЕНИЕ ПОВРЕЖДЕНО"
+
+#: src\mainmenu.cpp:35
+msgid "NO SAVED GAME"
+msgstr "НЕТ АВТОСОХРАНЕНИЯ"
+
+#: src\mainmenu.cpp:37 src\mainmenu.cpp:156
+msgid "New Game"
+msgstr "Новая Игра"
+
+#: src\mainmenu.cpp:39
+msgid "NO SAVES"
+msgstr "НЕТ СОХРАНЕНИЙ"
+
+#: src\mainmenu.cpp:41
+msgid "Encyclopedia"
+msgstr "Энциклопедия"
+
+#: src\mainmenu.cpp:41 src\mainmenu.cpp:43
+msgid "PLANNED"
+msgstr "В ПЛАНАХ"
+
+#: src\mainmenu.cpp:43
+msgid "Multiplayer"
+msgstr "Сетевая Игра"
+
+#: src\mainmenu.cpp:44
+msgid "Quit"
+msgstr "Выйти"
+
+#: src\mainmenu.cpp:93
+msgid "MAIN MENU"
+msgstr "ГЛАВНОЕ МЕНЮ"
+
+#: src\mainmenu.cpp:132
+msgid "RELEASE"
+msgstr "РЕЛИЗ"
+
+#: src\mainmenu.cpp:137
+msgid "DEV BUILD"
+msgstr "СБОРКА"
+
+#: src\mainmenu.cpp:157
+msgid ""
+"Start a new game? The current autosave will be replaced when new progress is "
+"saved."
+msgstr "Начать новую игру? Текущее автосохранение будет заменено после сохранения нового прогресса."
+
+#: src\mahjongsummarypart.cpp:92
+msgid "%1 Round: %2 Deal"
+msgstr "Раунд %1: Сдаёт %2"
+
+#: src\mahjongsummarypart.cpp:100
+msgid "Game Drawn"
+msgstr "Вничью..."
+
+#: src\mahjongsummarypart.cpp:106
+msgid "Drawn"
+msgstr "Сам Выбрал"
+
+#: src\mahjongsummarypart.cpp:108
+msgid "%1 (%2) wins by self-draw"
+msgstr "%1 (%2) побеждает самостоятельным добором"
+
+#: src\mahjongsummarypart.cpp:110
+msgid "%1 (%2) wins from %3"
+msgstr "%1 (%2) побеждает на сбросе %3"
+
+#: src\mahjongsummarypart.cpp:219
+msgid "Base Score:"
+msgstr "Базовые Очки:"
+
+#: src\mahjongsummarypart.cpp:233
+msgid "Total Points:"
+msgstr "Всего Очков:"
+
+#: src\mahjongsummarypart.cpp:260
+msgid "%1 wins %2 x%3 from %4 = %5"
+msgstr "%1 получает у %4: %2 × %3 = %5"
+
+#: src\mahjongsummarypart.cpp:269
+msgid "Multiplier:"
+msgstr "Множитель:"
+
+#: src\mahjongsummarypart.cpp:275
+msgid "Total Score:"
+msgstr "Общий Счёт:"
+
+#: src\mahjongpart.cpp:950
+msgid "Now it is not your turn. Sorry..."
+msgstr "Сейчас не ваш ход..."
+
+#: src\mahjongpart.cpp:1070 src\dialogs.cpp:772 src\dialogs.cpp:1047
+#: src\dialogs.cpp:1052
+msgid "Save Game"
+msgstr "Сохранить Игру"
+
+#: src\mahjongpart.cpp:1070
+msgid "Unable to update the autosave."
+msgstr "Не удалось обновить автосохранение."
+
+#: src\mahjongpart.cpp:1734
+msgid "Game Begins With %1"
+msgstr "Игра начинается с ветра %1"
+
+#: src\mahjongpart.cpp:1809
+msgid "%1 Call Game"
+msgstr "%1 объявляет Маджонг"
+
+#: src\mahjongpart.cpp:1856
+msgid "%1 Kongs The Last Discard"
+msgstr "%1 собирает Конг на сброшенной руне"
+
+#: src\mahjongpart.cpp:1882
+msgid "%1 Kongs The Last Drawn Rule"
+msgstr "%1 собирает Конг на взятой руне"
+
+#: src\mahjongpart.cpp:1903
+msgid "%1 Pungs The Last Discard"
+msgstr "%1 собирает Панг на сброшенной руне"
+
+#: src\mahjongpart.cpp:1929
+msgid "%1 Chows The Last Discard"
+msgstr "%1 собирает Чоу на сброшенной руне"
+
+#: src\mahjongpart.cpp:2003
+msgid "%1 summons %2 in %3"
+msgstr "%1 призывает %2 в %3"
+
+#: src\mahjongpart.cpp:2036
+msgid "%1 casts %2 over %3"
+msgstr "%1 применяет %2 на земле %3"
+
+#: src\mahjongpart.cpp:2044 src\mahjongpart.cpp:2090
+msgid "%1 casts %2"
+msgstr "%1 применяет %2"
+
+#: src\mahjongpart.cpp:2055
+msgid "%1 casts %2 to %3"
+msgstr "%1 применяет %2 к %3"
+
+#: src\mahjongpart.cpp:2075
+msgid "%1 casts %2 at %3's %4"
+msgstr "%1 применяет %2 к существу %4 игрока %3"
+
+#: src\mahjongpart.cpp:2078
+msgid "%1 casts %2 at friendly %3"
+msgstr "%1 применяет %2 к союзному существу %3"
+
+#: src\mahjongpart.cpp:2081
+msgid "Magic Resistance!"
+msgstr "Сопротивление магии!"
+
+#: src\loadrecovery.cpp:23
+msgid "Mahjong"
+msgstr "Маджонг"
+
+#: src\loadrecovery.cpp:24
+msgid "Mahjong Summary"
+msgstr "Итоги Маджонга"
+
+#: src\loadrecovery.cpp:25
+msgid "Adventure"
+msgstr "Война Рун"
+
+#: src\loadrecovery.cpp:26
+msgid "Battle Summary"
+msgstr "Итоги Битвы"
+
+#: src\loadrecovery.cpp:27
+msgid "Game Summary"
+msgstr "Итоги Игры"
+
+#: src\loadrecovery.cpp:28
+msgid "Between rounds"
+msgstr "Между Раундами"
+
+#: src\loadrecovery.cpp:29
+msgid "Saved game"
+msgstr "Сохранённая Игра"
+
+#: src\loadrecovery.cpp:35 src\loadrecovery.cpp:40 src\loadrecovery.cpp:42
+#: src\loadrecovery.cpp:47
+msgid "Unknown time"
+msgstr "Время неизвестно"
+
+#: src\loadrecovery.cpp:104
+msgid "Autosave"
+msgstr "Автосохранение"
+
+#: src\loadrecovery.cpp:107 src\loadrecovery.cpp:126 src\loadrecovery.cpp:144
+msgid "Difficulty"
+msgstr "Сложность"
+
+#: src\selectperson.cpp
+msgid "Training"
+msgstr "Тренировка"
+
+#: src\selectperson.cpp
+msgid "Unfair"
+msgstr "Нечестно"
+
+#: src\loadrecovery.cpp:108 src\loadrecovery.cpp:127 src\loadrecovery.cpp:151
+msgid "INVALID"
+msgstr "ПОВРЕЖДЕНО"
+
+#: src\loadrecovery.cpp:111
+msgid "Updated automatically"
+msgstr "Обновляется автоматически"
+
+#: src\loadrecovery.cpp:112
+msgid "The file will be left untouched"
+msgstr "Файл останется нетронутым"
+
+#: src\loadrecovery.cpp:128
+msgid "Named save"
+msgstr "Сохранённая Игра"
+
+#: src\loadrecovery.cpp:128
+msgid "The file can be deleted but not loaded"
+msgstr "Файл можно удалить, но нельзя загрузить"
+
+#: src\loadrecovery.cpp:139
+msgid "Emergency checkpoint %1"
+msgstr "Аварийная Точка %1"
+
+#: src\loadrecovery.cpp:147
+msgid "Unknown version"
+msgstr "Версия неизвестна"
+
+#: src\loadrecovery.cpp:152
+msgid "The checkpoint will be left untouched"
+msgstr "Аварийная точка останется нетронутой"
+
+#: src\loadrecovery.cpp:229
+msgid "LOAD GAME"
+msgstr "ЗАГРУЗКА ИГРЫ"
+
+#: src\loadrecovery.cpp:231
+msgid "EMERGENCY RECOVERY"
+msgstr "АВАРИЙНОЕ ВОССТАНОВЛЕНИЕ"
+
+#: src\loadrecovery.cpp:231
+msgid "AUTOSAVE AND NAMED SAVES"
+msgstr "АВТОСОХРАНЕНИЕ И СОХРАНЁННЫЕ ИГРЫ"
+
+#: src\loadrecovery.cpp:256
+msgid "No recovery checkpoint was found."
+msgstr "Аварийные точки не найдены."
+
+#: src\loadrecovery.cpp:256
+msgid "No autosave or named save was found."
+msgstr "Автосохранение и именные сохранения не найдены."
+
+#: src\loadrecovery.cpp:272
+msgid "Saves"
+msgstr "Сохранения"
+
+#: src\loadrecovery.cpp:272
+msgid "Recovery"
+msgstr "Восстановление"
+
+#: src\loadrecovery.cpp:273
+msgid "Delete"
+msgstr "Удалить"
+
+#: src\loadrecovery.cpp:274
+msgid "Loading..."
+msgstr "Загрузка..."
+
+#: src\loadrecovery.cpp:274
+msgid "Load"
+msgstr "Загрузить"
+
+#: src\loadrecovery.cpp:277
+msgid "Double-click or use Load. Restoring recovery replaces the autosave."
+msgstr "Дважды щёлкните или нажмите «Загрузить». Восстановление заменит автосохранение."
+
+#: src\loadrecovery.cpp:278
+msgid "Double-click a valid save to load. Delete removes named saves only."
+msgstr "Дважды щёлкните по исправному сохранению. Удалять можно только именные сохранения."
+
+#: src\loadrecovery.cpp:289
+msgid "Restore Recovery"
+msgstr "Восстановить"
+
+#: src\loadrecovery.cpp:290
+msgid ""
+"Restore this emergency checkpoint as the current autosave? The existing "
+"autosave will be kept as a backup."
+msgstr "Восстановить эту аварийную точку как текущее автосохранение? Нынешнее автосохранение останется в резервной копии."
+
+#: src\loadrecovery.cpp:320 src\loadrecovery.cpp:331
+msgid "Delete Save"
+msgstr "Удалить Сохранение"
+
+#: src\loadrecovery.cpp:321
+msgid "Delete the named save '%1'? This cannot be undone from the game menu."
+msgstr "Удалить сохранение «%1»? Отменить это действие из игры нельзя."
+
+#: src\loadrecovery.cpp:332
+msgid "The save could not be deleted: %1"
+msgstr "Не удалось удалить сохранение: %1"
+
+#: src\jsongui.cpp:72
+msgid "Creature: %1, stats [%2, %3, %4, %5]"
+msgstr "Существо: %1, параметры [%2, %3, %4, %5]"
+
+#: src\jsongui.cpp:87
+msgid "Spell: %1, target: %2, %3"
+msgstr "Заклинание: %1, цель: %2, %3"
+
+#: src\jsongui.cpp:137
+msgid "Clan: %1"
+msgstr "Клан: %1"
+
+#: src\jsongui.cpp:143
+msgid "Avatar: %1"
+msgstr "Колдун: %1"
+
+#: src\intropart.cpp:171
+msgid "ESC / ENTER / CLICK TO SKIP"
+msgstr "ESC / ENTER / КЛИК — ПРОПУСТИТЬ"
+
+#: src\gameobjects.cpp:3943
+msgid "One Chance"
+msgstr "Один Шанс"
+
+#: src\gameobjects.cpp:3944
+msgid "Self Drawn"
+msgstr "Сам Выбрал"
+
+#: src\gameobjects.cpp:3945
+msgid "All Concealed, with Discard"
+msgstr "Всё Скрыто, Считая Ставку"
+
+#: src\gameobjects.cpp:3957
+msgid "Lucky Sets"
+msgstr "Набор Удач"
+
+#: src\gameobjects.cpp:3958
+msgid "One Suit plus Honors"
+msgstr "Одна Масть и Почести"
+
+#: src\gameobjects.cpp:3959
+msgid "No Points"
+msgstr "Нет Очков"
+
+#: src\gameobjects.cpp:3960
+msgid "Four Triplets"
+msgstr "Четыре Тройки"
+
+#: src\gameobjects.cpp:3961
+msgid "Terminals and Honors"
+msgstr "Терминалы и Почести"
+
+#: src\gameobjects.cpp:3962
+msgid "Terminal, Honor in each set"
+msgstr "Терминал или Почесть в Каждом Наборе"
+
+#: src\gameobjects.cpp:3963
+msgid "All Simples"
+msgstr "Все Простые"
+
+#: src\gameobjects.cpp:3964
+msgid "Three Little Dragons"
+msgstr "Три Малых Дракона"
+
+#: src\gameobjects.cpp:3965
+msgid "One Suit Only"
+msgstr "Одна Масть"
+
+#: src\gameobjects.cpp:3966
+msgid "Three Consecutive Sequences"
+msgstr "Три Последовательности"
+
+#: src\gameobjects.cpp:3967
+msgid "All Concealed, Self Drawn"
+msgstr "Всё Скрыто, Сам Выбрал"
+
+#: src\gameobjects.cpp:3968
+msgid "Last Tile"
+msgstr "Последняя Руна"
+
+#: src\gameobjects.cpp:3969
+msgid "Three Concealed Triplets"
+msgstr "Три Скрытые Тройки"
+
+#: src\gameobjects.cpp:3970
+msgid "Robbed a Kong"
+msgstr "Забрал Конг"
+
+#: src\gameobjects.cpp:3971
+msgid "Supplemental Tile"
+msgstr "Дополнительная Руна"
+
+#: src\gameobjects.cpp:3972
+msgid "Three Big Dragons"
+msgstr "Три Больших Дракона"
+
+#: src\gameobjects.cpp:3973
+msgid "Big Four Winds"
+msgstr "Четыре Больших Ветра"
+
+#: src\gameobjects.cpp:3974
+msgid "All Terminals"
+msgstr "Все Терминалы"
+
+#: src\gameobjects.cpp:3975
+msgid "All Honors"
+msgstr "Все Почести"
+
+#: src\gameobjects.cpp:3976
+msgid "Nine Gates"
+msgstr "Девять Врат"
+
+#: src\gameobjects.cpp:3977
+msgid "Heavenly Hand"
+msgstr "Небесная Рука"
+
+#: src\gameobjects.cpp:3978
+msgid "Four Concealed Triplets"
+msgstr "Четыре Скрытые Тройки"
+
+#: src\gameobjects.cpp:3979
+msgid "Thirteen Orphans"
+msgstr "Тринадцать Сирот"
+
+#: src\gameobjects.cpp:3980
+msgid "Little Four Winds"
+msgstr "Четыре Малых Ветра"
+
+#: src\gameobjects.cpp:3981
+msgid "Earthly Hand"
+msgstr "Рука Земли"
+
+#: src\gamedata.cpp:57
+msgid "-%1 Loyalty"
+msgstr "-%1 Верность"
+
+#: src\gamedata.cpp:58
+msgid "+%1 Loyalty"
+msgstr "+%1 Верность"
+
+#: src\gamedata.cpp:60
+msgid "+%1 Attack"
+msgstr "+%1 Атака"
+
+#: src\gamedata.cpp:61
+msgid "-%1 Attack"
+msgstr "-%1 Атака"
+
+#: src\gamedata.cpp:63
+msgid "+%1 Missile"
+msgstr "+%1 Стрельба"
+
+#: src\gamedata.cpp:64
+msgid "-%1 Missile"
+msgstr "-%1 Стрельба"
+
+#: src\gamedata.cpp:66
+msgid "+%1 Defense"
+msgstr "+%1 Защита"
+
+#: src\gamedata.cpp:67
+msgid "-%1 Defense"
+msgstr "-%1 Защита"
+
+#: src\gamedata.cpp:69
+msgid "+%1 Attack, +%2 Max Loyalty"
+msgstr "+%1 Атака, +%2 Макс. Верность"
+
+#: src\gamedata.cpp:70
+msgid "+%1 Attack or +%2 Missile or +%3 Max Loyalty"
+msgstr "+%1 Атака или +%2 Стрельба или +%3 Макс. Верность"
+
+#: src\gamedata.cpp:71
+msgid "+%1 Attack, +%2 Missile, -%3 Max Loyalty"
+msgstr "+%1 Атака, +%2 Стрельба, -%3 Макс. Верность"
+
+#: src\gamedata.cpp:72
+msgid "+%1 Loyalty, up to max"
+msgstr "+%1 Верность, не выше максимума"
+
+#: src\gamedata.cpp:73
+msgid "-%1 Defense, -%2 Attack"
+msgstr "-%1 Защита, -%2 Атака"
+
+#: src\gamedata.cpp:74
+msgid "Missile attacks do %1 less damage"
+msgstr "Выстрелы наносят на %1 меньше урона"
+
+#: src\gamedata.cpp:76
+msgid "Freeze creature"
+msgstr "Обездвижить существо"
+
+#: src\gamedata.cpp:77
+msgid "Move one unit to any friendly territory"
+msgstr "Переместить отряд в дружественную землю"
+
+#: src\gamedata.cpp:79
+msgid "Remove enchantments"
+msgstr "Снять все эффекты магии"
+
+#: src\gamedata.cpp:1863
+msgid "%1's %2 was vanquished"
+msgstr "%2 игрока %1 повержен"
+
+#: src\dialogs.cpp:156
+msgid "Speciality"
+msgstr "Особенность"
+
+#: src\dialogs.cpp:200
+msgid "Unique"
+msgstr "Уникум"
+
+#: src\dialogs.cpp:214
+msgid "Attack:"
+msgstr "Атака:"
+
+#: src\dialogs.cpp:220
+msgid "Ranger:"
+msgstr "Стрельба:"
+
+#: src\dialogs.cpp:226
+msgid "Defense:"
+msgstr "Защита:"
+
+#: src\dialogs.cpp:232
+msgid "Loyalty:"
+msgstr "Верность:"
+
+#: src\dialogs.cpp:238
+msgid "Move Point:"
+msgstr "Движение:"
+
+#: src\dialogs.cpp:271
+msgid "Curse"
+msgstr "Проклятие"
+
+#: src\dialogs.cpp:276
+msgid "Effect: "
+msgstr "Эффект: "
+
+#: src\dialogs.cpp:280
+msgid "Target: "
+msgstr "Цель: "
+
+#: src\dialogs.cpp:294
+msgid "Ability"
+msgstr "Способность"
+
+#: src\dialogs.cpp:412
+msgid " (unique)"
+msgstr " (уникум)"
+
+#: src\dialogs.cpp:424
+msgid " (curse)"
+msgstr " (проклятие)"
+
+#: src\dialogs.cpp:469
+msgid "%{name}'s Spells"
+msgstr "Заклинания: %{name}"
+
+#: src\dialogs.cpp:470
+msgid "Spell Points: %{points}"
+msgstr "Очки Магии: %{points}"
+
+#: src\dialogs.cpp:772
+msgid "Create or overwrite a named save"
+msgstr "Создать или перезаписать сохранение"
+
+#: src\dialogs.cpp:774
+msgid "Return to Main Menu"
+msgstr "Вернуться в Главное Меню"
+
+#: src\dialogs.cpp:774
+msgid "The autosave will be updated"
+msgstr "Автосохранение будет обновлено"
+
+#: src\dialogs.cpp:776 src\dialogs.cpp:948
+msgid "Cancel"
+msgstr "Отмена"
+
+#: src\dialogs.cpp:793
+msgid "GAME MENU"
+msgstr "МЕНЮ ИГРЫ"
+
+#: src\dialogs.cpp:923
+msgid "SAVE GAME"
+msgstr "СОХРАНЕНИЕ ИГРЫ"
+
+#: src\dialogs.cpp:924
+msgid "Enter a name for this save"
+msgstr "Введите имя сохранения"
+
+#: src\dialogs.cpp:929
+msgid "Save name"
+msgstr "Имя Сохранения"
+
+#: src\dialogs.cpp:943
+msgid "Save"
+msgstr "Сохранить"
+
+#: src\dialogs.cpp:971
+msgid "Enter a save name."
+msgstr "Введите имя сохранения."
+
+#: src\dialogs.cpp:1036
+msgid "Overwrite Save"
+msgstr "Перезаписать Сохранение"
+
+#: src\dialogs.cpp:1037
+msgid ""
+"A save named '%1' already exists. Replace it? The previous file will be kept "
+"as a backup."
+msgstr "Сохранение «%1» уже существует. Заменить его? Предыдущая версия останется в резервной копии."
+
+#: src\dialogs.cpp:1047
+msgid "The game could not be saved: %1"
+msgstr "Не удалось сохранить игру: %1"
+
+#: src\dialogs.cpp:1052
+msgid "Saved as '%1'."
+msgstr "Сохранено как «%1»."
+
+#: src\dialogs.cpp:1106
+msgid "You Are %1"
+msgstr "Вы — %1"
+
+#: src\dialogs.cpp:1107
+msgid "Order Of Play"
+msgstr "Порядок Игры"
+
+#: src\dialogs.cpp:1279
+msgid "Missile volley"
+msgstr "Залп"
+
+#: src\dialogs.cpp:1280
+msgid "Fire Shield"
+msgstr "Огненный Щит"
+
+#: src\dialogs.cpp:1281
+msgid "Melee"
+msgstr "Рукопашная"
+
+#: src\dialogs.cpp:1289 src\dialogs.cpp:1675
+msgid "damage"
+msgstr "урон"
+
+#: src\dialogs.cpp:1294
+msgid "Opening leader"
+msgstr "Первый Боец"
+
+#: src\dialogs.cpp:1295
+msgid "Missile assignment"
+msgstr "Выбор Стрелков"
+
+#: src\dialogs.cpp
+msgid "Missile assignment %1/%2"
+msgstr "Назначение стрелков %1/%2"
+
+#: src\dialogs.cpp:1296
+msgid "Melee round"
+msgstr "Рукопашный Раунд"
+
+#: src\dialogs.cpp
+msgid "Melee action"
+msgstr "Ближний бой"
+
+#: src\dialogs.cpp
+msgid "Melee action %1"
+msgstr "Ближний бой — действие %1"
+
+#: src\dialogs.cpp
+msgid "Choice accepted"
+msgstr "Выбор принят"
+
+#: src\dialogs.cpp:1461 src\dialogs.cpp:1634
+msgid "Phase: "
+msgstr "Фаза: "
+
+#: src\dialogs.cpp:1462
+msgid "Complete"
+msgstr "Завершено"
+
+#: src\dialogs.cpp:1463
+msgid "Paused - "
+msgstr "Пауза — "
+
+#: src\dialogs.cpp:1468
+msgid "Event "
+msgstr "Событие "
+
+#: src\dialogs.cpp:1471
+msgid "Events: "
+msgstr "События: "
+
+#: src\dialogs.cpp:1478
+msgid "Resume"
+msgstr "Продолжить"
+
+#: src\dialogs.cpp:1478
+msgid "Pause"
+msgstr "Пауза"
+
+#: src\dialogs.cpp:1481
+msgid "Speed: "
+msgstr "Скорость: "
+
+#: src\dialogs.cpp:1639
+msgid "Last event: "
+msgstr "Последнее событие: "
+
+#: src\dialogs.cpp:1674
+msgid "Preview: "
+msgstr "Прогноз: "
+
+#: src\dialogs.cpp:1678
+msgid "hit"
+msgstr "удар"
+
+#: src\dialogs.cpp:1680
+msgid "Mighty Blow: "
+msgstr "Мощный Удар: "
+
+#: src\dialogs.cpp:1690
+msgid "Choose the opening leader. Enter: recommended. Esc: Auto Resolve."
+msgstr "Выберите первого бойца. Enter: рекомендация. Esc: автобой."
+
+#: src\dialogs.cpp:1693
+msgid "Choose a missile attacker. Enter: recommended. Esc: Auto Resolve."
+msgstr "Выберите стрелка. Enter: рекомендация. Esc: автобой."
+
+#: src\dialogs.cpp:1694
+msgid "Choose a missile target. Enter: recommended. Esc: Auto Resolve."
+msgstr "Выберите цель стрелка. Enter: рекомендация. Esc: автобой."
+
+#: src\dialogs.cpp:1697
+msgid "Choose an attacker. Enter: recommended. Esc: Auto Resolve."
+msgstr "Выберите атакующего. Enter: рекомендация. Esc: автобой."
+
+#: src\dialogs.cpp:1698
+msgid "Choose a target. Enter: recommended. Esc: Auto Resolve."
+msgstr "Выберите цель. Enter: рекомендация. Esc: автобой."
+
+#: src\dialogs.cpp:1702
+msgid "Auto Resolve"
+msgstr "Автобой"
+
+#: src\battlesummarypart.cpp:92
+msgid "Combat Summary"
+msgstr "Итоги Битвы"
+
+#: src\battlesummarypart.cpp:102
+msgid "%1 in %2"
+msgstr "%1 в %2"
+
+#: src\adventurepart.cpp:602
+msgid "Battle Forecast"
+msgstr "Прогноз Боя"
+
+#: src\adventurepart.cpp
+msgid "Battle Intel"
+msgstr "Данные Разведки"
+
+#: src\adventurepart.cpp:604
+msgid "Capture: %1%"
+msgstr "Захват: %1%"
+
+#: src\adventurepart.cpp:606
+msgid "Attackers remain: %1%"
+msgstr "Выживут: %1%"
+
+#: src\adventurepart.cpp
+msgid "Outcome hidden at this difficulty"
+msgstr "На этой сложности прогноз скрыт"
+
+#: src\adventurepart.cpp
+msgid "Known: %1 atk. / %2 guards"
+msgstr "Известно: %1 атак. / %2 защитн."
+
+#: src\adventurepart.cpp
+msgid "Land: %1 - visible forces only"
+msgstr "Земля: %1 · только видимые"
+
+#: src\adventurepart.cpp
+msgid "Blue: move  Orange: attack"
+msgstr "Голубой: ход  Оранжевый: атака"
+
+#: src\adventurepart.cpp
+msgid "Yellow: claimable"
+msgstr "Жёлтый: можно присоединить"
+
+#: src\adventurepart.cpp:849
+msgid "View Map"
+msgstr "Смотреть Карту"
+
+#: src\adventurepart.cpp:931
+msgid "Summoning"
+msgstr "Призвание"
+
+#: src\adventurepart.cpp:963
+msgid "Apply spell: %1, on land: %2?"
+msgstr "Применить заклинание %1 на земле %2?"
+
+#: src\adventurepart.cpp:979
+msgid "Teleport selected creature to %1?"
+msgstr "Телепортировать выбранное существо в %1?"
+
+#: src\adventurepart.cpp:988
+msgid "Select another friendly territory with a free party slot."
+msgstr "Выберите другую дружественную землю со свободным местом в отряде."
+
+#: src\adventurepart.cpp:1013
+msgid "Can'not apply spell: %1, incorrect target: %2"
+msgstr "Нельзя применить заклинание %1: неверная цель %2"
+
+#: src\adventurepart.cpp:1151
+msgid "Select destination"
+msgstr "Выберите Землю"
+
+#: src\adventurepart.cpp:1151
+msgid "Movement Phase"
+msgstr "Фаза Движения"
+
+#: src\adventurepart.cpp:1263 src\adventurepart.cpp:1399
+#: src\adventurepart.cpp:1408 src\adventurepart.cpp:1495
+msgid "Order"
+msgstr "Приказ"
+
+#: src\adventurepart.cpp:1263
+msgid "Selected creatures cannot move to this territory."
+msgstr "Выбранные существа не могут перейти на эту землю."
+
+#: src\adventurepart.cpp:1399 src\adventurepart.cpp:1408
+#: src\adventurepart.cpp:1495
+msgid "Unable to apply pending orders."
+msgstr "Не удалось применить подготовленные приказы."
+
+#: src\adventurepart.cpp:1415
+msgid "Unable to save game."
+msgstr "Не удалось сохранить игру."
+
+#: src\encyclopedia.cpp
+msgid "Aggressive"
+msgstr "Агрессивная"
+
+#: src\encyclopedia.cpp
+msgid "Economic"
+msgstr "Экономическая"
+
+#: src\encyclopedia.cpp
+msgid "Control"
+msgstr "Контроль"
+
+#: src\encyclopedia.cpp
+msgid "Balanced"
+msgstr "Сбалансированная"
+
+#: src\encyclopedia.cpp
+msgid "Wizards"
+msgstr "Колдуны"
+
+#: src\encyclopedia.cpp
+msgid "Denizens"
+msgstr "Существа"
+
+#: src\encyclopedia.cpp
+msgid "Spells"
+msgstr "Заклинания"
+
+#: src\encyclopedia.cpp
+msgid "Friendly creature"
+msgstr "Дружественное существо"
+
+#: src\encyclopedia.cpp
+msgid "Enemy creature"
+msgstr "Вражеское существо"
+
+#: src\encyclopedia.cpp
+msgid "Any creature"
+msgstr "Любое существо"
+
+#: src\encyclopedia.cpp
+msgid "Friendly party"
+msgstr "Дружественный отряд"
+
+#: src\encyclopedia.cpp
+msgid "Enemy party"
+msgstr "Вражеский отряд"
+
+#: src\encyclopedia.cpp
+msgid "Territory or party"
+msgstr "Территория или отряд"
+
+#: src\encyclopedia.cpp
+msgid "Caster"
+msgstr "Заклинатель"
+
+#: src\encyclopedia.cpp
+msgid "Another wizard"
+msgstr "Другой колдун"
+
+#: src\encyclopedia.cpp
+msgid "All wizards"
+msgstr "Все колдуны"
+
+#: src\encyclopedia.cpp
+msgid "Special effect"
+msgstr "Особый эффект"
+
+#: src\encyclopedia.cpp
+msgid "No fixed rune formula"
+msgstr "Нет фиксированной формулы рун"
+
+#: src\encyclopedia.cpp
+msgid "Rune formula:"
+msgstr "Формула рун:"
+
+#: src\encyclopedia.cpp
+msgid "Skull Realm"
+msgstr "Царство Черепов"
+
+#: src\encyclopedia.cpp
+msgid "Sword Realm"
+msgstr "Царство Мечей"
+
+#: src\encyclopedia.cpp
+msgid "Magic Number Realm"
+msgstr "Царство Магических Чисел"
+
+#: src\encyclopedia.cpp
+msgid "The Three Dragons"
+msgstr "Три Дракона"
+
+#: src\encyclopedia.cpp
+msgid "Elementals of the Four Winds"
+msgstr "Элементали Четырёх Ветров"
+
+#: src\encyclopedia.cpp
+msgid "Special Creatures"
+msgstr "Особые Существа"
+
+#: src\encyclopedia.cpp
+msgid ""
+"Clans: %1\n"
+"Strategy: %2"
+msgstr ""
+"Кланы: %1\n"
+"Стратегия: %2"
+
+#: src\encyclopedia.cpp
+msgid ""
+"Cost: %1 spell points\n"
+"Attack: %2   Missile: %3   Defense: %4\n"
+"Loyalty: %5   Movement: %6"
+msgstr ""
+"Цена: %1 очков магии\n"
+"Атака: %2   Стрельба: %3   Защита: %4\n"
+"Верность: %5   Движение: %6"
+
+#: src\encyclopedia.cpp
+msgid "Flying creature"
+msgstr "Летающее существо"
+
+#: src\encyclopedia.cpp
+msgid "Cost: %1 spell points\nTarget: %2\nRune formula: %3"
+msgstr "Цена: %1 очков магии\nЦель: %2\nФормула рун: %3"
+
+#: src\encyclopedia.cpp
+msgid "Persistent enchantment"
+msgstr "Постоянное зачарование"
+
+#: src\encyclopedia.cpp
+msgid "Duration: %1 turns"
+msgstr "Длительность: %1 ходов"
+
+#: src\encyclopedia.cpp
+msgid "ATTACKERS"
+msgstr "АТАКУЮЩИЕ"
+
+#: src\encyclopedia.cpp
+msgid "DEFENDERS + LAND"
+msgstr "ЗАЩИТНИКИ + ЗЕМЛЯ"
+
+#: src\encyclopedia.cpp
+msgid "1. TERRITORY FIRE"
+msgstr "1. ОГОНЬ ТЕРРИТОРИИ"
+
+#: src\encyclopedia.cpp
+msgid "2. MISSILE VOLLEY"
+msgstr "2. ОБЩИЙ ЗАЛП"
+
+#: src\encyclopedia.cpp
+msgid "3. MELEE"
+msgstr "3. БЛИЖНИЙ БОЙ"
+
+#: src\encyclopedia.cpp
+msgid "Loyalty 0 = defeated"
+msgstr "Верность 0 = поражение"
+
+#: src\encyclopedia.cpp
+msgid "ENCYCLOPEDIA"
+msgstr "ЭНЦИКЛОПЕДИЯ"
+
+#: src\encyclopedia.cpp
+msgid "THE OFFICIAL ARCANUM OF THE ISLE OF FOUR WINDS"
+msgstr "ОФИЦИАЛЬНЫЙ АРКАНУМ ОСТРОВА ЧЕТЫРЁХ ВЕТРОВ"
+
+#: src\encyclopedia.cpp
+msgid "ARROWS: NAVIGATE   ENTER: OPEN   WHEEL / PGUP / PGDN: READ   ESC: BACK"
+msgstr "СТРЕЛКИ: НАВИГАЦИЯ   ENTER: ОТКРЫТЬ   КОЛЕСО / PGUP / PGDN: ЧИТАТЬ   ESC: НАЗАД"
+
+#: src\encyclopedia.cpp
+msgid "Source: official Arcanium Rune War website, archived 2001"
+msgstr "Источник: официальный сайт Arcanium Rune War, архив 2001 года"
+
+#~ msgid "THE RUNE WAR RETURNS"
+#~ msgstr "ВОЙНА РУН ВОЗВРАЩАЕТСЯ"
+
+#~ msgid "AI Level"
+#~ msgstr "ИИ"
+
+#: themes/classic/json/gamedata/avatars.json
+msgid "The spawn of all that is evil and callous is the necromancer called %1. The Isle of Four winds knows no individual as ruthless as he, the one without emotion. Sadness, fear, anger, joy, jealousy and greed are sensations that do not clutter his being, making him the most focused and feared of all wizards. Death and decay are all that are required to fuel his existence, they are his conscience. His aspect is a composition of energy from this arcane persuasion. When looking into his shadowy eyes you can almost see the tortured souls of those who have crossed his path. It is said that when you meet %1, you have met death. The nature of %1's existence revolves around the magic that is found within the realm of skulls. He is singularly in tune with death as a source of magical essence. It is the fabric of his being. %1's unearthly aura pulsates with the dark fire of death. This has become his only link to the Isle of the Four Winds and for this reason %1 is limited to the use of Skull magic as his source of summoning and enchantment. However, due to his proximity to death, %1 is also attuned to the most destructive creatures found on the Isle. He has managed to call upon the Red Dragon, the Fire Elemental, and Maz'Ra the Demon Lord to do his bidding, and will not hesitate to call on them throughout the next competition. %1 is a true mercenary, not native to any of the races which vie for control of the Isle of Four Winds. He will choose to side with races only to suit his own needs, and to fortify his intensely evil magical essence. The Maitha and the Marz are the only communities brave enough to have managed to secure the use of %1 as an instrument in past Rune Wars. %1 will again side with one of these two clans in hopes to achieve total dominance and escalate his diabolic vitality. %1 is somewhat of an unknown. Although he is very much alive, considerable folklore has been attached to his movements. Natives to all the races on the Isle have cited many reasons for his existence and continue to speculate. Some say that he is an overlord to rival the Gods through constant killing sprees.His wanderings across the countryside have left it dark and destitute. Others believe that he is an incarnation of all that is evil. What is agreed upon is that %1 is most certainly the most bizarre and most fearsome individual on the island. If a wizard is to defeat him in the coming competition, he or she will have to have an iron will and a heart of stone, for %1 does not let up."
+msgstr "\tВоплощение всего злого и бессердечного — некромант по имени %1. На Острове Четырёх Ветров нет существа безжалостнее этого лишённого чувств колдуна. Печаль, страх, гнев, радость, зависть и жадность не тревожат его и потому делают самым сосредоточенным и пугающим из всех магов. Смерть и разложение питают его существование и заменяют ему совесть. В тёмных глазах %1 будто видны измученные души тех, кто пересёк ему дорогу. Говорят, встретить %1 — значит встретить саму смерть.\n\tСущность %1 неразрывно связана с магией царства Черепов. Смерть служит ему источником магии и самой тканью его бытия. Неземная аура %1 пульсирует тёмным пламенем смерти; это его единственная связь с Островом Четырёх Ветров, поэтому для призыва и чар он пользуется главным образом магией Черепов. Но близость к смерти роднит его и с самыми разрушительными существами острова. Красный Дракон, Элементаль Огня и владыка демонов Маз'Ра уже исполняли его волю и наверняка будут призваны вновь.\n\t%1 — настоящий наёмник, не принадлежащий ни к одному из народов, борющихся за остров. Он выбирает союзников лишь ради собственной выгоды и укрепления своей зловещей магической сущности. Только Красный и Фиолетовый кланы оказались достаточно смелы, чтобы воспользоваться им как орудием в прежних Войнах Рун. В новой войне %1 снова поддержит один из них в надежде добиться полного господства и умножить свою дьявольскую силу.\n\tПроисхождение %1 остаётся загадкой. Он несомненно жив, но каждое его появление окружено легендами. Все народы острова спорят о причине его существования. Одни считают его владыкой, бросившим вызов богам бесконечными убийствами: после его странствий земли остаются мрачными и опустошёнными. Другие видят в нём воплощение мирового зла. Все сходятся лишь в одном: %1 — самое странное и страшное существо острова. Чтобы победить его, колдуну потребуются железная воля и каменное сердце — %1 не знает пощады."
+
+#: themes/classic/json/gamedata/avatars.json
+msgid "%1 of the Kartha stands by the chivalric code of the honorable knight. All that he accomplishes or attempts is for the good of his nation. His piety and conviction to his people is unmatched by any other figure throughout the land. %1 truly believes that there is much to be gained through patience and virtue. His commitment to ethics is not a byproduct of his religious beliefs, moreover, it comes from within his magical fabric. %1's dedication and perseverance has allowed him to harvest his magical aura and detach himself from a mundane existence. This separates him from mere ordinary knights or crusaders of a church. The magic he possesses has become an extension of his blade, and it flourishes within him as hones his skills as a master swordsman and conjurer of good. The intense studies of the Knighthood have allowed %1 to discover a greater understanding of the magic that lies deep within his soul. His patience has become instinct as in the case of most Kartha clansfolk, however, %1 has most certainly fortified this attribute through his machine-like conviction. His magical nature lies within the power of the sword, therefore all that is summoned and enchanted by %1 is attached to this realm. Quite often, %1 is seen conjuring the aid of reputable heroes like Carol the Great and King Drago. He especially enjoys the company of these individuals because they share the sanctity that he so desperately cherishes. %1 finds strength in his summonings, and for this reason, is rarely seen alone. %1 is misunderstood by the other races native to the Isle of Four Winds. He is often considered a soft hearted individual willing to take pity on those that are deemed to be less fortunate. This, however, is the wrong angle to take when facing him in competition. While other wizards may expect him to limit the prize of his victory, he will pursue utter dominance. His absolute dedication to his people has instilled in him the will to claim a landslide victory. He intends to lead his people to glory. His strength of mind coupled with his unparallel sense of patience will make him a worthy opponent in the coming Rune War."
+msgstr "\t%1 из Жёлтого клана следует рыцарскому кодексу чести. Всё, что он делает, служит благу его народа. Никто на острове не сравнится с его верой и преданностью соотечественникам. %1 убеждён, что терпение и добродетель приносят великую награду. Его нравственные принципы порождены не только религией — они вплетены в саму его магическую природу. Упорство позволило %1 обуздать ауру и подняться над обыденным существованием. Поэтому он не просто рыцарь или церковный крестоносец: магия стала продолжением его клинка и крепнет вместе с мастерством мечника и чародея света.\n\tГоды изучения рыцарских искусств открыли %1 магию, скрытую глубоко в его душе. Терпение, свойственное Жёлтому клану, благодаря почти машинной целеустремлённости стало его инстинктом. Магическая природа %1 заключена в силе Меча, и все его призывы и чары связаны с этим царством. Он часто обращается за помощью к прославленным героям — Великому Профоссу и Королю Уго. Они разделяют святые идеалы, которыми он дорожит. %1 черпает силу в призванных союзниках и потому редко появляется один.\n\tДругие народы Острова Четырёх Ветров часто неверно понимают %1, считая мягкосердечным защитником несчастных. В Войне Рун такая ошибка опасна. Соперники могут ожидать, что он удовольствуется скромной победой, но %1 стремится к полному господству. Безграничная преданность народу заставляет его добиваться сокрушительного результата и вести своих людей к славе. Сильный разум и непревзойдённое терпение делают %1 достойным противником."
+
+#: themes/classic/json/gamedata/avatars.json
+msgid "There is a point in the development of a powerful wizard when a teacher realizes his pupil is truly gifted. %1, a disciple of Kierac, never attained this peak. Kierac recognized her potential early, and acknowledges her as a competent, if unspectacular wizard, never to be seen within the confines of the Mage Tower for a rune war though. No one can pinpoint the moment when she became a legitimate contender within the marz wizard hierarchy to be their preferred rune war mage. Her best quality seems to be the fact that she is constantly underestimated. Her tactics and spells are unspectacular for the most part, but in the end she always delivers a very strong impression. Being full blooded marz means that she is a dual breather, and fully amphibious. Being underwater gives her lots of freedom. The entire island is littered with channels and rivers so it is easy for her to get around quietly and secretly. Her stealth rivals that of Kierac himself, though this is a very little known fact."
+msgstr "\tВ обучении сильного колдуна наступает миг, когда наставник понимает: перед ним настоящий талант. Ученица Киерака %1 так и не достигла подобной вершины. Киерак рано заметил её способности и считает её умелой, хотя и не блистательной волшебницей — из тех, кого прежде не ожидали увидеть в Башне Магов среди участников Войны Рун.\n\tНикто не знает, когда именно %1 заняла законное место среди колдунов Фиолетового клана и стала претенденткой на роль его избранницы. Её главное достоинство в том, что соперники постоянно её недооценивают. Тактика и заклинания %1 редко выглядят эффектно, но итог неизменно оказывается впечатляющим.\n\tКак урождённая представительница Фиолетового клана, %1 способна дышать и воздухом, и под водой. Водная стихия дарит ей свободу: остров изрезан каналами и реками, по которым она перемещается тихо и незаметно. В скрытности %1 не уступает самому Киераку, хотя об этом почти никому не известно."
+
+#: themes/classic/json/gamedata/avatars.json
+msgid "According to %1, conditions for his victory are extremely ripe. His clan has become somewhat negligible in the eyes the other races due to the failure of past leaders to achieve success in previous Rune Wars. %1 is extremely determined to surprise the other wizards at the next competition. He has learned from past failure and has cited self betterment as the only possible course of action that will undo what has been done to his sorry nation. %1 has traveled the four corners of the Isle in order to obtain delicate magical information to quench his thirst for victory. Most of his magical essence is by choice self taught, having decided not to take on a mentor because of the pathetic pool of past leaders and wizards. %1 is very much in touch with the tides of magic which wash within his soul. He has learned to tap the innate magical nature of his clansfolk. Through intense magical study, %1 has discovered a way to harness the magical energy of his peoples desires. He will use this as a flagship of power to exact revenge over all the nations which call him weak. There is a distinct property of war which %1 holds in high regard which may make him a potent foe in the next Rune War competition. %1 is a tactical genius and through intense study, thought and magic, %1 has become a master of tactical application. %1 has trained himself to sort and apply strategy with calculating speed. He has repeated his training methods so often that it has become instinct for him to adapt to different scenarios effectively. %1 prides himself on lightning quick thought, and will definitely outclass his opponents in this area of cerebral battle. His controversial monocle reveals every invisible creature on the map. The nature of %1's magic is inherently versatile. Although the focus of his summoning is based in the realm of skulls, he utilizes all areas of tactical spell casting, enchanting his creatures with a full complement of supplemental spells. %1 is never seen hoarding or saving the power that may come his way during a competition. He is constantly expending his power attempting to bolster his army with the various spells he has at his command. %1 is a very flashy fighter who relies on speed and finesse rather than pure power. He does not allow himself to be overwhelmed or overmatched. His intense grasp of enchantment magic demonstrates this. %1's crusade for knowledge has certainly raised the hopes of his people. He can feel their excitement as the magical energies flow through his blood. %1's ability to harness the hopes of his nation will make him a match for all wizards, especially those who regard the Iz as nothing more than a petty annoyance."
+msgstr "\tПо мнению %1, обстоятельства как никогда благоприятствуют его победе. После неудач прежних вождей в прошлых Войнах Рун другие народы почти перестали считаться с Бирюзовым кланом. %1 намерен удивить соперников. Он изучил прежние поражения и решил, что лишь постоянное самосовершенствование способно вернуть униженному народу уважение. В поисках редких магических знаний %1 обошёл все уголки острова. Он сознательно отказался от наставника, не найдя достойного учителя среди прежних вождей и колдунов. Чутко ощущая магические приливы собственной души и врождённую силу своего народа, %1 научился превращать надежды бирюзовых в оружие мести всем, кто называл их слабыми.\n\tОсобенно высоко %1 ценит ту сторону войны, которая способна сделать его опаснейшим участником состязания: тактику. Благодаря упорным занятиям, размышлениям и магии он стал мастером стратегического применения сил. Бесчисленные повторения научили его молниеносно оценивать обстановку и инстинктивно приспосабливаться к любому сценарию. В интеллектуальной битве %1 рассчитывает превзойти всех соперников, а его знаменитый монокль открывает каждое невидимое существо на карте.\n\tМагия %1 необычайно гибка. Хотя его призывы главным образом связаны с царством Черепов, он владеет всем спектром тактических чар и усиливает существ множеством дополнительных заклинаний. %1 никогда не копит доставшуюся ему силу: он постоянно расходует её, укрепляя армию. Это эффектный боец, предпочитающий скорость и тонкий расчёт грубой мощи. Глубокое знание чар помогает ему не позволять врагам окружить или подавить себя.\n\tПоход %1 за знаниями вернул надежду его народу. Он чувствует воодушевление бирюзовых в потоке магии, проходящем сквозь его кровь. Способность обратить надежды клана в силу позволит %1 сразиться на равных с любым колдуном — особенно с теми, кто всё ещё считает Бирюзовый клан досадной мелочью."
+
+#: themes/classic/json/gamedata/avatars.json
+msgid "%1 is another foreigner to the Isle of Four Winds, a human. Her intense aversion to the forces of evil have attracted her to the Isle. She has been following the legacy of a certain wizard in hopes of one day facing this individual and banishing him from the land of the living. Orachi is the one, the source of the raging tempest that blows within her passionate soul. Relentless in her pursuit, %1 has finally pinpointed the whereabouts of her arch nemesis and feels that she is finally ready to face him. She will take on any commission in the coming Rune War just to oppose Orachi. Although she will meet the needs of the clan who calls her, she is set on another purpose. %1 wants revenge. Long ago, %1 was a very passive woman, living in a small town far away from the Isle of Four Winds. She pursued the study of magic half-heartedly because she did not have the resources available to truly harness such power. Her town was extremely mundane, a small farming reserve beside a great river which the townsfolk had built their lives around. %1 was content with her life, dedicated to her family and her town until one fateful day. The skies suddenly darkened as an intense storm rose up and shook the foundations of the town. Following the storm, an army of corpses and demons entered the town, killing and spreading its curse to everything. At the heart of the army was a tortured soul, a twisted man that did not show emotion, Orachi the Necromancer. The town was consumed within minutes and all that was once living had transformed into living dead. Orachi left as quickly as he came, leaving the small farming town in ruins. %1 managed to escape the torment by hiding in a small cave at the bank of the river. When the sun came out and the blue sky returned she went back to town. There was nothing left, even the chirping birds had been stolen by this heartless being. %1 broke into a frenzy, she shed all that was pure and dedicated herself to revenge. Her only course of action was to pursue the art of summoning and enchantment. She turned to the only source of magic known to her lands, the Demon Lord. She struck a pact with him. %1 gave him her soul and in return was granted the gift of knowledge. She loathed her decision but her anger cluttered her judgement, all she wanted was revenge. She had become reborn as a child of fire. Intense study and magical manipulation was %1's way. She nurtured the fire the Demon had planted within her. Through ritual meditation, %1 fed the fire of knowledge. What was once a small blaze was transformed into a hellblast capable of consuming entire armies. Because of her aversion to the skull magic of Orachi, the magic within her guided itself. It took on the form of the sword and the number. As a result of this, %1 has become a summoner and an enchanter of these two realms, and a potent force in the coming Rune War."
+msgstr "\t%1 — ещё одна чужеземка на Острове Четырёх Ветров, человек. Ненависть к силам зла привела её сюда. Долгие годы она шла по следу одного колдуна, мечтая встретить его и изгнать из мира живых. Имя этого врага — Орачин, источник бури, бушующей в её душе. Неустанные поиски наконец открыли %1 убежище заклятого противника, и теперь она готова сразиться с ним. В новой Войне Рун она примет предложение любого клана, лишь бы выступить против Орачина. Служа нанимателям, %1 не забывает своей истинной цели — мести.\n\tКогда-то %1 была тихой женщиной и жила в маленьком земледельческом поселении далеко от острова. Она понемногу изучала магию, но не располагала знаниями и средствами, чтобы раскрыть настоящий дар. Её жизнь принадлежала семье и городку у великой реки — пока не настал роковой день. Небо потемнело, страшная буря сотрясла дома, а вслед за ней пришла армия мертвецов и демонов, убивавшая всё живое и обращавшая его в проклятую нежить. Во главе шёл лишённый чувств Орачин-некромант. За несколько минут поселение погибло, и Орачин исчез так же внезапно, как появился. %1 спаслась в маленькой пещере на речном берегу. Когда вернулись солнце и синее небо, она увидела лишь руины и мёртвую тишину. Отбросив прежнюю чистоту, %1 посвятила себя мести. Единственным путём стали призыв и чары. Она обратилась к единственному известному в тех землях источнику магии — Владыке Демонов — и заключила с ним договор: душа в обмен на знание. %1 ненавидела свой выбор, но гнев затмил рассудок. Она переродилась дитём огня.\n\tС тех пор её путь — суровое обучение и магические опыты. %1 взращивала пламя, посеянное демоном, и ритуальными медитациями питала огонь знания. Маленькая искра превратилась во Взрыв Огня, способный поглощать целые армии. Отвращение к магии Черепов Орачина направило её силу к Мечам и Числам. Так %1 стала грозной призывательницей и повелительницей чар двух царств — силой, с которой придётся считаться в новой Войне Рун."
+
+#: themes/classic/json/gamedata/avatars.json
+msgid "[color:olive]The absolute master of summoning [color:default]is a title that describes %1. He is thought to be the oldest wizard on the Isle of Four Winds because of his intense grasp of the main summoning circles. Great mystery surrounds %1 much the same as it does Orachi except that %1 has not achieved his notoriety through mass torment and destruction. Rather, %1 has attained fame through his ability to alter his appearance via personal genetic manipulation. It is virtually impossible to chart his past movements. Therefore, very little is known about the age and background of %1, all is left to speculation. Many tales echo the name %1. One tale in particular has been agreed upon by many scholars and natives alike. %1 has participated in several Rune War competitions for the Marz and Iz clans. %1 says he favors these groups because they are considered somewhat alien. Throughout past competitions %1 has baffled his opponents with his ability to summon powerful creatures from all the main realms of magic; skulls, swords, and numbers. By drawing various entities from each realm he can form a decidedly deadly force. This leaves many opposing wizards scratching their collective heads, wondering how he could have possibly mastered such summoning. It has been proposed that %1 must have studied under the masters of each realm of summoning. But how did he do this? None of the masters have admitted to teaching him. It was then discovered that he was indeed a shapeshifter. From this discovery it has been assumed that the great masters taught him unknowingly. %1 could care less about the methods he uses to obtain knowledge. He will use anything at his disposal to achieve total mastery of summoning, and to bring victory to those who call for him to represent them in the Rune War. %1 has an unmatched thirst and capacity to learn the art of summoning, causing him to be unaligned. His one motivation in life is summoning. So long as there is knowledge to be gathered %1 will pursue it using any means. He has dedicated his life to acquiring all available summoning knowledge, and from this, has become the most celebrated Rune War wizard of all time. He does not waste time with what he calls trivial supplemental magic. He claims victory by employing absolute brute force, summoning the strongest, meanest creatures. Once again %1 has to be looked upon as the frontrunner in the coming Rune War competition. Perhaps he will not compete. Only time will tell."
+msgstr "\t«Абсолютный мастер призыва» — лучшее определение для %1. Благодаря глубочайшему знанию главных Кругов Призыва его считают старейшим колдуном острова. %1 окружён тайнами почти так же, как Орачин, но славу ему принесли не мучения и разрушение, а умение изменять собственное тело. Отследить его прежние обличья и странствия почти невозможно, поэтому возраст и происхождение %1 остаются предметом догадок.\n\tИмя %1 звучит во множестве легенд. Учёные и жители сходятся в том, что он участвовал в нескольких Войнах Рун на стороне Фиолетового и Бирюзового кланов, которые привлекают его своей чуждостью. В прошлых состязаниях %1 поражал врагов способностью призывать могучих существ из всех главных царств — Черепов, Мечей и Чисел. Комбинируя их силы, он создавал смертоносные армии и заставлял соперников гадать, как один колдун мог овладеть столь разными школами.\n\tПредполагали, что %1 учился у мастеров каждого царства, но ни один из них не признавался, что наставлял его. Ответ появился, когда раскрылась его природа Изменяющего Плоть: великие учителя передавали ему знания, не понимая, кому на самом деле преподают.\n\t%1 безразлично, какими средствами добывать знания. Он использует всё доступное, чтобы достичь полного мастерства призыва и принести победу тем, кто наймёт его на Войну Рун.\n\tНенасытная жажда и редчайшая способность к обучению не оставили %1 места среди одного клана. Единственная цель его жизни — призыв. Пока в мире остаётся знание, он будет искать его любыми способами. Посвятив себя всем школам призыва, %1 стал самым прославленным колдуном Войн Рун. Он презирает «пустячную» дополнительную магию и добивается победы грубой силой, вызывая самых могучих и жестоких существ. Поэтому %1 снова считается главным фаворитом — если, конечно, решит участвовать. Это покажет лишь время."
+
+#: themes/classic/json/gamedata/avatars.json
+msgid "Although %1 is a new face on the Isle of Four Winds, his participation in the coming Rune War is much anticipated. Not resident to the isle, %1 is a distinct type of faerie, foreign to all the native races. %1 is similar to Nucrus in that he shares no affiliation to a magical realm. However, his summoning skills are extremely potent. %1 has come into favor of the dragons and can summon all types of these devastating creatures. He has also discovered the secret of the Juggernaut and will most certainly call upon it to wreak absolute mayhem. %1, a mercenary in the truest sense, will lend his service to any clan that wishes to have him. Parables of his incredible summoning power have circulated throughout the land causing him to be the target of much interest by all the clans. Being of the bardly persuasion, %1 traversed the Isle of Four Winds on a self promotional tour, entertaining natives with songs and poems boasting of his fantastic powers. People have fallen in love with this enchanted performer. He has become their choice in the coming Rune War thus increasing his marketability amongst clan leaders. %1 will have many options available to him when it comes time to decide who he wishes to represent. People of all types back this charismatic hero, which many clan leaders have recognized. He is a representative of the common folk, the one to share a drink and a laugh with. Because many of the other wizards are feared for their anomalies, %1 is particularly adored for his jovial and charismatic nature. He has gained the enthusiasm of the natives and intends to feed from this. The sign of a great performer is a large crowd. A drawback to %1 is his lack of a supplemental spell realm. This may or may not expose a weakness, depending on how the runes fall for %1. This brash and persuasive character need only to look towards the dragons as a source of victory. %1 will be one to watch for this reason alone."
+msgstr "\tХотя %1 недавно появился на Острове Четырёх Ветров, его участия в Войне Рун ждут с большим интересом. Он не принадлежит к местным народам и представляет редкий вид фей. Подобно Нукрусу, %1 не связан с отдельным магическим царством, зато обладает огромным талантом призывателя. Он снискал расположение драконов и способен вызывать все разновидности этих разрушительных созданий. Кроме того, %1 раскрыл тайну Джагернаута и наверняка призовёт его, чтобы посеять полный хаос.\n\tКак истинный наёмник, %1 предложит услуги любому клану. Рассказы о его невероятной силе разошлись по всему острову и привлекли внимание всех правителей. По натуре бард, %1 устроил настоящее представление: путешествовал по землям, развлекая жителей песнями и стихами о собственном могуществе. Народы полюбили зачарованного артиста и захотели видеть его участником Войны Рун, чем резко подняли его ценность для вождей. %1 сможет выбирать из множества предложений. Его поддерживают простые жители всех народов — те, кто готов разделить с ним кружку и смех. Других колдунов боятся за их странности, а %1 любят за весёлый нрав и обаяние. Он намерен питаться восторгом толпы: великому артисту нужна большая публика.\n\tСлабость %1 — отсутствие собственной школы дополнительных заклинаний. Станет ли это проблемой, зависит от выпавших рун. Дерзкому и убедительному барду достаточно обратиться к драконам как к источнику победы. Уже поэтому за %1 стоит внимательно следить."
+
+#: themes/classic/json/gamedata/avatars.json
+msgid "Touted as the elite Rune War contestant, %1 is a representative of the Maitha clan. A veteran of past competition, %1 is the purest student of the actual game itself. He relies heavily on his ability to play the game rather than the magic contained within the runes. %1 is somewhat of a utility summoner and spell caster, only able to call upon the elements and minor beings to aid him in the battle process. He has no affiliation to any particular realm of magic, which certainly hinders his ability to employ a formidable legion. For this reason, %1 has had to move in a direction uncommon to most wizards. %1 has adopted a strategy that is extremely effective and quite frustrating to his opponents. Knowing that he can not overwhelm other wizards by summoning creatures, %1 has shifted his attention to widespread movement and land defense. %1 maximizes land acquisition through expert play. In addition, %1 employs the teleport spell to quickly shift his minions for hit and run attacks on lands which have been left penetrable by unsuspecting adversaries. The nature of his magic allows him the luxury of not having to divide his attention between tactical movement and gameplay. %1 can then concentrate his efforts on burying his opponents through advanced rune battle strategy. The Maitha adore his approach, as they are quite passive and profoundly intellectual. They have relied on %1 for many years and continue to have confidence in him. %1 has little room for error because his people will not tolerate failure. Impulsive by nature, the Maitha will not hesitate to dissolve their pact with %1 if he wavers from total success. %1 enjoys the pressures of being Maitha. They think very highly of their race and pride themselves on quick thinking and troubleshooting. It has become a common sight to see %1 dazzling his opponents with brilliant play and decision making, almost toying with them. %1 carries himself with a cocky swagger, knowing that his play has rarely been matched in the past. He very much looks forward to the coming Rune War so he can once again teach the veterans a lesson and embarrass any new comers to the event."
+msgstr "\t%1 считается элитным участником Войны Рун и представляет Красный клан. Ветеран прежних состязаний, он прежде всего мастер самой Игры Рун и полагается на умение играть сильнее, чем на заключённую в рунах магию. %1 — универсальный, но ограниченный призыватель: он способен вызывать стихий и младших существ, однако не связан ни с одним главным царством и потому не может собрать обычный могучий легион. Это заставило его избрать путь, непохожий на стратегии большинства колдунов.\n\tТактика %1 чрезвычайно эффективна и выводит соперников из себя. Понимая, что не сможет подавить врагов числом призванных существ, он сосредоточился на подвижности и защите земель. Искусная игра позволяет %1 быстро расширять владения, а Телепорт переносит существ для внезапных ударов по землям, которые неосторожные враги оставили уязвимыми. Его магическая природа не требует делить внимание между тактикой на карте и Игрой Рун, поэтому %1 может сокрушать противников продвинутой стратегией за столом. Спокойный и рассудительный Красный клан высоко ценит такой подход и много лет доверяет своему избраннику. Но права на ошибку у %1 почти нет: гордый народ не простит провала и расторгнет договор, если победа окажется под угрозой.\n\t%1 нравится давление, связанное с ролью красного колдуна. Этот народ высоко ценит себя, быстроту мысли и умение решать сложные задачи. Соперники привыкли видеть, как %1 ослепляет их блестящей игрой и решениями, будто забавляясь. Он держится с самоуверенной ухмылкой, зная, что прежде мало кто мог сравниться с его мастерством. %1 с нетерпением ждёт новой Войны Рун, чтобы снова проучить ветеранов и поставить новичков в неловкое положение."
+
+#: themes/classic/json/gamedata/avatars.json
+msgid "%1's affiliation to a clan is torn due to his lack of a true birthright. He is born of native persuasion, however, he shares the blood of two races. %1's mother was a Maithan Elder and his father was a dedicated Karthan Crusader, making %1 the offspring of two high ranking individuals of conflicting races. While %1 received the favor of both races, sharp Maithan intellect and intense Karthan dedication, he became a source of great conflict. He was an incredible specimen, bred for wizardry and participation in coming Rune Wars. The leaders of each of his clans recognized this and as a result began vying for control of him. %1 left his home, a neutral township between the two clan regions, to seek peace and to concentrate on summoning and enchantment. By putting distance between himself and the clans, %1 forced the leaders to take action in hopes of resolving this issue. It was thought by each clan that if he were to have only one living parent then %1 would become partisan to the clan of the survivor. The Maithans and Karthans agreed to pit the two against each other in a mock Rune War, with the loser to be put to death.. %1, still away in training, did not learn of this event and continued his studies. His mother and father decided it their way. They poisoned themselves and ended this horrible conflict in tragedy. To this day it has been kept secret to %1 and the two nations have resolved to fairly commission %1 when the Rune War comes. %1's magical aura was shaped when he left his home. He sought refuge in the mountains where he became one with the crisp mountain air. He dipped into the magic of the air and learned to harness and control the wonders contained within it. Therefore, without knowledge of a distinct realm, all his summonings are related to flight and the winds. %1 became the self taught master of the air, able to call upon such mystical beings as the Ki-Lin, Griffon, and Air Elemental. His supplemental magic was shaped from a genetic trait given to him by his father. The Karthan dedication to the sword was strong within him so %1 focused on it, allowing it to bubble within him, creating the substance for his enchantments. It is not known as to which clan %1 will be representing in the coming Rune War. His ignorance towards the fate of his parents protects his relationship with his two native clans. Until %1 discovers the truth he will remain loyal to these clans, having to decide which one he will unite with. If %1 is to learn of the demise of his parents, no one knows what will come of the rage that will boil inside him."
+msgstr "%1 разрывается между двумя кланами, поскольку не имеет единственного наследия. Он родился на острове, но в его жилах течёт кровь двух народов: мать была старейшиной Красного клана, отец — преданным крестоносцем Жёлтого. %1 унаследовал острый ум красных и неукротимую целеустремлённость жёлтых, став редчайшим дарованием, словно созданным для магии и Войн Рун. Правители обоих кланов поняли это и начали бороться за право распоряжаться им. Желая покоя и возможности изучать призыв и чары, %1 покинул родной нейтральный городок между двумя землями. Его уход заставил вождей искать страшное решение: каждый клан решил, что после смерти одного родителя %1 выберет народ выжившего. Мать и отца заставили сойтись в учебной Войне Рун, проигравшего ожидала казнь. Находившийся далеко в обучении %1 ничего не знал. Родители приняли собственное решение: вместе выпили яд и завершили спор трагедией. Истину до сих пор скрывают от %1, а два народа договорились честно делить право приглашать его на Войну Рун.\n\tМагическая аура %1 сформировалась после ухода из дома. Он нашёл убежище в горах и слился с чистым воздухом вершин, научившись чувствовать и направлять заключённую в нём магию. Не принадлежа отдельному царству, %1 связывает все призывы с полётом и ветрами. Он самостоятельно стал мастером воздуха и вызывает таких существ, как Ки-Рин, Грифон и Элементаль Эфира. Дополнительные чары выросли из наследия отца: жёлтая преданность Мечу жила в его крови, и %1 позволил этой силе стать основой своих заклинаний.\n\tНикто не знает, какой клан %1 представит в новой Войне Рун. Незнание судьбы родителей пока сохраняет его связь с обоими народами, и он должен лишь выбрать одного из них. Но если %1 узнает правду об их гибели, никто не способен предсказать, во что превратится закипающая в нём ярость."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The adventure party is a wise magical investment. It combines a formidable ground and air assault with a stalwart defense. Its ability to see the invisible can foil enemy plans."
+msgstr "\tПриключенцы — разумное вложение магии. Они сочетают мощную наземную и воздушную атаку с крепкой защитой, а способность видеть невидимое может разрушить планы врага."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The Air Elemental proves to be the greatest combatant af all the elements. Summoners calling upon this element gain the favor of the silence spell, an annoyance to all wizards who are stricken with it."
+msgstr "\tЭлементаль Эфира — сильнейший боец среди стихий. Призвавший его колдун получает «Тишину» — заклинание, способное серьёзно досадить любому сопернику."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "Carol is a versatile addition to any summoner that can call her to battle. Her pendant allows her to gate to friendly summoning circles and gives her army first strike if she leads them into battle by using the short range displacement ability of her pendant."
+msgstr "\tВеликий Профосс — универсальное подкрепление. Его кулон открывает врата к дружественным Кругам Призыва и даёт ведомой им атакующей армии Первый Удар."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "Chameleons are stealthy archers of the lizard persuasion. Their hearty nature and loyalty to Ziag allow them to recuperate quickly. This is the only invisible unit with ranged attack capability."
+msgstr "\tХамелеоны — скрытные стрелки из племени ящеров. Живучесть и верность Зиагу помогают им быстро восстанавливаться. Это единственное невидимое существо со Стрельбой."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "A valued member of the skull summoning realm, the Durlock provides an initial foundation for a strong force with its missile fire and robust attack."
+msgstr "\tДрайдер — ценный воин царства Черепов. Его стрелковый удар и крепкая Атака служат хорошей основой сильного отряда."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "Born from the ground beneath, the Earth Elemental is another consistent battle force. The one who controls it receives the ability to peek at his or her opponents hands with the scry runes spell."
+msgstr "\tРождённый в глубинах земли Элементаль Земли — надёжная боевая сила. Его владелец получает заклинание «Ясновидение», позволяющее заглянуть в руки противников."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The Fire Elemental is a particularly volatile creature. A potent attack force that employs a solid melee and ranged attack, its ability to grant the random discard spell is its real burn."
+msgstr "\tЭлементаль Огня крайне непредсказуем. Он сочетает сильные ближнюю и стрелковую атаки, но его главный дар — заклинание «Случайная Ставка»."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "This high range creature is strong in all facets of combat like most sword creatures. Its initial ranged strike is followed by a potent melee attack."
+msgstr "\tПламенник силён во всех видах боя, как и многие существа Мечей. За мощным начальным выстрелом следует серьёзная атака в ближнем бою."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The Green Dragon is a very hostile and aggressive beast. Its lack of a missile strike is supplemented by a fearsome attack strength and a high loyalty. When in play, this Dragon grants its controller the ability to draw a sword rune."
+msgstr "\tЗелёный Дракон — свирепый и агрессивный зверь. Отсутствие Стрельбы компенсируют огромная Атака и высокая Верность; пока он в игре, хозяин может получить руну Мечей."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The griffon is a credible strategic unit. Its ability to merge and see the invisible along with its capable combat properties makes it a useful low range creature. An excellent scout with its high movement."
+msgstr "\tГрифон — полезное стратегическое существо. Слияние, способность видеть невидимое и достойные боевые качества делают его хорошим недорогим бойцом, а высокая подвижность — отличным разведчиком."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "This creature leads its category on the battlefield. It combines strength, resilience, and broad movement. The Juggernaut is indeed a powerful summons."
+msgstr "\tДжагернаут — один из лучших бойцов своего класса. Он сочетает огромную силу, живучесть и высокую подвижность и полностью оправдывает затраты на призыв."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "This fearsome serpent like beast has no visible weaknesses. Its lack of a ranged attack is offset by its ability to ignore missiles while its other abilities are very impressive."
+msgstr "\tУ этого грозного змееподобного зверя нет явных слабостей. Отсутствие собственной Стрельбы компенсируется невосприимчивостью к снарядам и внушительными остальными характеристиками."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The invisible undead knight is a formidable adversary to any mid-range unit. With the addition of supplemental enchantments, Kilor becomes a potent foe to any opponent."
+msgstr "\tНевидимый рыцарь-нежить опасен для любого существа среднего уровня. Усиленный дополнительными чарами, Килор становится грозным противником для любой армии."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "King Drago is the jewel of the realm of swords. His consistencies in the art of war are bolstered by his resistance to magic. Add his mastery of the fearsome mighty blow and you have an awesome fighting machine. Unfortunately he is difficult to heal."
+msgstr "\tКороль Уго — жемчужина царства Мечей. Его мастерство войны дополняют Сопротивление Магии и грозный Мощный Удар. Это превосходная боевая машина, которую, увы, трудно лечить."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The Knight Templar is a solid low range summoning. He has the ability to combat any low to mid-range opponent with his impressive mighty blow."
+msgstr "\tОтряд Рыцарей — надёжный недорогой призыв. Благодаря Мощному Удару он способен справиться со многими слабыми и средними противниками."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "A hauntingly gorgeous individual, Learra's hypnotic song freezes opponents in combat when she leads an attacking party, providing her with the first strike. A good melee property makes this strike quite nasty."
+msgstr "\tЗавораживающе прекрасная Сирена Ниеннах гипнотической песней сковывает врагов, когда ведёт атакующий отряд, и получает Первый Удар. Её высокая Атака делает этот удар особенно опасным."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The Demon Lord known as Maz'Ra may well be the most fearsome creature available to summoners. It can single handedly dispatch many capable armies with its overwhelming attack strength and intimidating Hellblast ability."
+msgstr "\tВладыка Демонов Маз'Ра, возможно, самое страшное существо, доступное призывателям. Его сокрушительная Атака и устрашающий Взрыв Огня позволяют в одиночку уничтожать сильные армии."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "Extremely resilient, the minotaur is an excellent choice for summoners. It possesses solid battle attributes at a reasonable cost."
+msgstr "\tМинотавр чрезвычайно живуч и станет отличным выбором для призывателя: за умеренную цену он предлагает уверенные боевые характеристики."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The Red Dragon has a particular affinity to the skull realm, allowing its summoner the ability to draw a rune of skulls. It has an intense ranged breath attack and a capable defense making it another powerful minion to do your bidding."
+msgstr "\tКрасный Дракон связан с царством Черепов и позволяет призывателю получить руну Черепа. Мощное дыхание дальнего боя и крепкая Защита делают его опасным слугой."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The sand wraith is an exceptional strategic unit because of its invisibility. Pair off a sand wraith or two with a mid range creature and watch the overconfident big ones fall."
+msgstr "\tДух Пустыни — ценное стратегическое существо благодаря Невидимости. Добавьте одного-двух духов к бойцу среднего уровня — и самоуверенные великаны начнут падать."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "Shadows are a useful staple in the skull realm. Their ability to merge amongst themselves and maintain invisibility greatly enhances their attacking prowess."
+msgstr "\tГнильё — полезная основа армии Черепов. Способности к Слиянию и Невидимости заметно усиливают его в атаке."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "Shanahan the Cloud Giant is the pinnacle of the number realm. There are many options available to the commander of this big boy. Overwhelm most anything by itself, or attach it to a party and wreak havoc across the Isle."
+msgstr "\tОблачный великан Шаннаган — вершина царства Чисел. Он способен сокрушить почти любого врага в одиночку или присоединиться к отряду и сеять хаос по всему острову."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "Foot soldiers of the skull summoning chain, the skeleton horde provides support. Their sheer numbers allow them to swarm, attacking every member of an opposing army."
+msgstr "\tОрда Скелетов — пехота царства Черепов и надёжная поддержка. Благодаря численности она может нападать Роем, атакуя каждого участника вражеского отряда."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "With its exceptional resilience and regeneration, the stone golem makes for a solid low range creature ideal for support."
+msgstr "\tКаменный Голем очень живуч и владеет Регенерацией, поэтому отлично подходит на роль недорогого существа поддержки."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The thunder bird introduces a ranged attack to the number realm. Couple this with hearty melee and loyalty values and you have a powerful mid-range unit."
+msgstr "\tПтица Молний приносит стрелковую атаку в царство Чисел. В сочетании с хорошей Атакой и Верностью это делает её сильным существом среднего уровня."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "A wizard must draw upon the power of the winds to summon a tornado. Astronge mid-ranged being, the tornado offers immunity to missile attacks and consistent battle attributes."
+msgstr "\tЧтобы призвать Торнадо, колдун обращается к силе ветров. Это крепкое существо среднего уровня с ровными боевыми характеристиками и невосприимчивостью к стрелковым атакам."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The Water Elemental is a powerful force on the Isle, and in the Rune Game. Fog is the strategic annoyance granted to the commander of this element."
+msgstr "\tЭлементаль Воды силён и на острове, и в Игре Рун. Его командир получает «Дым Маны» — весьма неприятное стратегическое заклинание."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "The White Dragon is extremely resilient and loyal by nature. Factor in its ability to allow the summoner to draw a character rune and its consistent battle characteristics and you have a top notch unit at your command."
+msgstr "\tБелый Дракон от природы чрезвычайно живуч и верен. Он позволяет призывателю получить руну Чисел, а ровные боевые характеристики делают его первоклассным бойцом."
+
+#: themes/classic/json/gamedata/creatures.json
+msgid "Wraiths provide the most bang for the buck in the skull regime. Regeneration supplies durability in combat allowing the wraith to clean up any low to mid-range enemies and territories."
+msgstr "\tЧучело исключительно выгодно для царства Черепов. Регенерация делает его живучим и позволяет расправляться со слабыми и средними противниками и землями."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "An intense bloodlust flows through the veins of the recipient of this spell, making it a more fierce attacker."
+msgstr "\tЖажда крови наполняет зачарованное существо и делает его гораздо свирепее в атаке."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "When a friendly creature is enchanted with this spell it becomes extremely eager for battle, sacrificing loyalty for the lust of battle."
+msgstr "\tЗачарованное дружественное существо рвётся в бой и жертвует Верностью ради усиления Атаки."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "Extremely bright lights appear and dance around the target of this spell, distracting it from battle and reducing its ability to defend itself."
+msgstr "\tЯркие огни танцуют вокруг цели, отвлекают её от боя и снижают способность защищаться."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "The caster draws upon the power of the demons to bolster the loyalty of one of his minions."
+msgstr "\tКолдун обращается к силе демонов, чтобы повысить Верность одного из своих существ."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "Removes all enchantments from the target creature. Does not affect any special abilities."
+msgstr "\tСнимает с выбранного существа все наложенные чары, не затрагивая его врождённые способности."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "Swirling winds surround the target of this spell kicking up dust and other debris. The target becomes distracted and unable to fully defend itself."
+msgstr "\tВихревые ветры поднимают вокруг цели пыль и обломки. Существо теряет концентрацию и хуже защищается."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "The caster of this spell is able to conjure a shield of energy around a single friendly creature, reducing the effectiveness of missile and territory fire against it."
+msgstr "\tКолдун окружает одно дружественное существо энергетическим щитом, ослабляющим стрелковый огонь существ и территорий."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "This spell sharpens the vision of one friendly creature with ranged combat ability, enabling it to pinpoint its ranged attack."
+msgstr "\tЗаклинание обостряет зрение дружественного стрелка и позволяет ему точнее наносить дальние удары."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "An important supplementary spell, healing restores two loyalty to a friendly unit. Loyalty will be added up to the target's maximum."
+msgstr "\tЛечение восстанавливает дружественному существу 2 Верности, но не выше его максимума."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "The most destructive spell in the lands, hellblast surrounds a targeted enemy army with a searing hot firestorm causing some major damage."
+msgstr "\tВзрыв Огня — самое разрушительное заклинание острова. Оно окружает выбранную вражескую армию обжигающим огненным штормом и наносит тяжёлый урон."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "The target of this spell becomes inspired by visions of mighty warriors cutting down their enemies. This greatly enhances the combat ability of the enchanted."
+msgstr "\tВидения великих воинов, сокрушающих врагов, вдохновляют цель и значительно повышают её боевую мощь."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "The caster of this spell summons the power of the skies to strike an enemy creature with a lightning bolt. Shocking!"
+msgstr "\tКолдун призывает силу небес и поражает вражеское существо Шаровой Молнией. Громко и эффектно!"
+
+#: themes/classic/json/gamedata/spells.json
+msgid "The magic of this enchantment consumes its target, making it feel more confident in its abilities. As a result, the creature touched by this gains in defense."
+msgstr "\tМагическая аура придаёт цели уверенность в собственных силах и повышает её Защиту."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "Removes all enchantments from every creature in the selected territory. Does not affect any special abilities."
+msgstr "Снимает все чары со всех существ на выбранной земле, не затрагивая их врождённые способности."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "The summoner directs the face of fear at an enemy army group, sending them into panic and reducing their loyalty."
+msgstr "\tПризыватель обрушивает воплощённый страх на вражеский отряд, повергая его в панику и снижая Верность."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "The waters of a great mystical fountain are sprinkled upon the recipient of this spell giving it a random bonus. The target receives +Melee or +Loyalty or +Ranged."
+msgstr "\tВоды Мистического Ручья даруют выбранному существу случайное усиление: Атаку, Верность или Стрельбу."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "Another mind altering spell, paralyzing fear ceases the movement of one enemy creature for one turn as it becomes wracked with terror."
+msgstr "\tПарализующий страх сковывает разум одного вражеского существа и лишает его возможности двигаться в течение одного хода."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "With this spell the summoner is able to harness the power of the skull realm to drain the will of one enemy creature, reducing its combat characteristics."
+msgstr "\tПризыватель использует силу царства Черепов, чтобы подавить волю одного вражеского существа и снизить его боевые характеристики."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "A cloud of billowing smoke surrounds one enemy creature limiting its visibility. This will reduce or negate the target's ability to make a ranged attack."
+msgstr "\tКлубы Тумана окутывают одно вражеское существо и ограничивают его видимость, уменьшая или полностью лишая его Стрельбы."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "An excellent utility spell, teleport allows the caster to call upon the gates of travel to shift any one of his or her minions to any friendly territory."
+msgstr "\tТелепорт открывает врата перемещения и переносит одно дружественное существо на любую союзную землю."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "A mana-dampening fog covers every wizard, preventing normal spell casting and creature summoning for three turns."
+msgstr "Дым Маны окутывает всех колдунов и на три хода запрещает обычное применение заклинаний и призыв существ."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "Forces the targeted wizard to discard a random rune on their next turn."
+msgstr "Заставляет выбранного колдуна сбросить случайную руну в начале следующего хода."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "Reveals the targeted opponent's concealed runes to the caster for five turns."
+msgstr "На пять ходов открывает заклинателю скрытые руны выбранного противника."
+
+#: themes/classic/json/gamedata/spells.json
+msgid "Prevents the targeted wizard from calling Chao, Pung, Kong or Game and from casting spells or summoning creatures for three turns. Telepaths are immune."
+msgstr "На три хода запрещает выбранному колдуну объявлять Чоу, Панг, Конг и Маджонг, применять заклинания и призывать существ."
+
+#: themes/classic/json/gamedata/specials.json
+msgid "The presence of the possessor of this ability sends even the bravest of souls into panic. This is reflected by the loss of -2 loyalty points to all that combat it."
+msgstr "Присутствие обладателя этой способности повергает в ужас даже храбрейших: все сражающиеся с ним теряют 2 Верности."
+
+#: themes/classic/json/gamedata/specials.json
+msgid "Those possessing Major Magic Resistence receive a %1% chance to ignore the effects of spells directed at them by any wizard."
+msgstr "Обладатели Высшего Сопротивления Магии с вероятностью %%{percent} игнорируют направленные на них заклинания любого колдуна."
+
+#: themes/classic/json/gamedata/specials.json
+msgid "This fearsome ability gives the possessor a 25% chance to strike a devastating blow in combat. A succesful mighty blow boosts melee strength by +3, and guarantees that at least one damage is done, regardless of the opponents defense rating."
+msgstr "Эта грозная способность даёт 25% шанс нанести Мощный Удар. Успешный удар повышает Атаку на 3 и гарантирует не менее 1 урона независимо от Защиты противника."
+
+#: themes/classic/json/gamedata/specials.json
+msgid "Heals +2 loyalty before movement phase."
+msgstr "Восстанавливает 2 Верности перед фазой движения."
+
+#: themes/classic/json/gamedata/specials.json
+msgid "The ranger attack speciality"
+msgstr "Существо участвует в начальном стрелковом залпе."
+
+#: src/strings.cpp
+msgid "Action Rejected"
+msgstr "Действие отклонено"
+
+#: src/strings.cpp
+msgid "That action is not available in the current phase."
+msgstr "Это действие недоступно в текущей фазе."
+
+#: src/strings.cpp
+msgid "It is not your turn."
+msgstr "Сейчас не ваш ход."
+
+#: src/strings.cpp
+msgid "That choice is no longer available."
+msgstr "Этот выбор больше недоступен."
+
+#: src/strings.cpp
+msgid "Silence prevents this action."
+msgstr "Тишина не позволяет выполнить это действие."
+
+#: src/strings.cpp
+msgid "Mana Fog prevents casting this turn."
+msgstr "Дым Маны не позволяет колдовать в этот ход."
+
+#: src/strings.cpp
+msgid "You have already summoned or cast a spell this turn."
+msgstr "В этот ход вы уже призвали существо или применили заклинание."
+
+#: src/strings.cpp
+msgid "That Mahjong call is not legal for the current rune."
+msgstr "Этот вызов в Игре Рун нельзя сделать для текущей руны."
+
+#: src/strings.cpp
+msgid "That rune choice is no longer available."
+msgstr "Эта руна больше недоступна для выбора."
+
+#: src/strings.cpp
+msgid "Select a valid territory."
+msgstr "Выберите подходящую землю."
+
+#: src/strings.cpp
+msgid "Select a valid target."
+msgstr "Выберите подходящую цель."
+
+#: src/strings.cpp
+msgid "The required runes are not available."
+msgstr "Не хватает требуемых рун."
+
+#: src/strings.cpp
+msgid "This action requires %2 spell points; only %1 are available."
+msgstr "Для этого действия нужно %2 очков магии; доступно только %1."
+
+#: src/strings.cpp
+msgid "There are not enough spell points for that action."
+msgstr "Для этого действия не хватает очков магии."
+
+#: src/strings.cpp
+msgid "This claim requires %2 claim points; only %1 are available."
+msgstr "Для захвата нужно %2 очков захвата; доступно только %1."
+
+#: src/strings.cpp
+msgid "There are not enough claim points for that territory."
+msgstr "Для захвата этой земли не хватает очков захвата."
+
+#: src/strings.cpp
+msgid "Your army has no free summoning slot."
+msgstr "В вашей армии нет свободного места для призыва."
+
+#: src/strings.cpp
+msgid "That unique creature is already on the map."
+msgstr "Это уникальное существо уже находится на карте."
+
+#: src/strings.cpp
+msgid "The destination party is full."
+msgstr "В целевом отряде нет свободного места."
+
+#: src/strings.cpp
+msgid "The selected creature is no longer available."
+msgstr "Выбранное существо больше недоступно."
+
+#: src/strings.cpp
+msgid "The selected creature cannot move to that territory."
+msgstr "Выбранное существо не может перейти на эту землю."
+
+#: src/strings.cpp
+msgid "That territory cannot be claimed now."
+msgstr "Сейчас эту землю нельзя присвоить."
+
+#: src/strings.cpp
+msgid "There are no Adventure orders to undo."
+msgstr "Нет приказов фазы движения, которые можно отменить."
+
+#: src/strings.cpp
+msgid "There is no battle choice awaiting input."
+msgstr "Сейчас нет ожидающего решения в бою."
+
+#: src/strings.cpp
+msgid "That battle choice is no longer legal."
+msgstr "Этот выбор в бою больше недоступен."
+
+#: src/strings.cpp
+msgid "The game rejected that action."
+msgstr "Игра отклонила это действие."
+
+#: src/developertools.cpp
+msgid "RNG state copied to clipboard"
+msgstr "Состояние ГСЧ скопировано в буфер обмена"
+
+#: src/developertools.cpp
+msgid "Unable to copy RNG state"
+msgstr "Не удалось скопировать состояние ГСЧ"
+
+#: src/developertools.cpp
+msgid "Return Human Control"
+msgstr "Вернуть управление"
+
+#: src/developertools.cpp
+msgid "Control returns immediately at this safe input boundary"
+msgstr "Управление вернётся сразу на этой безопасной границе"
+
+#: src/developertools.cpp
+msgid "Let AI Control My Seat"
+msgstr "Передать моё место ИИ"
+
+#: src/developertools.cpp
+msgid "Observer-safe AI uses only legal player actions until the phase ends"
+msgstr "Обычный ИИ играет только легальными действиями до конца фазы"
+
+#: src/developertools.cpp
+msgid "Finish Current Phase"
+msgstr "Завершить текущую фазу"
+
+#: src/developertools.cpp
+msgid "Skip presentation and stop at the next summary"
+msgstr "Пропустить анимации и остановиться на следующей сводке"
+
+#: src/developertools.cpp
+msgid "Next Adventure Phase"
+msgstr "Следующая фаза карты"
+
+#: src/developertools.cpp
+msgid "Stop at the beginning of the next map phase"
+msgstr "Остановиться в начале следующей фазы карты"
+
+#: src/developertools.cpp
+msgid "Battle Test Scenario"
+msgstr "Тестовый бой"
+
+#: src/developertools.cpp
+msgid "Create balanced armies and stop at manual combat"
+msgstr "Создать равные армии и остановиться перед ручным боем"
+
+#: src/developertools.cpp
+msgid "Final Rune Game"
+msgstr "Последняя Игра Рун"
+
+#: src/developertools.cpp
+msgid "Deal the last hand of the North round"
+msgstr "Раздать последнюю руку Северного раунда"
+
+#: src/developertools.cpp
+msgid "Final Adventure Phase"
+msgstr "Последняя фаза карты"
+
+#: src/developertools.cpp
+msgid "Open the last map phase before final scoring"
+msgstr "Открыть последнюю фазу карты перед итоговым счётом"
+
+#: src/developertools.cpp
+msgid "Finish Current Round"
+msgstr "Завершить текущий раунд"
+
+#: src/developertools.cpp
+msgid "Run legal turns and stop at the next Rune Game"
+msgstr "Доиграть легально и остановиться на следующей Игре Рун"
+
+#: src/developertools.cpp
+msgid "Finish Game"
+msgstr "Завершить партию"
+
+#: src/developertools.cpp
+msgid "Run legal turns until the final score screen"
+msgstr "Доиграть легально до итогового экрана"
+
+#: src/developertools.cpp
+msgid "Copy RNG State"
+msgstr "Копировать состояние ГСЧ"
+
+#: src/developertools.cpp
+msgid "Copy the original seed, current state and draw count"
+msgstr "Скопировать исходный seed, текущее состояние и счётчик"
+
+#: src/developertools.cpp
+msgid "DEVELOPER TOOLS"
+msgstr "ИНСТРУМЕНТЫ РАЗРАБОТЧИКА"
+
+#: src/adventurepart.cpp src/mahjongpart.cpp
+msgid "Developer Tools"
+msgstr "Инструменты разработчика"
+
+#: src/gamesummarypart.cpp
+msgid "VICTORY"
+msgstr "ПОБЕДА"
+
+#: src/gamesummarypart.cpp
+msgid "JOINT VICTORY"
+msgstr "СОВМЕСТНАЯ ПОБЕДА"
+
+#: src/gamesummarypart.cpp
+msgid "Final score: %1"
+msgstr "Итоговый счёт: %1"
+
+#: src/gamesummarypart.cpp
+msgid "Winners: %1"
+msgstr "Победители: %1"
+
+#: src/gamesummarypart.cpp
+msgid "CLICK / ENTER: NEXT WINNER"
+msgstr "КЛИК / ENTER: СЛЕДУЮЩИЙ ПОБЕДИТЕЛЬ"
+
+#: src/gamesummarypart.cpp
+msgid "CLICK / ENTER: DETAILED SCORES"
+msgstr "КЛИК / ENTER: ПОДРОБНЫЙ СЧЁТ"
+
+#: src/settingsmenu.cpp
+msgid "AI Difficulty"
+msgstr "Сложность ИИ"
+
+#: src/settingsmenu.cpp
+msgid "AI DIFFICULTY"
+msgstr "СЛОЖНОСТЬ ИИ"
+
+#: src/settingsmenu.cpp
+msgid "AI defends and heals, but does not invade or use offensive spells."
+msgstr "ИИ защищается и лечит, но не вторгается и не применяет атакующие заклинания."
+
+#: src/settingsmenu.cpp
+msgid "Forgiving opponents use simpler plans and conserve fewer runes."
+msgstr "Щадящие соперники строят более простые планы и меньше берегут руны."
+
+#: src/settingsmenu.cpp
+msgid "The intended fair challenge with the complete AI toolset."
+msgstr "Задуманная честная сложность с полным набором возможностей ИИ."
+
+#: src/settingsmenu.cpp
+msgid "Deeper planning and stronger coordination. Battle forecasts are hidden."
+msgstr "Более глубокие планы и сильная координация. Прогнозы боя скрыты."
+
+#: src/settingsmenu.cpp
+msgid "Brutal AI with explicit economy bonuses. No hidden information or rigged luck."
+msgstr "Жестокий ИИ с открытыми бонусами экономики. Без тайных знаний и подкрученной удачи."
+
+#: src/settingsmenu.cpp
+msgid "FOR NEW GAMES"
+msgstr "ДЛЯ НОВЫХ ИГР"
+
+#: src/settingsmenu.cpp
+msgid "Saved games are unchanged."
+msgstr "Сохранения не изменяются."
+
+#: src/ui/mainmenu.cpp
+msgid "Replays"
+msgstr "Реплеи"
+
+#: src/ui/mainmenu.cpp
+msgid "NO REPLAYS"
+msgstr "НЕТ РЕПЛЕЕВ"
+
+#: src/ui/replaybrowser.cpp
+msgid "Game session"
+msgstr "Игровая сессия"
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay %1"
+msgstr "Реплей %1"
+
+#: src/ui/replaybrowser.cpp
+msgid "Invalid replay"
+msgstr "Повреждённый реплей"
+
+#: src/ui/replaybrowser.cpp
+msgid "Actions"
+msgstr "Действия"
+
+#: src/ui/replaybrowser.cpp
+msgid "Developer assisted"
+msgstr "С инструментами разработчика"
+
+#: src/ui/replaybrowser.cpp
+msgid "The file can be deleted but not opened"
+msgstr "Файл можно удалить, но нельзя открыть"
+
+#: src/ui/replaybrowser.cpp
+msgid "REPLAY LIBRARY"
+msgstr "БИБЛИОТЕКА РЕПЛЕЕВ"
+
+#: src/ui/replaybrowser.cpp
+msgid "RECORDED GAME SESSIONS"
+msgstr "ЗАПИСАННЫЕ ИГРОВЫЕ СЕССИИ"
+
+#: src/ui/replaybrowser.cpp
+msgid "No recorded replay was found."
+msgstr "Записанных реплеев пока нет."
+
+#: src/ui/replaybrowser.cpp
+msgid "Details"
+msgstr "Сведения"
+
+#: src/ui/replaybrowser.cpp
+msgid "Double-click a replay to watch its recorded session."
+msgstr "Дважды щёлкните по реплею, чтобы посмотреть запись игры."
+
+#: src/ui/replaybrowser.cpp
+msgid "This replay is incompatible or damaged: %1"
+msgstr "Этот реплей несовместим или повреждён: %1"
+
+#: src/ui/replaybrowser.cpp
+msgid ""
+"%1\n"
+"Actions: %2\n"
+"Content: %3 v%4\n"
+"Rules: %5 v%6\n"
+"Status: %7"
+msgstr ""
+"%1\n"
+"Действия: %2\n"
+"Контент: %3 v%4\n"
+"Правила: %5 v%6\n"
+"Статус: %7"
+
+#: src/ui/replaybrowser.cpp
+msgid "Ready for playback"
+msgstr "Готов к воспроизведению"
+
+#: src/ui/replaybrowser.cpp
+msgid "Incomplete"
+msgstr "Запись неполная"
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay Details"
+msgstr "Сведения о реплее"
+
+#: src/ui/replaybrowser.cpp
+msgid "Delete Replay"
+msgstr "Удалить реплей"
+
+#: src/ui/replaybrowser.cpp
+msgid "Delete this recorded replay? This cannot be undone from the game menu."
+msgstr "Удалить этот реплей? Отменить удаление из меню игры будет нельзя."
+
+#: src/ui/replaybrowser.cpp
+msgid "The replay could not be deleted: %1"
+msgstr "Не удалось удалить реплей: %1"
+
+#: src/ui/replaybrowser.cpp src/ui/replayviewer.cpp
+msgid "Play"
+msgstr "Пуск"
+
+#: src/ui/replaybrowser.cpp src/ui/replayviewer.cpp
+msgid "Replay Playback"
+msgstr "Просмотр реплея"
+
+#: src/ui/replaybrowser.cpp
+msgid "The replay could not be opened: %1"
+msgstr "Не удалось открыть реплей: %1"
+
+#: src/ui/replayviewer.cpp
+msgid "Rune Game"
+msgstr "Игра Рун"
+
+#: src/ui/replayviewer.cpp
+msgid "Rune Game Summary"
+msgstr "Итоги Игры Рун"
+
+#: src/ui/replayviewer.cpp
+msgid "Playback stopped: %1"
+msgstr "Воспроизведение остановлено: %1"
+
+#: src/ui/replayviewer.cpp
+msgid "<< Phase"
+msgstr "<< Фаза"
+
+#: src/ui/replayviewer.cpp
+msgid "Phase >>"
+msgstr "Фаза >>"
+
+#: src/ui/replayviewer.cpp
+msgid "%1 | phase %2/%3 | action %4/%5"
+msgstr "%1 | фаза %2/%3 | действие %4/%5"
+
+#: src/ui/replayviewer.cpp
+msgid "Space: play/pause  Arrows: step  PgUp/PgDn: phase  +/-: speed"
+msgstr "Пробел: пуск/пауза  Стрелки: шаг  PgUp/PgDn: фаза  +/-: скорость"
+
+#: src/ui/replaybrowser.cpp
+msgid "Import"
+msgstr "Импорт"
+
+#: src/ui/replaybrowser.cpp
+msgid "Export"
+msgstr "Экспорт"
+
+#: src/ui/replaybrowser.cpp
+msgid "IMPORT REPLAY"
+msgstr "ИМПОРТ РЕПЛЕЯ"
+
+#: src/ui/replaybrowser.cpp
+msgid "EXPORT REPLAY"
+msgstr "ЭКСПОРТ РЕПЛЕЯ"
+
+#: src/ui/replaybrowser.cpp
+msgid "Enter or paste the full .fwr path"
+msgstr "Введите или вставьте полный путь к файлу .fwr"
+
+#: src/ui/replaybrowser.cpp
+msgid "Full replay path"
+msgstr "Полный путь к реплею"
+
+#: src/ui/replaybrowser.cpp
+msgid "Shift+Insert: paste"
+msgstr "Shift+Insert: вставить"
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay Import"
+msgstr "Импорт реплея"
+
+#: src/ui/replaybrowser.cpp
+msgid "Replay Export"
+msgstr "Экспорт реплея"
+
+#: src/ui/replaybrowser.cpp
+msgid "The replay could not be imported: %1"
+msgstr "Не удалось импортировать реплей: %1"
+
+#: src/ui/replaybrowser.cpp
+msgid "The replay could not be exported: %1"
+msgstr "Не удалось экспортировать реплей: %1"
+
+#: src/ui/replaybrowser.cpp
+msgid "Imported replay into the library."
+msgstr "Реплей импортирован в библиотеку."
+
+#: src/ui/replaybrowser.cpp
+msgid "A replay already exists at that path. Replace it?"
+msgstr "По этому пути уже существует реплей. Заменить его?"
+
+#: src/ui/replaybrowser.cpp
+msgid ""
+"Exported replay to:\n"
+"%1"
+msgstr ""
+"Реплей экспортирован в:\n"
+"%1"
+
+#: src/ui/replayviewer.cpp
+msgid ""
+"Replay diverged at action %1.\n"
+"Expected state: %2\n"
+"Actual state: %3"
+msgstr ""
+"Реплей разошёлся на действии %1.\n"
+"Ожидаемое состояние: %2\n"
+"Фактическое состояние: %3"
+
+#: src/ui/replayviewer.cpp
+msgid ""
+"Replay diverged at action %1.\n"
+"Expected: %2\n"
+"Actual: %3"
+msgstr ""
+"Реплей разошёлся на действии %1.\n"
+"Ожидалось: %2\n"
+"Получено: %3"

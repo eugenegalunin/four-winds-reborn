@@ -1,7 +1,8 @@
 # Battle and Adventure Rules
 
 This document is the implementation contract for the current battle and map
-phase. The original game rules remain in `docs/Manual.txt`.
+phase. The original game rules remain in
+`docs/reference/classic/Manual.txt`.
 
 ## Combat order
 
@@ -167,35 +168,67 @@ the resulting board instead.
 
 ### Difficulty and player forecast
 
-AI difficulty is selected when starting a new game, on the wizard and clan
-screen. Clicking the `AI Level` panel cycles through `Easy`, `Normal` and
-`Hard`. The selected value belongs to that game and is stored in the save;
-older saves without the field load as `Normal`.
+The default AI difficulty is selected in **Settings**. A large portrait card in
+the left panel and its arrows cycle through `Training`, `Easy`, `Normal`, `Hard`
+and `Unfair`; the right panel keeps the language, presentation, audio and
+display controls. The setting is copied into a newly started game. From that
+point the selected value belongs to that game and is stored in its save, so
+changing the default does not rewrite existing saves. Older saves without the
+field load as `Normal`.
 
-Difficulty does not modify creature statistics, town statistics, rune income
-or random rolls. It changes the AI planning budget:
+`Training` is a teaching policy rather than a weaker approximation of normal
+play. Its AI players do not claim land, enter enemy territory or cast offensive
+spells. They may reinforce friendly territory, summon creatures and heal their
+own armies, so the Rune Game and economy still demonstrate their ordinary
+rules without turning the map into a war.
+
+`Easy`, `Normal` and `Hard` modify only bounded decision quality around an
+unchanged `Normal` reference. They do not modify creature or town statistics,
+rune or spell-point income, legal actions, random rolls or the information
+available to an AI:
 
 - `Easy` runs 8 battle samples, looks only at the immediate spell cast and
-  limits coordinated attacks to one party per target.
-- `Normal` runs 16 battle samples and uses each behavior profile's normal spell
-  horizon and army coordination.
+  limits coordinated attacks to one party per target. It preserves goal runes
+  less strongly, keeps a smaller ordinary spell-point and defensive reserve,
+  waits for clearer map threats and accepts riskier attacks. Routine offensive
+  casts receive a penalty, while lethal casts remain available. On a stable
+  subset of turns it
+  may choose the second plan only when that plan scores at least 88 percent of
+  the best one; this bounded mistake is deterministic rather than favorable or
+  hostile RNG.
+- `Normal` runs 16 battle samples and retains the established behavior
+  profile's spell horizon, rune valuation, army coordination, threat response,
+  battle thresholds and exact best-plan selection.
 - `Hard` runs 48 battle samples, extends spell projection by one step (up to
-  four casts), lets a profile coordinate one additional party per target and
-  hides the player's map battle forecast.
+  four casts), retains wider strategic goal and action beams and lets a profile
+  coordinate one additional party per target. It values future goal runes more,
+  keeps a larger ordinary spell-point reserve, responds to weaker visible map
+  threats, keeps a larger defensive reserve, requires a safer forecast before
+  attacking and penalizes wasted battle damage more heavily. It also hides the
+  player's map battle forecast.
+- `Unfair` is deliberately asymmetric. It runs 128 battle samples, keeps wider
+  strategic and spell beams, values offensive magic more strongly and accepts
+  dangerous attacks when pressure is useful. Every AI begins with 500 bonus
+  spell points and receives 125 spell points plus 100 Land Claim points against
+  every rival clan after each Rune Game part. The mode still uses the ordinary
+  legal actions and combat resolver; it receives no favorable rolls and cannot
+  inspect hidden runes or invisible enemy units.
 
 Behavior profiles and difficulty remain independent. An aggressive wizard on
-`Easy` still behaves aggressively, but plans less deeply; on `Hard` it keeps
-the same doctrine and evaluates it more thoroughly.
+`Easy` still prefers pressure, but does not spend an ordinary attack spell every
+time it can; on `Hard` it keeps the same doctrine and evaluates it more
+thoroughly. `Unfair` preserves the doctrine too, then adds its documented
+economy handicap.
 
-On `Easy` and `Normal`, select movable creatures on one of your territories and
-hover an enemy territory during the movement phase. The right panel shows
-simulated capture chance and expected attacker survival for exactly the selected
-party. The preview uses the same battle resolver and the current difficulty's
-sample budget, runs on copies and never consumes the live game RNG. It also uses
-the player's filtered `LocalData`, so invisible enemies are not disclosed by the
-preview. The same forecast remains visible while dragging the party flag. On
-`Hard` the panel receives no forecast data; the AI still uses its full private
-48-sample evaluation when planning its own actions.
+On `Training`, `Easy` and `Normal`, select movable creatures on one of your
+territories and hover an enemy territory during the movement phase. The right
+panel shows simulated capture chance and expected attacker survival for exactly
+the selected party. The preview uses the same battle resolver and the current
+difficulty's sample budget, runs on copies and never consumes the live game RNG.
+It also uses the player's filtered `LocalData`, so invisible enemies are not
+disclosed by the preview. The same forecast remains visible while dragging the
+party flag. On `Hard` and `Unfair` the panel receives no outcome percentages;
+AI players still use their own decision budget when planning actions.
 
 ## Spellcasting AI
 

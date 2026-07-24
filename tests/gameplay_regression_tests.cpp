@@ -13,14 +13,23 @@
 #include "aispell.h"
 #include "aistrategy.h"
 #include "aiturn.h"
+#include "adventurehints.h"
 #include "avatar_balance_tests.h"
 #include "battle.h"
+#include "contentcatalog.h"
+#include "contentpackage.h"
 #include "crashreport.h"
+#ifdef BUILD_DEBUG
+#include "developertools.h"
+#endif
 #include "gameplayrng.h"
 #include "gametheme.h"
+#include "gamesummarypart.h"
 #include "intropart.h"
 #include "recovery.h"
 #include "replay.h"
+#include "replayfiles.h"
+#include "runegameruleset.h"
 #include "savegames.h"
 #include "settings.h"
 #include "simulation.h"
@@ -67,6 +76,7 @@ extern int bonusPass;
 extern LocalPlayers gamers;
 extern Wind currentWind;
 extern Wind roundWind;
+extern Wind partWind;
 extern CroupierSet croupier;
 extern int stoneLastCount;
 extern Stone dropStone;
@@ -81,12 +91,489 @@ namespace
 {
 int failures = 0;
 
+class AlternateRuneGameRuleset final : public RuneGameRuleset
+{
+public:
+    const std::string & id(void) const override
+    {
+        static const std::string value("test-alternate-scoring");
+        return value;
+    }
+
+    int version(void) const override { return 7; }
+    const std::vector<int> & wallStoneIds(void) const override
+    {
+        static const std::vector<int> stones = { Stone::Skull1, Stone::Sword1 };
+        return stones;
+    }
+    int wallCopies(void) const override { return 4; }
+    int initialHandSize(void) const override { return 2; }
+    bool allowsChao(bool nextPlayer, bool sequenceRune, int variantCount) const override
+    {
+        return nextPlayer && sequenceRune && 0 < variantCount;
+    }
+    bool allowsPung(bool otherPlayer, int matchingRuneCount) const override
+    {
+        return otherPlayer && 0 < matchingRuneCount;
+    }
+    bool allowsExposedKong(bool otherPlayer, int matchingRuneCount) const override
+    {
+        return otherPlayer && 1 < matchingRuneCount;
+    }
+    bool allowsSelfKong(bool currentPlayer, bool hasDrawnRune,
+                        bool upgradesPung, int matchingRuneCount) const override
+    {
+        return currentPlayer && hasDrawnRune && (upgradesPung || 2 == matchingRuneCount);
+    }
+    bool allowsWinStone(bool hasDrawnRune, bool, bool) const override
+    {
+        return hasDrawnRune;
+    }
+    bool isWinningStructure(int groupCount, int pairCount) const override
+    {
+        return 0 < groupCount && 0 < pairCount;
+    }
+    int callChoicePriority(RuneGameCall call) const override
+    {
+        switch(call)
+        {
+            case RuneGameCall::Game: return 4;
+            case RuneGameCall::Chao: return 3;
+            case RuneGameCall::Pung: return 2;
+            case RuneGameCall::Kong: return 1;
+            case RuneGameCall::None: break;
+        }
+        return 0;
+    }
+    int discardClaimPriority(RuneGameCall call) const override
+    {
+        switch(call)
+        {
+            case RuneGameCall::Game: return 3;
+            case RuneGameCall::Chao: return 2;
+            case RuneGameCall::Pung:
+            case RuneGameCall::Kong: return 1;
+            case RuneGameCall::None: break;
+        }
+        return 0;
+    }
+    RuneGameRoundAdvance advanceRound(int roundWindId, int partWindId) const override
+    {
+        if(Wind::East == roundWindId && Wind::South == partWindId)
+            return { roundWindId, partWindId, false, true };
+        if(Wind::None == roundWindId && Wind::None == partWindId)
+            return { Wind::East, Wind::East, false, false };
+        return { Wind::East, Wind::South, false, false };
+    }
+    int firstTurnWindId(void) const override { return Wind::South; }
+    int spellPointAward(RuneGameSpellPointEvent event) const override
+    {
+        switch(event)
+        {
+            case RuneGameSpellPointEvent::Discard: return 2;
+            case RuneGameSpellPointEvent::Chao: return 4;
+            case RuneGameSpellPointEvent::Pung: return 6;
+            case RuneGameSpellPointEvent::Kong: return 8;
+            case RuneGameSpellPointEvent::Win: return 10;
+        }
+        return 0;
+    }
+    int baseWinPoints(void) const override { return 30; }
+    int scoreMultiplier(int doubles) const override { return 3 << std::max(0, doubles); }
+    int maximumWinScore(void) const override { return 200; }
+};
+
 void expect(bool condition, const char* message)
 {
     if(condition) return;
 
     std::cerr << "FAIL: " << message << '\n';
     ++failures;
+}
+
+JsonObject jsonObjectWithoutKey(const JsonObject & source, const std::string & omittedKey)
+{
+    JsonObject result;
+    for(const std::string & key : source.keys())
+    {
+        if(key == omittedKey) continue;
+
+        const JsonValue* value = source.getValue(key);
+        if(!value) continue;
+        switch(value->getType())
+        {
+            case JsonType::Null: result.addNull(key); break;
+            case JsonType::Integer: result.addInteger(key, value->getInteger()); break;
+            case JsonType::Double: result.addDouble(key, value->getDouble()); break;
+            case JsonType::String: result.addString(key, value->getString()); break;
+            case JsonType::Boolean: result.addBoolean(key, value->getBoolean()); break;
+            case JsonType::Object:
+                result.addObject(key, static_cast<const JsonObject &>(*value));
+                break;
+            case JsonType::Array:
+                result.addArray(key, static_cast<const JsonArray &>(*value));
+                break;
+        }
+    }
+    return result;
+}
+
+void testRuneGameRulesetIdentityContract()
+{
+    std::string rulesetError;
+    expect(selectActiveRuneGameRuleset(ClassicRuneGameRulesetId,
+                                       ClassicRuneGameRulesetVersion,
+                                       &rulesetError) && rulesetError.empty(),
+           "the registered Classic Rune Game ruleset must be selectable");
+
+    const RuneGameRulesetIdentity classicIdentity =
+        runeGameRulesetIdentity(activeRuneGameRuleset());
+    const JsonObject encodedClassic =
+        runeGameRulesetIdentityJson(activeRuneGameRuleset());
+    expect(classicIdentity.id == ClassicRuneGameRulesetId &&
+           classicIdentity.version == ClassicRuneGameRulesetVersion &&
+           encodedClassic.getString("id") == ClassicRuneGameRulesetId &&
+           encodedClassic.getInteger("version") == ClassicRuneGameRulesetVersion,
+           "Classic ruleset identity must have one stable JSON representation");
+
+    RuneGameRulesetIdentity resolved;
+    const JsonObject legacyContainer;
+    rulesetError.clear();
+    expect(resolveRuneGameRulesetIdentity(legacyContainer, resolved, true, &rulesetError) &&
+           sameRuneGameRuleset(resolved, classicIdentity) && rulesetError.empty(),
+           "legacy artifacts without ruleset metadata must load as Classic");
+    rulesetError.clear();
+    expect(!resolveRuneGameRulesetIdentity(legacyContainer, resolved, false, &rulesetError) &&
+           rulesetError == "Rune Game ruleset metadata is missing",
+           "new artifacts must be able to require explicit ruleset metadata");
+
+    JsonObject malformed;
+    malformed.addString(RuneGameRulesetIdentityKey, "classic");
+    rulesetError.clear();
+    expect(!resolveRuneGameRulesetIdentity(malformed, resolved, true, &rulesetError) &&
+           rulesetError == "Rune Game ruleset metadata is invalid",
+           "malformed ruleset metadata must be rejected");
+
+    JsonObject unavailableIdentity;
+    unavailableIdentity.addString("id", "test-alternate-scoring");
+    unavailableIdentity.addInteger("version", 7);
+    JsonObject unavailable;
+    unavailable.addObject(RuneGameRulesetIdentityKey, unavailableIdentity);
+    rulesetError.clear();
+    expect(!resolveRuneGameRulesetIdentity(unavailable, resolved, true, &rulesetError) &&
+           rulesetError.find("test-alternate-scoring@7") != std::string::npos &&
+           !selectActiveRuneGameRuleset("test-alternate-scoring", 7, nullptr) &&
+           sameRuneGameRuleset(runeGameRulesetIdentity(activeRuneGameRuleset()),
+                               classicIdentity),
+           "unregistered rulesets must be rejected without changing the active ruleset");
+}
+
+void testContentPackageIdentityContract()
+{
+    JsonObject classicManifest;
+    classicManifest.addInteger("schema", ContentPackageManifestSchema);
+    classicManifest.addString("id", ClassicContentPackageId);
+    classicManifest.addInteger("version", ClassicContentPackageVersion);
+    classicManifest.addString("engineContract", ClassicEngineContentContract);
+    classicManifest.addString("gameData", "content.json");
+    JsonArray classicVersions;
+    classicVersions.addInteger(ClassicContentPackageVersion);
+    classicManifest.addArray("compatibleVersions", classicVersions);
+    JsonObject classicIndex;
+    classicIndex.addObject(ContentPackageIdentityKey, classicManifest);
+
+    std::string packageError;
+    expect(activateContentPackage(classicIndex, &packageError) && packageError.empty(),
+           "the Classic content package manifest must activate");
+    const ContentPackageIdentity classicIdentity =
+        contentPackageIdentity(activeContentPackageManifest());
+    const JsonObject encodedClassic =
+        contentPackageIdentityJson(activeContentPackageManifest());
+    expect(classicIdentity.id == ClassicContentPackageId &&
+           classicIdentity.version == ClassicContentPackageVersion &&
+           encodedClassic.getString("id") == ClassicContentPackageId &&
+           encodedClassic.getInteger("version") == ClassicContentPackageVersion,
+           "Classic content package identity must have one stable JSON representation");
+
+    ContentPackageIdentity resolved;
+    const JsonObject legacyContainer;
+    packageError.clear();
+    expect(resolveContentPackageIdentity(legacyContainer, resolved, true, &packageError) &&
+           sameContentPackage(resolved, classicIdentity) && packageError.empty(),
+           "legacy artifacts without content package metadata must load as Classic");
+    packageError.clear();
+    expect(!resolveContentPackageIdentity(legacyContainer, resolved, false, &packageError) &&
+           packageError == "Content package metadata is missing",
+           "new artifacts must be able to require explicit content package metadata");
+
+    JsonObject malformed;
+    malformed.addString(ContentPackageIdentityKey, ClassicContentPackageId);
+    packageError.clear();
+    expect(!resolveContentPackageIdentity(malformed, resolved, true, &packageError) &&
+           packageError == "Content package metadata is invalid",
+           "malformed content package metadata must be rejected");
+
+    JsonObject unavailableIdentity;
+    unavailableIdentity.addString("id", "removed-package");
+    unavailableIdentity.addInteger("version", 4);
+    JsonObject unavailable;
+    unavailable.addObject(ContentPackageIdentityKey, unavailableIdentity);
+    packageError.clear();
+    expect(!resolveContentPackageIdentity(unavailable, resolved, true, &packageError) &&
+           packageError.find("removed-package@4") != std::string::npos,
+           "artifacts from an unavailable content package must be rejected clearly");
+
+    JsonObject compatibleManifest;
+    compatibleManifest.addInteger("schema", ContentPackageManifestSchema);
+    compatibleManifest.addString("id", ClassicContentPackageId);
+    compatibleManifest.addInteger("version", 2);
+    compatibleManifest.addString("engineContract", ClassicEngineContentContract);
+    compatibleManifest.addString("gameData", "content-v2.json");
+    JsonArray compatibleVersions;
+    compatibleVersions.addInteger(1);
+    compatibleVersions.addInteger(2);
+    compatibleManifest.addArray("compatibleVersions", compatibleVersions);
+    JsonObject compatibleIndex;
+    compatibleIndex.addObject(ContentPackageIdentityKey, compatibleManifest);
+    packageError.clear();
+    expect(activateContentPackage(compatibleIndex, &packageError) &&
+           activeContentPackageManifest().gameData == "content-v2.json" &&
+           resolveContentPackageIdentity(legacyContainer, resolved, true, &packageError) &&
+           resolved.version == ClassicContentPackageVersion,
+           "a manifest must be able to declare compatibility with an older package version");
+
+    JsonObject invalidManifest = compatibleManifest;
+    invalidManifest.addInteger("schema", ContentPackageManifestSchema + 1);
+    JsonObject invalidIndex;
+    invalidIndex.addObject(ContentPackageIdentityKey, invalidManifest);
+    packageError.clear();
+    expect(!activateContentPackage(invalidIndex, &packageError) &&
+           activeContentPackageManifest().identity.version == 2,
+           "a rejected manifest must not replace the active content package");
+
+    JsonObject unsupportedContractManifest = compatibleManifest;
+    unsupportedContractManifest.addString("engineContract", "future-dynamic-v2");
+    JsonObject unsupportedContractIndex;
+    unsupportedContractIndex.addObject(ContentPackageIdentityKey,
+                                       unsupportedContractManifest);
+    packageError.clear();
+    expect(!activateContentPackage(unsupportedContractIndex, &packageError) &&
+           activeContentPackageManifest().identity.version == 2,
+           "an unsupported engine content contract must fail transactionally");
+
+    packageError.clear();
+    expect(activateContentPackage(classicIndex, &packageError) && packageError.empty(),
+           "content package tests must restore the Classic package");
+}
+
+void testInstalledContentCatalog()
+{
+    const std::string sourceRoot = FOUR_WINDS_SOURCE_DIR;
+    const std::string sourceProgram =
+        (std::filesystem::path(sourceRoot) / "four-winds-catalog-test.exe").string();
+    const std::vector<InstalledContentPackage> installed =
+        ContentCatalog::discover(sourceProgram, "four-winds-catalog-source-test");
+    const auto original = std::find_if(installed.begin(), installed.end(),
+        [](const InstalledContentPackage & package)
+        {
+            return package.theme == "classic";
+        });
+    std::string error;
+    expect(original != installed.end() && original->compatible &&
+           original->manifest.identity.id == ClassicContentPackageId &&
+           original->manifest.identity.version == ClassicContentPackageVersion &&
+           original->displayName() == "Classic" &&
+           ContentCatalog::isAvailable(sourceProgram,
+                                       "four-winds-catalog-source-test",
+                                       "classic", &error) && error.empty(),
+           "the installed Classic package must pass catalog validation");
+
+    const auto reborn = std::find_if(installed.begin(), installed.end(),
+        [](const InstalledContentPackage & package)
+        {
+            return package.theme == "reborn";
+        });
+    error.clear();
+    expect(reborn != installed.end() && reborn->compatible &&
+           reborn->manifest.identity.id == "reborn-community" &&
+           reborn->manifest.identity.version == 1 &&
+           reborn->displayName() == "Reborn Community Package" &&
+           ContentCatalog::isAvailable(sourceProgram,
+                                       "four-winds-catalog-source-test",
+                                       "reborn", &error) && error.empty(),
+           "the installed Reborn content package must pass catalog validation");
+
+    const std::filesystem::path fixtureRoot =
+        std::filesystem::temp_directory_path() / "four-winds-content-catalog-test";
+    std::error_code filesystemError;
+    std::filesystem::remove_all(fixtureRoot, filesystemError);
+    std::filesystem::create_directories(fixtureRoot / "themes" / "broken",
+                                        filesystemError);
+    const std::string sourceIndex =
+        (std::filesystem::path(sourceRoot) / "themes" / "classic" / "index.json").string();
+    std::string indexText;
+    const std::string brokenIndex =
+        (fixtureRoot / "themes" / "broken" / "index.json").string();
+    const bool fixtureWritten = Systems::readFile2String(sourceIndex, indexText) &&
+        Systems::saveString2File(indexText, brokenIndex);
+    const std::string fixtureProgram = (fixtureRoot / "game.exe").string();
+    const std::vector<InstalledContentPackage> broken =
+        ContentCatalog::discover(fixtureProgram, "four-winds-catalog-broken-test");
+    const auto rejected = std::find_if(broken.begin(), broken.end(),
+        [](const InstalledContentPackage & package)
+        {
+            return package.theme == "broken";
+        });
+    error.clear();
+    expect(fixtureWritten && rejected != broken.end() && !rejected->compatible &&
+           rejected->error.find("content.json") != std::string::npos &&
+           !ContentCatalog::isAvailable(fixtureProgram,
+                                        "four-winds-catalog-broken-test",
+                                        "broken", &error) &&
+           error.find("content.json") != std::string::npos,
+           "incomplete packages must remain visible to diagnostics but unavailable");
+    error.clear();
+    expect(!ContentCatalog::isAvailable(sourceProgram,
+                                        "four-winds-catalog-source-test",
+                                        "missing", &error) &&
+           error.find("not installed") != std::string::npos,
+           "an absent stored package must produce a safe fallback diagnostic");
+    std::filesystem::remove_all(fixtureRoot, filesystemError);
+}
+
+void testRuneGameRoundFlowRuleset()
+{
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+
+    RuneGameRoundAdvance advance = classicRuleset.advanceRound(Wind::None, Wind::None);
+    expect(advance.roundWindId == Wind::East && advance.partWindId == Wind::East &&
+           !advance.rotatePlayerWinds && !advance.complete &&
+           classicRuleset.firstTurnWindId() == Wind::East,
+           "Classic ruleset must start the East round and East part with East taking the turn");
+
+    advance = classicRuleset.advanceRound(Wind::East, Wind::East);
+    expect(advance.roundWindId == Wind::East && advance.partWindId == Wind::South &&
+           advance.rotatePlayerWinds && !advance.complete,
+           "Classic ruleset must rotate seats when advancing within a round");
+
+    advance = classicRuleset.advanceRound(Wind::East, Wind::North);
+    expect(advance.roundWindId == Wind::South && advance.partWindId == Wind::East &&
+           !advance.rotatePlayerWinds && !advance.complete,
+           "Classic ruleset must begin the next round after the North part");
+
+    advance = classicRuleset.advanceRound(Wind::North, Wind::North);
+    expect(advance.complete,
+           "Classic ruleset must finish after the North part of the North round");
+
+    const AlternateRuneGameRuleset alternateRuleset;
+    advance = alternateRuleset.advanceRound(Wind::None, Wind::None);
+    expect(advance.roundWindId == Wind::East && advance.partWindId == Wind::East &&
+           !advance.rotatePlayerWinds && !advance.complete &&
+           alternateRuleset.firstTurnWindId() == Wind::South,
+           "an injected ruleset must control its opening round and first turn");
+    advance = alternateRuleset.advanceRound(Wind::East, Wind::East);
+    expect(advance.roundWindId == Wind::East && advance.partWindId == Wind::South &&
+           !advance.rotatePlayerWinds && !advance.complete,
+           "an injected ruleset must control seat rotation independently from Classic");
+    advance = alternateRuleset.advanceRound(Wind::East, Wind::South);
+    expect(advance.complete,
+           "an injected ruleset must control its own tournament completion point");
+
+    const Wind savedRoundWind = GameData::roundWind;
+    const Wind savedPartWind = GameData::partWind;
+    GameData::roundWind = Wind(Wind::East);
+    GameData::partWind = Wind(Wind::South);
+    expect(!GameData::isGameOver(classicRuleset) && GameData::isGameOver(alternateRuleset),
+           "GameData tournament completion must route through the injected ruleset");
+    GameData::roundWind = savedRoundWind;
+    GameData::partWind = savedPartWind;
+}
+
+void testRuneGameSpellPointRuleset()
+{
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+    const AlternateRuneGameRuleset alternateRuleset;
+
+    expect(classicRuleset.spellPointAward(RuneGameSpellPointEvent::Discard) == 10 &&
+           classicRuleset.spellPointAward(RuneGameSpellPointEvent::Chao) == 20 &&
+           classicRuleset.spellPointAward(RuneGameSpellPointEvent::Pung) == 30 &&
+           classicRuleset.spellPointAward(RuneGameSpellPointEvent::Kong) == 40 &&
+           classicRuleset.spellPointAward(RuneGameSpellPointEvent::Win) == 50,
+           "Classic ruleset must preserve every established spell-point award");
+
+    LocalPlayer classicDiscard;
+    classicDiscard.points = 0;
+    classicDiscard.stones.add(GameStone(Stone::Sword1));
+    classicDiscard.setMahjongDrop(0);
+    expect(classicDiscard.points == 10,
+           "the compatibility discard path must keep the Classic spell-point award");
+
+    LocalPlayer alternateDiscard;
+    alternateDiscard.points = 0;
+    alternateDiscard.stones.add(GameStone(Stone::Sword1));
+    alternateDiscard.setMahjongDrop(0, alternateRuleset);
+    expect(alternateDiscard.points == 2,
+           "an injected ruleset must control the discard spell-point award");
+
+    LocalPlayer alternateChao;
+    alternateChao.points = 0;
+    alternateChao.stones.add(GameStone(Stone::Sword1));
+    alternateChao.stones.add(GameStone(Stone::Sword3));
+    alternateChao.setMahjongChao(Stone(Stone::Sword2), 0, alternateRuleset);
+    expect(alternateChao.points == 4 && alternateChao.rules.size() == 1 &&
+           alternateChao.rules.front().isChao(),
+           "an injected ruleset must control the Chao spell-point award");
+
+    LocalPlayer alternatePung;
+    alternatePung.points = 0;
+    alternatePung.stones.add(GameStone(Stone::Dragon1));
+    alternatePung.stones.add(GameStone(Stone::Dragon1));
+    alternatePung.setMahjongPung(Stone(Stone::Dragon1), alternateRuleset);
+    expect(alternatePung.points == 6 && alternatePung.rules.size() == 1 &&
+           alternatePung.rules.front().isPung(),
+           "an injected ruleset must control the Pung spell-point award");
+
+    LocalPlayer exposedKong;
+    exposedKong.points = 0;
+    exposedKong.stones.add(GameStone(Stone::Sword5));
+    exposedKong.stones.add(GameStone(Stone::Sword5));
+    exposedKong.stones.add(GameStone(Stone::Sword5));
+    exposedKong.setMahjongKong1(Stone(Stone::Sword5), alternateRuleset);
+    expect(exposedKong.points == 8 && exposedKong.rules.size() == 1 &&
+           exposedKong.rules.front().isKong(),
+           "an injected ruleset must control the exposed Kong spell-point award");
+
+    LocalPlayer concealedKong;
+    concealedKong.points = 0;
+    concealedKong.stones.add(GameStone(Stone::Number4));
+    concealedKong.stones.add(GameStone(Stone::Number4));
+    concealedKong.stones.add(GameStone(Stone::Number4));
+    concealedKong.newStone = GameStone(Stone(Stone::Number4), false);
+    concealedKong.setMahjongKong2(alternateRuleset);
+    expect(concealedKong.points == 8 && concealedKong.rules.size() == 1 &&
+           concealedKong.rules.front().isKong() && concealedKong.rules.front().isConcealed(),
+           "an injected ruleset must control the concealed Kong spell-point award");
+
+    LocalPlayer upgradedKong;
+    upgradedKong.points = 0;
+    upgradedKong.rules.push_back(WinRule(WinRule::Pung, Stone(Stone::Skull2), false));
+    upgradedKong.newStone = GameStone(Stone(Stone::Skull2), false);
+    upgradedKong.setMahjongKong2(alternateRuleset);
+    expect(upgradedKong.points == 8 && upgradedKong.rules.front().isKong(),
+           "an injected ruleset must control the upgraded Kong spell-point award");
+
+    WinRules concealedRules;
+    concealedRules << WinRule(WinRule::Chao, Stone(Stone::Sword1), false)
+                   << WinRule(WinRule::Pung, Stone(Stone::Dragon1), false)
+                   << WinRule(WinRule::Kong, Stone(Stone::Skull1), false);
+    const WinResults alternateWin(
+        Wind(Wind::East), Wind(Wind::South), Wind(Wind::West),
+        WinRules(), concealedRules, Stone(Stone::Number2), Stone(Stone::Number2));
+    LocalPlayer winner;
+    winner.points = 0;
+    winner.setMahjongGame(alternateWin, alternateRuleset);
+    expect(winner.points == 28,
+           "a winner must convert concealed sets and the win through one injected ruleset");
 }
 
 BattleCreature creature(int uid, int move, int loyalty = 3, int ranger = 1)
@@ -115,7 +602,7 @@ BattleCreature combatCreature(const Clan & clan, const Creature & id, int uid,
 template<class T>
 std::vector<T> loadIndexed(const char* filename)
 {
-    JsonContentFile file(std::string(FOUR_WINDS_SOURCE_DIR) + "/themes/default/json/gamedata/" + filename);
+    JsonContentFile file(std::string(FOUR_WINDS_SOURCE_DIR) + "/themes/classic/json/gamedata/" + filename);
     expect(file.isValid(), "game data JSON must parse");
 
     const std::list<T> values = file.toArray().toStdList<T>();
@@ -167,6 +654,9 @@ void testDifficultyRules()
     AI::BehaviorProfile parsedProfile = AI::BehaviorProfile::Balanced;
     expect(AI::difficultyFromString("EASY") == AI::Difficulty::Easy,
            "AI difficulty parsing must be case insensitive");
+    expect(AI::difficultyFromString("training") == AI::Difficulty::Training &&
+           AI::difficultyFromString("UNFAIR") == AI::Difficulty::Unfair,
+           "teaching and deliberately asymmetric difficulty names must round-trip");
     expect(AI::difficultyFromString("hard", parsedDifficulty) &&
            parsedDifficulty == AI::Difficulty::Hard &&
            !AI::difficultyFromString("impossible", parsedDifficulty),
@@ -184,19 +674,27 @@ void testDifficultyRules()
     AI::clearBehaviorProfileOverride();
     expect(!AI::behaviorProfileOverrideEnabled(),
            "behavior-profile override must return to native avatar doctrine");
-    expect(AI::nextDifficulty(AI::Difficulty::Easy) == AI::Difficulty::Normal &&
+    expect(AI::nextDifficulty(AI::Difficulty::Training) == AI::Difficulty::Easy &&
+           AI::nextDifficulty(AI::Difficulty::Easy) == AI::Difficulty::Normal &&
            AI::nextDifficulty(AI::Difficulty::Normal) == AI::Difficulty::Hard &&
-           AI::nextDifficulty(AI::Difficulty::Hard) == AI::Difficulty::Easy,
-           "AI difficulty selector must cycle Easy, Normal, Hard");
+           AI::nextDifficulty(AI::Difficulty::Hard) == AI::Difficulty::Unfair &&
+           AI::nextDifficulty(AI::Difficulty::Unfair) == AI::Difficulty::Training &&
+           AI::previousDifficulty(AI::Difficulty::Training) == AI::Difficulty::Unfair &&
+           AI::previousDifficulty(AI::Difficulty::Normal) == AI::Difficulty::Easy,
+           "AI difficulty selector must cycle both ways through all five levels");
 
-    expect(AI::difficultyRules(AI::Difficulty::Easy).battleForecastSamples == 8 &&
+    expect(AI::difficultyRules(AI::Difficulty::Training).battleForecastSamples == 4 &&
+           AI::difficultyRules(AI::Difficulty::Easy).battleForecastSamples == 8 &&
            AI::difficultyRules(AI::Difficulty::Normal).battleForecastSamples == 16 &&
-           AI::difficultyRules(AI::Difficulty::Hard).battleForecastSamples == 48,
+           AI::difficultyRules(AI::Difficulty::Hard).battleForecastSamples == 48 &&
+           AI::difficultyRules(AI::Difficulty::Unfair).battleForecastSamples == 128,
            "higher AI difficulty must spend more work on battle forecasts");
-    expect(AI::difficultyRules(AI::Difficulty::Easy).showPlayerBattleForecast &&
+    expect(AI::difficultyRules(AI::Difficulty::Training).showPlayerBattleForecast &&
+           AI::difficultyRules(AI::Difficulty::Easy).showPlayerBattleForecast &&
            AI::difficultyRules(AI::Difficulty::Normal).showPlayerBattleForecast &&
-           !AI::difficultyRules(AI::Difficulty::Hard).showPlayerBattleForecast,
-           "Hard must hide the player's map battle forecast without reducing the AI budget");
+           !AI::difficultyRules(AI::Difficulty::Hard).showPlayerBattleForecast &&
+           !AI::difficultyRules(AI::Difficulty::Unfair).showPlayerBattleForecast,
+           "Hard and Unfair must hide map outcome percentages without reducing AI budgets");
     expect(AI::spellPlanningHorizon(AI::BehaviorProfile::Control, AI::Difficulty::Easy) == 1 &&
            AI::spellPlanningHorizon(AI::BehaviorProfile::Control, AI::Difficulty::Normal) == 3 &&
            AI::spellPlanningHorizon(AI::BehaviorProfile::Control, AI::Difficulty::Hard) == 4,
@@ -214,9 +712,53 @@ void testDifficultyRules()
            AI::difficultyRules(AI::Difficulty::Normal).strategicBranchLimit == 6 &&
            AI::difficultyRules(AI::Difficulty::Hard).strategicBranchLimit == 10,
            "higher AI difficulty must retain a wider strategic action beam");
+    expect(AI::difficultyRules(AI::Difficulty::Easy).offensiveSpellPenalty > 0 &&
+           AI::difficultyRules(AI::Difficulty::Normal).offensiveSpellPenalty == 0 &&
+           AI::difficultyRules(AI::Difficulty::Hard).offensiveSpellPenalty == 0,
+           "Easy alone must explicitly restrain non-essential offensive spell pressure");
+    expect(AI::difficultyRules(AI::Difficulty::Easy).runeValuePercent < 100 &&
+           AI::difficultyRules(AI::Difficulty::Normal).runeValuePercent == 100 &&
+           100 < AI::difficultyRules(AI::Difficulty::Hard).runeValuePercent,
+           "difficulty must scale future-rune conservation around an unchanged Normal baseline");
+    expect(AI::manaReserve(AI::BehaviorProfile::Balanced, AI::Difficulty::Easy) <
+               AI::manaReserve(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) &&
+           AI::manaReserve(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) <
+               AI::manaReserve(AI::BehaviorProfile::Balanced, AI::Difficulty::Hard),
+           "Hard must preserve more spell points than Normal and Easy on ordinary casts");
+    expect(AI::minimumBattleWinChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Easy) <
+               AI::minimumBattleWinChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) &&
+           AI::minimumBattleWinChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) <
+               AI::minimumBattleWinChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Hard),
+           "Hard must demand safer public battle forecasts while Easy accepts more doubtful attacks");
+    expect(AI::minimumThreatCaptureChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Hard) <
+               AI::minimumThreatCaptureChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) &&
+           AI::minimumThreatCaptureChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) <
+               AI::minimumThreatCaptureChance(AI::BehaviorProfile::Balanced, AI::Difficulty::Easy),
+           "Hard must react to weaker visible threats while Easy waits for clearer danger");
+    expect(AI::defensiveReservePercent(AI::BehaviorProfile::Balanced, AI::Difficulty::Easy) <
+               AI::defensiveReservePercent(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) &&
+           AI::defensiveReservePercent(AI::BehaviorProfile::Balanced, AI::Difficulty::Normal) <
+               AI::defensiveReservePercent(AI::BehaviorProfile::Balanced, AI::Difficulty::Hard),
+           "difficulty must make whole-turn defensive coordination deliberately distinct");
+    expect(AI::preferNearBestChoice(AI::Difficulty::Easy, 100, 90, 6) &&
+           !AI::preferNearBestChoice(AI::Difficulty::Easy, 100, 70, 6) &&
+           !AI::preferNearBestChoice(AI::Difficulty::Easy, 100, 90, 7) &&
+           !AI::preferNearBestChoice(AI::Difficulty::Normal, 100, 99, 6),
+           "Easy mistakes must be deterministic, occasional and bounded to near-best choices");
 
-    GameData::setAIDifficulty(AI::Difficulty::Hard);
-    expect(GameData::toJsonObject(JsonObject()).getString("ai:difficulty") == "hard",
+    const AI::DifficultyRules & training = AI::difficultyRules(AI::Difficulty::Training);
+    const AI::DifficultyRules & unfair = AI::difficultyRules(AI::Difficulty::Unfair);
+    expect(training.supportSpellsOnly && !training.allowLandClaims &&
+           !training.allowEnemyLandMoves && training.initialAiSpellPointBonus == 0,
+           "Training must heal and defend without hostile spells, claims or invasions");
+    expect(!unfair.supportSpellsOnly && unfair.allowLandClaims && unfair.allowEnemyLandMoves &&
+           unfair.initialAiSpellPointBonus == 500 &&
+           unfair.mahjongPartAiSpellPointBonus == 125 &&
+           unfair.mahjongPartAiLandClaimBonus == 100,
+           "Unfair must expose its explicit starting and recurring economy handicap");
+
+    GameData::setAIDifficulty(AI::Difficulty::Unfair);
+    expect(GameData::toJsonObject(JsonObject()).getString("ai:difficulty") == "unfair",
            "save data must persist the selected AI difficulty");
     GameData::setAIDifficulty(AI::Difficulty::Normal);
 }
@@ -295,6 +837,16 @@ void testStrategicRunePlanning()
     expect(!baseline.runeGoals.empty() &&
            baseline.runeValue(Stone(Stone::Skull1)) > baseline.runeValue(Stone(Stone::Number2)),
            "strategic Rune AI must value a held summon rune above an unrelated rune");
+
+    AI::StrategicIntent easyConservation = baseline;
+    easyConservation.difficulty = AI::Difficulty::Easy;
+    AI::StrategicIntent hardConservation = baseline;
+    hardConservation.difficulty = AI::Difficulty::Hard;
+    expect(easyConservation.runeValue(Stone(Stone::Skull1)) <
+               baseline.runeValue(Stone(Stone::Skull1)) &&
+           baseline.runeValue(Stone(Stone::Skull1)) <
+               hardConservation.runeValue(Stone(Stone::Skull1)),
+           "Hard must conserve an observer-visible goal rune more strongly than Normal and Easy");
 
     const int drop = AI::mahjongSelect(orachi.stones, VecStones(), WinRules(), baseline);
     expect(0 <= drop && drop < static_cast<int>(orachi.stones.size()) &&
@@ -605,10 +1157,32 @@ void testActionReplay()
     AI::setBehaviorProfileOverride(AI::BehaviorProfile::Aggressive);
     const JsonObject journal = Replay::actionJournal(randomFinalState);
     AI::clearBehaviorProfileOverride();
+    Replay::JournalInfo journalInfo;
+    std::string journalInspectionError;
+    const std::string stateBeforeJournalInspection =
+        GameData::authoritativeState().toString();
+    expect(Replay::inspectJournal(journal, journalInfo, &journalInspectionError) &&
+           journalInspectionError.empty() && journalInfo.schema == 3 &&
+           journalInfo.actionCount == 1 &&
+           journalInfo.startedAtEpoch > 0 && journalInfo.savedAtEpoch > 0 &&
+           journalInfo.gamePart == Menu::MahjongPart &&
+           journalInfo.rulesetId == ClassicRuneGameRulesetId &&
+           journalInfo.rulesetVersion == ClassicRuneGameRulesetVersion &&
+           journalInfo.contentPackageId == ClassicContentPackageId &&
+           journalInfo.contentPackageVersion == ClassicContentPackageVersion &&
+           journalInfo.contiguousToCheckpoint &&
+           GameData::authoritativeState().toString() == stateBeforeJournalInspection,
+           "replay inspection must expose library metadata without mutating game state");
+    const JsonObject* journalRuleset = journal.getObject(RuneGameRulesetIdentityKey);
+    const JsonObject* journalPackage = journal.getObject(ContentPackageIdentityKey);
     expect(journal.getInteger("schema") == 3 &&
            journal.getString("aiBehaviorProfile") == "aggressive" &&
            journal.getInteger("actionCount") == 1 &&
-           journal.getBoolean("contiguousToCheckpoint"),
+           journal.getBoolean("contiguousToCheckpoint") &&
+           journalRuleset && journalRuleset->getString("id") == ClassicRuneGameRulesetId &&
+           journalRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
+           journalPackage && journalPackage->getString("id") == ClassicContentPackageId &&
+           journalPackage->getInteger("version") == ClassicContentPackageVersion,
            "forced AI doctrine must enter a contiguous versioned replay journal");
 
     replayError.clear();
@@ -617,12 +1191,95 @@ void testActionReplay()
            !AI::behaviorProfileOverrideEnabled(),
            "replay journal must restore RNG state, AI doctrine and its caller scope");
 
+    const std::string stateBeforePlayback = GameData::authoritativeState().toString();
+    {
+        Replay::Playback playback;
+        replayError.clear();
+        expect(playback.open(journal, &replayError) && replayError.empty() &&
+               playback.position() == 0 && playback.size() == 1 &&
+               playback.phaseCount() == 1 &&
+               GameData::authoritativeState().toString() == randomInitialState.toString(),
+               "replay playback must open at its validated initial state");
+        expect(playback.stepForward(&replayError) && playback.atEnd() &&
+               Replay::authoritativeStateHash() == randomExpectedHash,
+               "replay playback must advance one deterministic action");
+        expect(playback.stepBackward(&replayError) && playback.atBeginning() &&
+               GameData::authoritativeState().toString() == randomInitialState.toString(),
+               "replay playback must rebuild the previous deterministic position");
+        expect(playback.seek(playback.size(), &replayError) &&
+               playback.nextPhase(&replayError) && playback.atEnd() &&
+               playback.previousPhase(&replayError) && playback.atBeginning(),
+               "replay playback phase navigation must clamp to valid boundaries");
+    }
+    expect(GameData::authoritativeState().toString() == stateBeforePlayback &&
+           !AI::behaviorProfileOverrideEnabled(),
+           "closing replay playback must restore the caller's game and AI scope");
+
+    JsonObject divergentJournal = journal;
+    JsonArray divergentSteps;
+    if(const JsonArray* recordedSteps = journal.getArray("steps"))
+    {
+        for(std::size_t index = 0; index < recordedSteps->size(); ++index)
+        {
+            JsonObject step = *recordedSteps->getObject(index);
+            if(index == 0) step.addString("expectedStateHash", "0000000000000000");
+            divergentSteps.addObject(step);
+        }
+    }
+    divergentJournal.addArray("steps", divergentSteps);
+    Replay::Playback divergentPlayback;
+    replayError.clear();
+    expect(!divergentPlayback.open(divergentJournal, &replayError) &&
+           divergentPlayback.failure().isValid() &&
+           divergentPlayback.failure().kind == Replay::FailureKind::StateHashMismatch &&
+           divergentPlayback.failure().step == 0 &&
+           divergentPlayback.failure().expected == "0000000000000000" &&
+           !divergentPlayback.failure().actual.empty(),
+           "replay playback must expose the first deterministic mismatch as structured data");
+
+    JsonObject legacyJournal = jsonObjectWithoutKey(journal, RuneGameRulesetIdentityKey);
+    legacyJournal = jsonObjectWithoutKey(legacyJournal, ContentPackageIdentityKey);
+    const JsonObject* journalInitial = journal.getObject("initialState");
+    expect(journalInitial != nullptr,
+           "versioned replay journal must retain its initial state");
+    if(journalInitial)
+    {
+        JsonObject legacyInitial =
+            jsonObjectWithoutKey(*journalInitial, RuneGameRulesetIdentityKey);
+        legacyInitial = jsonObjectWithoutKey(legacyInitial, ContentPackageIdentityKey);
+        legacyJournal.addObject("initialState", legacyInitial);
+        replayError.clear();
+        expect(Replay::run(legacyJournal, &replayError) &&
+               Replay::authoritativeStateHash() == randomExpectedHash,
+               "legacy Classic replay without ruleset metadata must remain playable");
+    }
+
     JsonObject invalidProfileJournal = journal;
     invalidProfileJournal.addString("aiBehaviorProfile", "impossible");
     replayError.clear();
     expect(!Replay::run(invalidProfileJournal, &replayError) &&
            replayError.find("invalid AI behavior profile") != std::string::npos,
            "replay must reject an unknown AI doctrine instead of silently using Balanced");
+
+    JsonObject unavailableRulesetJournal = journal;
+    JsonObject unavailableRuleset;
+    unavailableRuleset.addString("id", "removed-variant");
+    unavailableRuleset.addInteger("version", 3);
+    unavailableRulesetJournal.addObject(RuneGameRulesetIdentityKey, unavailableRuleset);
+    replayError.clear();
+    expect(!Replay::run(unavailableRulesetJournal, &replayError) &&
+           replayError.find("removed-variant@3") != std::string::npos,
+           "replay must reject an unavailable ruleset before applying any action");
+
+    JsonObject unavailablePackageJournal = journal;
+    JsonObject unavailablePackage;
+    unavailablePackage.addString("id", "removed-package");
+    unavailablePackage.addInteger("version", 4);
+    unavailablePackageJournal.addObject(ContentPackageIdentityKey, unavailablePackage);
+    replayError.clear();
+    expect(!Replay::run(unavailablePackageJournal, &replayError) &&
+           replayError.find("removed-package@4") != std::string::npos,
+           "replay must reject an unavailable content package before applying any action");
 
     JsonObject tamperedRandomState = randomInitialState;
     JsonObject tamperedRng = *randomInitialState.getObject("gameplayRng");
@@ -657,7 +1314,8 @@ void testGameplayRngState()
         GameplayRng::uniform(0, 1000000),
         GameplayRng::uniform(0, 1000000)
     };
-    expect(actual == expected && GameplayRng::draws() == 4,
+    expect(actual == expected && GameplayRng::draws() == 4 &&
+           GameplayRng::initialSeed() == UINT64_C(0xfedcba987654321),
            "restored gameplay RNG must reproduce values and draw count");
 
     std::vector<int> firstShuffle = { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -670,10 +1328,122 @@ void testGameplayRngState()
            "gameplay RNG shuffle must be deterministic for a fixed seed");
 }
 
-int runFixedSeedReplaySelfTest()
+#ifdef BUILD_DEBUG
+void testDeveloperFastForward()
+{
+    GameplayRng::seed(UINT64_C(0x15d15d));
+    const Avatar human(Avatar::Nucrus);
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer fast-forward fixture must initialize Mahjong");
+
+    const DeveloperTools::FastForwardResult result =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinishPhase, human);
+    expect(result.success && result.menu == Menu::MahjongSummaryPart && 0 < result.ticks,
+           "developer fast-forward must legally reach the next Mahjong summary");
+    expect(GameData::developerAssisted() && !GameData::developerAutoplay(human),
+           "developer fast-forward must mark the session and return human control");
+
+    const JsonObject assistedState = GameData::authoritativeState();
+    expect(assistedState.getBoolean("developerAssisted") &&
+           GameData::restoreState(assistedState) && GameData::developerAssisted(),
+           "developer-assisted state must remain marked across save restoration");
+    const JsonObject replay = Replay::actionJournal(GameData::authoritativeState());
+    expect(replay.getBoolean("developerAssisted"),
+           "developer-assisted replay metadata must be explicit");
+
+    GameplayRng::seed(UINT64_C(0x15d15e));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer round fast-forward fixture must initialize Mahjong");
+    const DeveloperTools::FastForwardResult roundResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinishRound, human);
+    expect(roundResult.success && roundResult.menu == Menu::MahjongPart &&
+           0 < roundResult.ticks,
+           "developer fast-forward must recognize the next Rune Game as a completed round");
+
+    GameplayRng::seed(UINT64_C(0x15d15f));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer Adventure fast-forward fixture must initialize Mahjong");
+    const DeveloperTools::FastForwardResult adventureResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::NextAdventure, human);
+    expect(adventureResult.success && adventureResult.menu == Menu::AdventurePart &&
+           0 < adventureResult.ticks,
+           "developer fast-forward must stop at the beginning of the next Adventure phase");
+
+    const DeveloperTools::FastForwardResult battleResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::BattleFixture, human);
+    expect(battleResult.success && battleResult.menu == Menu::AdventurePart &&
+           GameData::authoritativeState().getObject("battleSession") != nullptr &&
+           GameData::currentPerson().avatar == human &&
+           !GameData::developerAutoplay(human),
+           "developer battle fixture must stop on the human seat's normal battle choice");
+
+    ActionList cleanup;
+    expect(GameData::client2Adventure(human,
+                                      ClientBattleChoice(-1, -1, true), cleanup),
+           "developer battle fixture must remain resolvable by the normal battle action");
+
+    GameplayRng::seed(UINT64_C(0x15d160));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer battle fixture from Mahjong must initialize the Rune Game");
+    const DeveloperTools::FastForwardResult directBattleResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::BattleFixture, human);
+    expect(directBattleResult.success && directBattleResult.menu == Menu::AdventurePart &&
+           GameData::authoritativeState().getObject("battleSession") != nullptr &&
+           GameData::currentPerson().avatar == human,
+           "developer battle fixture must open manual combat directly from the Rune Game");
+
+    GameplayRng::seed(UINT64_C(0x15d161));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer final Rune fixture must initialize a base game");
+    const DeveloperTools::FastForwardResult finalRuneResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinalRuneFixture, human);
+    const JsonObject finalRuneState = GameData::authoritativeState();
+    std::string finalRuneValidationError;
+    expect(finalRuneResult.success && finalRuneResult.menu == Menu::MahjongPart &&
+           finalRuneState.getString("wind:round") == "north" &&
+           finalRuneState.getString("wind:part") == "north" &&
+           finalRuneState.getBoolean("developerAssisted") &&
+           Recovery::validateSaveState(finalRuneState, &finalRuneValidationError),
+           "developer final Rune fixture must deal a valid last hand");
+
+    GameplayRng::seed(UINT64_C(0x15d162));
+    GameData::initPersons(Person(human, Clan::Red, Wind::East));
+    expect(GameData::initMahjong(),
+           "developer final Adventure fixture must initialize a base game");
+    const DeveloperTools::FastForwardResult finalAdventureResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinalAdventureFixture, human);
+    const JsonObject finalAdventureState = GameData::authoritativeState();
+    std::string finalAdventureValidationError;
+    expect(finalAdventureResult.success && finalAdventureResult.menu == Menu::AdventurePart &&
+           finalAdventureState.getString("wind:round") == "north" &&
+           finalAdventureState.getString("wind:part") == "north" &&
+           Recovery::validateSaveState(finalAdventureState, &finalAdventureValidationError),
+           "developer final Adventure fixture must open a valid last map phase");
+
+    const DeveloperTools::FastForwardResult finalScoreResult =
+        DeveloperTools::fastForward(DeveloperTools::Command::FinishGame, human);
+    expect(finalScoreResult.success && finalScoreResult.menu == Menu::GameSummaryPart &&
+           0 < finalScoreResult.ticks,
+           "developer final Adventure fixture must legally reach final scoring");
+    const std::vector<ReplayFiles::Info> archivedReplays = ReplayFiles::inspect();
+    expect(std::any_of(archivedReplays.begin(), archivedReplays.end(),
+        [](const ReplayFiles::Info & info)
+        {
+            return info.valid && info.journal.developerAssisted &&
+                   0 < info.journal.actionCount && info.journal.contiguousToCheckpoint;
+        }), "developer Finish Game must archive a playable replay");
+}
+#endif
+
+int runFixedSeedReplaySelfTest(const std::string & replayDirectory = std::string())
 {
     constexpr uint64_t seed = UINT64_C(0x123456789abcdef);
-    constexpr const char* expectedHash = "8020dff30d3f1571";
+    constexpr const char* expectedHash = "5f1012c76a1d1638";
 
     GameplayRng::seed(seed);
     GameData::initPersons(Person(Avatar::Nucrus, Clan::Red, Wind::East));
@@ -702,7 +1472,9 @@ int runFixedSeedReplaySelfTest()
 
     const JsonObject finalState = GameData::authoritativeState();
     const std::string actualHash = Replay::authoritativeStateHash();
-    const JsonObject journal = Replay::actionJournal(finalState);
+    JsonObject journal = Replay::actionJournal(finalState);
+    if(!replayDirectory.empty())
+        journal.addBoolean("developerAssisted", true);
     std::string replayError;
     if(!Replay::run(journal, &replayError) || Replay::authoritativeStateHash() != actualHash)
     {
@@ -716,6 +1488,18 @@ int runFixedSeedReplaySelfTest()
         std::cerr << "FAIL: expected fixed-seed replay hash " << expectedHash
                   << ", got " << actualHash << '\n';
         return 1;
+    }
+
+    if(!replayDirectory.empty())
+    {
+        std::string replayFile;
+        replayError.clear();
+        if(!ReplayFiles::writeAutomatic(replayDirectory, journal, &replayFile, &replayError))
+        {
+            std::cerr << "FAIL: unable to write test replay: " << replayError << '\n';
+            return 1;
+        }
+        std::cout << "test replay: " << replayFile << '\n';
     }
 
     return 0;
@@ -740,6 +1524,8 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("ru_RU");
     Settings::setGameSpeed("fast");
+    Settings::setContentTheme("alternate");
+    Settings::setAIDifficulty(AI::Difficulty::Unfair);
     Settings::setMusicVolume(35);
     Settings::setEffectsVolume(60);
     Settings::setVoiceVolume(85);
@@ -755,6 +1541,13 @@ int runSettingsPersistenceSelfTest()
 
     Settings::setLanguage("en");
     Settings::setGameSpeed("normal");
+    Settings::setContentTheme("default");
+    if(Settings::contentTheme() != "classic")
+    {
+        std::cerr << "FAIL: legacy default theme alias must migrate to classic\n";
+        return 1;
+    }
+    Settings::setAIDifficulty(AI::Difficulty::Easy);
     Settings::setMusicVolume(100);
     Settings::setEffectsVolume(100);
     Settings::setVoiceVolume(100);
@@ -762,6 +1555,8 @@ int runSettingsPersistenceSelfTest()
     Settings::setFullscreen(false);
     Settings::setWindowScale(100);
     if(!Settings::read() || Settings::language() != "ru" || Settings::gameSpeed() != "fast" ||
+       Settings::contentTheme() != "alternate" ||
+       Settings::aiDifficulty() != AI::Difficulty::Unfair ||
        !Settings::music() || Settings::musicVolume() != 35 ||
        !Settings::sound() || Settings::effectsVolume() != 60 || Settings::voiceVolume() != 85 ||
        !Settings::soundGuardianRules() || !Settings::fullscreen() ||
@@ -774,6 +1569,8 @@ int runSettingsPersistenceSelfTest()
     const JsonObject saved = JsonContentFile(settingsFile).toObject();
     if(!saved.isValid() || saved.getString("language") != "ru" ||
        saved.getString("game:speed") != "fast" ||
+       saved.getString("content:theme") != "alternate" ||
+       saved.getString("ai:difficulty") != "unfair" ||
        !saved.getBoolean("music", false) || saved.getInteger("music:volume", -1) != 35 ||
        !saved.getBoolean("sound", false) || saved.getInteger("sound:volume", -1) != 60 ||
        saved.getInteger("voice:volume", -1) != 85 ||
@@ -787,12 +1584,15 @@ int runSettingsPersistenceSelfTest()
 
     JsonObject legacy;
     legacy.addString("language", "en");
+    legacy.addString("content:theme", "default");
     legacy.addBoolean("music", false);
     legacy.addBoolean("sound", false);
     if(!Systems::saveString2File(legacy.toString(), settingsFile) || !Settings::read() ||
        Settings::musicVolume() != 0 || Settings::effectsVolume() != 0 ||
        Settings::voiceVolume() != 0 || Settings::music() || Settings::sound() ||
-       Settings::windowScale() != 100)
+       Settings::windowScale() != 100 ||
+       Settings::contentTheme() != "classic" ||
+       Settings::aiDifficulty() != AI::Difficulty::Normal)
     {
         std::cerr << "FAIL: legacy boolean audio settings are not load compatible\n";
         return 1;
@@ -1032,6 +1832,29 @@ void testLuckAbility()
     expect(openingDeal.front().stones.size() == GAME_SET_COUNT && !openingWall.hasLuckDraw(),
            "Luck must not trigger during the initial thirteen-rune deal");
 
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+    expect(classicRuleset.wallStoneIds().size() == 34 &&
+           classicRuleset.wallCopies() == 4 &&
+           classicRuleset.initialHandSize() == GAME_SET_COUNT,
+           "Classic ruleset must own the established 136-rune wall and thirteen-rune hand");
+
+    const AlternateRuneGameRuleset alternateRuleset;
+    CroupierSet alternateWall;
+    alternateWall.reset(alternateRuleset);
+    expect(alternateWall.bank.size() == 8 &&
+           std::count(alternateWall.bank.begin(), alternateWall.bank.end(), Stone(Stone::Skull1)) == 4 &&
+           std::count(alternateWall.bank.begin(), alternateWall.bank.end(), Stone(Stone::Sword1)) == 4,
+           "an injected ruleset must control wall composition and copy count");
+
+    LocalPlayers alternateDeal = openingDeal;
+    for(auto & player : alternateDeal) player.stones.clear();
+    alternateDeal.distributeStones(alternateWall, alternateRuleset);
+    expect(std::all_of(alternateDeal.begin(), alternateDeal.end(), [](const LocalPlayer & player)
+           {
+               return player.stones.size() == 2;
+           }) && alternateWall.bank.empty(),
+           "an injected ruleset must control the initial hand size without changing Classic");
+
     GameStones hand;
     hand.add(GameStone(Stone(Stone::Sword2), false));
     hand.add(GameStone(Stone(Stone::Sword3), false));
@@ -1238,6 +2061,21 @@ void testAvatarPassives()
 
 void testMahjongCallPlanning()
 {
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+    const AlternateRuneGameRuleset alternateRuleset;
+    expect(classicRuleset.callChoicePriority(RuneGameCall::Kong) >
+               classicRuleset.callChoicePriority(RuneGameCall::Pung) &&
+           classicRuleset.callChoicePriority(RuneGameCall::Pung) >
+               classicRuleset.callChoicePriority(RuneGameCall::Chao),
+           "Classic call choice priority must remain Kong, Pung, Chao");
+    expect(classicRuleset.discardClaimPriority(RuneGameCall::Game) >
+               classicRuleset.discardClaimPriority(RuneGameCall::Pung) &&
+           classicRuleset.discardClaimPriority(RuneGameCall::Pung) ==
+               classicRuleset.discardClaimPriority(RuneGameCall::Kong) &&
+           classicRuleset.discardClaimPriority(RuneGameCall::Pung) >
+               classicRuleset.discardClaimPriority(RuneGameCall::Chao),
+           "Classic discard claims must keep Game first and Pung/Kong above Chao");
+
     LocalPlayer pung;
     pung.avatar = Avatar::Orachi;
     pung.clan = Clan::Red;
@@ -1249,6 +2087,14 @@ void testMahjongCallPlanning()
         pung, Wind(Wind::East), Stone(Stone::Dragon1), AI::StrategicIntent());
     expect(ordinaryPung.type == AI::MahjongCallType::Pung && 0 < ordinaryPung.score,
            "Mahjong AI must accept a useful Pung when it does not sacrifice a strategic rune goal");
+
+    LocalPlayer singleMatch = pung;
+    singleMatch.stones.pop_back();
+    expect(!singleMatch.isMahjongPung(Wind(Wind::East), Stone(Stone::Dragon1),
+                                      classicRuleset) &&
+           singleMatch.isMahjongPung(Wind(Wind::East), Stone(Stone::Dragon1),
+                                     alternateRuleset),
+           "an injected ruleset must control Pung legality without changing Classic");
 
     AI::StrategicIntent protectedIntent;
     AI::RuneGoal protectedDragon;
@@ -1285,6 +2131,32 @@ void testMahjongCallPlanning()
         chao, Wind(Wind::East), Stone(Stone::Sword3), chaoIntent);
     expect(selectedChao.type == AI::MahjongCallType::Chao && selectedChao.variant == 2,
            "Mahjong AI must choose the Chao variant that preserves its strategic runes");
+    const AI::MahjongCallPlan alternateChao = AI::chooseMahjongCall(
+        chao, Wind(Wind::East), Stone(Stone::Sword3), chaoIntent, alternateRuleset);
+    expect(alternateChao.type == AI::MahjongCallType::Chao &&
+           alternateChao.variant == selectedChao.variant &&
+           alternateChao.score == selectedChao.score - 8,
+           "Mahjong AI call scoring must consume the injected spell-point economy");
+
+    LocalPlayer compactWin;
+    compactWin.avatar = Avatar::Orachi;
+    compactWin.clan = Clan::Red;
+    compactWin.wind = Wind::South;
+    compactWin.stones.add(GameStone(Stone(Stone::Sword1)));
+    compactWin.stones.add(GameStone(Stone(Stone::Sword2)));
+    compactWin.stones.add(GameStone(Stone(Stone::Sword3)));
+    compactWin.stones.add(GameStone(Stone(Stone::Dragon1)));
+    compactWin.newStone = GameStone(Stone(Stone::Dragon1), false);
+    expect(!compactWin.isWinMahjong(Wind(Wind::South), Wind(Wind::East), Stone(),
+                                    nullptr, classicRuleset) &&
+           compactWin.isWinMahjong(Wind(Wind::South), Wind(Wind::East), Stone(),
+                                   nullptr, alternateRuleset),
+           "an injected ruleset must control winning structure validation");
+
+    compactWin.newStone.reset();
+    expect(!compactWin.isWinMahjong(Wind(Wind::East), Wind(Wind::East),
+                                    Stone(Stone::Dragon1), nullptr, alternateRuleset),
+           "an injected ruleset must control whether a discard may complete a win");
 
     LocalPlayer duplicateChao;
     duplicateChao.stones.add(GameStone(Stone::Sword2));
@@ -1594,6 +2466,17 @@ void testSpellCastingAI()
     expect(healing.spell == Spell(Spell::Healing) && healing.unit == 270 && healing.land == Land(Land::Corzen),
            "spell AI must heal a wounded friendly creature");
 
+    const Spells noFuture;
+    const AI::SpellCastPlan trainingSupport = AI::chooseSpellCast(
+        caster, spellSet({ Spell::Healing, Spell::LightningBolt }),
+        AI::BehaviorProfile::Aggressive, AI::Difficulty::Training, noFuture);
+    expect(trainingSupport.spell == Spell(Spell::Healing) && trainingSupport.unit == 270,
+           "Training AI must choose healing even when a lethal hostile spell is available");
+    expect(!AI::chooseSpellCast(caster, spellSet({ Spell::LightningBolt }),
+                                AI::BehaviorProfile::Aggressive,
+                                AI::Difficulty::Training, noFuture).isValid(),
+           "Training AI must reject every offensive-only spell plan");
+
     const AI::SpellCastPlan lightning = chooseOnly(caster, Spell::LightningBolt);
     expect(lightning.spell == Spell(Spell::LightningBolt) && lightning.unit == 280 &&
            lightning.land == Land(Land::Zubrus),
@@ -1638,13 +2521,17 @@ void testSpellCastingAI()
            "spell AI plan must convert to the correct player-target command");
 
     const Spells damageOrControl = spellSet({ Spell::LightningBolt, Spell::Silence });
-    const Spells noFuture;
     const AI::SpellCastPlan aggressiveChoice = AI::chooseSpellCast(
         caster, damageOrControl, AI::BehaviorProfile::Aggressive, noFuture);
     const AI::SpellCastPlan controlChoice = AI::chooseSpellCast(
         caster, damageOrControl, AI::BehaviorProfile::Control, noFuture);
+    const AI::SpellCastPlan easyLethalChoice = AI::chooseSpellCast(
+        caster, damageOrControl, AI::BehaviorProfile::Aggressive,
+        AI::Difficulty::Easy, noFuture);
     expect(aggressiveChoice.spell == Spell(Spell::LightningBolt),
            "aggressive spell AI must prefer lethal damage over player control");
+    expect(easyLethalChoice.spell == Spell(Spell::LightningBolt),
+           "Easy must still take an available lethal spell instead of suppressing all aggression");
     expect(controlChoice.spell == Spell(Spell::Silence),
            "control spell AI must prefer Silence over the same damage option");
     expect(AI::shouldCastBeforeSummon(aggressiveChoice) && AI::shouldCastBeforeSummon(controlChoice),
@@ -1714,6 +2601,15 @@ void testSpellCastingAI()
            "aggressive spell AI must prefer pressure over rune economy");
     expect(economicChoice.spell == Spell(Spell::DrawNumber),
            "economic spell AI must prefer rune economy over non-lethal damage");
+    const AI::SpellCastPlan easyPressureChoice = AI::chooseSpellCast(
+        caster, damageOrRune, AI::BehaviorProfile::Aggressive,
+        AI::Difficulty::Easy, noFuture);
+    const AI::SpellCastPlan normalPressureChoice = AI::chooseSpellCast(
+        caster, damageOrRune, AI::BehaviorProfile::Aggressive,
+        AI::Difficulty::Normal, noFuture);
+    expect(easyPressureChoice.spell == Spell(Spell::DrawNumber) &&
+           normalPressureChoice.spell == Spell(Spell::LightningBolt),
+           "Easy must conserve a routine non-lethal Lightning Bolt while Normal keeps reference pressure");
     expect(!AI::shouldCastBeforeSummon(economicChoice),
            "an ordinary economic spell must not delay a legal summon");
     LocalData ordinaryEconomicState = GameData::toLocalData(caster.avatar);
@@ -1801,6 +2697,9 @@ void testAdventureProfiles()
         AI::chooseAdventureClaim(player, AI::BehaviorProfile::Economic);
     const AI::AdventureClaimPlan balancedClaim =
         AI::chooseAdventureClaim(player, AI::BehaviorProfile::Balanced);
+    expect(!AI::chooseAdventureClaim(player, AI::BehaviorProfile::Aggressive,
+                                     AI::Difficulty::Training).isValid(),
+           "Training AI must never claim enemy territory");
     expect(aggressiveClaim.land == Land(Land::Corimar),
            "aggressive Adventure AI must claim the highest-pressure frontier");
     expect(economicClaim.land == Land(Land::Sunspot),
@@ -1825,6 +2724,9 @@ void testAdventureProfiles()
         AI::chooseAdventureMove(player, party, AI::BehaviorProfile::Aggressive, nearbyTargets);
     const AI::AdventureMovePlan economicMove =
         AI::chooseAdventureMove(player, party, AI::BehaviorProfile::Economic, nearbyTargets);
+    expect(!AI::chooseAdventureMove(player, party, AI::BehaviorProfile::Aggressive,
+                                    AI::Difficulty::Training, nearbyTargets).isValid(),
+           "Training AI must never plan a move into enemy territory");
     expect(aggressiveMove.target == Land(Land::Kern) &&
            aggressiveMove.destination == Land(Land::Kern) && aggressiveMove.engagesEnemy,
            "aggressive Adventure AI must accept a calculated attack on a defended land");
@@ -1940,6 +2842,15 @@ void testAdventureCoordination()
         AI::chooseAdventureTurn(player, AI::BehaviorProfile::Aggressive);
     expect(aggressivePlan.reservedParties == 0,
            "aggressive Adventure AI must keep all parties available when no serious threat exists");
+
+    const AI::AdventureTurnPlan trainingPlan = AI::chooseAdventureTurn(
+        player, AI::BehaviorProfile::Aggressive, AI::Difficulty::Training);
+    expect(std::all_of(trainingPlan.orders.begin(), trainingPlan.orders.end(),
+                       [&](const AI::AdventurePartyOrder & order)
+    {
+        return !order.isMove() ||
+               GameData::landInfo(order.move.destination).clan == player.clan;
+    }), "Training whole-turn planning must contain only holds and friendly reinforcements");
 
     std::map<int, int> arrivals;
     std::map<int, int> targetAssignments;
@@ -2115,6 +3026,215 @@ void testBattleAI()
     expect(meleeTargets.findBattleUnitConst(371)->loyalty() == 1 &&
            meleeTargets.findBattleUnitConst(372)->loyalty() == 8,
            "Battle AI melee planning must not mutate its targets");
+
+    BattleParty overkillTarget(Clan::Yellow, Land::Baliphon);
+    expect(overkillTarget.join(combatCreature(Clan::Yellow, Creature::Durlock,
+                                               373, 0, 0, 0, 1)),
+           "difficulty overkill fixture must join");
+    GameData::setAIDifficulty(AI::Difficulty::Easy);
+    const AI::BattleAttackPlan easyOverkill = AI::chooseMeleeBattlePlan(
+        meleeActor, overkillTarget, AI::BehaviorProfile::Balanced);
+    GameData::setAIDifficulty(AI::Difficulty::Normal);
+    const AI::BattleAttackPlan normalOverkill = AI::chooseMeleeBattlePlan(
+        meleeActor, overkillTarget, AI::BehaviorProfile::Balanced);
+    GameData::setAIDifficulty(AI::Difficulty::Hard);
+    const AI::BattleAttackPlan hardOverkill = AI::chooseMeleeBattlePlan(
+        meleeActor, overkillTarget, AI::BehaviorProfile::Balanced);
+    GameData::setAIDifficulty(AI::Difficulty::Unfair);
+    const AI::BattleAttackPlan unfairOverkill = AI::chooseMeleeBattlePlan(
+        meleeActor, overkillTarget, AI::BehaviorProfile::Balanced);
+    GameData::setAIDifficulty(AI::Difficulty::Normal);
+    expect(easyOverkill.isValid() && normalOverkill.isValid() && hardOverkill.isValid() &&
+           unfairOverkill.isValid() &&
+           unfairOverkill.score < hardOverkill.score &&
+           hardOverkill.score < normalOverkill.score &&
+           normalOverkill.score < easyOverkill.score,
+           "Unfair must penalize wasted battle damage more strongly than Hard, Normal and Easy");
+}
+
+void testMahjongClaimPriorityRuleset()
+{
+    const LocalPlayers savedPlayers = GameData::gamers;
+    const Wind savedCurrentWind = GameData::currentWind;
+    const Wind savedRoundWind = GameData::roundWind;
+    const CroupierSet savedCroupier = GameData::croupier;
+    const int savedStoneLastCount = GameData::stoneLastCount;
+    const Stone savedDropStone = GameData::dropStone;
+    const WinResults savedWinResult = GameData::winResult;
+    const bool savedSkipRepeatSay = GameData::skipRepeatSay;
+    const bool savedSkipNewStone = GameData::skipNewStone;
+    const bool savedSkipNewTurn = GameData::skipNewTurn;
+
+    auto player = [](Avatar::avatar_t avatar, Clan::clan_t clan, Wind::wind_t wind)
+    {
+        LocalPlayer result;
+        result.avatar = avatar;
+        result.clan = clan;
+        result.wind = wind;
+        result.setAI(true);
+        return result;
+    };
+
+    GameData::gamers.clear();
+    GameData::gamers.push_back(player(Avatar::Javed, Clan::Red, Wind::East));
+    GameData::gamers.push_back(player(Avatar::Orachi, Clan::Yellow, Wind::South));
+    GameData::gamers.push_back(player(Avatar::Niana, Clan::Aqua, Wind::West));
+    GameData::gamers.push_back(player(Avatar::Dayla, Clan::Purple, Wind::North));
+
+    LocalPlayer & chaoCaller = GameData::gamers[1];
+    chaoCaller.stones.add(GameStone(Stone(Stone::Sword1)));
+    chaoCaller.stones.add(GameStone(Stone(Stone::Sword2)));
+    chaoCaller.stones.add(GameStone(Stone(Stone::Dragon2)));
+
+    LocalPlayer & pungCaller = GameData::gamers[2];
+    pungCaller.stones.add(GameStone(Stone(Stone::Sword3)));
+    pungCaller.stones.add(GameStone(Stone(Stone::Sword3)));
+    pungCaller.stones.add(GameStone(Stone(Stone::Dragon2)));
+
+    GameData::currentWind = Wind(Wind::East);
+    GameData::roundWind = Wind(Wind::East);
+    GameData::croupier = CroupierSet();
+    GameData::stoneLastCount = 100;
+    GameData::dropStone = Stone(Stone::Sword3);
+    GameData::winResult = WinResults();
+    GameData::skipRepeatSay = false;
+    GameData::skipNewStone = false;
+    GameData::skipNewTurn = false;
+
+    ActionList classicActions;
+    expect(AI::mahjongGameKongPungChao(
+               GameData::currentWind, GameData::roundWind, GameData::dropStone,
+               GameData::winResult, classicActions, true, classicRuneGameRuleset()),
+           "Classic ruleset must resolve a competing discard claim");
+    const auto classicPung = std::find_if(classicActions.begin(), classicActions.end(),
+        [](const ActionMessage & action)
+        {
+            return action.type() == Action::MahjongPung && action.getBoolean("sayOnly") &&
+                action.getString("currentWind") == "west";
+        });
+    expect(classicPung != classicActions.end(),
+           "Classic claim priority must choose Pung over Chao");
+
+    ActionList alternateActions;
+    const AlternateRuneGameRuleset alternateRuleset;
+    expect(AI::mahjongGameKongPungChao(
+               GameData::currentWind, GameData::roundWind, GameData::dropStone,
+               GameData::winResult, alternateActions, true, alternateRuleset),
+           "an alternate ruleset must resolve the same competing discard claim");
+    const auto alternateChao = std::find_if(alternateActions.begin(), alternateActions.end(),
+        [](const ActionMessage & action)
+        {
+            return action.type() == Action::MahjongChao && action.getBoolean("sayOnly") &&
+                action.getString("currentWind") == "south";
+        });
+    expect(alternateChao != alternateActions.end(),
+           "an injected ruleset must be able to prefer Chao over Pung");
+
+    GameData::gamers = savedPlayers;
+    GameData::currentWind = savedCurrentWind;
+    GameData::roundWind = savedRoundWind;
+    GameData::croupier = savedCroupier;
+    GameData::stoneLastCount = savedStoneLastCount;
+    GameData::dropStone = savedDropStone;
+    GameData::winResult = savedWinResult;
+    GameData::skipRepeatSay = savedSkipRepeatSay;
+    GameData::skipNewStone = savedSkipNewStone;
+    GameData::skipNewTurn = savedSkipNewTurn;
+}
+
+void testAdventureHints()
+{
+    const LocalPlayers savedPlayers = GameData::gamers;
+    const Clan savedCorzenOwner = GameData::landsInfo[Land::Corzen].clan;
+    const Clan savedZubrusOwner = GameData::landsInfo[Land::Zubrus].clan;
+
+    GameData::landsInfo[Land::Corzen].clan = Clan::Red;
+    GameData::landsInfo[Land::Zubrus].clan = Clan::Yellow;
+    GameData::gamers.clear();
+
+    LocalPlayer red;
+    red.avatar = Avatar::Orachi;
+    red.clan = Clan::Red;
+    red.wind = Wind::East;
+    red.addLandClaimPoints(Clan::Yellow, 500);
+    BattleParty attackers(Clan::Red, Land::Corzen);
+    BattleCreature selected(Clan::Red, Creature::SkeletonHorde, 3600);
+    selected.setSelected(true);
+    expect(attackers.join(selected), "Adventure hint attacker fixture must join");
+    red.army.push_back(attackers);
+
+    LocalPlayer yellow;
+    yellow.avatar = Avatar::Lakkho;
+    yellow.clan = Clan::Yellow;
+    yellow.wind = Wind::South;
+    LocalPlayer aqua;
+    aqua.avatar = Avatar::Ziag;
+    aqua.clan = Clan::Aqua;
+    aqua.wind = Wind::West;
+    LocalPlayer purple;
+    purple.avatar = Avatar::Dayla;
+    purple.clan = Clan::Purple;
+    purple.wind = Wind::North;
+    GameData::gamers.push_back(red);
+    GameData::gamers.push_back(yellow);
+    GameData::gamers.push_back(aqua);
+    GameData::gamers.push_back(purple);
+
+    const LocalData baselineView = GameData::toLocalData(Avatar(Avatar::Orachi));
+    const AdventureHints::BattlePreview baseline = AdventureHints::battlePreview(
+        baselineView, Land::Corzen, Land::Zubrus, AI::Difficulty::Normal);
+    expect(baseline.available && baseline.showPercentages && 0 < baseline.samples &&
+           baseline.attackerCount == 1 && baseline.visibleDefenderCount == 0,
+           "Normal Adventure preview must explain its observer-visible battle basis");
+    expect(AdventureHints::destinationCue(baselineView, Land::Corzen, Land::Zubrus) ==
+               AdventureHints::DestinationCue::Attack,
+           "an observer-legal enemy destination must receive an attack cue");
+
+    GameData::landsInfo[Land::Zubrus].clan = Clan::Red;
+    expect(AdventureHints::destinationCue(baselineView, Land::Corzen, Land::Zubrus) ==
+               AdventureHints::DestinationCue::Move,
+           "an observer-legal friendly destination must receive a move cue");
+    GameData::landsInfo[Land::Zubrus].clan = Clan::Yellow;
+
+    BattleParty hiddenGuard(Clan::Yellow, Land::Zubrus);
+    expect(hiddenGuard.join(BattleCreature(Clan::Yellow, Creature::Shadow, 3601)),
+           "Adventure hint invisible guard fixture must join");
+    GameData::gamers[1].army.push_back(hiddenGuard);
+
+    const LocalData hiddenView = GameData::toLocalData(Avatar(Avatar::Orachi));
+    expect(!hiddenView.playerOfClan(Clan(Clan::Yellow)).army.findBattleUnitConst(3601),
+           "the Adventure hint observer view must not contain an invisible guard");
+    const AdventureHints::BattlePreview hidden = AdventureHints::battlePreview(
+        hiddenView, Land::Corzen, Land::Zubrus, AI::Difficulty::Normal);
+    expect(hidden.captureChance == baseline.captureChance &&
+           hidden.attackerSurvival == baseline.attackerSurvival &&
+           hidden.visibleDefenderCount == baseline.visibleDefenderCount,
+           "an invisible guard must not influence a passive battle preview");
+    expect(AdventureHints::canClaimObserved(hiddenView, Land::Zubrus) &&
+           !GameData::canClaimLand(GameData::gamers[0], Land::Zubrus),
+           "a passive claim cue must not reveal a hidden guard before an explicit attempt");
+
+    const AdventureHints::BattlePreview hard = AdventureHints::battlePreview(
+        hiddenView, Land::Corzen, Land::Zubrus, AI::Difficulty::Hard);
+    expect(hard.available && !hard.showPercentages && hard.samples == 0 &&
+           hard.attackerCount == 1 && hard.visibleDefenderCount == 0,
+           "Hard must expose known forces without leaking outcome percentages");
+    const AdventureHints::BattlePreview unfair = AdventureHints::battlePreview(
+        hiddenView, Land::Corzen, Land::Zubrus, AI::Difficulty::Unfair);
+    expect(unfair.available && !unfair.showPercentages && unfair.samples == 0,
+           "Unfair must hide outcome percentages under the same observer-safe contract as Hard");
+
+    GameplayRng::seed(0x156EULL);
+    const std::uint64_t stateBefore = GameplayRng::state();
+    const std::uint64_t drawsBefore = GameplayRng::draws();
+    AdventureHints::battlePreview(hiddenView, Land::Corzen, Land::Zubrus,
+                                  AI::Difficulty::Normal);
+    expect(GameplayRng::state() == stateBefore && GameplayRng::draws() == drawsBefore,
+           "opening a battle preview must not consume gameplay RNG");
+
+    GameData::gamers = savedPlayers;
+    GameData::landsInfo[Land::Corzen].clan = savedCorzenOwner;
+    GameData::landsInfo[Land::Zubrus].clan = savedZubrusOwner;
 }
 
 void testInteractiveBattleSession()
@@ -2474,7 +3594,8 @@ void testAdventureBattleSessionFlow()
 
     const AdventureBattleChoice choice =
         static_cast<const AdventureBattleChoice &>(actions.back());
-    expect(choice.phase() == "opening_leader" && choice.recommendedActor() == 410 &&
+    expect(choice.phase() == "opening_leader" && choice.choiceNumber() == 1 &&
+           choice.choiceCount() == 0 && choice.recommendedActor() == 410 &&
            choice.recommendedTarget() == -1 && choice.targets().empty(),
            "Adventure battle choice must expose a target-free opening leader phase");
     const JsonObject pendingState = GameData::authoritativeState();
@@ -2501,7 +3622,8 @@ void testAdventureBattleSessionFlow()
            "a legal opening leader must emit the next Adventure battle phase");
     const AdventureBattleChoice meleeChoice =
         static_cast<const AdventureBattleChoice &>(meleeActions.back());
-    expect(meleeChoice.phase() == "attacker_melee" &&
+    expect(meleeChoice.phase() == "attacker_melee" && meleeChoice.choiceNumber() == 1 &&
+           meleeChoice.choiceCount() == 0 &&
            meleeChoice.recommendedTarget() == 420,
            "Adventure must expose the stable recommended target for manual melee");
 
@@ -2514,7 +3636,7 @@ void testAdventureBattleSessionFlow()
            "a nonlethal manual attack must emit the next battle decision");
     const AdventureBattleChoice continuedChoice =
         static_cast<const AdventureBattleChoice &>(continued.back());
-    expect(!continuedChoice.strikes().empty(),
+    expect(continuedChoice.choiceNumber() == 2 && !continuedChoice.strikes().empty(),
            "each later battle decision must carry its authoritative event timeline");
 
     ActionList resolved;
@@ -2629,6 +3751,16 @@ int runRecoverySelfTest()
     const JsonObject* metadataRng = productionMetadata.getObject("gameplayRng");
     const JsonObject* savedRng = productionState.getObject("gameplayRng");
     const JsonObject* replay = productionMetadata.getObject("replay");
+    const JsonObject* savedRuleset = productionState.getObject(RuneGameRulesetIdentityKey);
+    const JsonObject* metadataRuleset =
+        productionMetadata.getObject(RuneGameRulesetIdentityKey);
+    const JsonObject* replayRuleset = replay ?
+        replay->getObject(RuneGameRulesetIdentityKey) : nullptr;
+    const JsonObject* savedPackage = productionState.getObject(ContentPackageIdentityKey);
+    const JsonObject* metadataPackage =
+        productionMetadata.getObject(ContentPackageIdentityKey);
+    const JsonObject* replayPackage = replay ?
+        replay->getObject(ContentPackageIdentityKey) : nullptr;
     std::string replayError;
     valid = valid && productionState.isValid() &&
         productionState.getInteger("version") == FORMAT_VERSION_CURRENT &&
@@ -2642,9 +3774,157 @@ int runRecoverySelfTest()
         productionMetadata.getString("aiDifficulty") == "hard" &&
         metadataRng && savedRng && metadataRng->getString("algorithm") == GameplayRng::Algorithm &&
         metadataRng->getString("state") == savedRng->getString("state") &&
+        savedRuleset && metadataRuleset && replayRuleset &&
+        savedRuleset->getString("id") == ClassicRuneGameRulesetId &&
+        savedRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
+        metadataRuleset->getString("id") == ClassicRuneGameRulesetId &&
+        metadataRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
+        replayRuleset->getString("id") == ClassicRuneGameRulesetId &&
+        replayRuleset->getInteger("version") == ClassicRuneGameRulesetVersion &&
+        savedPackage && metadataPackage && replayPackage &&
+        savedPackage->getString("id") == ClassicContentPackageId &&
+        savedPackage->getInteger("version") == ClassicContentPackageVersion &&
+        metadataPackage->getString("id") == ClassicContentPackageId &&
+        metadataPackage->getInteger("version") == ClassicContentPackageVersion &&
+        replayPackage->getString("id") == ClassicContentPackageId &&
+        replayPackage->getInteger("version") == ClassicContentPackageVersion &&
         replay && replay->getInteger("actionCount") == 1 &&
         replay->getBoolean("contiguousToCheckpoint") && Replay::run(*replay, &replayError) &&
         breadcrumbs && 0 < breadcrumbs->size();
+
+    const std::filesystem::path replayDirectory = directory / "replays";
+    std::string replayFile;
+    std::string replayStorageError;
+    const bool replayWritten = replay && ReplayFiles::writeAutomatic(
+        replayDirectory.string(), *replay, &replayFile, &replayStorageError);
+    const std::vector<ReplayFiles::Info> storedReplays =
+        ReplayFiles::inspect(replayDirectory.string());
+    valid = valid && replayWritten && replayStorageError.empty() &&
+        Systems::isFile(replayFile) && storedReplays.size() == 1 &&
+        storedReplays[0].valid && storedReplays[0].path == replayFile &&
+        storedReplays[0].journal.actionCount == 1 &&
+        storedReplays[0].journal.difficulty == "hard" &&
+        storedReplays[0].journal.rulesetId == ClassicRuneGameRulesetId &&
+        storedReplays[0].journal.contentPackageId == ClassicContentPackageId;
+
+    const std::filesystem::path brokenReplay = replayDirectory / "broken.fwr";
+    valid = valid && Systems::saveString2File("not-json", brokenReplay.string());
+    const std::vector<ReplayFiles::Info> inspectedReplays =
+        ReplayFiles::inspect(replayDirectory.string());
+    valid = valid && inspectedReplays.size() == 2 && inspectedReplays[0].valid &&
+        !inspectedReplays[1].valid && !inspectedReplays[1].error.empty();
+
+    const std::filesystem::path outsideReplay = directory / "outside.fwr";
+    valid = valid && Systems::saveString2File(replay ? replay->toString() : "{}",
+                                               outsideReplay.string());
+
+    const std::filesystem::path transferLibrary = directory / "transfer-library";
+    const std::filesystem::path transferOutput = directory / "transfer-output";
+    std::string importedReplay;
+    replayStorageError.clear();
+    valid = valid && ReplayFiles::importReplay(transferLibrary.string(),
+                                               outsideReplay.string(),
+                                               &importedReplay,
+                                               &replayStorageError) &&
+        replayStorageError.empty() && Systems::isFile(importedReplay) &&
+        ReplayFiles::inspect(transferLibrary.string()).size() == 1;
+
+    std::string duplicateImport;
+    replayStorageError.clear();
+    valid = valid && ReplayFiles::importReplay(transferLibrary.string(),
+                                               outsideReplay.string(),
+                                               &duplicateImport,
+                                               &replayStorageError) &&
+        replayStorageError.empty() && duplicateImport != importedReplay &&
+        Systems::isFile(duplicateImport) &&
+        ReplayFiles::inspect(transferLibrary.string()).size() == 2;
+
+    std::string exportedReplay;
+    replayStorageError.clear();
+    const std::filesystem::path exportWithoutExtension = transferOutput / "shared-session";
+    valid = valid && ReplayFiles::exportReplay(transferLibrary.string(), importedReplay,
+                                               exportWithoutExtension.string(), false,
+                                               &exportedReplay, &replayStorageError) &&
+        replayStorageError.empty() &&
+        std::filesystem::path(exportedReplay).extension() == ".fwr" &&
+        Systems::isFile(exportedReplay);
+    std::string importedContents;
+    std::string exportedContents;
+    valid = valid && Systems::readFile2String(importedReplay, importedContents) &&
+        Systems::readFile2String(exportedReplay, exportedContents) &&
+        importedContents == exportedContents;
+
+    replayStorageError.clear();
+    valid = valid && !ReplayFiles::exportReplay(transferLibrary.string(), importedReplay,
+                                                exportedReplay, false, nullptr,
+                                                &replayStorageError) &&
+        !replayStorageError.empty();
+    replayStorageError.clear();
+    valid = valid && ReplayFiles::exportReplay(transferLibrary.string(), importedReplay,
+                                               exportedReplay, true, nullptr,
+                                               &replayStorageError) &&
+        replayStorageError.empty();
+
+    const std::filesystem::path invalidImport = directory / "invalid-import.fwr";
+    valid = valid && Systems::saveString2File("not-json", invalidImport.string());
+    replayStorageError.clear();
+    valid = valid && !ReplayFiles::importReplay(transferLibrary.string(),
+                                                invalidImport.string(), nullptr,
+                                                &replayStorageError) &&
+        !replayStorageError.empty() &&
+        ReplayFiles::inspect(transferLibrary.string()).size() == 2;
+    replayStorageError.clear();
+    valid = valid && !ReplayFiles::exportReplay(transferLibrary.string(),
+                                                outsideReplay.string(),
+                                                (transferOutput / "outside-copy.fwr").string(),
+                                                false, nullptr, &replayStorageError) &&
+        !replayStorageError.empty();
+
+    replayStorageError.clear();
+    valid = valid && !ReplayFiles::deleteReplay(replayDirectory.string(),
+                                                outsideReplay.string(),
+                                                &replayStorageError) &&
+        !replayStorageError.empty() && Systems::isFile(outsideReplay.string());
+    replayStorageError.clear();
+    valid = valid && ReplayFiles::deleteReplay(replayDirectory.string(), replayFile,
+                                                &replayStorageError) &&
+        replayStorageError.empty() && !Systems::isFile(replayFile);
+
+    JsonObject legacyState = jsonObjectWithoutKey(productionState,
+                                                   RuneGameRulesetIdentityKey);
+    legacyState = jsonObjectWithoutKey(legacyState, ContentPackageIdentityKey);
+    std::string legacyError;
+    valid = valid && Recovery::validateSaveState(legacyState, &legacyError) &&
+        legacyError.empty() && GameData::restoreState(legacyState) &&
+        activeRuneGameRuleset().id() == ClassicRuneGameRulesetId &&
+        activeRuneGameRuleset().version() == ClassicRuneGameRulesetVersion;
+
+    JsonObject incompatibleState = productionState;
+    JsonObject incompatibleRuleset;
+    incompatibleRuleset.addString("id", "removed-variant");
+    incompatibleRuleset.addInteger("version", 3);
+    incompatibleState.addObject(RuneGameRulesetIdentityKey, incompatibleRuleset);
+    std::string incompatibleError;
+    const std::string stateBeforeIncompatibleRestore =
+        GameData::authoritativeState().toString();
+    valid = valid && !Recovery::validateSaveState(incompatibleState, &incompatibleError) &&
+        incompatibleError.find("removed-variant@3") != std::string::npos &&
+        !GameData::restoreState(incompatibleState) &&
+        GameData::authoritativeState().toString() == stateBeforeIncompatibleRestore;
+
+    JsonObject incompatiblePackageState = productionState;
+    JsonObject incompatiblePackage;
+    incompatiblePackage.addString("id", "removed-package");
+    incompatiblePackage.addInteger("version", 4);
+    incompatiblePackageState.addObject(ContentPackageIdentityKey, incompatiblePackage);
+    std::string incompatiblePackageError;
+    const std::string stateBeforeIncompatiblePackageRestore =
+        GameData::authoritativeState().toString();
+    valid = valid &&
+        !Recovery::validateSaveState(incompatiblePackageState, &incompatiblePackageError) &&
+        incompatiblePackageError.find("removed-package@4") != std::string::npos &&
+        !GameData::restoreState(incompatiblePackageState) &&
+        GameData::authoritativeState().toString() == stateBeforeIncompatiblePackageRestore;
 
     const std::filesystem::path manualDirectory = directory / "manual-saves";
     std::string manualFile;
@@ -2736,6 +4016,10 @@ int runRecoverySelfTest()
         inspected[0].savedAtEpoch > 0 &&
         inspected[0].gamePart == Menu::AdventurePart &&
         inspected[0].aiDifficulty == "hard" &&
+        inspected[0].runeGameRulesetId == ClassicRuneGameRulesetId &&
+        inspected[0].runeGameRulesetVersion == ClassicRuneGameRulesetVersion &&
+        inspected[0].contentPackageId == ClassicContentPackageId &&
+        inspected[0].contentPackageVersion == ClassicContentPackageVersion &&
         !inspected[1].valid && !inspected[2].valid;
 
     const std::string promoted = (directory / "game.sav").string();
@@ -2978,6 +4262,37 @@ int runCapturedLightningRepro(const char* savePath)
     return 0;
 }
 
+void testGameSummaryInputGuard()
+{
+    using namespace GameSummaryInput;
+
+    expect(!acceptsVictoryPageClick(false, 0, 0),
+           "victory page must reject a release whose press was not observed");
+    expect(!acceptsVictoryPageClick(true, 0, 1),
+           "victory page must reject a click pressed on the previous winner");
+    expect(acceptsVictoryPageClick(true, 1, 1),
+           "victory page must accept a fresh press and release on the same winner");
+
+    expect(!blocksScorePageDone(0, 1000),
+           "score-page input guard must be inactive until the summary is opened");
+    expect(blocksScorePageDone(1000, 1000),
+           "score-page input guard must block the transition event itself");
+    expect(blocksScorePageDone(1000, 1000 + ScorePageGuardMilliseconds - 1),
+           "score-page input guard must remain active through its final millisecond");
+    expect(!blocksScorePageDone(1000, 1000 + ScorePageGuardMilliseconds),
+           "score-page input guard must release normal input at the boundary");
+    expect(!blocksScorePageDone(1000, 999),
+           "score-page input guard must tolerate a non-monotonic test timestamp");
+
+    expect(doneDisposition(true, 0, 1000) == DoneDisposition::AdvanceVictory,
+           "the visible Done button must advance while a winner portrait is shown");
+    expect(doneDisposition(false, 1000, 1100) == DoneDisposition::Ignore,
+           "the Done button must ignore the event that just opened the score page");
+    expect(doneDisposition(false, 1000, 1000 + ScorePageGuardMilliseconds) ==
+               DoneDisposition::Close,
+           "the Done button must close the settled score page");
+}
+
 void testMatchScoreContract()
 {
     std::vector<MatchScore::PlayerInput> inputs(4);
@@ -3005,8 +4320,15 @@ void testMatchScoreContract()
     expect(scores[0].finalRank == 1 && scores[1].finalRank == 2 &&
            scores[2].finalRank == 2 && scores[3].finalRank == 4,
            "final ties must retain shared competition rank");
+    expect(MatchScore::winnerIndices(scores) == std::vector<std::size_t>({ 0 }),
+           "winner selection must return the sole first-place player");
     expect(scores[3].categories[MatchScore::index(MatchScore::Category::SpellPoints)].score == 0,
            "negative resource values must not reduce canonical score");
+
+    inputs[1].scores = inputs[0].scores;
+    const MatchScore::Results tiedScores = MatchScore::calculate(inputs);
+    expect(MatchScore::winnerIndices(tiedScores) == std::vector<std::size_t>({ 0, 1 }),
+           "winner selection must preserve every tied first-place player");
 }
 
 void configureSimulationBonuses()
@@ -3047,9 +4369,12 @@ void testTournamentContract()
                {
                    return match.match.difficulty == AI::Difficulty::Hard &&
                           match.match.forceBehaviorProfile &&
-                          match.match.behaviorProfile == AI::BehaviorProfile::Economic;
+                          match.match.behaviorProfile == AI::BehaviorProfile::Economic &&
+                          match.match.runeGameRulesetId == ClassicRuneGameRulesetId &&
+                          match.match.runeGameRulesetVersion ==
+                              ClassicRuneGameRulesetVersion;
                }),
-           "every matrix cell must propagate difficulty and doctrine to every match");
+           "every matrix cell must propagate difficulty, doctrine and ruleset to every match");
 
     for(std::size_t seedIndex = 0; seedIndex < config.seeds.size(); ++seedIndex)
     {
@@ -3099,6 +4424,14 @@ void testTournamentContract()
     duplicate.avatars[1] = duplicate.avatars[0];
     expect(!Tournament::buildSchedule(duplicate).valid(),
            "duplicate tournament avatars must be rejected");
+
+    Tournament::Config unavailableRuleset = config;
+    unavailableRuleset.runeGameRulesetId = "removed-variant";
+    unavailableRuleset.runeGameRulesetVersion = 3;
+    expect(!Tournament::buildSchedule(unavailableRuleset).valid() &&
+           Tournament::buildSchedule(unavailableRuleset).error.find(
+               "removed-variant@3") != std::string::npos,
+           "tournament schedule must reject an unavailable ruleset");
 
     Tournament::Result synthetic;
     synthetic.config = config;
@@ -3154,21 +4487,30 @@ void testTournamentContract()
     const std::string csv = Tournament::toCsv(synthetic);
     const std::string text = Tournament::toText(synthetic);
     const JsonContentString parsed(json);
-    expect(parsed.isValid() && parsed.toObject().getInteger("schema_version") == 2 &&
-           parsed.toObject().getString("behavior_profile") == "control",
+    const JsonObject parsedTournament = parsed.toObject();
+    const JsonObject* exportedRuleset =
+        parsedTournament.getObject(RuneGameRulesetIdentityKey);
+    expect(parsed.isValid() && parsedTournament.getInteger("schema_version") == 2 &&
+           parsedTournament.getString("behavior_profile") == "control" &&
+           exportedRuleset && exportedRuleset->getString("id") ==
+               ClassicRuneGameRulesetId &&
+           exportedRuleset->getInteger("version") == ClassicRuneGameRulesetVersion,
            "balance JSON export must be valid and versioned");
     expect(csv.find("early_territory") != std::string::npos &&
            csv.find("behavior_profile") != std::string::npos &&
+           csv.find("ruleset_id,ruleset_version") != std::string::npos &&
            csv.find("spells_cast") != std::string::npos &&
            csv.find("avatar,clan,clan_id,wind") != std::string::npos &&
            csv.find(",Red,red,") != std::string::npos &&
+           csv.find(",classic,1,") != std::string::npos &&
            csv.find("synthetic") != std::string::npos,
            "balance CSV must contain canonical clan names, ids, telemetry and hashes");
     expect(json.find("\"clan\": \"red\"") != std::string::npos &&
            json.find("\"clan_name\": \"Red\"") != std::string::npos,
            "balance JSON must expose canonical clan ids and display names");
-    expect(text.find("95% Wilson") != std::string::npos,
-           "human balance report must label its uncertainty interval");
+    expect(text.find("95% Wilson") != std::string::npos &&
+           text.find("Rune Game ruleset: classic@1") != std::string::npos,
+           "human balance report must label its ruleset and uncertainty interval");
     expect(synthetic.summaries.size() == 4 && synthetic.summaries[0].completed == 1,
            "balance aggregation must retain every completed avatar result");
 
@@ -3220,7 +4562,14 @@ int runHeadlessMatchSelfTest()
     }
 
     std::string fullReplayError;
+    const JsonObject* fullReplayRuleset =
+        first.actionReplay.getObject(RuneGameRulesetIdentityKey);
     if(!first.fullReplayCaptured ||
+       first.runeGameRulesetId != ClassicRuneGameRulesetId ||
+       first.runeGameRulesetVersion != ClassicRuneGameRulesetVersion ||
+       !fullReplayRuleset ||
+       fullReplayRuleset->getString("id") != ClassicRuneGameRulesetId ||
+       fullReplayRuleset->getInteger("version") != ClassicRuneGameRulesetVersion ||
        first.actionReplay.getString("aiBehaviorProfile") != "aggressive" ||
        first.actionReplay.getInteger("actionCount") <= 64 ||
        !first.actionReplay.getBoolean("contiguousToCheckpoint") ||
@@ -3387,6 +4736,24 @@ int runHeadlessMatchSelfTest()
         return 1;
     }
 
+    Settings::setContentTheme("../unsafe");
+    if(Settings::contentTheme() != "classic")
+    {
+        std::cerr << "FAIL: unsafe content theme names must fall back to classic\n";
+        return 1;
+    }
+
+    Simulation::MatchConfig unavailableRuleset = config;
+    unavailableRuleset.runeGameRulesetId = "removed-variant";
+    unavailableRuleset.runeGameRulesetVersion = 3;
+    const Simulation::MatchResult unavailable = Simulation::runMatch(unavailableRuleset);
+    if(unavailable.status != Simulation::MatchStatus::InvalidConfiguration ||
+       unavailable.error.find("removed-variant@3") == std::string::npos)
+    {
+        std::cerr << "FAIL: unavailable Rune Game ruleset was not rejected\n";
+        return 1;
+    }
+
     std::cout << "headless match simulation: ok"
               << ", seed=" << first.seed
               << ", hash=" << first.finalStateHash
@@ -3422,7 +4789,7 @@ bool applyBalanceScenario(Tournament::Config & config, const char* difficulty,
 {
     if(difficulty && !AI::difficultyFromString(difficulty, config.difficulty))
     {
-        std::cerr << "difficulty must be easy, normal or hard\n";
+        std::cerr << "difficulty must be training, easy, normal, hard or unfair\n";
         return false;
     }
 
@@ -3797,12 +5164,20 @@ int main(int argc, char** argv)
     expect(UnicodeString(unicodeSample).toString() == unicodeSample,
            "engine UTF-8/UTF-16 conversion must preserve Cyrillic and supplementary characters");
 
-    JsonContentFile indexFile(std::string(FOUR_WINDS_SOURCE_DIR) + "/themes/default/index.json");
+    JsonContentFile indexFile(std::string(FOUR_WINDS_SOURCE_DIR) + "/themes/classic/index.json");
     expect(indexFile.isValid(), "theme index JSON must parse");
-    expect(GameData::loadIndexes(indexFile.toObject()), "theme indexes must load");
+    std::string bootstrapPackageError;
+    expect(activateContentPackage(indexFile.toObject(), &bootstrapPackageError) &&
+           activeContentPackageManifest().engineContract == ClassicEngineContentContract &&
+           activeContentPackageManifest().gameData == "content.json",
+           "theme content package manifest must activate");
+    JsonContentFile contentFile(std::string(FOUR_WINDS_SOURCE_DIR) +
+        "/themes/classic/content.json");
+    expect(contentFile.isValid(), "authoritative theme content JSON must parse");
+    expect(GameData::loadIndexes(contentFile.toObject()), "theme content indexes must load");
 
     JsonContentFile soundsFile(std::string(FOUR_WINDS_SOURCE_DIR) +
-        "/themes/default/json/gamedata/sounds.json");
+        "/themes/classic/json/gamedata/sounds.json");
     expect(soundsFile.isValid() && soundsFile.isArray(), "theme sound JSON must parse");
     const std::list<FileInfo> soundRecords = soundsFile.toArray().toStdList<FileInfo>();
     const auto localizedSound = std::find_if(soundRecords.begin(), soundRecords.end(),
@@ -3813,6 +5188,35 @@ int main(int argc, char** argv)
         expect(GameTheme::localizedSoundFile(*localizedSound, "en") == "1053.ogg" &&
                GameTheme::localizedSoundFile(*localizedSound, "ru_RU") == "voice_ru_1053.ogg",
                "sound resources must follow the selected English/Russian language");
+    }
+
+    JsonContentFile rebornSoundsFile(std::string(FOUR_WINDS_SOURCE_DIR) +
+        "/themes/reborn/json/gamedata/sounds.json");
+    expect(rebornSoundsFile.isValid() && rebornSoundsFile.isArray(),
+           "Reborn theme sound JSON must parse");
+    const std::list<FileInfo> rebornSoundRecords =
+        rebornSoundsFile.toArray().toStdList<FileInfo>();
+    const auto localizedRebornAnnouncer =
+        std::find_if(rebornSoundRecords.begin(), rebornSoundRecords.end(),
+            [](const FileInfo & info) { return info.id == "begin"; });
+    const auto localizedRebornCreature =
+        std::find_if(rebornSoundRecords.begin(), rebornSoundRecords.end(),
+            [](const FileInfo & info) { return info.id == "creature01"; });
+    expect(localizedRebornAnnouncer != rebornSoundRecords.end() &&
+           localizedRebornCreature != rebornSoundRecords.end(),
+           "Reborn localized voice fixtures must exist");
+    if(localizedRebornAnnouncer != rebornSoundRecords.end() &&
+       localizedRebornCreature != rebornSoundRecords.end())
+    {
+        expect(GameTheme::localizedSoundFile(*localizedRebornAnnouncer, "en_US") ==
+                   "announcer_en_01.ogg" &&
+               GameTheme::localizedSoundFile(*localizedRebornAnnouncer, "ru_RU") ==
+                   "announcer_ru_01.ogg" &&
+               GameTheme::localizedSoundFile(*localizedRebornCreature, "en") ==
+                   "creature_name_en_01.ogg" &&
+               GameTheme::localizedSoundFile(*localizedRebornCreature, "ru") ==
+                   "creature_name_ru_01.ogg",
+               "Reborn announcer and creature voices must follow the selected language");
     }
     expect(GameTheme::isVoiceSound("orachi_chao") &&
            GameTheme::isVoiceSound("creature01") &&
@@ -3825,7 +5229,7 @@ int main(int argc, char** argv)
            "voice and effect sound IDs must use separate volume groups");
 
     JsonContentFile imagesFile(std::string(FOUR_WINDS_SOURCE_DIR) +
-        "/themes/default/json/gamedata/images.json");
+        "/themes/classic/json/gamedata/images.json");
     expect(imagesFile.isValid() && imagesFile.isArray(), "theme image JSON must parse");
     const std::list<ImageInfo> imageRecords = imagesFile.toArray().toStdList<ImageInfo>();
     const auto localizedPassButton = std::find_if(imageRecords.begin(), imageRecords.end(),
@@ -3866,7 +5270,7 @@ int main(int argc, char** argv)
         localizationOwnerSnapshot.push_back(info.clan);
 
     const std::string russianCatalog = std::string(FOUR_WINDS_SOURCE_DIR) +
-        "/themes/default/lang/ru.mo";
+        "/themes/classic/lang/ru.mo";
     Translation::reset();
     Translation::setStripContext('|');
     expect(Translation::bindDomain("four-winds-localization-test", russianCatalog),
@@ -3914,7 +5318,7 @@ int main(int argc, char** argv)
            GameData::clanInfo(Clan::Yellow).name == "Yellow" &&
            GameData::clanInfo(Clan::Aqua).name == "Aqua" &&
            GameData::clanInfo(Clan::Purple).name == "Purple",
-           "default theme clan names must match the canonical identity contract");
+           "Classic theme clan names must match the canonical identity contract");
 
     expect(GameData::creatureInfo(Creature::Tornado).cost == 240,
            "Tornado must use the canonical 240-point price");
@@ -3937,6 +5341,9 @@ int main(int argc, char** argv)
 
     if(1 < argc && std::string(argv[1]) == "--settings-self-test")
         return runSettingsPersistenceSelfTest();
+
+    if(2 < argc && std::string(argv[1]) == "--write-test-replay")
+        return runFixedSeedReplaySelfTest(argv[2]);
 
     if(1 < argc && std::string(argv[1]) == "--fixed-seed-replay")
         return runFixedSeedReplaySelfTest();
@@ -3968,6 +5375,11 @@ int main(int argc, char** argv)
     }
 
     testDifficultyRules();
+    testRuneGameRulesetIdentityContract();
+    testContentPackageIdentityContract();
+    testInstalledContentCatalog();
+    testRuneGameRoundFlowRuleset();
+    testRuneGameSpellPointRuleset();
     testPolygonHitTesting();
     testDrawnMahjongResult();
     testStrategicRunePlanning();
@@ -3976,6 +5388,7 @@ int main(int argc, char** argv)
     testLuckAbility();
     testAvatarPassives();
     testMahjongCallPlanning();
+    testMahjongClaimPriorityRuleset();
     testExposedKongDispatchAndReplacementDraw();
     testSpellAndSpecialityContracts();
     testSpellCastingAI();
@@ -3983,11 +5396,16 @@ int main(int argc, char** argv)
     testAdventureProfiles();
     testAdventureCoordination();
     testBattleAI();
+    testAdventureHints();
     testInteractiveBattleSession();
     testBattleSessionSpecialities();
     testAdventureBattleSessionFlow();
     testGameplayRngState();
+#ifdef BUILD_DEBUG
+    testDeveloperFastForward();
+#endif
     testActionReplay();
+    testGameSummaryInputGuard();
     testMatchScoreContract();
     testTournamentContract();
 
@@ -4066,7 +5484,7 @@ int main(int argc, char** argv)
            "legacy named-clan land claims must remain loadable");
 
     JsonContentFile spellFile(std::string(FOUR_WINDS_SOURCE_DIR) +
-                              "/themes/default/json/gamedata/spells.json");
+                              "/themes/classic/json/gamedata/spells.json");
     expect(spellFile.isValid(), "spell theme JSON must parse");
     const std::list<SpellInfo> spellInfos = spellFile.toArray().toStdList<SpellInfo>();
 
@@ -4134,7 +5552,7 @@ int main(int argc, char** argv)
            "Guidance must reject creatures without a ranged attack");
 
     JsonContentFile avatarFile(std::string(FOUR_WINDS_SOURCE_DIR) +
-                               "/themes/default/json/gamedata/avatars.json");
+                               "/themes/classic/json/gamedata/avatars.json");
     expect(avatarFile.isValid(), "avatar theme JSON must parse");
     const std::list<AvatarInfo> avatarInfos = avatarFile.toArray().toStdList<AvatarInfo>();
 
@@ -4146,6 +5564,9 @@ int main(int argc, char** argv)
     expect(javed && hasSpell(*javed, Spell(Spell::MassDispel)),
            "Javed must know Mass Dispel");
 
+    const RuneGameRuleset & classicRuleset = classicRuneGameRuleset();
+    expect(classicRuleset.id() == "classic" && classicRuleset.version() == 1,
+           "Classic Rune Game ruleset identity must remain stable");
     expect(WinResults::scoreMultiplier(0) == 1, "zero doubles must use x1");
     expect(WinResults::scoreMultiplier(1) == 2, "one double must use x2");
     expect(WinResults::scoreMultiplier(4) == 16, "four doubles must use x16");
@@ -4163,6 +5584,16 @@ int main(int argc, char** argv)
     expect(pointHand.totalScore() == 24,
            "Mahjong total score must include set and hand points without doubles");
 
+    const AlternateRuneGameRuleset alternateRuleset;
+    expect(alternateRuleset.id() == "test-alternate-scoring" && alternateRuleset.version() == 7,
+           "an injected Rune Game ruleset must expose independent identity and version");
+    expect(pointHand.totalPoints(alternateRuleset) == 34,
+           "an injected Rune Game ruleset must control base win points");
+    expect(pointHand.totalScore(alternateRuleset) == 102,
+           "an injected Rune Game ruleset must control score multiplication");
+    expect(pointHand.totalScore() == 24,
+           "an injected Rune Game ruleset must not mutate the implicit Classic ruleset");
+
     WinRules doubledRules;
     doubledRules << WinRule(WinRule::Pung, Stone(Stone::WindEast), false)
                  << WinRule(WinRule::Chao, Stone(Stone::Sword2), false)
@@ -4174,6 +5605,8 @@ int main(int argc, char** argv)
            "a lucky exposed Wind Pung must retain its four base points");
     expect(doubledHand.totalScore() == 48,
            "Mahjong doubles must multiply the complete accumulated point total");
+    expect(doubledHand.totalScore(alternateRuleset) == 200,
+           "an injected Rune Game ruleset must control the maximum win score");
 
     WinRules concealedRules;
     concealedRules << WinRule(WinRule::Pung, Stone(Stone::Skull1), true)

@@ -1,0 +1,177 @@
+{
+    "cursor":		"hardware",
+    "background":	{ "id": "screen3", "type": "file", "file": "all.png", "crop": [0, 0, 1024, 768], "colorkey": "#ffd2d2" },
+    "default:font":	"dejavus18",
+    "default:color":	"#efe4ae",
+
+    "music:common":	[ "rune-common" ],
+    "music:red":	[ "red" ],
+    "music:yellow":	[ "yellow" ],
+    "music:aqua":	[ "aqua" ],
+    "music:purple":	[ "purple" ],
+
+    "mahjongdrop:delay": 12,
+    "mahjongdrop:step": 40,
+    "mahjongdeal:delay": 55,
+
+    "buttons":      [
+                      { "id": "but_chow", "position": [ 426, 286 ], "sprites": [ "but_chow1", "but_chow2" ] },
+                      { "id": "but_pung", "position": [ 555, 286 ], "sprites": [ "but_pung1", "but_pung2" ] },
+                      { "id": "but_kong", "position": [ 555, 332 ], "sprites": [ "but_kong1", "but_kong2" ] },
+                      { "id": "but_game", "position": [ 426, 332 ], "sprites": [ "but_game1", "but_game2" ], "tooltip": "fatality!" },
+                      { "id": "but_pass", "position": [ 494, 370 ], "sprites": [ "but_pass1", "but_pass2" ], "tooltip": "set pass" },
+                      { "id": "but_cast", "position": [ 984, 676 ], "sprites": [ "but_cast1", "but_cast2", "null", "but_cast3" ], "tooltip": "cast or summon" },
+                      { "id": "but_logs", "position": [ 106, 252 ], "sprites": [ "but_logs1", "but_logs2" ], "centered": true, "tooltip": "show logs" },
+                      { "id": "but_syst", "position": [ 212, 370 ], "sprites": [ "but_syst1", "but_syst2" ], "centered": true, "tooltip": "save & exit" },
+                      { "id": "but_qest", "position": [ 106, 370 ], "sprites": [ "but_qest1", "but_qest2" ], "centered": true, "tooltip": "show heroes" },
+                      { "id": "but_maps", "position": [ 212, 252 ], "sprites": [ "but_maps1", "but_maps2" ], "centered": true, "tooltip": "show map" }
+		],
+
+    "stone:selected":	{ "id": "stone_selected", "type": "file", "file": "all.png", "crop": [952, 1070, 62, 84], "colorkey": "#ffd2d2" },
+    "stone:active":	{ "id": "stone_active", "type": "file", "file": "all.png", "crop": [893, 1080, 56, 70], "colorkey": "#ffd2d2" },
+
+    "offset:localset": [ 480, 684 ],
+    "offset:dropstone": [ 520, 320 ],
+    "offset:trash": [ 320, 120 ],
+    "offset:remains": [ 832, 336 ],
+
+    "affected:skull": { "sprite": "affected_skull", "info": "affected spell: draw skull", "offset": [ 10, 678 ] },
+    "affected:sword": { "sprite": "affected_sword", "info": "affected spell: draw sword", "offset": [ 10, 678 ] },
+    "affected:number": { "sprite": "affected_number", "info": "affected spell: draw number", "offset": [ 10, 678 ] },
+    "affected:discard": { "sprite": "affected_discard", "info": "affected spell: random discard", "offset": [ 42, 720 ] },
+    "affected:silence": { "sprite": "affected_silence", "info": "affected spell: silence", "offset": [ 42, 678 ] },
+    "affected:scry": { "sprite": "affected_scry", "info": "affected spell: scry runes, hand revealed", "offset": [ 10, 720 ] },
+
+    "points:init": 250,
+    "points:game": 50,
+    "points:kong": 40,
+    "points:pung": 30,
+    "points:chao": 20,
+    "points:pass": 10,
+
+    "names:font": "dejavus18",
+    "names:positions": {
+			    "top": [ 512, 85 ],
+			    "left": [ 70, 330 ],
+			    "right": [ 955, 330 ],
+			    "bottom": [ 512, 590 ]
+			},
+
+    "winrules:positions": {
+			    "top": [ 512, 14 ],
+			    "left": [ 10, 330 ],
+			    "right": [ 975, 330 ],
+			    "bottom": [ 512, 610 ]
+			},
+
+    "textinfo:fastlog": { "position": [ 512, 520 ], "align": "center", "font": "dejavus18", "color": "lime" },
+
+    "windcompass:sprites": {
+			    "east": [ "wind_blue_east", "wind_yellow_east" ],
+			    "south": [ "wind_blue_south", "wind_yellow_south" ],
+			    "west": [ "wind_blue_west", "wind_yellow_west" ],
+			    "north": [ "wind_blue_north", "wind_yellow_north" ]
+			},
+
+    "windcompass:positions": {
+				"center": [ 185, 335 ],
+				"right": [ 245, 335 ],
+				"left": [ 125, 335 ],
+				"top": [ 185, 275 ],
+				"bottom": [ 185, 395 ]
+			},
+
+    "animation:turn":	{
+			    "delay": 5000,
+			    "sprites": [
+					    { "id": "turn_delay1", "type": "file", "file": "all.png", "crop": [172, 1164, 60, 60], "colorkey": "#ffd2d2", "offset": [ 802, 250 ] },
+					    { "id": "turn_delay2", "type": "file", "file": "all.png", "crop": [232, 1164, 60, 60], "colorkey": "#ffd2d2", "offset": [ 850, 282 ] },
+					    { "id": "turn_delay3", "type": "file", "file": "all.png", "crop": [292, 1164, 60, 60], "colorkey": "#ffd2d2", "offset": [ 832, 340 ] },
+					    { "id": "turn_delay4", "type": "file", "file": "all.png", "crop": [352, 1164, 60, 60], "colorkey": "#ffd2d2", "offset": [ 772, 340 ] },
+					    { "id": "turn_delay5", "type": "file", "file": "all.png", "crop": [412, 1164, 60, 60], "colorkey": "#ffd2d2", "offset": [ 754, 282 ] }
+			]
+		},
+
+    "animation:chao":	{
+			    "delay": 50,
+			    "sound": "anim_chao",
+			    "sprites": [
+					    { "id": "anim_chao01", "type": "file", "file": "anihydra.png", "crop": [0, 0, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, -40 ] },
+					    { "id": "anim_chao02", "type": "file", "file": "anihydra.png", "crop": [250, 0, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, -40 ] },
+					    { "id": "anim_chao03", "type": "file", "file": "anihydra.png", "crop": [500, 0, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, -40 ] },
+					    { "id": "anim_chao04", "type": "file", "file": "anihydra.png", "crop": [750, 0, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, -40 ] },
+					    { "id": "anim_chao05", "type": "file", "file": "anihydra.png", "crop": [0, 250, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, -40 ] },
+					    { "id": "anim_chao06", "type": "file", "file": "anihydra.png", "crop": [250, 250, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, -40 ] },
+					    { "id": "anim_chao07", "type": "file", "file": "anihydra.png", "crop": [500, 250, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, -40 ] },
+					    { "id": "anim_chao08", "type": "file", "file": "anihydra.png", "crop": [750, 250, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, -40 ] },
+					    { "id": "anim_chao07" },
+					    { "id": "anim_chao06" },
+					    { "id": "anim_chao05" },
+					    { "id": "anim_chao04" },
+					    { "id": "anim_chao03" },
+					    { "id": "anim_chao02" }
+				]
+			},
+    "animation:pung":	{
+			    "delay": 50,
+			    "sound": "anim_pung",
+			    "sprites": [
+					    { "id": "anim_pung01", "type": "file", "file": "anijuger.png", "crop": [0, 0, 204, 200], "colorkey": "#ffd2d2", "offset": [ 820, -15 ] },
+					    { "id": "anim_pung02", "type": "file", "file": "anijuger.png", "crop": [204, 0, 204, 200], "colorkey": "#ffd2d2", "offset": [ 820, -15 ] },
+					    { "id": "anim_pung03", "type": "file", "file": "anijuger.png", "crop": [408, 0, 204, 200], "colorkey": "#ffd2d2", "offset": [ 820, -15 ] },
+					    { "id": "anim_pung04", "type": "file", "file": "anijuger.png", "crop": [612, 0, 204, 200], "colorkey": "#ffd2d2", "offset": [ 820, -15 ] },
+					    { "id": "anim_pung05", "type": "file", "file": "anijuger.png", "crop": [816, 0, 204, 200], "colorkey": "#ffd2d2", "offset": [ 820, -15 ] },
+					    { "id": "anim_pung04" },
+					    { "id": "anim_pung03" },
+					    { "id": "anim_pung02" }
+				]
+			},
+    "animation:kong":	{
+			    "delay": 50,
+			    "sound": "anim_kong",
+			    "sprites": [
+					    { "id": "anim_kong01", "type": "file", "file": "anidemon.png", "crop": [0, 0, 300, 300], "colorkey": "#ffd2d2", "offset": [ 755, 395 ] },
+					    { "id": "anim_kong02", "type": "file", "file": "anidemon.png", "crop": [300, 0, 300, 300], "colorkey": "#ffd2d2", "offset": [ 755, 395 ] },
+					    { "id": "anim_kong03", "type": "file", "file": "anidemon.png", "crop": [600, 0, 300, 300], "colorkey": "#ffd2d2", "offset": [ 755, 395 ] },
+					    { "id": "anim_kong04", "type": "file", "file": "anidemon.png", "crop": [0, 300, 300, 300], "colorkey": "#ffd2d2", "offset": [ 755, 395 ] },
+					    { "id": "anim_kong05", "type": "file", "file": "anidemon.png", "crop": [300, 300, 300, 300], "colorkey": "#ffd2d2", "offset": [ 755, 395 ] },
+					    { "id": "anim_kong06", "type": "file", "file": "anidemon.png", "crop": [600, 300, 300, 300], "colorkey": "#ffd2d2", "offset": [ 755, 395 ] },
+					    { "id": "anim_kong07", "type": "file", "file": "anidemon.png", "crop": [0, 600, 300, 300], "colorkey": "#ffd2d2", "offset": [ 755, 395 ] },
+					    { "id": "anim_kong08", "type": "file", "file": "anidemon.png", "crop": [300, 600, 300, 300], "colorkey": "#ffd2d2", "offset": [ 755, 395 ] },
+					    { "id": "anim_kong09", "type": "file", "file": "anidemon.png", "crop": [600, 600, 300, 300], "colorkey": "#ffd2d2", "offset": [ 755, 395 ] },
+					    { "id": "anim_kong08" },
+					    { "id": "anim_kong07" },
+					    { "id": "anim_kong06" },
+					    { "id": "anim_kong05" },
+					    { "id": "anim_kong04" },
+					    { "id": "anim_kong03" },
+					    { "id": "anim_kong02" }
+				]
+			},
+    "animation:game":	{
+			    "delay": 100,
+			    "sound": "anim_game",
+			    "sprites": [
+					    { "id": "anim_game01", "type": "file", "file": "aniwizar.png", "crop": [0, 0, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game02", "type": "file", "file": "aniwizar.png", "crop": [250, 0, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game03", "type": "file", "file": "aniwizar.png", "crop": [500, 0, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game04", "type": "file", "file": "aniwizar.png", "crop": [750, 0, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game05", "type": "file", "file": "aniwizar.png", "crop": [0, 250, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game06", "type": "file", "file": "aniwizar.png", "crop": [250, 250, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game07", "type": "file", "file": "aniwizar.png", "crop": [500, 250, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game08", "type": "file", "file": "aniwizar.png", "crop": [750, 250, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game09", "type": "file", "file": "aniwizar.png", "crop": [0, 500, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game10", "type": "file", "file": "aniwizar.png", "crop": [250, 500, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game11", "type": "file", "file": "aniwizar.png", "crop": [500, 500, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game12", "type": "file", "file": "aniwizar.png", "crop": [750, 500, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game13", "type": "file", "file": "aniwizar.png", "crop": [0, 750, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game14", "type": "file", "file": "aniwizar.png", "crop": [250, 750, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game15", "type": "file", "file": "aniwizar.png", "crop": [500, 750, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game16", "type": "file", "file": "aniwizar.png", "crop": [750, 750, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game17", "type": "file", "file": "aniwizar.png", "crop": [0, 1000, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game18", "type": "file", "file": "aniwizar.png", "crop": [250, 1000, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game19", "type": "file", "file": "aniwizar.png", "crop": [500, 1000, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] },
+					    { "id": "anim_game20", "type": "file", "file": "aniwizar.png", "crop": [750, 1000, 250, 250], "colorkey": "#ffd2d2", "offset": [ 0, 430 ] }
+				]
+			}
+}

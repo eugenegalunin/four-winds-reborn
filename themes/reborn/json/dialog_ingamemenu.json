@@ -1,0 +1,22 @@
+{
+    "size": [ 520, 330 ],
+    "font": "dejavus18",
+    "width:border": 1,
+    "color:background": "#0b0b0b",
+    "color:border": "#a88b4d",
+    "color:header": "#ead7a4",
+    "color:text": "#d9c9a7",
+
+    "entry:save": [ 40, 72, 440, 62 ],
+    "entry:menu": [ 40, 146, 440, 62 ],
+    "entry:cancel": [ 40, 220, 440, 54 ],
+
+    "font:title": "dejavus26",
+    "font:entry": "dejavus22",
+    "font:small": "dejavus14",
+    "color:item": "#11100e",
+    "color:item_selected": "#2b2115",
+    "color:item_border": "#4c4130",
+    "color:selected_border": "#d0aa5d",
+    "color:muted": "#857b69"
+}

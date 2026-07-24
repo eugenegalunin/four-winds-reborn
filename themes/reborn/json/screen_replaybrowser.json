@@ -1,0 +1,45 @@
+{
+    "cursor": "hardware",
+    "background": "#08090a",
+    "sprites": [
+        {
+            "id": "replaybrowser:background",
+            "type": "file",
+            "file": "mainmenu_background_reborn.png",
+            "offset": [ 224, 0 ]
+        },
+        {
+            "id": "replaybrowser:panel",
+            "type": "rect",
+            "fill": "#08090a",
+            "alpha": 242,
+            "size": [ 760, 660 ],
+            "offset": [ 132, 54 ]
+        }
+    ],
+
+    "panel:area": [ 132, 54, 760, 660 ],
+    "list:area": [ 176, 146, 672, 382 ],
+    "list:item_height": 82,
+    "list:item_gap": 12,
+    "button:back": [ 176, 642, 105, 50 ],
+    "button:import": [ 289, 642, 105, 50 ],
+    "button:export": [ 402, 642, 105, 50 ],
+    "button:details": [ 515, 642, 105, 50 ],
+    "button:delete": [ 628, 642, 105, 50 ],
+    "button:play": [ 741, 642, 107, 50 ],
+
+    "font:title": "dejavus34",
+    "font:entry": "dejavus22",
+    "font:small": "dejavus14",
+
+    "color:panel_border": "#a88b4d",
+    "color:title": "#ead7a4",
+    "color:text": "#d9c9a7",
+    "color:muted": "#857b69",
+    "color:error": "#b46f62",
+    "color:item": "#11100e",
+    "color:item_selected": "#2b2115",
+    "color:item_border": "#4c4130",
+    "color:selected_border": "#d0aa5d"
+}

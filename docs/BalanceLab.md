@@ -20,6 +20,13 @@ the lifetime of that match and is restored before the child exits. Forced cells
 therefore measure how the same roster and fixtures respond to one doctrine;
 they are not mixed-profile head-to-head games.
 
+The runner accepts all five player-facing difficulties. `Training` is useful as
+a non-aggression and support-spell invariant test. `Unfair` exercises the
+largest decision budgets and the explicit AI economy handicap. Because a lab
+match controls all four players, every participant in an `Unfair` cell receives
+the same handicap; such a cell proves stability and compares avatars, but is
+not a direct measurement of the advantage over a human player.
+
 For more flexible rosters, every legal one-avatar-per-clan bijection is combined
 with the four seat rotations. Unsupported avatar/clan combinations are never
 invented. The schedule rejects duplicate avatars, duplicate seeds and rosters
@@ -125,6 +132,14 @@ cells and 60 isolated matches; all eight published seeds produce 480 matches:
 .\scripts\run-balance-matrix.ps1 -SeedCount 8 -OutputDirectory diagnostics\balance-matrix-full
 ```
 
+The default matrix intentionally keeps the three honest competitive levels.
+Include the policy extremes explicitly when validating a difficulty change;
+with one seed the five-level native matrix is 5 cells and 20 isolated matches:
+
+```powershell
+.\scripts\run-balance-matrix.ps1 -Profiles Native -Difficulties Training,Easy,Normal,Hard,Unfair -OutputDirectory diagnostics\difficulty-smoke
+```
+
 A focused matrix can select subsets without changing its report contract:
 
 ```powershell
@@ -169,6 +184,8 @@ forced doctrine, difficulty, seeds and seat rotations remain fixed:
 .\scripts\run-balance-cohorts.ps1
 .\scripts\run-balance-cohorts.ps1 -SeedCount 8 -OutputDirectory diagnostics\balance-cohorts-full
 .\scripts\run-balance-cohorts.ps1 -Clans Aqua -SeedCount 2
+.\scripts\run-balance-cohorts.ps1 -Jobs 2 `
+  -BaselineManifest tests\fixtures\balance-cohorts-15.6e-refactor.sha256.json
 ```
 
 The cohort root exports `balance-cohorts.json`, `balance-cohorts.csv` and
@@ -177,7 +194,60 @@ same clan slot; a negative mean-rank delta is an improvement. `native` is
 deliberately unavailable here because it would change doctrine together with
 the avatar and defeat the control. Machine-readable reports use the canonical
 IDs `red`, `yellow`, `aqua` and `purple`; the `clan` display column uses the
-corresponding capitalized names.
+corresponding capitalized names. Every new isolated match and aggregate JSON
+report also records the selected Rune Game ruleset id/version. Player CSV rows
+carry the same identity in `ruleset_id` and `ruleset_version`; resumed isolated
+records are rejected if that identity is unavailable or differs from the
+requested schedule.
+
+Long cohort runs support bounded parallel match processes, safe continuation and
+an automatic parity verdict. `-Jobs 2` runs two isolated fixtures at a time;
+record filenames and merge order remain fixed, so this changes throughput rather
+than simulation order. A fresh run writes `cohort-run-contract.json`, keyed by
+the SHA-256 of `gameplay_regression_tests.exe`, the simulation parameters and
+the exact scenario rosters. If a run is interrupted, repeat the same command
+with `-Resume`. Completed valid scenarios are reused; missing or incomplete
+ones are rerun. Resume refuses a different binary, parameter set or roster.
+
+The tracked
+`tests/fixtures/balance-cohorts-15.6e-refactor.sha256.json` manifest records the
+SHA-256 contract for every scenario `balance-players.csv` plus the aggregate
+`balance-cohorts.csv`, including the explicit `classic@1` columns. It makes the
+refactor gate reproducible on a clean clone
+without committing the large diagnostic reports. The standalone comparison
+uses that manifest by default and fails unless every candidate CSV is
+byte-identical:
+
+```powershell
+.\scripts\compare-balance-cohorts.ps1 `
+  -CandidateDirectory diagnostics\balance-cohorts
+```
+
+`-BaselineDirectory` remains available as an explicit override when auditing a
+new candidate against a complete local report tree.
+
+For refactoring work, use the explicit gate wrapper:
+
+```powershell
+# Presentation-only or desktop input extraction: build/tests + 4 matches.
+.\scripts\run-refactor-gate.ps1 -Mode Quick -Jobs 2
+
+# Rules, AI, authoritative state, save/RNG/replay work and milestone closure:
+# build/tests + all 13 scenarios / 52 matches + baseline comparison.
+.\scripts\run-refactor-gate.ps1 -Mode Full -Jobs 2
+
+# Continue only the unfinished scenarios of an interrupted Full gate.
+.\scripts\run-refactor-gate.ps1 -Mode Full -Jobs 2 -Resume -SkipBuild
+```
+
+`Quick` compares the fixed Normal/Balanced baseline roster against the baseline
+scenario prefix in the tracked manifest. It is sufficient only when the changed
+code is outside authoritative simulation paths. `Full` remains required for
+behavior-affecting changes and before closing a refactoring milestone or a
+release. `-SkipBuild` is intended only when the current test executable has
+already been built and verified in the same working tree. Pass
+`-BaselineDirectory` to either mode only when intentionally replacing the
+tracked contract with a complete local report tree.
 
 Verify one retained replay, one scenario, or a complete matrix after the run:
 
@@ -187,9 +257,9 @@ Verify one retained replay, one scenario, or a complete matrix after the run:
 
 The verifier restores the replay's initial authoritative state, reapplies every
 recorded validated action and system transition, checks every intermediate state
-hash, and requires the final hash to match the retained match record. This is a
-development integrity check; a future player-facing replay viewer is a separate
-feature.
+hash, and requires the final hash to match the retained match record. This
+specialized development verifier remains separate from the implemented
+player-facing replay library and viewer.
 
 ## Published baseline 1
 
@@ -214,9 +284,13 @@ Forcing one common doctrine across the same fixtures confirms that the profile
 axis materially changes play. Economic averaged 8.17 summons and 31.81 casts per
 player; Control averaged 4.76 summons and 40.87 casts. Aggressive finished with
 only 0.24 surviving units per player on average, while Economic finished with
-2.33. Difficulty also acts as a computation budget: mean emitted actions rose
-from 3,699.81 on Easy to 3,824.90 on Normal and 3,948.96 on Hard, while mean total
-scores remained close (13.775, 13.866 and 13.756).
+2.33. In this historical baseline, difficulty acted primarily as a computation
+budget: mean emitted actions rose from 3,699.81 on Easy to 3,824.90 on Normal
+and 3,948.96 on Hard, while mean total scores remained close (13.775, 13.866 and
+13.756). This matrix predates the deliberately distinct Easy/Normal/Hard
+decision policies introduced in 15.6C. Keep it as a reproducible historical
+record; validate the newer policy in a fresh controlled matrix instead of
+silently overwriting these results.
 
 Seat rotation is working as a control. Across the native fixtures the four wind
 rank-one rates ranged from 21.88% to 31.25%, much smaller than the observed

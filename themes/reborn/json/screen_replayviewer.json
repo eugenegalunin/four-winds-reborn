@@ -1,0 +1,20 @@
+{
+    "cursor": "hardware",
+    "overlay:area": [ 0, 0, 1024, 78 ],
+    "button:back": [ 12, 25, 78, 44 ],
+    "button:previous_phase": [ 96, 25, 94, 44 ],
+    "button:previous_step": [ 196, 25, 48, 44 ],
+    "button:play": [ 250, 25, 110, 44 ],
+    "button:next_step": [ 366, 25, 48, 44 ],
+    "button:next_phase": [ 420, 25, 94, 44 ],
+    "button:speed": [ 520, 25, 90, 44 ],
+    "progress:area": [ 628, 36, 372, 12 ],
+
+    "font:control": "dejavus18",
+    "font:small": "dejavus14",
+    "color:overlay": "#08090a",
+    "color:border": "#4c4130",
+    "color:text": "#ead7a4",
+    "color:muted": "#857b69",
+    "color:active": "#d0aa5d"
+}

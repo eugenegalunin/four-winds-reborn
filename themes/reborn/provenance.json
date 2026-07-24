@@ -1,0 +1,61 @@
+{
+    "schema": 1,
+    "status": "release",
+    "sourceTheme": "classic",
+    "sourcePackage": "classic-original",
+    "mediaExtensions": [ ".png", ".jpg", ".jpeg", ".ogg", ".mid", ".wav", ".ttf", ".otf" ],
+    "sharedIdenticalMedia": [
+        "assets/images/difficulty_training.png",
+        "assets/images/difficulty_easy.png",
+        "assets/images/difficulty_normal.png",
+        "assets/images/difficulty_hard.png",
+        "assets/images/difficulty_unfair.png"
+    ],
+    "retainedCompatibilityMedia": [
+        "assets/audio/1000.ogg",
+        "assets/audio/1001.ogg",
+        "assets/audio/1002.ogg",
+        "assets/audio/1003.ogg",
+        "assets/audio/1004.ogg",
+        "assets/audio/1005.ogg",
+        "assets/audio/1006.ogg",
+        "assets/audio/1010.ogg",
+        "assets/audio/1011.ogg",
+        "assets/audio/1012.ogg",
+        "assets/audio/1013.ogg",
+        "assets/audio/1021.ogg",
+        "assets/audio/1022.ogg",
+        "assets/audio/1023.ogg",
+        "assets/audio/1024.ogg",
+        "assets/audio/1025.ogg",
+        "assets/audio/1026.ogg",
+        "assets/audio/1030.ogg",
+        "assets/audio/1031.ogg",
+        "assets/audio/1032.ogg",
+        "assets/audio/1033.ogg",
+        "assets/audio/1034.ogg",
+        "assets/audio/1035.ogg",
+        "assets/audio/1036.ogg",
+        "assets/audio/1037.ogg"
+    ],
+    "narrativeTables": [ "avatars", "creatures", "spells", "lands" ],
+    "thirdPartyAssets": [
+        {
+            "name": "Forum",
+            "source": "https://github.com/google/fonts/tree/main/ofl/forum",
+            "license": "SIL Open Font License 1.1",
+            "licenseFile": "licenses/Forum-OFL.txt"
+        },
+        {
+            "name": "PT Serif",
+            "source": "https://github.com/google/fonts/tree/main/ofl/ptserif",
+            "license": "SIL Open Font License 1.1",
+            "licenseFile": "licenses/PT-Serif-OFL.txt"
+        }
+    ],
+    "standaloneRequires": {
+        "identicalMediaFiles": 0,
+        "identicalNarrativeFields": 0
+    },
+    "note": "Release audit 2026-07-24: all unused inherited media, legacy announcer fallbacks, and legacy UI/atlas images were removed. Five project-created difficulty portraits are explicitly shared by both packages and verified byte-identical. Twenty-five generic non-voice gameplay effects are intentionally retained as an explicit compatibility layer and do not make the player package a preview. The audit reports zero unclassified inherited media and zero inherited narrative fields. Standalone status remains reserved for a future package with no retained Classic compatibility media."
+}

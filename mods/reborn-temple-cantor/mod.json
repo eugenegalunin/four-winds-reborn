@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "reborn-temple-cantor",
+  "display_name": {
+    "en": "Reborn: Temple Cantor",
+    "ru": "Reborn: Храмовый кантор"
+  },
+  "version": "1.0.0",
+  "type": "theme_voice_overlay",
+  "target_theme": "reborn",
+  "language": "ru",
+  "description": {
+    "en": "The original Russian ritual narrator voice created for the Reborn theme.",
+    "ru": "Первоначальный русский ритуальный голос рассказчика, созданный для темы Reborn."
+  },
+  "content": {
+    "audio_directory": "theme-overlay/assets/audio",
+    "intro_timings": "intro-timings-ru.json",
+    "reference_audio": "source/reference.wav",
+    "reference_metadata": "source/reference.json"
+  }
+}

@@ -13,26 +13,18 @@ LGPL-3.0-or-later license and upstream attribution.
 ## Download
 
 The latest stable release is
-[Four Winds Reborn v0.2.0](https://github.com/jaskes/four-winds-reborn/releases/latest),
+[Four Winds Reborn v0.3.0](https://github.com/jaskes/four-winds-reborn/releases/latest),
 with ready-to-run Windows, Linux and macOS x64 archives plus SHA-256 checksums.
 On Windows, unpack the archive and launch `four-winds-reborn.exe`.
 
 ## Roadmap
 
-- Make Easy, Normal and Hard play deliberately differently, then validate the
-  result over deterministic match cohorts.
-- Add development tools for AI takeover, fast-forwarding and reproducible
-  near-end scenarios so long games can be tested quickly.
-- Improve battle explanations, training and replay viewing while incrementally
-  splitting the largest gameplay files into ruleset-ready modules.
-- Add versioned themes and mod support, including a legally distinct optional
-  art, music and naming set.
-- Ship an Android build with native touch controls, safe app lifecycle handling
-  and compatible saves.
-- Add local Duel and Coalition rulesets, followed by additional Rune Game rules
-  through a shared versioned ruleset contract.
-- Add authoritative multiplayer last, after the platforms and local rulesets
-  are stable.
+- Make Android the focus of v0.4.0, with native touch controls, safe app
+  lifecycle handling and compatible saves.
+- Prove the shared ruleset contract with additional local Rune Game rules,
+  followed by separate Duel and Coalition modes.
+- Add authoritative multiplayer last, after Android and the local rulesets are
+  stable.
 
 ## Screenshots
 
@@ -62,8 +54,12 @@ On Windows, unpack the archive and launch `four-winds-reborn.exe`.
 - Independent music, effects and voice volume controls, plus Classic, Normal
   and Fast presentation speeds.
 - Restored story intro and separate menu, faction, map and summary music.
-- Easy, Normal and Hard AI, distinct wizard behavior profiles and improved
-  Mahjong, spell, summon, map and battle decisions.
+- Two complete presentation packages: the default Classic theme and the
+  optional Reborn theme, selectable in Settings without changing game rules.
+- Five deliberately distinct AI levels, selected in Settings for new games:
+  peaceful Training, honest Easy, Normal and Hard, and an openly unfair
+  economy-boosted challenge. No level receives favorable RNG or access to
+  hidden information.
 - Manual tactical battles with legal target selection, AI recommendations and
   optional automatic resolution.
 - A bilingual Encyclopedia covering lore, factions, wizards, creatures, spells,
@@ -94,14 +90,9 @@ On Windows, install [MSYS2](https://www.msys2.org/) and run:
 
 ## Documentation
 
-- [Changelog](CHANGELOG.md)
-- [Battle and Adventure rules](docs/BattleAndAdventureRules.md)
-- [Spell lifecycle](docs/SpellLifecycle.md)
-- [Localization and source provenance](docs/Localization.md)
-- [Preserved Arcanium archive material](docs/ArcaniumArchive.md)
-- [Balance laboratory](docs/BalanceLab.md) and
-  [current balance tiers](docs/BalanceTiers.md)
-- [Branch and release process](docs/ReleaseProcess.md)
+Rules, balance evidence, localization/provenance, archived original sources and
+the release workflow are indexed in [the documentation guide](docs/README.md).
+Completed player-facing work is recorded in the [changelog](CHANGELOG.md).
 
 ## License and attribution
 

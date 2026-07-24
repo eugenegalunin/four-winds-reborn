@@ -2,11 +2,16 @@ param(
     [ValidateRange(1, 8)]
     [int]$SeedCount = 1,
     [string]$OutputDirectory = "diagnostics\balance-cohorts",
-    [ValidateSet("Easy", "Normal", "Hard")]
+    [ValidateSet("Training", "Easy", "Normal", "Hard", "Unfair")]
     [string]$Difficulty = "Normal",
     [ValidateSet("Balanced", "Aggressive", "Economic", "Control")]
     [string]$BehaviorProfile = "Balanced",
     [string[]]$Clans = @("Red", "Yellow", "Aqua", "Purple"),
+    [ValidateRange(1, 8)]
+    [int]$Jobs = 1,
+    [switch]$Resume,
+    [string]$BaselineDirectory = "",
+    [string]$BaselineManifest = "",
     [switch]$KeepEngineLog,
     [switch]$KeepMatchRecords
 )
@@ -14,6 +19,8 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $lab = Join-Path $PSScriptRoot "run-balance-lab.ps1"
+$compareCohorts = Join-Path $PSScriptRoot "compare-balance-cohorts.ps1"
+$runner = Join-Path $repoRoot "build-windows\gameplay_regression_tests.exe"
 $outputPath = if ([IO.Path]::IsPathRooted($OutputDirectory)) {
     [IO.Path]::GetFullPath($OutputDirectory)
 } else {
@@ -42,10 +49,6 @@ if (-not $expectedScenariosPath.StartsWith($outputPrefix,
     throw "Refusing to clean an unexpected cohort scenarios path."
 }
 $scenariosPath = $expectedScenariosPath
-if (Test-Path -LiteralPath $scenariosPath) {
-    Remove-Item -LiteralPath $scenariosPath -Recurse -Force
-}
-New-Item -ItemType Directory -Path $scenariosPath -Force | Out-Null
 
 $baseline = [ordered]@{
     red = "nucrus"
@@ -92,20 +95,65 @@ function Get-CohortScenarioId([string]$Clan, [string]$Candidate) {
     return "$Clan-$Candidate"
 }
 
-function Invoke-CohortScenario([string]$Id, [string[]]$Roster) {
-    $scenarioDirectory = Join-Path $scenariosPath $Id
-    Write-Host "===== Balance cohort scenario: $Id ($($Roster -join ',')) ====="
-    $arguments = @{
-        SeedCount = $SeedCount
-        OutputDirectory = $scenarioDirectory
-        Difficulty = $Difficulty
-        BehaviorProfile = $BehaviorProfile
-        Roster = $Roster
+if (-not (Test-Path -LiteralPath $runner -PathType Leaf)) {
+    & (Join-Path $PSScriptRoot "build-windows.ps1")
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $runner -PathType Leaf)) {
+        throw "Windows balance runner could not be built."
     }
-    if ($KeepEngineLog) { $arguments.KeepEngineLog = $true }
-    if ($KeepMatchRecords) { $arguments.KeepMatchRecords = $true }
-    & $lab @arguments
+}
 
+$baselineRoster = New-Roster "red" $baseline.red
+$scenarioDefinitions = @([PSCustomObject][ordered]@{
+    id = "baseline"
+    roster = @($baselineRoster)
+})
+foreach ($clan in $selectedClans) {
+    foreach ($candidate in $candidates[$clan]) {
+        if ($candidate -eq $baseline[$clan]) { continue }
+        $scenarioDefinitions += [PSCustomObject][ordered]@{
+            id = Get-CohortScenarioId $clan $candidate
+            roster = @(New-Roster $clan $candidate)
+        }
+    }
+}
+
+$runContract = [ordered]@{
+    schema_version = 1
+    runner_sha256 = (Get-FileHash -LiteralPath $runner -Algorithm SHA256).Hash.ToLowerInvariant()
+    seed_count = $SeedCount
+    difficulty = $Difficulty.ToLowerInvariant()
+    behavior_profile = $BehaviorProfile.ToLowerInvariant()
+    selected_clan_ids = @($selectedClans)
+    scenarios = @($scenarioDefinitions | ForEach-Object {
+        [PSCustomObject][ordered]@{
+            id = $_.id
+            roster = @($_.roster)
+        }
+    })
+}
+$runContractJson = $runContract | ConvertTo-Json -Depth 8 -Compress
+$runContractPath = Join-Path $outputPath "cohort-run-contract.json"
+New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
+if ($Resume) {
+    if (-not (Test-Path -LiteralPath $runContractPath -PathType Leaf)) {
+        throw "Cannot resume: '$runContractPath' does not exist. Start once without -Resume."
+    }
+    $savedContract = Get-Content -LiteralPath $runContractPath -Raw |
+        ConvertFrom-Json | ConvertTo-Json -Depth 8 -Compress
+    if ($savedContract -cne $runContractJson) {
+        throw "Cannot resume: runner hash, parameters, or scenario roster changed. Start a fresh run without -Resume or choose another output directory."
+    }
+} else {
+    if (Test-Path -LiteralPath $scenariosPath) {
+        Remove-Item -LiteralPath $scenariosPath -Recurse -Force
+    }
+    [IO.File]::WriteAllText($runContractPath,
+        ($runContract | ConvertTo-Json -Depth 8), $utf8)
+}
+New-Item -ItemType Directory -Path $scenariosPath -Force | Out-Null
+
+function Read-CohortScenario([string]$Id, [string[]]$Roster) {
+    $scenarioDirectory = Join-Path $scenariosPath $Id
     $reportPath = Join-Path $scenarioDirectory "balance-report.json"
     if (-not (Test-Path -LiteralPath $reportPath -PathType Leaf)) {
         throw "Cohort scenario '$Id' did not produce balance-report.json."
@@ -115,6 +163,9 @@ function Invoke-CohortScenario([string]$Id, [string[]]$Roster) {
     if ($report.schema_version -ne 2 -or
         $report.difficulty -ne $Difficulty.ToLowerInvariant() -or
         $report.behavior_profile -ne $BehaviorProfile.ToLowerInvariant() -or
+        -not $report.runeGameRuleset -or
+        -not [string]$report.runeGameRuleset.id -or
+        [int]$report.runeGameRuleset.version -le 0 -or
         (@($report.roster) -join ",") -ne $requestedRoster -or
         [int]$report.legal_clan_assignments -ne 1 -or
         [int]$report.planned_matches -ne ($SeedCount * 4) -or
@@ -128,19 +179,95 @@ function Invoke-CohortScenario([string]$Id, [string[]]$Roster) {
     }
 }
 
-$baselineRoster = New-Roster "red" $baseline.red
-$scenarioData = @(Invoke-CohortScenario "baseline" $baselineRoster)
-foreach ($clan in $selectedClans) {
-    foreach ($candidate in $candidates[$clan]) {
-        if ($candidate -eq $baseline[$clan]) { continue }
-        $scenarioData += Invoke-CohortScenario `
-            (Get-CohortScenarioId $clan $candidate) `
-            (New-Roster $clan $candidate)
+function Invoke-CohortScenario([string]$Id, [string[]]$Roster) {
+    $scenarioDirectory = Join-Path $scenariosPath $Id
+    Write-Host "===== Balance cohort scenario: $Id ($($Roster -join ',')) ====="
+    $arguments = @{
+        SeedCount = $SeedCount
+        OutputDirectory = $scenarioDirectory
+        Difficulty = $Difficulty
+        BehaviorProfile = $BehaviorProfile
+        Roster = $Roster
+        Jobs = $Jobs
     }
+    if ($KeepEngineLog) { $arguments.KeepEngineLog = $true }
+    if ($KeepMatchRecords) { $arguments.KeepMatchRecords = $true }
+    & $lab @arguments
+    return Read-CohortScenario $Id $Roster
 }
+
+$scenarioData = @()
+$scenarioDurations = @()
+$scenarioCount = $scenarioDefinitions.Count
+$resumedScenarios = @{}
+if ($Resume) {
+    foreach ($definition in $scenarioDefinitions) {
+        try {
+            $resumedScenarios[$definition.id] = Read-CohortScenario `
+                $definition.id $definition.roster
+        } catch {
+            Write-Warning "Resume: scenario '$($definition.id)' is missing or incomplete and will be rerun. $($_.Exception.Message)"
+        }
+    }
+    Write-Host ("Resume contract accepted: {0}/{1} scenarios complete; {2} pending." -f `
+        $resumedScenarios.Count, $scenarioCount,
+        ($scenarioCount - $resumedScenarios.Count))
+}
+$pendingScenarioCount = $scenarioCount - $resumedScenarios.Count
+$cohortWatch = [Diagnostics.Stopwatch]::StartNew()
+for ($scenarioIndex = 0; $scenarioIndex -lt $scenarioCount; ++$scenarioIndex) {
+    $definition = $scenarioDefinitions[$scenarioIndex]
+    $ordinal = $scenarioIndex + 1
+    Write-Progress -Activity "Controlled balance cohort" `
+        -Status "Scenario $ordinal/${scenarioCount}: $($definition.id)" `
+        -PercentComplete ([int](100 * $scenarioIndex / $scenarioCount))
+    Write-Host ("===== Cohort progress {0}/{1}: {2} =====" -f `
+        $ordinal, $scenarioCount, $definition.id)
+
+    $scenario = $null
+    $reused = $false
+    if ($resumedScenarios.ContainsKey($definition.id)) {
+        $scenario = $resumedScenarios[$definition.id]
+        $reused = $true
+        Write-Host "Resume: reusing completed scenario '$($definition.id)'."
+    }
+    if (-not $reused) {
+        $scenarioWatch = [Diagnostics.Stopwatch]::StartNew()
+        $scenario = Invoke-CohortScenario $definition.id $definition.roster
+        $scenarioWatch.Stop()
+        $scenarioDurations += $scenarioWatch.Elapsed.TotalSeconds
+    }
+    $scenarioData += $scenario
+
+    $remaining = if ($Resume) {
+        $pendingScenarioCount - $scenarioDurations.Count
+    } else {
+        $scenarioCount - $ordinal
+    }
+    $eta = if ($remaining -gt 0 -and $scenarioDurations.Count -gt 0) {
+        $averageSeconds = ($scenarioDurations | Measure-Object -Average).Average
+        [TimeSpan]::FromSeconds($averageSeconds * $remaining).ToString("hh\:mm\:ss")
+    } else {
+        "00:00:00"
+    }
+    Write-Host ("Cohort progress {0}/{1} complete; ETA {2}" -f `
+        $ordinal, $scenarioCount, $eta)
+}
+$cohortWatch.Stop()
+Write-Progress -Activity "Controlled balance cohort" -Completed
+Write-Host ("Cohort scenarios complete in {0}." -f `
+    $cohortWatch.Elapsed.ToString("hh\:mm\:ss"))
 
 $baselineScenario = $scenarioData | Where-Object { $_.id -eq "baseline" } |
     Select-Object -First 1
+$cohortRulesetId = [string]$baselineScenario.report.runeGameRuleset.id
+$cohortRulesetVersion = [int]$baselineScenario.report.runeGameRuleset.version
+foreach ($scenario in $scenarioData) {
+    if ([string]$scenario.report.runeGameRuleset.id -cne $cohortRulesetId -or
+        [int]$scenario.report.runeGameRuleset.version -ne $cohortRulesetVersion) {
+        throw "Cohort scenarios use different Rune Game rulesets."
+    }
+}
 $cells = @()
 $csvRows = @()
 foreach ($clan in $selectedClans) {
@@ -210,6 +337,8 @@ foreach ($clan in $selectedClans) {
             baseline_avatar = $baselineAvatar
             candidate_avatar = $candidate
             scenario = $scenario.id
+            ruleset_id = $cohortRulesetId
+            ruleset_version = $cohortRulesetVersion
             completed = [int]$summary.completed
             rank_one_finishes = [int]$summary.rank_one_finishes
             rank_one_rate = Format-Invariant $summary.rank_one_rate
@@ -240,6 +369,7 @@ $engineDirty = [bool](git -C (Join-Path $repoRoot "engine") `
 
 $reportRoot = [ordered]@{
     schema_version = 2
+    runner_sha256 = $runContract.runner_sha256
     game_revision = $gameRevision
     game_dirty = $gameDirty
     engine_revision = $engineRevision
@@ -248,6 +378,10 @@ $reportRoot = [ordered]@{
     seeds = @($baselineScenario.report.seeds)
     difficulty = $Difficulty.ToLowerInvariant()
     behavior_profile = $BehaviorProfile.ToLowerInvariant()
+    runeGameRuleset = [PSCustomObject][ordered]@{
+        id = $cohortRulesetId
+        version = $cohortRulesetVersion
+    }
     selected_clans = @($selectedClans | ForEach-Object { $clanNames[$_] })
     selected_clan_ids = $selectedClans
     clan_identity = @($clanNames.GetEnumerator() | ForEach-Object {
@@ -258,6 +392,8 @@ $reportRoot = [ordered]@{
     })
     baseline_roster = @($baselineRoster)
     scenario_count = $scenarioData.Count
+    execution_jobs = $Jobs
+    resumed = [bool]$Resume
     planned_matches = [int](($scenarioData | ForEach-Object {
         [int]$_.report.planned_matches
     } | Measure-Object -Sum).Sum)
@@ -280,6 +416,7 @@ $textPath = Join-Path $outputPath "balance-cohorts.txt"
 $text = New-Object Text.StringBuilder
 [void]$text.AppendLine("Four Winds Reborn controlled avatar/clan cohorts")
 [void]$text.AppendLine("Seeds: $SeedCount; difficulty: $($Difficulty.ToLowerInvariant()); profile: $($BehaviorProfile.ToLowerInvariant())")
+[void]$text.AppendLine("Rune Game ruleset: $cohortRulesetId@$cohortRulesetVersion")
 [void]$text.AppendLine("Scenarios: $($scenarioData.Count); isolated matches: $($reportRoot.planned_matches)")
 [void]$text.AppendLine("Delta is candidate minus the baseline avatar in the same clan; lower mean-rank delta is better.")
 [void]$text.AppendLine()
@@ -295,3 +432,14 @@ foreach ($row in $csvRows) {
 
 Write-Host $text.ToString()
 Write-Host "Controlled cohort reports: $outputPath"
+if ($BaselineDirectory -or $BaselineManifest) {
+    $compareArguments = @{
+        CandidateDirectory = $outputPath
+    }
+    if ($BaselineDirectory) {
+        $compareArguments.BaselineDirectory = $BaselineDirectory
+    } else {
+        $compareArguments.BaselineManifest = $BaselineManifest
+    }
+    & $compareCohorts @compareArguments
+}

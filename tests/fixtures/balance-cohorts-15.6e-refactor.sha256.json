@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "name": "R11 Classic ruleset persistence Normal/Balanced seed 363134977",
+  "seed_count": 1,
+  "difficulty": "normal",
+  "behavior_profile": "balanced",
+  "csv_contracts": [
+    { "path": "balance-cohorts.csv", "sha256": "e4db783fb79de07312b3fef90338c0ba7f768322c8b540f45a339802459496c2" },
+    { "path": "scenarios/aqua-kierac/balance-players.csv", "sha256": "88b24ab202fdd5dc880aac33fb2ab637c479db6acbd83ee191d983cc1462ee54" },
+    { "path": "scenarios/aqua-logun/balance-players.csv", "sha256": "805ba31109cc65345d662c35cf6c8346f363c905eee54f2fb7e2b3fd3b903a12" },
+    { "path": "scenarios/aqua-niana/balance-players.csv", "sha256": "922f33add6fb3d5910d592d3062d74f2e8be4e6cb3d22749fe26a2b387d6c705" },
+    { "path": "scenarios/baseline/balance-players.csv", "sha256": "4ce9cf37e31bdab1fce91f479beef9f41c73c6961073a24b6139a1438cd50f6c" },
+    { "path": "scenarios/purple-kierac/balance-players.csv", "sha256": "bba8b16fb2755cffc100c6b60ba47831735f89b8cfcccb15ea4832ce3638e87d" },
+    { "path": "scenarios/purple-logun/balance-players.csv", "sha256": "88aebb469cff04c4f67015520a798b96239fec1a56fdd3d438a0de15f5915ba5" },
+    { "path": "scenarios/purple-orachi/balance-players.csv", "sha256": "478527d4b0392bf6b29367d2570e68cf560732cd5024a96068885f8a3ceaedf1" },
+    { "path": "scenarios/red-javed/balance-players.csv", "sha256": "0ad723784c489e8b1df3821b15c865be06257d0a360243df87515bbf56f2cebf" },
+    { "path": "scenarios/red-logun/balance-players.csv", "sha256": "0b2e968c588219c09b8e59a268c76030b9805568548a9dcfe668cb54f962dca5" },
+    { "path": "scenarios/red-orachi/balance-players.csv", "sha256": "e43ea3b9141fc2f5e8bceeb2961c8937570e8c876ef2a7ddb6b54b27eda17253" },
+    { "path": "scenarios/yellow-javed/balance-players.csv", "sha256": "88369767e452201da89856e0b54d2d1a25b806dcfa925a6bff70297f24b487c7" },
+    { "path": "scenarios/yellow-logun/balance-players.csv", "sha256": "0deef55220b9de8af8c085fecb4185afcd9feed82117a52e0b42719da21b39db" },
+    { "path": "scenarios/yellow-niana/balance-players.csv", "sha256": "aaa913e795b219d99ded6ab420c576ba13fda995f659ab879497268ad658edf5" }
+  ]
+}

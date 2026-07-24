@@ -1,0 +1,12 @@
+[
+    { "id": "tooltips", "file": "ptserif-regular.ttf", "size": "14", "blend": "blended" },
+    { "id": "dejavus12", "file": "ptserif-regular.ttf", "size": "12", "blend": "blended" },
+    { "id": "dejavus14", "file": "ptserif-regular.ttf", "size": "14", "blend": "blended" },
+    { "id": "dejavus16", "file": "ptserif-regular.ttf", "size": "16", "blend": "blended" },
+    { "id": "dejavus18", "file": "ptserif-regular.ttf", "size": "18", "blend": "blended" },
+    { "id": "dejavus22", "file": "forum-regular.ttf", "size": "22", "blend": "blended" },
+    { "id": "dejavus26", "file": "forum-regular.ttf", "size": "26", "blend": "blended" },
+    { "id": "dejavus34", "file": "forum-regular.ttf", "size": "34", "blend": "blended" },
+    { "id": "dejavus40", "file": "forum-regular.ttf", "size": "40", "blend": "blended" },
+    { "id": "terminus14", "file": "ptserif-regular.ttf", "size": "14", "blend": "blended" }
+]

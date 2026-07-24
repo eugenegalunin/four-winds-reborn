@@ -2,19 +2,27 @@
 
 Four Winds Reborn uses two permanent branches:
 
-- `develop` is the integration branch. Normal gameplay, UI, data and tooling
+- `develop` is the integration branch. Normal gameplay, UI, content and tooling
   changes land here as focused commits.
 - `main` is the published release history. It receives completed release merges
-  and exceptional hotfixes; it is never used as a general work branch.
+  and exceptional hotfixes; it is not a general work branch.
 
-The release that introduces this policy is the one-time bootstrap: `develop`
-is created from that released `main`. Every later normal release follows the
-flow below.
+Do not force-push either permanent branch or rewrite published release history.
+
+## Versioning
+
+Release tags use SemVer in the `vMAJOR.MINOR.PATCH` form. While the project is
+pre-1.0, increment MINOR for a completed player-facing roadmap slice and PATCH
+for a compatible hotfix. Reserve `v1.0.0` for the accepted stable core roadmap.
+
+The tag must exactly match `project(... VERSION ...)` in `CMakeLists.txt`.
+The release workflow rejects malformed tags, version mismatches and commits
+that are not already present on `origin/main`.
 
 ## Normal development
 
-Start work from current `develop`, keep related changes in a reviewable commit,
-and push the integration branch:
+Start work from current `develop`, keep related changes reviewable and push the
+integration branch:
 
 ```bash
 git switch develop
@@ -23,75 +31,96 @@ git pull --ff-only origin develop
 git push origin develop
 ```
 
-CI runs for pushes and pull requests targeting either permanent branch. Do not
-force-push `develop` or `main` and do not rewrite their published history.
+CI runs for pushes and pull requests targeting both permanent branches.
 
-## Tagged release
+## Release gate
 
-Starting after the historical `v20260716.*` releases, versions use SemVer in the
-`vMAJOR.MINOR.PATCH` form. The first SemVer release is `v0.1.0`. While the game
-is pre-1.0, increment MINOR for a completed player-facing roadmap slice and
-PATCH for compatible hotfixes. Reserve `v1.0.0` for the accepted, stable core
-roadmap. The version in the tag must exactly match `project(... VERSION ...)` in
-`CMakeLists.txt`.
+Before merging a release, freeze its scope and complete all of the following:
 
-The first SemVer release is cut only after the owner accepts the main-menu
-milestone. Its release gate is:
+1. Update `CHANGELOG.md`, the public `README.md`, the CMake version and any
+   affected contracts in `docs/`.
+2. Run the theme and content validator:
 
-- every enabled menu entry has a complete path with no clickable dead end;
-- Continue, New Game, Load Game and Quit pass manual Windows smoke testing;
-- named save create/overwrite/load/delete and emergency recovery restore pass
-  manual Windows smoke testing;
-- the original narrated story intro advances through all 17 frames with the
-  selected English/Russian track, and Esc/Enter/Space/click each skip cleanly;
-- music transitions pass manual Windows smoke testing: intro on the main menu,
-  the selected clan theme in Mahjong, map music in Adventure, silence during a
-  visible battle, map resume after combat, and the victory theme on summaries;
-- Settings persists English/Russian, music, effects, Guardian voices, the
-  Classic/Normal/Fast presentation profile and Windowed/Fullscreen display
-  mode; language and display mode apply without restart;
-- Classic presentation visibly deals the opening hand, animates draw/discard
-  runes and slows combat, while Normal and Fast remain usable alternatives;
-- entries intentionally deferred to later roadmaps remain visibly disabled;
-- the menu artwork has confirmed redistribution permission or is replaced;
-- local tests and all platform CI jobs are green.
+   ```bash
+   python scripts/validate-json.py
+   ```
 
-The historical calendar GitHub Release records may be removed during the
-`v0.1.0` cutover, after the replacement package is ready. Keep their Git tags as
-history unless the owner explicitly confirms tag deletion at action time.
+3. Produce a clean Windows package and pass all local CTest targets.
+4. Run the full deterministic refactor gate:
 
-After all platform checks and owner smoke testing are accepted, reconcile the
-complete integration branch into `main` as one explicit release merge commit:
+   ```powershell
+   .\scripts\run-refactor-gate.ps1 -Mode Full
+   ```
+
+   This compares all 52 controlled matches with the retained fixed-seed
+   baseline. A deliberate rules or balance change requires reviewed evidence
+   and an intentional baseline update, never a silent replacement.
+5. Require green Linux, macOS and Windows CI for the release source.
+6. Smoke-test the exact player package rather than a development-tree binary:
+
+   - verify that a clean profile starts in Classic;
+   - switch between Classic and Reborn and verify that the selection persists;
+   - verify that an old `content:theme = default` setting migrates to Classic;
+   - start English and Russian games and check intro, voices, music and effects;
+   - create, load, overwrite and delete a named save; verify autosave/recovery;
+   - record, browse, export/import and play a compatible replay;
+   - switch windowed/fullscreen modes and resize the window;
+   - complete a Rune Game hand, Adventure movement, a manual battle and the
+     score/victory flow.
+
+Reborn may ship with `release` provenance status when the validator reports
+zero unclassified inherited live media and zero identical narrative fields.
+Generic non-voice compatibility effects are permitted only when every exact
+path is declared in `retainedCompatibilityMedia`.
+
+Advertising Reborn as legally distinct and standalone is a stronger claim:
+`themes/reborn/provenance.json` must then have `standalone` status and the
+validator must additionally report zero retained compatibility media.
+Package-neutral project assets may remain shared only when their exact paths
+are listed in `sharedIdenticalMedia`.
+
+For v0.3.0, Classic is the initial presentation and Reborn is an opt-in
+release-status package. Reborn must not be labelled Preview solely because
+generic compatibility effects remain. Switching the initial presentation to
+Reborn is a separate product decision to make after README screenshots are
+updated and player feedback has been reviewed.
+
+## Tag and publish
+
+After the gate and owner smoke test pass, merge the complete integration branch
+into `main` as an explicit release commit. Replace `0.3.0` below with the
+version being published:
 
 ```bash
 git switch main
 git pull --ff-only origin main
-git merge --no-ff develop -m "release: v0.1.0"
+git merge --no-ff develop -m "release: v0.3.0"
 git push origin main
-git tag -a v0.1.0 -m "Four Winds Reborn v0.1.0"
-git push origin v0.1.0
+git tag -a v0.3.0 -m "Four Winds Reborn v0.3.0"
+git push origin v0.3.0
 ```
 
-Push `main` before the tag. The release workflow rejects a tag whose commit is
-not already contained in `origin/main`. An accepted tag rebuilds and tests the
-game on Linux, macOS and Windows, packages all three platforms, generates
-`SHA256SUMS.txt` and publishes the GitHub Release.
+Push `main` before the tag. The accepted tag builds and tests Linux, macOS and
+Windows packages, verifies that the Windows executable uses the GUI subsystem,
+generates `SHA256SUMS.txt` and publishes the GitHub Release.
 
-After publication, switch back to `develop` for the next feature commit.
+Verify all three downloadable archives and their checksums after publication,
+then return to `develop`. If the release merge itself contains any release-only
+change, reconcile `main` back into `develop`.
 
 ## Hotfix
 
-Create a focused hotfix from `main`, validate it on the affected platform and
-merge it back as a dedicated release commit. Tag and publish it with the same
-sequence as a normal release. Then reconcile released `main` back into
-`develop` so the fix cannot disappear from the next release:
+Create a focused hotfix from `main`, validate the affected paths and the normal
+release gate, then publish a PATCH version with the same merge-and-tag order.
+Merge the released `main` back into `develop` so the correction cannot disappear
+from the next MINOR release:
 
 ```bash
 git switch develop
 git pull --ff-only origin develop
-git merge --no-ff main -m "reconcile hotfix v0.1.1"
+git merge --no-ff main -m "reconcile hotfix v0.3.1"
 git push origin develop
 ```
 
-Generated builds, diagnostics, dumps, local handoff notes and credentials must
-never be staged in either branch.
+Generated builds, diagnostics, dumps, downloaded packages, credentials and
+local handoff notes must never be staged in either branch.

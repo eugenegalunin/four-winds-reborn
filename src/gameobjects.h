@@ -32,6 +32,8 @@ using namespace SWE;
 #define GAME_SET_COUNT  13
 #define GAME_STONE_MAX  70
 
+class RuneGameRuleset;
+
 struct Enum
 {
     int	val;
@@ -911,6 +913,7 @@ struct CroupierSet
     const VecStones &           luckChoices(void) const { return luckDraw; }
     Stone                       resolveLuckDraw(int);
     void                        reset(void);
+    void                        reset(const RuneGameRuleset &);
     bool                        valid(void) const;
     void                        put(const Stone &);
 
@@ -1034,11 +1037,14 @@ struct WinResults
     OpponentFinesList		opponentFines(void) const;
 
     int				totalPoints(void) const;
+    int                         totalPoints(const RuneGameRuleset &) const;
     int				scoreRules(void) const;
     int				totalScore(void) const;
+    int                         totalScore(const RuneGameRuleset &) const;
     static int			scoreMultiplier(int doubles);
 
     int                         baseScore(void) const;
+    int                         baseScore(const RuneGameRuleset &) const;
     int                         pairBonus(void) const;
 
     std::string			toString(void) const;
@@ -1136,11 +1142,17 @@ struct LocalPlayer : public RemotePlayer
     LocalPlayer() {}
 
     Stone			setMahjongDrop(int);
+    Stone                       setMahjongDrop(int, const RuneGameRuleset &);
     void			setMahjongChao(const Stone &, int);
+    void                        setMahjongChao(const Stone &, int, const RuneGameRuleset &);
     void			setMahjongPung(const Stone &);
+    void                        setMahjongPung(const Stone &, const RuneGameRuleset &);
     void			setMahjongKong1(const Stone &);
+    void                        setMahjongKong1(const Stone &, const RuneGameRuleset &);
     void			setMahjongKong2(void);
+    void                        setMahjongKong2(const RuneGameRuleset &);
     void			setMahjongGame(const WinResults &);
+    void                        setMahjongGame(const WinResults &, const RuneGameRuleset &);
 
     bool			haveKong(void) const;
     bool			allowCastSpell(const Spell &) const;
@@ -1149,10 +1161,16 @@ struct LocalPlayer : public RemotePlayer
     bool			newTurnEvent(CroupierSet &, bool skipnewStone);
 
     bool			isMahjongChao(const Wind &, const Stone &) const;
+    bool                        isMahjongChao(const Wind &, const Stone &, const RuneGameRuleset &) const;
     bool			isMahjongPung(const Wind &, const Stone &) const;
+    bool                        isMahjongPung(const Wind &, const Stone &, const RuneGameRuleset &) const;
     bool			isMahjongKong1(const Wind &, const Stone &) const;
+    bool                        isMahjongKong1(const Wind &, const Stone &, const RuneGameRuleset &) const;
     bool			isMahjongKong2(const Wind &) const;
+    bool                        isMahjongKong2(const Wind &, const RuneGameRuleset &) const;
     bool			isWinMahjong(const Wind &, const Wind &, const Stone &, WinResults* = nullptr) const;
+    bool                        isWinMahjong(const Wind &, const Wind &, const Stone &,
+                                             WinResults*, const RuneGameRuleset &) const;
 
     JsonObject			toJsonObject(void) const;
     static LocalPlayer		fromJsonObject(const JsonObject &);
@@ -1162,6 +1180,7 @@ struct LocalPlayers : public std::vector<LocalPlayer>
 {
     void			setPersons(const Persons &);
     void			distributeStones(CroupierSet &);
+    void                        distributeStones(CroupierSet &, const RuneGameRuleset &);
     void			shiftWinds(void);
 
     bool			findKongs(void) const;

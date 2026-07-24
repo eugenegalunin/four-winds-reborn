@@ -33,6 +33,8 @@ namespace AI
     enum class Difficulty;
 }
 
+class RuneGameRuleset;
+
 namespace Menu
 {
     // Keep serialized gameplay part values stable; UI-only states belong at the end.
@@ -51,7 +53,8 @@ namespace Menu
         MainMenu = 10,
         LoadRecovery = 11,
         SettingsMenu = 12,
-        Encyclopedia = 13
+        Encyclopedia = 13,
+        ReplayLibrary = 14
     };
 }
 
@@ -59,6 +62,7 @@ struct FileInfo
 {
     std::string			id;
     std::string 		file;
+    std::string                 fileEn;
     std::string                 fileRu;
 
     FileInfo() {}
@@ -324,6 +328,7 @@ namespace GameData
     bool                        initPersons(const Persons &);
 
     bool			initMahjong(void);
+    bool                        initMahjong(const RuneGameRuleset &);
     bool			mahjong2Client(const Avatar &, ActionList &);
     bool			client2Mahjong(const Avatar &, const ClientMessage &, ActionList &,
                                        ActionRejection* rejection = nullptr);
@@ -343,16 +348,32 @@ namespace GameData
 
     AI::Difficulty              aiDifficulty(void);
     void                        setAIDifficulty(AI::Difficulty);
+    bool                        usesAI(const Person &);
+    bool                        developerAssisted(void);
+
+#ifdef BUILD_DEBUG
+    bool                        developerAutoplay(const Avatar &);
+    void                        setDeveloperAutoplay(const Avatar &, bool);
+    bool                        initDeveloperBattleFixture(const Avatar &, ActionList &,
+                                                           std::string* error = nullptr);
+    bool                        initDeveloperFinalRuneFixture(const Avatar &,
+                                                              std::string* error = nullptr);
+    bool                        initDeveloperFinalAdventureFixture(const Avatar &,
+                                                                   std::string* error = nullptr);
+#endif
 
     bool			saveGame(const JsonObject &);
     bool                        saveNamedGame(const JsonObject &, const std::string &,
                                              bool overwrite, std::string* error = nullptr);
+    bool                        archiveCurrentReplay(std::string* savedFile = nullptr,
+                                                     std::string* error = nullptr);
     bool                        saveRecovery(const JsonObject &, const std::string & reason);
     JsonObject                  authoritativeState(void);
     bool                        restoreState(const JsonObject &);
     bool			loadGame(void);
     bool			loadGame(const std::string &);
     bool			isGameOver(void);
+    bool                        isGameOver(const RuneGameRuleset &);
 
     int				loadedGamePart(void);
     void                        setGamePart(int);

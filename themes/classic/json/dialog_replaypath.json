@@ -1,0 +1,22 @@
+{
+    "size": [ 700, 280 ],
+    "font": "dejavus18",
+    "width:border": 1,
+    "color:background": "#0b0b0b",
+    "color:border": "#a88b4d",
+    "color:header": "#ead7a4",
+    "color:text": "#d9c9a7",
+
+    "input:area": [ 40, 94, 620, 50 ],
+    "button:accept": [ 40, 198, 240, 48 ],
+    "button:cancel": [ 420, 198, 240, 48 ],
+
+    "font:title": "dejavus26",
+    "font:input": "dejavus16",
+    "font:small": "dejavus14",
+    "color:input": "#11100e",
+    "color:input_border": "#d0aa5d",
+    "color:button": "#191612",
+    "color:button_border": "#6e5d3e",
+    "color:muted": "#857b69"
+}

@@ -1,0 +1,9 @@
+{
+    "font": "dejavus18",
+    "size": [ 1004, 748 ],
+    "width:border": 0,
+
+    "offset:target_left": [ 0, 268 ],
+    "offset:target_right": [ 736, 268 ],
+    "offset:target_top": [ 444, 0 ]
+}

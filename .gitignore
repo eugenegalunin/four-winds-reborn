@@ -4,6 +4,16 @@
 /four-winds-reborn
 /tech-build
 /diagnostics/
+/.venv-tts/
+/.venv-chatterbox/
+# Local high-resolution and generated media sources. Player-ready runtime
+# assets belong under themes/ and are the only copies included in builds.
+/art/
+/voicepacks/
+/tmp/
+/.cache/
+**/__pycache__/
+*.py[cod]
 /*.log
 /ninja-ui.err
 /ninja-ui.out

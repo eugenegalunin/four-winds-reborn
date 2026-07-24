@@ -32,7 +32,7 @@ struct Application
     Size            geometry;
     std::string     theme;
 
-    Application() : program(nullptr), fullscreen(false), theme("default") {}
+    Application() : program(nullptr), fullscreen(false), theme("classic") {}
     Application(const char* p, bool f, const Size & g, const char* t): program(p), fullscreen(f), geometry(g), theme(t) {}
 
     static std::string domain(void);
@@ -47,6 +47,7 @@ class RuneWarsClient : public Application
 {
     int			part;
     std::string		savefile;
+    bool                themeCommandOverride;
 
     void		parseCommandOptions(int argc, char** argv);
     void		loadResources(void);

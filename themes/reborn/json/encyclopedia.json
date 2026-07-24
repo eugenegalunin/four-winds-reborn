@@ -1,0 +1,523 @@
+{
+    "source": {
+        "name": "Arcanium Productions Rune War website",
+        "snapshot": "2001-03-04",
+        "url": "https://web.archive.org/web/20010304082845/http://www.arcanium.com/Games/RuneWar/index.html",
+        "note": "Historical descriptions are preserved separately from current Four Winds Reborn rules. Current creature statistics always come from the active theme data."
+    },
+    "categories": [
+        {
+            "id": "chronicle",
+            "title_en": "Chronicle",
+            "title_ru": "Летопись",
+            "entries": [
+                {
+                    "title_en": "The Wandering Prophet",
+                    "title_ru": "Странствующий пророк",
+                    "subtitle_en": "Jutka's welcome to the official Rune War archive",
+                    "subtitle_ru": "Приветствие Джутки из официального архива Rune War",
+                    "source_url": "Menu/Menu.shtml",
+                    "body_en": [
+                        "Jutka the Wandering Prophet welcomes travellers to the Isle of Four Winds on the eve of a new Rune War. Clan leaders gather at the Oracle of Jaar, while foreign wizards and unfamiliar faces arrive in search of a commission.",
+                        "The elders remember earlier competitions, the suffering of the clans and creatures of catastrophic power. Twenty-five years of prosperity are at stake. Jutka's scrying shows a cloudy future: the contest will be cerebral as well as physical, and no clan enters it as an obvious favourite."
+                    ],
+                    "body_ru": [
+                        "Джутка, Странствующий пророк, приветствует путников на Острове Четырёх Ветров накануне новой Войны Рун. Вожди кланов собираются у Оракула Джаара, а чужеземные колдуны и незнакомцы ищут, кому предложить свои услуги.",
+                        "Старейшины помнят прежние состязания, страдания кланов и существ катастрофической силы. На кону двадцать пять лет процветания. Прорицание Джутки показывает туманное будущее: борьба будет не только физической, но и интеллектуальной, и явного фаворита среди кланов нет."
+                    ]
+                },
+                {
+                    "title_en": "The Isle of Four Winds",
+                    "title_ru": "Остров Четырёх Ветров",
+                    "subtitle_en": "Precipice, the Period of Chaos and the rise of magic",
+                    "subtitle_ru": "Пресипис, Период Хаоса и расцвет магии",
+                    "source_url": "Tales/FourWindsBackground.shtml",
+                    "body_en": [
+                        "During the Period of Chaos the island itself escaped the worst mutations, but isolation left too little land and food for its people. Water accelerated the magical potential of living things, dividing the population into rival sects competing for scarce resources.",
+                        "The need to survive made the island home to the most advanced magic users on Precipice. The four great clans emerged from this age, each guarding its own culture, territory and school of power.",
+                        "The complete original background manuscript is preserved with Four Winds Reborn as docs/reference/classic/Backgrnd.txt. This article is its player-facing introduction."
+                    ],
+                    "body_ru": [
+                        "Во время Периода Хаоса сам остров избежал самых страшных мутаций, но изоляция оставила его жителям слишком мало земли и пищи. Вода усилила магический потенциал живых существ, а население раскололось на соперничающие общины, боровшиеся за скудные ресурсы.",
+                        "Необходимость выжить превратила остров в родину самых искусных магов Пресиписа. Из этой эпохи вышли четыре великих клана, каждый со своей культурой, территорией и школой силы.",
+                        "Полная оригинальная рукопись истории сохранена в Four Winds Reborn как docs/reference/classic/Backgrnd.txt. Эта статья служит её введением для игрока."
+                    ]
+                },
+                {
+                    "title_en": "Birth of the Tower",
+                    "title_ru": "Рождение Башни",
+                    "subtitle_en": "The clash that changed the island",
+                    "subtitle_ru": "Столкновение, изменившее остров",
+                    "source_url": "Tales/BirthOfTower.shtml",
+                    "body_en": [
+                        "At the height of the old clan wars, four legendary magic users met in battle. Their enchanted weapons struck at the same instant. The released forces twisted the ground, the winds and the magic around them, raising the Tower of Four Winds at the heart of the island.",
+                        "The four survived and became the Mages of the Tower. Recognising that endless war would destroy every clan, they used their new authority and the Tower's power to force the rivals to negotiate."
+                    ],
+                    "body_ru": [
+                        "В разгар древней войны кланов четыре легендарных мага встретились на поле боя. Их зачарованное оружие ударило одновременно. Высвободившаяся сила исказила землю, ветры и саму магию, подняв в центре острова Башню Четырёх Ветров.",
+                        "Все четверо выжили и стали Магами Башни. Поняв, что бесконечная война уничтожит каждый клан, они заставили соперников начать переговоры, опираясь на новый авторитет и мощь Башни."
+                    ]
+                },
+                {
+                    "title_en": "The Rune War Accord",
+                    "title_ru": "Договор о Войне Рун",
+                    "subtitle_en": "How rivalry became a ritual contest",
+                    "subtitle_ru": "Как вражда стала ритуальным состязанием",
+                    "source_url": "Tales/MakingRuneWar.shtml",
+                    "body_en": [
+                        "The Tower brought delegations from all four clans into guarded quarters. Maitha sent three representatives, Iz entrusted the iron-willed elder Mo-Do, Marz sent young messengers, and Kartha chose Mishai and Drago. Hydra, titan, demon and wizard guardians discouraged treachery.",
+                        "After a month of difficult negotiation the clans agreed to replace continuous war with a regulated magical contest held every twenty-five years. The system preserved their rivalry and ambition while protecting the island and allowing knowledge to flourish."
+                    ],
+                    "body_ru": [
+                        "Башня поселила делегации четырёх кланов в охраняемых покоях. Майта прислали троих представителей, Из доверились несгибаемому старейшине Мо-До, Марз отправили молодых посланников, а Картха выбрали Мишай и Драго. Гидра, титан, демон и колдун-страж пресекали попытки предательства.",
+                        "После месяца тяжёлых переговоров кланы согласились заменить непрерывную войну регулируемым магическим состязанием раз в двадцать пять лет. Система сохранила соперничество и честолюбие, но защитила остров и позволила знаниям развиваться."
+                    ]
+                },
+                {
+                    "title_en": "The Seventeenth Rune War",
+                    "title_ru": "Семнадцатая Война Рун",
+                    "subtitle_en": "The official website's 3416 campaign setting",
+                    "subtitle_ru": "Кампания 3416 года по версии официального сайта",
+                    "source_url": "Tales/Introduction.shtml",
+                    "body_en": [
+                        "The website dates the creation of the Tower to 2991 and the first Rune War to 3016. Its current campaign is the seventeenth cycle in 3416. The previous contest ended in a stalemate, leaving the four clans spread evenly across the island.",
+                        "Native and mercenary wizards train for an unusually open contest. New summonings, the Dragons of Trassk and stronger supplemental magic make the outcome impossible to predict. Choose a wizard and a clan, then let the runes fall where they may.",
+                        "These dates are preserved as the 2001 website continuity. Other surviving Arcanium manuscripts use a different chronology; Four Winds Reborn keeps both as historical sources rather than silently forcing them into one timeline."
+                    ],
+                    "body_ru": [
+                        "Сайт датирует создание Башни 2991 годом, а первую Войну Рун — 3016-м. Его текущая кампания представляет семнадцатый цикл 3416 года. Прошлое состязание закончилось ничьёй, поэтому четыре клана равномерно расселены по острову.",
+                        "Местные и наёмные колдуны готовятся к необычайно открытому противостоянию. Новые призывы, Драконы Трааска и усиленная вспомогательная магия делают исход непредсказуемым. Выберите колдуна и клан — и пусть руны выпадут как выпадут.",
+                        "Эти даты сохранены как версия официального сайта 2001 года. Другие уцелевшие рукописи Arcanium используют иную хронологию; Four Winds Reborn хранит обе традиции как исторические источники, не склеивая их молча."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "clans",
+            "title_en": "Clans",
+            "title_ru": "Кланы",
+            "entries": [
+                {
+                    "title_en": "Red Clan — Maitha",
+                    "title_ru": "Красный клан — Майта",
+                    "subtitle_en": "Native masters of wind magic",
+                    "subtitle_ru": "Коренные мастера магии ветров",
+                    "image": "clan1",
+                    "source_url": "Tales/ClanMaitha.shtml",
+                    "body_en": [
+                        "The Maitha have inhabited the Isle of Four Winds for thousands of years and resent sharing it with clans they regard as foreigners. Proud and openly supremacist, they accepted the Rune War treaty reluctantly.",
+                        "They claim the discovery of magic and did learn to harness the winds. Every Maithan is touched by magic from youth. Small and physically fragile, with enlarged heads and formidable intellects, they believe mind and magic will ultimately replace the sword."
+                    ],
+                    "body_ru": [
+                        "Майта живут на Острове Четырёх Ветров тысячи лет и возмущены тем, что должны делить его с кланами, которых считают чужеземцами. Гордые и убеждённые в собственном превосходстве, они приняли договор о Войне Рун лишь под давлением.",
+                        "Они приписывают себе открытие магии и действительно научились подчинять ветры. Каждый Майта с детства соприкасается с магией. Невысокие и физически хрупкие, с увеличенным черепом и грозным интеллектом, они верят, что разум и магия однажды заменят меч."
+                    ]
+                },
+                {
+                    "title_en": "Yellow Clan — Kartha",
+                    "title_ru": "Жёлтый клан — Картха",
+                    "subtitle_en": "Honour, patience and the sword",
+                    "subtitle_ru": "Честь, терпение и меч",
+                    "image": "clan2",
+                    "source_url": "Tales/ClanKartha.shtml",
+                    "body_en": [
+                        "The Kartha built a disciplined human society around honour, patience and martial skill. Their knights and heroes value duty to the clan, carefully prepared strength and the protection of their people.",
+                        "Their magic is associated with the sword realm: steadfast warriors, famous champions and powerful defensive enchantments. They enter the Rune War as organisers and defenders, but their code does not prevent them from seeking complete victory."
+                    ],
+                    "body_ru": [
+                        "Картха построили дисциплинированное человеческое общество вокруг чести, терпения и воинского мастерства. Их рыцари и герои ценят долг перед кланом, тщательно подготовленную силу и защиту своего народа.",
+                        "Их магия связана с царством мечей: стойкими воинами, прославленными героями и сильными защитными чарами. Они входят в Войну Рун как организаторы и защитники, но кодекс чести не мешает им стремиться к полной победе."
+                    ]
+                },
+                {
+                    "title_en": "Aqua Clan — Iz",
+                    "title_ru": "Бирюзовый клан — Из",
+                    "subtitle_en": "Adaptable survivors and tacticians",
+                    "subtitle_ru": "Изобретательные выжившие и тактики",
+                    "image": "clan3",
+                    "source_url": "Tales/ClanIz.shtml",
+                    "body_en": [
+                        "The lizard-like Iz are an aggressive, practical people shaped by repeated hardship. Other clans often dismiss them, but scarcity taught the Iz to improvise, learn from defeat and turn every scrap of knowledge into an advantage.",
+                        "Their best wizards favour speed, concealment and tactical flexibility. Ziag embodies this culture: his monocle, broad spell book and invisible agents are answers to a history in which brute prestige was never available to his clan."
+                    ],
+                    "body_ru": [
+                        "Ящероподобные Из — напористый и практичный народ, закалённый постоянными лишениями. Другие кланы нередко смотрят на них свысока, но нужда научила Из импровизировать, извлекать уроки из поражений и превращать каждую крупицу знания в преимущество.",
+                        "Их лучшие колдуны предпочитают скорость, скрытность и тактическую гибкость. Зиаг воплощает эту культуру: монокль, широкий набор заклинаний и невидимые агенты стали ответом на историю, в которой его клан не мог полагаться на грубую силу и старый престиж."
+                    ]
+                },
+                {
+                    "title_en": "Purple Clan — Marz",
+                    "title_ru": "Фиолетовый клан — Марз",
+                    "subtitle_en": "Amphibious scholars from the stars",
+                    "subtitle_ru": "Учёные-амфибии, пришедшие со звёзд",
+                    "image": "clan4",
+                    "source_url": "Tales/ClanMarz.shtml",
+                    "body_en": [
+                        "The Marz fled another world after being driven nearly to extinction during the Golden Age. The waters around the Isle of Four Winds gave these amphibious refugees a new home, though much of their stellar origin has faded into myth.",
+                        "Webbed hands and feet and exceptional lungs make them superb swimmers and underwater explorers. Gentle, private and devoted to knowledge, they usually avoid aggression—but the Rune War is essential to their survival, and they will use unexpected means when failure threatens their culture."
+                    ],
+                    "body_ru": [
+                        "Марз бежали с другого мира после того, как в Золотой век оказались на грани уничтожения. Воды вокруг Острова Четырёх Ветров дали этим земноводным изгнанникам новый дом, хотя их звёздное происхождение со временем превратилось в миф.",
+                        "Перепончатые кисти и стопы и необыкновенные лёгкие делают их превосходными пловцами и подводными исследователями. Мирные, замкнутые и преданные знаниям, они обычно избегают агрессии, но Война Рун необходима для их выживания, и перед угрозой поражения Марз способны прибегнуть к неожиданным средствам."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "guide",
+            "title_en": "Game Guide",
+            "title_ru": "Основы игры",
+            "entries": [
+                {
+                    "id": "campaign_flow",
+                    "title_en": "How a Rune War Works",
+                    "title_ru": "Как устроена Война Рун",
+                    "subtitle_en": "Rune hand, magic, map phase, repeat",
+                    "subtitle_ru": "Партия рун, магия, карта — и новый круг",
+                    "source_url": "docs/reference/classic/Manual.txt:1.2",
+                    "body_en": [
+                        "A campaign alternates between the Rune Game and the strategic map. At the table you build a winning hand, earn and spend spell points, cast spells and summon creatures. When the hand ends, every wizard receives a map turn.",
+                        "On the map you claim undefended neighbouring land, move parties and attack enemy territories. A party can contain up to three creatures. Battles begin automatically when a party finishes its move in hostile land.",
+                        "The goal is to control as much of the Isle as possible and lead the final score. Actions at the rune table build your magic economy, while winning hands provide the land-claim points that fuel expansion."
+                    ],
+                    "body_ru": [
+                        "Кампания чередует Игру Рун и стратегическую карту. За столом вы собираете победную руку, зарабатываете и тратите очки магии, применяете заклинания и призываете существ. После завершения руки каждый колдун получает ход на карте.",
+                        "На карте можно присваивать незащищённые соседние земли, перемещать отряды и атаковать вражеские территории. В одном отряде помещается до трёх существ. Бой начинается автоматически, когда отряд заканчивает движение на чужой земле.",
+                        "Цель — контролировать как можно больше Острова и выйти вперёд по итоговым очкам. Действия за столом развивают магическую экономику, а победные руки дают очки захвата земель для расширения владений."
+                    ]
+                },
+                {
+                    "id": "creature_stats",
+                    "title_en": "Creature Characteristics",
+                    "title_ru": "Характеристики существ",
+                    "subtitle_en": "Attack, missile, defense, loyalty, movement and cost",
+                    "subtitle_ru": "Атака, стрельба, защита, верность, движение и цена",
+                    "source_url": "docs/reference/classic/Manual.txt:4.3",
+                    "body_en": [
+                        "Attack is melee strength. When it exceeds the target's Defense, the difference is dealt as Loyalty damage. Every supporting creature behind the active attacker adds +1 Attack. If Attack does not exceed Defense, the strike can still inflict 1 damage: an equal match has a 50% chance, then 25%, 12%, 6% and progressively less as the defense gap grows.",
+                        "Missile is direct Loyalty damage during the opening volley; Defense does not reduce it. Force Shield reduces missile damage, while Ignore Missiles prevents a creature from being selected. A territory also fires once at the attackers before creature missiles resolve.",
+                        "Defense absorbs melee Attack. Loyalty is a creature's endurance: at zero it is defeated and leaves its summoner. Movement is the number of adjacent map steps available in a map phase. Cost is paid in spell points when summoning; the listed runes are the magical formula. A Unique creature can exist only once on the map."
+                    ],
+                    "body_ru": [
+                        "Атака — сила существа в ближнем бою. Если она выше Защиты цели, разница снимается с Верности. Каждое существо поддержки позади активного бойца даёт ему +1 к Атаке. Если Атака не превосходит Защиту, удар всё равно может нанести 1 урон: при равенстве шанс равен 50%, затем 25%, 12%, 6% и всё меньше с ростом разницы.",
+                        "Стрельба наносит прямой урон Верности во время начального залпа; Защита его не уменьшает. Силовой Щит снижает урон, а Невосприимчивость к Снарядам не позволяет выбрать существо целью. Перед залпом существ территория также один раз стреляет по атакующим.",
+                        "Защита поглощает Атаку в ближнем бою. Верность — запас стойкости: при нуле существо побеждено и покидает своего колдуна. Движение показывает число переходов между соседними землями за фазу карты. Цена платится очками магии при призыве, а указанные руны составляют магическую формулу. Уникальное существо может присутствовать на карте только в одном экземпляре."
+                    ]
+                },
+                {
+                    "id": "battle_guide",
+                    "title_en": "Battle at a Glance",
+                    "title_ru": "Бой на одной схеме",
+                    "subtitle_en": "Territory fire, simultaneous missiles, alternating melee",
+                    "subtitle_ru": "Огонь территории, общий залп и ближний бой",
+                    "source_url": "docs/BattleAndAdventureRules.md",
+                    "body_en": [
+                        "1. The defending territory fires at one attacker. First Strike does not cancel this shot.",
+                        "2. Unless the attacking leader grants First Strike, surviving missile creatures on both sides choose targets and the two volleys resolve simultaneously. A shooter still completes a shot planned before the volley even if the opposing volley defeats it.",
+                        "3. Melee actions alternate and are recalculated after every strike. The defender normally acts first; an attacking First Strike leader reverses initiative and skips creature missiles. Supporting creatures add Attack, while Merge creatures can add Defense.",
+                        "When all defending creatures fall, the attackers fight the territory itself. Reducing its Loyalty to zero captures it. If every attacker falls first, the defense holds."
+                    ],
+                    "body_ru": [
+                        "1. Защищающаяся территория стреляет по одному атакующему. Первый Удар не отменяет этот выстрел.",
+                        "2. Если лидер атаки не даёт Первый Удар, выжившие стрелки обеих сторон выбирают цели, после чего два залпа разрешаются одновременно. Стрелок завершает заранее подготовленный выстрел, даже если встречный залп уже победил его.",
+                        "3. Действия ближнего боя чередуются и заново рассчитываются после каждого удара. Обычно первым действует защитник; Первый Удар лидера атаки передаёт инициативу нападающим и пропускает залп существ. Поддержка повышает Атаку, а одинаковые существа со Слиянием могут повышать Защиту.",
+                        "После поражения всех защитников атакующие сражаются с самой территорией. Если её Верность падает до нуля, земля захвачена. Если раньше погибают все атакующие, оборона устояла."
+                    ]
+                },
+                {
+                    "id": "battle_controls",
+                    "title_en": "Controlling a Battle",
+                    "title_ru": "Управление боем",
+                    "subtitle_en": "Manual choices, AI recommendation and Auto Resolve",
+                    "subtitle_ru": "Ручной выбор, рекомендация ИИ и автобой",
+                    "source_url": "docs/BattleAndAdventureRules.md",
+                    "body_en": [
+                        "In a manual battle, yellow outlines mark legal attackers, red outlines mark legal targets and blue marks the Battle AI recommendation. First select the opening leader; during missile and melee steps select an acting creature and its target.",
+                        "Enter accepts the current recommendation. Auto Resolve, or Escape, delegates all remaining decisions to the Battle AI. Both paths use the same combat rules; manual control changes choices, never damage formulas.",
+                        "The playback can be paused and switched between 1x, 2x and 4x. On Easy and Normal the map forecast estimates capture chance and survivors; Hard hides that forecast."
+                    ],
+                    "body_ru": [
+                        "В ручном бою жёлтая рамка отмечает доступных атакующих, красная — допустимые цели, а синяя — рекомендацию боевого ИИ. Сначала выберите лидера атаки; во время стрельбы и ближнего боя выбирайте действующее существо и его цель.",
+                        "Enter принимает текущую рекомендацию. Автобой или Escape передаёт все оставшиеся решения боевому ИИ. Оба пути используют одни и те же правила: ручное управление меняет выбор действий, но не формулы урона.",
+                        "Воспроизведение боя можно приостановить и переключить между скоростью 1x, 2x и 4x. На Easy и Normal прогноз карты оценивает вероятность захвата и число выживших; на Hard прогноз скрыт."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "rune_game",
+            "title_en": "Rune Game",
+            "title_ru": "Игра Рун",
+            "entries": [
+                {
+                    "id": "rune_game_goal",
+                    "title_en": "Runes and the Winning Hand",
+                    "title_ru": "Руны и победная рука",
+                    "subtitle_en": "The 13-rune Hong Kong mahjong foundation",
+                    "subtitle_ru": "Основа гонконгского маджонга с рукой из 13 рун",
+                    "source_url": "docs/reference/classic/Manual.txt:2.1.1-2.1.3",
+                    "body_en": [
+                        "The wall contains four copies of 34 different runes: three numbered suits—Skulls, Swords and Magic Numbers—and seven honors: four Winds and three Dragons. Ones and nines are terminals; runes two through eight are simples.",
+                        "Every wizard starts a hand with 13 runes. A normal turn draws one rune and discards one. A winning hand contains four sets and one pair. A set is a Chow (three consecutive runes of one suit), a Pung (three identical runes), or a Kong (four identical runes).",
+                        "You may declare Game with a rune you draw yourself or with another wizard's active discard. Exposed sets stay visible and their runes can no longer be rearranged or used as spell components; concealed runes remain flexible until the hand is completed."
+                    ],
+                    "body_ru": [
+                        "Стена содержит по четыре экземпляра 34 разных рун: три числовые масти — Черепа, Мечи и Магические Числа — и семь старших рун: четыре Ветра и три Дракона. Единицы и девятки называются крайними, а руны от двух до восьми — простыми.",
+                        "Каждый колдун начинает раздачу с 13 рунами. Обычный ход состоит из добора одной руны и сброса одной. Победная рука содержит четыре набора и одну пару. Набором считается Чау — три последовательные руны одной масти, Панг — три одинаковые руны, или Конг — четыре одинаковые руны.",
+                        "Объявить Игру можно на самостоятельно взятой руне или на активном сбросе другого колдуна. Открытые наборы видны всем, а их руны уже нельзя перестроить или использовать как компоненты заклинаний; скрытые руны остаются свободными до завершения руки."
+                    ]
+                },
+                {
+                    "id": "rune_game_calls",
+                    "title_en": "Chow, Pung and Kong",
+                    "title_ru": "Чау, Панг и Конг",
+                    "subtitle_en": "Claiming discards and changing turn order",
+                    "subtitle_ru": "Перехват сброса и изменение очереди хода",
+                    "source_url": "docs/reference/classic/Manual.txt:2.1.3",
+                    "body_en": [
+                        "Chow completes a three-rune sequence and may claim only the discard of the player immediately before you in turn order. Pung uses two matching runes from your hand to claim the same discard from any opponent. Kong uses three matching runes to claim the fourth, or may be declared after drawing the fourth rune or upgrading an exposed Pung.",
+                        "After Chow or Pung, the caller immediately discards and play continues from that wizard. Kong also takes the turn but first receives a replacement rune so the hand is not left short.",
+                        "Competing calls use the classic priority: Game, Kong, Pung, then Chow. Pass declines the current opportunity; it does not discard a rune from your hand."
+                    ],
+                    "body_ru": [
+                        "Чау завершает последовательность из трёх рун и может забрать только сброс игрока, который ходил непосредственно перед вами. Для Панга нужны две одинаковые руны в руке, после чего можно забрать такую же руну у любого соперника. Конг использует три одинаковые руны для перехвата четвёртой; его также можно объявить после добора четвёртой руны или превратить в него уже открытый Панг.",
+                        "После Чау или Панга объявивший их колдун сразу сбрасывает руну, и очередь продолжается от него. Конг тоже перехватывает ход, но сначала даёт дополнительный добор, чтобы рука не стала короче.",
+                        "Если один сброс вызывает несколько заявок, действует классический приоритет: Игра, Конг, Панг, затем Чау. Пас отказывается от текущей возможности, но не сбрасывает руну из вашей руки."
+                    ]
+                },
+                {
+                    "id": "rune_game_winds",
+                    "title_en": "Winds, Deals and Match Length",
+                    "title_ru": "Ветра, раздачи и длина партии",
+                    "subtitle_en": "Four prevailing winds, four deals each",
+                    "subtitle_ru": "Четыре господствующих ветра по четыре раздачи",
+                    "source_url": "docs/reference/classic/Manual.txt:2.1.2; src/gamedata.cpp",
+                    "body_en": [
+                        "East is the dealer and acts first in a hand. The other seats are South, West and North. Your seat wind is lucky for you; the prevailing wind shown in the centre of the compass is lucky for every wizard.",
+                        "A complete Rune War contains four prevailing-wind rounds—East, South, West and North. Each round contains four deals, rotating the seat winds after every hand, for 16 hands in all. A wall exhausted without a winner is a draw and still advances the campaign.",
+                        "Every completed hand is followed by one strategic map phase in East, South, West, North order. After the fourth deal of the North round, the campaign proceeds to the final score."
+                    ],
+                    "body_ru": [
+                        "Восток является сдающим и ходит первым в раздаче. Остальные места называются Юг, Запад и Север. Ветер вашего места считается счастливым для вас, а господствующий ветер в центре компаса — счастливым для всех колдунов.",
+                        "Полная Война Рун состоит из четырёх кругов господствующего ветра: Востока, Юга, Запада и Севера. В каждом круге проходят четыре раздачи со сменой ветров мест после каждой руки — всего 16 раздач. Если стена закончилась без победителя, фиксируется ничья, но кампания всё равно продолжается.",
+                        "После каждой завершённой руки следует одна фаза стратегической карты в порядке Восток, Юг, Запад, Север. После четвёртой раздачи круга Севера игра переходит к итоговому подсчёту."
+                    ]
+                },
+                {
+                    "id": "rune_game_magic",
+                    "title_en": "Spell Points and Rune Magic",
+                    "title_ru": "Очки магии и сила рун",
+                    "subtitle_en": "How magic is earned and spent in Reborn",
+                    "subtitle_ru": "Как магия зарабатывается и тратится в Reborn",
+                    "source_url": "docs/reference/classic/Manual.txt:3.2.1; themes/classic/index.json",
+                    "body_en": [
+                        "Every wizard begins the campaign with 250 spell points. In the current Reborn rules, discarding earns 10 points; exposing a Chow, Pung or Kong earns 20, 30 or 40; winning earns another 50 plus the same set rewards for the combinations that remained concealed in the hand.",
+                        "Spell points are persistent currency, not the score of a mahjong hand. Summoning a creature or casting a spell spends the listed amount. You must also hold the exact charged runes shown by its formula; using them as components depletes their magic, although the physical runes remain in your hand.",
+                        "The spell menu highlights only actions that are currently legal. A creature also needs a controlled summoning circle or the Tower and room in your army; a spell may additionally require a valid target. Unspent spell points form one of the five final-score categories."
+                    ],
+                    "body_ru": [
+                        "Каждый колдун начинает кампанию с 250 очками магии. В действующих правилах Reborn сброс приносит 10 очков; открытие Чау, Панга или Конга — 20, 30 или 40; победа добавляет ещё 50 и такие же награды за наборы, которые до конца оставались скрытыми в руке.",
+                        "Очки магии — постоянная валюта, а не счёт маджонговской руки. Призыв существа или применение заклинания тратит указанную сумму. Кроме того, в руке должны находиться точные заряженные руны из формулы; использование как компонентов истощает их магию, хотя сами руны остаются в руке.",
+                        "Меню заклинаний подсвечивает только доступные сейчас действия. Для существа также нужны контролируемый круг призыва или Башня и свободное место в армии; заклинанию может понадобиться допустимая цель. Неизрасходованные очки магии образуют одну из пяти категорий итогового счёта."
+                    ]
+                },
+                {
+                    "id": "rune_game_scoring",
+                    "title_en": "Scoring a Winning Hand",
+                    "title_ru": "Подсчёт победной руки",
+                    "subtitle_en": "Points, doubles, the 500-point limit and payments",
+                    "subtitle_ru": "Очки, удвоения, предел 500 и выплаты",
+                    "source_url": "docs/reference/classic/Manual.txt:2.1.4",
+                    "body_en": [
+                        "Classic scoring starts at 20 points for winning. Exposed and concealed Pungs and Kongs add different values; lucky pairs, a fully concealed hand, a one-chance wait and self-draw can add more. Chows normally add no base points. The summary screen lists every recognized set and hand bonus.",
+                        "Doubles reward patterns such as lucky sets, all Pungs, one suit, all simples, winds and dragons. The classic formula multiplies the accumulated points by 2 for each double and limits a hand to 500 points. Limit patterns such as Big Four Winds or Three Big Dragons reach that ceiling directly.",
+                        "The winning score is then paid as land-claim points. Dealer self-draw receives x2 from each opponent; dealer from a discard receives x6 from the discarder. A non-dealer self-draw receives x2 from East and x1 from the others; a non-dealer winning from a discard receives x4 from the discarder. These claim points are later spent to take undefended enemy land."
+                    ],
+                    "body_ru": [
+                        "Классический подсчёт начинается с 20 очков за победу. Открытые и скрытые Панги и Конги имеют разную цену; счастливые пары, полностью скрытая рука, ожидание единственной руны и самостоятельный добор могут добавить очки. Чау обычно не даёт базовых очков. Итоговый экран перечисляет каждый распознанный набор и бонус руки.",
+                        "Удвоения выдаются за счастливые наборы, руку из Пангов, одну масть, только простые руны, комбинации Ветров и Драконов и другие узоры. Классическая формула умножает накопленные очки на два за каждое удвоение и ограничивает руку 500 очками. Предельные комбинации вроде Больших Четырёх Ветров или Трёх Больших Драконов сразу достигают этого потолка.",
+                        "Победный счёт выплачивается очками захвата земель. Если сдающий выиграл на своём доборе, каждый соперник платит x2; если на чужом сбросе, сбросивший платит x6. Обычный игрок при самостоятельном доборе получает x2 от Востока и x1 от остальных; при победе на сбросе — x4 от сбросившего. Затем эти очки тратятся на захват незащищённых вражеских земель."
+                    ]
+                },
+                {
+                    "id": "rune_game_victory",
+                    "title_en": "Winning the Rune War",
+                    "title_ru": "Победа в Войне Рун",
+                    "subtitle_en": "Five strategic categories decide the final rank",
+                    "subtitle_ru": "Итоговый ранг определяют пять стратегических категорий",
+                    "source_url": "docs/MatchScoring.md",
+                    "body_en": [
+                        "After 16 hands, every wizard is compared in five categories: total value of owned territories, number of summoning circles, summon cost of surviving creatures, unspent spell points, and unspent land-claim points against opposing clans.",
+                        "Each category is ranked separately. With four players, first through fourth receive 4, 3, 2 and 1 standing points; ties share a rank and skip the following place. The five standing awards are added, and the highest Total Score wins the Rune War.",
+                        "This means no single raw number dominates the campaign. Land, infrastructure, surviving armies, saved magic and unused claim power all matter, so spending every resource for a short-term gain can cost a category at the end."
+                    ],
+                    "body_ru": [
+                        "После 16 раздач колдуны сравниваются в пяти категориях: суммарная ценность своих территорий, число кругов призыва, стоимость выживших существ, неизрасходованные очки магии и неизрасходованные очки захвата против чужих кланов.",
+                        "Каждая категория ранжируется отдельно. При четырёх игроках места с первого по четвёртое дают 4, 3, 2 и 1 зачётное очко; при ничьей игроки делят место, а следующее пропускается. Пять наград складываются, и колдун с наибольшим Общим Счётом побеждает в Войне Рун.",
+                        "Поэтому одно большое число не может решить всю кампанию. Земли, инфраструктура, уцелевшая армия, сохранённая магия и запас права на захват одинаково важны, а трата всех ресурсов ради краткой выгоды может стоить итоговой категории."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "rules",
+            "title_en": "Classic Rules",
+            "title_ru": "Классические правила",
+            "entries": [
+                {
+                    "title_en": "Rune Game Table",
+                    "title_ru": "Стол Игры Рун",
+                    "subtitle_en": "The official Mah Jong screen FAQ",
+                    "subtitle_ru": "Официальный FAQ по экрану маджонга",
+                    "source_url": "Oracle/MahJong.shtml",
+                    "body_en": [
+                        "The compass shows the prevailing wind at its centre and the four seat winds around it. The current player's seat is highlighted. Play proceeds counter-clockwise. On your turn a drawn rune appears to the right of your thirteen-rune hand.",
+                        "The original release used Space to bypass the timer and V to switch temporarily to the map. If the timer expired after a normal draw, the newly drawn rune was discarded; after claiming with chow or pung, a random rune was discarded.",
+                        "Four Winds Reborn preserves the table and rules while providing modern speed settings, explicit action buttons and safer turn handling. Consult the bundled Mahjong rules for complete scoring."
+                    ],
+                    "body_ru": [
+                        "В центре компаса показан господствующий ветер, а вокруг него — четыре ветра мест игроков. Ветер текущего игрока подсвечивается. Ход идёт против часовой стрелки. В свой ход вы получаете руну справа от основной руки из тринадцати рун.",
+                        "В оригинале пробел пропускал ожидание таймера, а V временно открывала карту. Если время истекало после обычного добора, сбрасывалась только что взятая руна; после объявления чоу или панг сбрасывалась случайная руна из руки.",
+                        "Four Winds Reborn сохраняет стол и основные правила, но добавляет современные настройки скорости, явные кнопки действий и более надёжную обработку хода. Полный подсчёт очков описан в приложенных правилах маджонга."
+                    ]
+                },
+                {
+                    "title_en": "Map and Movement",
+                    "title_ru": "Карта и движение",
+                    "subtitle_en": "Flags, armies, dismissal, undo and land claims",
+                    "subtitle_ru": "Флаги, армии, роспуск, отмена и захват земель",
+                    "source_url": "Oracle/MapScreen.shtml",
+                    "body_en": [
+                        "A flag above a town marks creatures in that territory. Select the land to inspect its army. The Tower can hold forces from every clan. Creatures move to adjacent territories; units with two movement points may travel farther when a valid path exists.",
+                        "Dismiss removes a creature when the map limit prevents a better summoning. Undo restores all prepared movement orders for the current phase.",
+                        "Mah Jong victories award claim points against defeated players. A deed appears when you have enough points, the land borders your territory, and no creatures defend it. The Tower never counts as the required adjacent territory."
+                    ],
+                    "body_ru": [
+                        "Флаг над городом означает, что на территории есть существа. Выберите землю, чтобы осмотреть её армию. В Башне могут одновременно находиться силы всех кланов. Существа переходят на соседние территории; отряды с двумя очками движения могут пройти дальше, если существует допустимый путь.",
+                        "Кнопка «Распустить» удаляет существо, когда лимит на карте мешает лучшему призыву. «Отмена» возвращает все подготовленные приказы движения текущей фазы.",
+                        "Победы в маджонге дают очки захвата против проигравших. Документ на землю появляется, если очков достаточно, территория граничит с вашей и на ней нет существ. Башня не считается необходимой соседней территорией."
+                    ]
+                },
+                {
+                    "title_en": "Combat Procedure",
+                    "title_ru": "Порядок боя",
+                    "subtitle_en": "The classic three-phase explanation",
+                    "subtitle_ru": "Классическое объяснение трёх фаз",
+                    "source_url": "Oracle/MapScreen.shtml",
+                    "body_en": [
+                        "Attack is melee strength, Missile is ranged damage, Defense reduces melee damage, and Loyalty is the damage a unit can endure.",
+                        "Classic combat begins with the defending territory's ranged attack against an attacker. Next, creatures with Missile values make their ranged strikes. Melee then alternates between the leaders of the defending and attacking parties; supporting units increase the leader's attack, and fallen leaders are replaced until one side remains.",
+                        "Special abilities, enchantments and manual target choices can change this sequence in Four Winds Reborn. The forecast uses the active Reborn combat engine; on Hard difficulty it is intentionally hidden."
+                    ],
+                    "body_ru": [
+                        "Атака определяет силу ближнего боя, Стрельба — дальний урон, Защита уменьшает урон в рукопашной, а Верность показывает, сколько повреждений выдержит отряд.",
+                        "Классический бой начинается с выстрела обороняющейся территории по атакующим. Затем существа со Стрельбой наносят дальние удары. После этого лидеры обороняющейся и наступающей групп поочерёдно сражаются врукопашную; поддержка усиливает атаку лидера, а павшего заменяет следующий, пока одна сторона не останется без бойцов.",
+                        "В Four Winds Reborn способности, чары и ручной выбор целей могут менять эту последовательность. Прогноз рассчитывается действующим движком Reborn; на сложности Hard он намеренно скрыт."
+                    ]
+                },
+                {
+                    "title_en": "Casting and Summoning",
+                    "title_ru": "Заклинания и призыв",
+                    "subtitle_en": "Runes, spell points and legal targets",
+                    "subtitle_ru": "Руны, очки заклинаний и допустимые цели",
+                    "source_url": "Oracle/SpellCasting.shtml",
+                    "body_en": [
+                        "A cast requires your turn, enough spell points and the runes shown by the spell. Summoned creatures need a territory you control with a summoning circle; the Tower is also a legal summoning location. Enchantments target a creature, while several hostile spells target another wizard.",
+                        "Healing restores current Loyalty up to the creature's maximum; it does not raise that maximum. A spell can fizzle against magic-resistant creatures such as Maz'Ra or King Drago.",
+                        "The archived FAQ describes the original interface. Four Winds Reborn shows the currently legal spells and targets directly and records rejected actions in its diagnostics."
+                    ],
+                    "body_ru": [
+                        "Для заклинания нужен ваш ход, достаточное число очков магии и указанные руны. Существо призывается на контролируемую территорию с кругом призыва; Башня также считается допустимым местом. Чары накладываются на существо, а некоторые враждебные заклинания выбирают целью другого колдуна.",
+                        "Лечение восстанавливает текущую Верность до её максимума, но не увеличивает сам максимум. Заклинание может рассеяться без эффекта против существ с сопротивлением магии, например Маз'Ра или Короля Драго.",
+                        "Архивный FAQ описывает старый интерфейс. Four Winds Reborn сразу показывает доступные заклинания и цели и фиксирует отклонённые действия в диагностике."
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "legacy",
+            "title_en": "Legacy",
+            "title_ru": "Наследие",
+            "show_in_game": false,
+            "entries": [
+                {
+                    "title_en": "The Original Website",
+                    "title_ru": "Оригинальный сайт",
+                    "subtitle_en": "A map of the 2001 Arcanium archive",
+                    "subtitle_ru": "Карта архива Arcanium 2001 года",
+                    "source_url": "index.html",
+                    "body_en": [
+                        "The official site was a framed 750 by 550 experience with seven portals: Tales, Denizens, Wizards, Oracle, Scry, Herald and Main. Its header played the Marz MIDI theme.",
+                        "Tales held eight lore pages. Denizens grouped the bestiary into Skull, Sword, Magic Number, Elemental, Dragon and Special creatures. Wizards covered all nine playable magic users. Oracle contained installation and gameplay answers. Scry was a screenshot gallery, and Herald preserved reviews and player comments.",
+                        "Four Winds Reborn records the complete page inventory and provenance in docs/ArcaniumArchive.md."
+                    ],
+                    "body_ru": [
+                        "Официальный сайт представлял собой фреймовую страницу размером 750 на 550 пикселей с семью порталами: Tales, Denizens, Wizards, Oracle, Scry, Herald и Main. В заголовке играла MIDI-тема Марз.",
+                        "Tales содержал восемь страниц истории. Denizens делил бестиарий на существ Черепов, Мечей, Чисел, Элементалей, Драконов и Особых. Wizards рассказывал о девяти игровых колдунах. Oracle отвечал на вопросы об установке и правилах. Scry был галереей, а Herald хранил отзывы прессы и игроков.",
+                        "Полный список страниц и происхождение материалов Four Winds Reborn сохраняет в docs/ArcaniumArchive.md."
+                    ]
+                },
+                {
+                    "title_en": "Scrying Gallery",
+                    "title_ru": "Галерея прорицаний",
+                    "subtitle_en": "Five views of the classic release",
+                    "subtitle_ru": "Пять видов классической игры",
+                    "source_url": "Scry/Scry.shtml",
+                    "body_en": [
+                        "The Scry archive presented five screenshot sets: the Map Screen, Combat Screen, Well Screen, Score Screen and Victory Screen. Together they documented the strategic map, battle presentation, Rune Game table, final scoring and victory art of the original release.",
+                        "Most of those original screens and their art survive inside the Classic theme. The Reborn README uses current screenshots so players can distinguish the restored game from its historical presentation."
+                    ],
+                    "body_ru": [
+                        "Архив Scry показывал пять наборов снимков: карту, бой, колодец с рунами, итоговый счёт и экран победы. Вместе они документировали стратегическую карту, оформление сражений, стол Игры Рун, финальный подсчёт и победные иллюстрации оригинала.",
+                        "Большинство этих экранов и рисунков сохранилось внутри стандартной темы. README Reborn использует современные снимки, чтобы игроки отличали восстановленную игру от её исторического облика."
+                    ]
+                },
+                {
+                    "title_en": "Contemporary Reviews",
+                    "title_ru": "Отзывы прессы",
+                    "subtitle_en": "How the press described Rune War in 1997–1998",
+                    "subtitle_ru": "Как прессa описывала Rune War в 1997–1998 годах",
+                    "source_url": "Herald/Herald2.shtml",
+                    "body_en": [
+                        "The archived Herald collected five contemporary notices. Strategy Plus called Rune War a fresh approach to strategy. Next Generation highlighted its unusually elaborate computer Mah Jong. GameSpot described a challenge for experienced players. ZENtropy rated it 8/10 and called it a jewel, while AllAboutGames awarded 88% and placed it among the strongest strategy games of its moment.",
+                        "These are historical promotional excerpts, not modern review scores. They are preserved to show how the hybrid of Mah Jong, magic and territorial strategy was received at release."
+                    ],
+                    "body_ru": [
+                        "Архивный Herald собрал пять отзывов современников. Strategy Plus назвал Rune War свежим подходом к стратегии. Next Generation отметил необычайно сложную компьютерную реализацию маджонга. GameSpot увидел в ней вызов для опытного игрока. ZENtropy поставил 8 из 10 и назвал игру драгоценностью, а AllAboutGames дал 88 процентов и отнёс её к сильнейшим стратегиям своего времени.",
+                        "Это исторические рекламные выдержки, а не современные оценки. Они сохранены, чтобы показать, как на выходе приняли необычное соединение маджонга, магии и борьбы за территории."
+                    ]
+                },
+                {
+                    "title_en": "Player Voices",
+                    "title_ru": "Голоса игроков",
+                    "subtitle_en": "Comments preserved by the Herald",
+                    "subtitle_ru": "Комментарии, сохранённые в Herald",
+                    "source_url": "Herald/Herald3.shtml",
+                    "body_en": [
+                        "The player page praised the striking artwork, strategic depth and the way Rune War transformed Mah Jong into a larger campaign. Comments came from PC Gamer UK, Games.exe, TEN's File Factory and several beta testers.",
+                        "The shortest and perhaps most durable verdict came from tester Martin Rep: the game was simply great. The continuing restoration exists because a small community still agrees."
+                    ],
+                    "body_ru": [
+                        "Страница игроков хвалила выразительную графику, стратегическую глубину и то, как Rune War превращала маджонг в большую кампанию. Там были комментарии PC Gamer UK, Games.exe, TEN's File Factory и нескольких бета-тестеров.",
+                        "Самый короткий и, пожалуй, самый стойкий вывод принадлежал тестеру Мартину Репу: игра просто отличная. Нынешняя реставрация существует потому, что небольшое сообщество по-прежнему с ним согласно."
+                    ]
+                },
+                {
+                    "title_en": "Windows 95 Time Capsule",
+                    "title_ru": "Капсула времени Windows 95",
+                    "subtitle_en": "The archived installation FAQ",
+                    "subtitle_ru": "Архивный FAQ по установке",
+                    "source_url": "Oracle/Installation.shtml",
+                    "body_en": [
+                        "The original installer expected 60 MB free for the game and another 30 MB on the Windows system drive. Rune War required DirectX 5, a display capable of 1024 by 768 in 256 colours, and dplayx.dll. Its crash advice was to close background programs or increase the virtual swap file.",
+                        "None of these requirements apply to Four Winds Reborn. They are kept here as a technical museum label for the 1990s release; current platform requirements belong in the Reborn README and release notes."
+                    ],
+                    "body_ru": [
+                        "Оригинальному установщику требовалось 60 МБ для игры и ещё 30 МБ на системном диске Windows. Rune War нуждалась в DirectX 5, экране 1024 на 768 в 256 цветах и библиотеке dplayx.dll. При нехватке памяти советовали закрыть фоновые программы или увеличить файл подкачки.",
+                        "К Four Winds Reborn эти требования не относятся. Здесь они сохранены как музейная табличка к выпуску девяностых; актуальные требования находятся в README и примечаниях к релизам Reborn."
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -11,7 +11,6 @@ from pathlib import Path
 
 
 TRANSLATIONS: dict[str, str] = {
-    "Original Theme": "Оригинальная тема",
     "Select Wizard & Clan": "Колдун и Клан",
     "Wizard:": "Колдун:",
     "Clan:": "Клан:",
@@ -222,8 +221,14 @@ TRANSLATIONS: dict[str, str] = {
     "Normal": "Норма",
     "Hard": "Сложно",
     "Battle Forecast": "Прогноз Боя",
+    "Battle Intel": "Данные Разведки",
     "Capture: %1%": "Захват: %1%",
     "Attackers remain: %1%": "Выживет Атакующих: %1%",
+    "Outcome hidden on Hard": "Исход скрыт на сложной",
+    "Known: %1 attackers / %2 visible guards": "Известно: %1 атак. / %2 защитн.",
+    "Town loyalty: %1 - known forces only": "Верность земли: %1 · только видимые",
+    "Blue: move  Orange: attack": "Голубой: ход  Оранжевый: атака",
+    "Yellow: claimable": "Жёлтый: можно присоединить",
     "Luck: choose a rune": "Удача: Выберите Руну",
     "The other rune returns to the wall.": "Другая руна вернётся в стену.",
     "One Chance": "Один Шанс",
@@ -694,7 +699,210 @@ RUNTIME_DESCRIPTION_FILES = (
     "spells.json",
     "specials.json",
     "abilities.json",
+    "lands.json",
 )
+
+RUNTIME_LOCALIZED_FIELDS = ("name", "dignity", "description")
+
+TRANSLATIONS.update({
+    "Reborn Community Package": "Reborn",
+    "Morvane": "Морвейн",
+    "Grave Sovereign": "Повелитель Могил",
+    "Morvane hears counsel in the final breath of kings. He enters the war with patient cruelty, raising disciplined hosts from every forgotten battlefield.": "Морвейн слышит советы в последнем вздохе королей. Он вступает в войну с терпеливой жестокостью, поднимая дисциплинированные легионы на каждом забытом поле боя.",
+    "Aurel": "Аурель",
+    "Oathbound Marshal": "Маршал Клятвы",
+    "Aurel binds steel, law and magic into a single unbroken oath. He wins by building a force that can endure every setback and answer in kind.": "Аурель связывает сталь, закон и магию единой нерушимой клятвой. Он побеждает, создавая войско, способное пережить любой удар и ответить тем же.",
+    "Selka": "Селка",
+    "Tide Whisperer": "Шепчущая Приливам",
+    "Selka travels beneath river and reef, appearing where no army expects her. Quiet choices and precise timing make her more dangerous than louder rivals.": "Селка путешествует под реками и рифами, появляясь там, где её не ждёт ни одна армия. Тихие решения и безупречный расчёт делают её опаснее самых громких соперников.",
+    "Veyr": "Вейр",
+    "Glass-Eyed Strategist": "Стеклоглазый Стратег",
+    "Veyr studies war through an enchanted lens that reveals hidden companies. Every movement is a calculation, and every apparent retreat is another prepared trap.": "Вейр изучает войну через зачарованную линзу, открывающую скрытые отряды. Каждое движение для него — расчёт, а каждое отступление — подготовленная ловушка.",
+    "Ashara": "Ашара",
+    "Ember Exile": "Изгнанница Углей",
+    "Ashara carries the last flame of a vanished homeland. Her anger can erase whole ranks, but she has learned to aim it with a survivor's discipline.": "Ашара несёт последнее пламя исчезнувшей родины. Её гнев способен стереть целые ряды, но она научилась направлять его с дисциплиной выжившей.",
+    "Morrow": "Морроу",
+    "Many-Faced Sage": "Многоликий Мудрец",
+    "Morrow has borrowed a thousand faces and learned something from every life. No summoning tradition is closed to this patient collector of forbidden forms.": "Морроу примерил тысячу лиц и из каждой жизни вынес новый урок. Для этого терпеливого собирателя запретных форм не существует закрытой школы призыва.",
+    "Rill": "Рилл",
+    "Wandering Cantor": "Странствующий Певец",
+    "Rill remembers every road as a song. His verses restore courage to weary allies and turn a scattered company into a loyal host.": "Рилл помнит каждую дорогу как песню. Его куплеты возвращают храбрость усталым союзникам и превращают разрозненный отряд в верное войско.",
+    "Nix": "Никс",
+    "Laughing Gambler": "Смеющийся Игрок",
+    "Nix treats fate as a table where the rules change with every throw. What looks like recklessness is often a wager made several turns in advance.": "Никс считает судьбу игровым столом, где правила меняются после каждого броска. То, что кажется безрассудством, часто оказывается ставкой, сделанной за несколько ходов вперёд.",
+    "Cael": "Каэль",
+    "Storm-Born Seer": "Рождённый Бурей Провидец",
+    "Cael listens to thoughts carried by the high winds. Silence cannot close that inner sky, and no hidden intention remains hidden for long.": "Каэль слышит мысли, которые несут высотные ветра. Безмолвие не способно закрыть это внутреннее небо, и ни один замысел не остаётся тайной надолго.",
+    "Unknown Wanderer": "Неизвестный Странник",
+
+    "Bonebound Host": "Связанный Костями Легион",
+    "Nightshade": "Ночная Тень",
+    "Web Reaver": "Паутинный Жнец",
+    "Hollow Cavalier": "Полый Всадник",
+    "Pale Echo": "Бледное Эхо",
+    "Horned Tyrant": "Рогатый Тиран",
+    "Oathguard": "Страж Клятвы",
+    "Gatewarden": "Хранитель Врат",
+    "Maze Bull": "Лабиринтный Бык",
+    "Free Company": "Вольный Отряд",
+    "Cinder Giant": "Угольный Великан",
+    "Crowned Drake": "Коронованный Дракон",
+    "Dune Phantom": "Призрак Дюн",
+    "Stone Colossus": "Каменный Колосс",
+    "Tide Siren": "Сирена Прилива",
+    "Stormwing": "Бурекрыл",
+    "Cloud Serpent": "Облачный Змей",
+    "Sky Titan": "Небесный Титан",
+    "Frost Drake": "Ледяной Дракон",
+    "Verdant Drake": "Изумрудный Дракон",
+    "Ember Drake": "Огненный Дракон",
+    "Cinder Elemental": "Элементаль Углей",
+    "Stoneheart Elemental": "Камнесердный Элементаль",
+    "Aether Elemental": "Элементаль Эфира",
+    "Tide Elemental": "Элементаль Прилива",
+    "Iron Behemoth": "Железный Исполин",
+    "Living Tempest": "Живая Буря",
+    "Griffin": "Грифон",
+    "Veil Stalker": "Незримый Охотник",
+
+    "Veterans of a dozen border wars fight beneath the Free Company's patched banner. Their scouts expose invisible enemies in neighboring lands, while the company itself brings balanced steel and missile fire.": "Ветераны десятка пограничных войн сражаются под латаным знаменем Вольного Отряда. Их разведчики обнаруживают невидимых врагов в соседних землях, а сам отряд сочетает надёжный ближний бой и стрельбу.",
+    "A living knot of high wind, the Aether Elemental crosses the map with unnatural speed. Missiles pass through its body, and its presence grants the summoner the power to silence a rival wizard.": "Живой узел высотных ветров, Элементаль Эфира движется по карте с неестественной быстротой. Снаряды проходят сквозь его тело, а его присутствие дарует призывателю силу лишить соперника голоса.",
+    "The Gatewarden carries keys to roads that do not exist on any map. She may step between friendly summoning circles, and an attacking company under her command seizes the first action in melee.": "Хранительница Врат носит ключи от дорог, которых нет ни на одной карте. Она может переходить между дружественными кругами призыва, а ведомый ею атакующий отряд получает первое действие в ближнем бою.",
+    "The Veil Stalker bends color and shadow around its scales before loosing a careful shot. It remains invisible while traveling and restores itself at the opening of every map phase.": "Незримый Охотник изгибает свет и тень вокруг своей чешуи, прежде чем сделать точный выстрел. Он остаётся невидимым в пути и полностью восстанавливается в начале каждой фазы карты.",
+    "Web Reavers pin prey with barbed threads before closing on hooked limbs. They possess no arcane trick, relying instead on unusually strong melee backed by a precise opening shot.": "Паутинные Жнецы опутывают добычу колючими нитями, а затем сходятся в ближнем бою. У них нет магических уловок — только необычайно сильная атака и точный первый выстрел.",
+    "Stone and root close every wound in the Stoneheart Elemental when the map phase begins. Its deep memory also teaches its summoner Rune Sight, revealing a rival's concealed hand.": "Камень и корни залечивают каждую трещину Камнесердного Элементаля в начале фазы карты. Его древняя память также открывает призывателю Рунное Зрение и скрытую руку соперника.",
+    "The Cinder Elemental answers every melee blow with a lick of punishing flame. While it endures, its summoner may fracture an enemy rune through the Shatter Rune spell.": "Элементаль Углей отвечает языком карающего пламени на каждый удар в ближнем бою. Пока он существует, призыватель может расколоть вражескую руну заклинанием Раскол Руны.",
+    "A Cinder Giant hurls furnace-hot stone before wading into battle. High defense and loyalty let it hold the line after its powerful opening volley has landed.": "Угольный Великан швыряет раскалённые камни, а затем вступает в бой. Высокая защита и верность позволяют ему держать строй после мощного начального залпа.",
+    "The Verdant Drake abandons ranged combat for overwhelming claws and relentless speed. Its bond with forged weapons lets its summoner call a Blade rune from the wall.": "Изумрудный Дракон отказался от стрельбы ради сокрушительных когтей и стремительного движения. Его связь с кованым оружием позволяет призывателю вызвать из стены Руну Клинка.",
+    "Griffins patrol two lands at a stride and spot companies hidden from ordinary eyes. When several fight together, their disciplined formation improves both attack and defense.": "Грифоны проходят две земли за один ход и замечают отряды, скрытые от обычного взгляда. Сражаясь вместе, они строятся в единый строй и повышают как атаку, так и защиту.",
+    "The Iron Behemoth advances slowly, but few defenders can stop it once battle begins. Its massive frame strikes hard, absorbs punishment and repairs itself before each movement phase.": "Железный Исполин движется медленно, но остановить его в бою почти невозможно. Огромное тело наносит тяжёлые удары, выдерживает урон и восстанавливается перед каждой фазой движения.",
+    "The Cloud Serpent coils through volleys as though arrows were rain. Strong attack, deep loyalty and swift movement make it dangerous even without a missile strike of its own.": "Облачный Змей проходит сквозь залпы, словно стрелы — это дождь. Сильная атака, высокая верность и скорость делают его опасным даже без собственной стрельбы.",
+    "Only hoofprints and a hollow rattle announce the Hollow Cavalier. Invisible on the map and solid in close combat, it is an ideal blade for an ambush or an enchanted assault.": "О Полом Всаднике предупреждают лишь следы копыт и пустой грохот. Невидимый на карте и крепкий в ближнем бою, он идеально подходит для засады или усиленной заклинаниями атаки.",
+    "The Crowned Drake is a fortress with wings folded around it. Magic may fail against its hide, and every melee attack carries a chance to become a devastating Mighty Blow.": "Коронованный Дракон подобен крепости со сложенными крыльями. Магия может рассеяться о его шкуру, а каждый удар способен превратиться в сокрушительный Могучий Удар.",
+    "An Oathguard is inexpensive, disciplined and far more dangerous than its modest strength suggests. Each melee attack has a chance to erupt into a Mighty Blow.": "Страж Клятвы дёшев, дисциплинирован и гораздо опаснее, чем кажется по его скромной силе. Каждый удар в ближнем бою может стать Могучим Ударом.",
+    "The Tide Siren's first note steals a defender's moment to react. When she leads an attack, her company skips the missile exchange and acts first in melee.": "Первая нота Сирены Прилива лишает защитника времени на ответ. Когда она ведёт атаку, её отряд пропускает обмен залпами и первым действует в ближнем бою.",
+    "The Horned Tyrant breaks armies by presence alone. Its crushing attack is protected by resistance to hostile magic, while Inferno scorches every enemy that dares share its battlefield.": "Рогатый Тиран ломает армии одним своим присутствием. Сопротивление вражеской магии защищает его сокрушительную атаку, а Инферно обжигает каждого врага на поле боя.",
+    "The Maze Bull needs neither enchantment nor subtlety. Reliable attack, defense and loyalty make this straightforward fighter a dependable core for an early company.": "Лабиринтному Быку не нужны ни чары, ни хитрости. Надёжные атака, защита и верность делают его крепкой основой раннего отряда.",
+    "The Ember Drake opens battle with a long torrent of fire, then closes with fang and claw. Its affinity with death lets its summoner call a Bone rune from the wall.": "Огненный Дракон начинает бой длинной струёй пламени, а затем пускает в ход клыки и когти. Его связь со смертью позволяет призывателю вызвать из стены Руну Кости.",
+    "The Dune Phantom travels as a stain of moving sand, unseen until combat begins. Its defenses are fragile, but secrecy makes it a useful escort, scout and surprise attacker.": "Призрак Дюн движется невидимым пятном песка и появляется лишь в бою. Его защита хрупка, но скрытность делает его полезным разведчиком, спутником и внезапным нападающим.",
+    "Nightshades cross the island unseen and grow stronger when gathered into one company. Their Merge discipline improves both attack and defense for every matching companion.": "Ночные Тени незримо пересекают остров и становятся сильнее, собравшись в одном отряде. Их Слияние повышает атаку и защиту каждого одинакового союзника.",
+    "The Sky Titan combines speed, missile power and immense loyalty in a single towering ally. Its Devotion restores two loyalty before movement, keeping it ready for the next campaign.": "Небесный Титан сочетает скорость, стрельбу и огромную верность. Его Преданность восстанавливает две единицы верности перед движением, готовя его к следующему походу.",
+    "A Bonebound Host is weak one warrior at a time and terrifying as a tide. When it attacks, Swarm spreads its assault across the entire opposing company instead of only the leader.": "Каждый воин Связанного Костями Легиона слаб по отдельности, но вместе они превращаются в ужасный прилив. Рой распределяет их атаку по всему вражескому отряду, а не только по лидеру.",
+    "The Stone Colossus is cheap to summon and stubborn to remove. Chips and fractures seal before movement, allowing this regenerating guardian to return to full loyalty.": "Каменный Колосс дёшев в призыве и упрямо держится в бою. Сколы и трещины затягиваются перед движением, полностью восстанавливая верность этого стража.",
+    "Stormwing dives across two lands and announces battle with a bolt from the clouds. Balanced attack and high loyalty make it a flexible mid-cost creature.": "Бурекрыл пролетает две земли и начинает бой ударом из облаков. Сбалансированная атака и высокая верность делают его гибким существом средней цены.",
+    "The Living Tempest rolls over two lands at a time, carrying a durable core inside its storm wall. Enemy missiles vanish into the gale before they can select it as a target.": "Живая Буря проходит две земли за ход, скрывая прочное ядро за стеной ветра. Вражеские снаряды исчезают в вихре, не успев выбрать её целью.",
+    "The Tide Elemental divides into grasping currents that can strike an entire enemy company. Its summoner also gains Essence Haze, suppressing ordinary magic and summoning across the table.": "Элементаль Прилива разделяется на цепкие потоки, способные атаковать весь вражеский отряд. Его призыватель также получает Туман Эссенции, подавляющий обычную магию и призыв за столом.",
+    "The Frost Drake is swift, fiercely loyal and difficult to break. Its crystalline breath carries a Number rune's pattern, allowing its summoner to call one from the wall.": "Ледяной Дракон быстр, необычайно верен и с трудом поддаётся натиску. Узоры в его ледяном дыхании позволяют призывателю вызвать из стены Руну Числа.",
+    "The Pale Echo is an aggressive spirit that crosses two lands before striking. Whatever loyalty it loses is restored before movement, making repeated battles its natural rhythm.": "Бледное Эхо — агрессивный дух, способный пройти две земли перед ударом. Потерянная верность восстанавливается перед движением, поэтому череда боёв для него естественна.",
+
+    "War Trance": "Боевой Транс",
+    "Reckless Oath": "Безрассудная Клятва",
+    "Radiant Burst": "Сияющая Вспышка",
+    "Dark Command": "Тёмный Приказ",
+    "Unravel": "Развеивание",
+    "Blinding Dust": "Слепящая Пыль",
+    "Aegis": "Эгида",
+    "Guiding Star": "Путеводная Звезда",
+    "Mend": "Исцеление",
+    "Inferno": "Инферно",
+    "Valiant Heart": "Доблестное Сердце",
+    "Storm Lance": "Копьё Бури",
+    "Arcane Mantle": "Магическая Мантия",
+    "Great Unraveling": "Великое Развеивание",
+    "Dread Wave": "Волна Ужаса",
+    "Wellspring": "Источник",
+    "Wellspring of Might": "Источник Силы",
+    "Wellspring of Reach": "Источник Дальности",
+    "Wellspring of Vigor": "Источник Стойкости",
+    "Binding Sigil": "Сковывающий Знак",
+    "Withering Mark": "Метка Увядания",
+    "Veil of Smoke": "Дымовая Завеса",
+    "Waystep": "Шаг Сквозь Пространство",
+    "Essence Haze": "Туман Эссенции",
+    "Shatter Rune": "Раскол Руны",
+    "Rune Sight": "Рунное Зрение",
+    "Hush": "Безмолвие",
+    "Call Number Rune": "Призыв Руны Числа",
+    "Call Bone Rune": "Призыв Руны Кости",
+    "Call Blade Rune": "Призыв Руны Клинка",
+
+    "War Trance permanently grants one friendly creature +1 Attack.": "Боевой Транс навсегда даёт одному дружественному существу +1 к Атаке.",
+    "Reckless Oath permanently grants one friendly creature +1 Attack and +1 Missile, but reduces its maximum Loyalty by 2.": "Безрассудная Клятва навсегда даёт одному дружественному существу +1 к Атаке и +1 к Стрельбе, но снижает его максимальную Верность на 2.",
+    "Radiant Burst permanently reduces one enemy creature's Defense by 1.": "Сияющая Вспышка навсегда снижает Защиту одного вражеского существа на 1.",
+    "Dark Command permanently raises one friendly creature's maximum Loyalty by 1.": "Тёмный Приказ навсегда повышает максимальную Верность одного дружественного существа на 1.",
+    "Unravel removes every spell enchantment from one creature, friendly or enemy. Innate special abilities remain.": "Развеивание снимает все наложенные заклинания с одного дружественного или вражеского существа. Врождённые особенности сохраняются.",
+    "Blinding Dust permanently reduces one enemy creature's Attack by 1.": "Слепящая Пыль навсегда снижает Атаку одного вражеского существа на 1.",
+    "Aegis permanently reduces missile and territory-fire damage against one friendly creature by 1.": "Эгида навсегда уменьшает на 1 урон от стрельбы и огня территории по одному дружественному существу.",
+    "Guiding Star permanently grants one friendly creature +1 Missile.": "Путеводная Звезда навсегда даёт одному дружественному существу +1 к Стрельбе.",
+    "Mend restores 2 current Loyalty to one friendly creature, never above its maximum.": "Исцеление восстанавливает одному дружественному существу 2 текущей Верности, но не выше максимума.",
+    "Inferno immediately deals 2 Loyalty damage to every creature in one enemy company.": "Инферно немедленно наносит 2 урона Верности каждому существу в одном вражеском отряде.",
+    "Valiant Heart permanently grants one friendly creature +1 Attack and +1 maximum Loyalty.": "Доблестное Сердце навсегда даёт одному дружественному существу +1 к Атаке и +1 к максимальной Верности.",
+    "Storm Lance immediately deals 1 Loyalty damage to one enemy creature.": "Копьё Бури немедленно наносит 1 урон Верности одному вражескому существу.",
+    "Arcane Mantle permanently grants one friendly creature +1 Defense.": "Магическая Мантия навсегда даёт одному дружественному существу +1 к Защите.",
+    "Great Unraveling removes every spell enchantment from all creatures in the selected land. Innate special abilities remain.": "Великое Развеивание снимает все наложенные заклинания со всех существ в выбранной земле. Врождённые особенности сохраняются.",
+    "Dread Wave permanently reduces the maximum Loyalty of every creature in one enemy company by 1.": "Волна Ужаса навсегда снижает максимальную Верность каждого существа в одном вражеском отряде на 1.",
+    "Wellspring permanently grants one friendly creature a random +1 bonus to Attack, Missile or maximum Loyalty.": "Источник навсегда даёт одному дружественному существу случайный бонус +1 к Атаке, Стрельбе или максимальной Верности.",
+    "Wellspring of Might is the Attack outcome of Wellspring and permanently grants +1 Attack.": "Источник Силы — исход Источника, навсегда дающий +1 к Атаке.",
+    "Wellspring of Reach is the Missile outcome of Wellspring and permanently grants +1 Missile.": "Источник Дальности — исход Источника, навсегда дающий +1 к Стрельбе.",
+    "Wellspring of Vigor is the Loyalty outcome of Wellspring and permanently grants +1 maximum Loyalty.": "Источник Стойкости — исход Источника, навсегда дающий +1 к максимальной Верности.",
+    "Binding Sigil prevents one enemy creature from acting for one battle turn.": "Сковывающий Знак не позволяет одному вражескому существу действовать в течение одного хода боя.",
+    "Withering Mark permanently reduces one enemy creature's Attack and Defense by 1.": "Метка Увядания навсегда снижает Атаку и Защиту одного вражеского существа на 1.",
+    "Veil of Smoke permanently reduces one enemy creature's Missile by 1, to a minimum effective value of zero.": "Дымовая Завеса навсегда снижает Стрельбу одного вражеского существа на 1, но не ниже нуля.",
+    "Waystep moves one friendly creature directly to any friendly land.": "Шаг Сквозь Пространство перемещает одно дружественное существо прямо в любую дружественную землю.",
+    "Essence Haze affects every wizard and prevents ordinary spell casting and creature summoning for 3 turns.": "Туман Эссенции действует на всех колдунов и запрещает обычные заклинания и призыв существ на 3 хода.",
+    "Shatter Rune forces one rival wizard to discard a random rune during their next turn.": "Раскол Руны заставляет одного соперника сбросить случайную руну в течение его следующего хода.",
+    "Rune Sight reveals one rival's concealed hand to the caster for 5 turns.": "Рунное Зрение на 5 ходов открывает заклинателю скрытую руку одного соперника.",
+    "Hush prevents one rival from calling Chao, Pung, Kong or Game and from casting or summoning for 3 turns. Telepaths are immune.": "Безмолвие на 3 хода запрещает одному сопернику объявлять Чоу, Панг, Конг или Маджонг, а также колдовать и призывать. Телепаты невосприимчивы.",
+    "Call Number Rune directs your next draw to a Number rune if one remains in the wall.": "Призыв Руны Числа направляет ваш следующий добор к Руне Числа, если такая осталась в стене.",
+    "Call Bone Rune directs your next draw to a Bone rune if one remains in the wall.": "Призыв Руны Кости направляет ваш следующий добор к Руне Кости, если такая осталась в стене.",
+    "Call Blade Rune directs your next draw to a Blade rune if one remains in the wall.": "Призыв Руны Клинка направляет ваш следующий добор к Руне Клинка, если такая осталась в стене.",
+
+    "Ashen Point": "Пепельный Мыс",
+    "Azure Reach": "Лазурный Предел",
+    "Goldwatch": "Золотой Дозор",
+    "Bleak Narrows": "Мрачные Теснины",
+    "Brackenwall": "Папоротниковый Вал",
+    "Starwood": "Звёздный Лес",
+    "Charfall": "Угольный Пад",
+    "Whispering Expanse": "Шепчущий Простор",
+    "Cloudrest": "Облачный Приют",
+    "Coralmere": "Коралловое Озеро",
+    "Blackwater": "Чёрные Воды",
+    "Firwatch": "Еловый Дозор",
+    "Gambler's Run": "Тропа Игрока",
+    "Stonejaw": "Каменная Пасть",
+    "Mossbarrow": "Мшистый Курган",
+    "Gorsehold": "Терновая Крепь",
+    "Hexwood": "Колдовской Лес",
+    "Iron Oath": "Железная Клятва",
+    "Cairnfall": "Падение Курганов",
+    "Oathhaven": "Пристань Клятвы",
+    "Moonreed": "Лунные Камыши",
+    "Redhaven": "Красная Гавань",
+    "Mirebridge": "Болотный Мост",
+    "Tinker's Hollow": "Лощина Мастера",
+    "Bloomwater Bay": "Цветущая Бухта",
+    "Pyre Reach": "Огненный Предел",
+    "Crown Peaks": "Коронные Пики",
+    "Rimebank": "Инеевый Берег",
+    "Riftstead": "Поселение Разлома",
+    "Reedmarch": "Камышовый Рубеж",
+    "Ashfang": "Пепельный Клык",
+    "Stillwind Plains": "Равнины Тихого Ветра",
+    "Windglass Chute": "Ущелье Ветрового Стекла",
+    "Sablemere": "Соболиное Озеро",
+    "Sunward": "Солнечный Край",
+    "Sunwell": "Солнечный Колодец",
+    "Sunscar": "Солнечный Шрам",
+    "Talon Reach": "Когтистый Предел",
+    "Shellback Isle": "Панцирный Остров",
+    "Crosswind Citadel": "Цитадель Перекрёстных Ветров",
+    "Scale Ford": "Чешуйчатый Брод",
+    "High Banner": "Высокое Знамя",
+    "Ember Coast": "Тлеющий Берег",
+    "Springmere": "Весеннее Озеро",
+    "Thornfield": "Терновое Поле",
+})
 
 
 for number in range(1, 10):
@@ -753,10 +961,22 @@ def translation_for(msgid: str) -> str | None:
     )
 
 
-def runtime_descriptions() -> dict[str, list[str]]:
+def runtime_messages(catalog: Path) -> dict[str, list[str]]:
     root = Path(__file__).resolve().parents[1]
-    data_dir = root / "themes" / "default" / "json" / "gamedata"
+    theme = catalog.resolve().parent.parent
+    data_dir = theme / "json" / "gamedata"
     messages: dict[str, list[str]] = {}
+
+    index_path = theme / "index.json"
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        index = {}
+    description = index.get("description") if isinstance(index, dict) else None
+    if isinstance(description, str) and description:
+        messages.setdefault(description, []).append(
+            index_path.relative_to(root).as_posix()
+        )
 
     for filename in RUNTIME_DESCRIPTION_FILES:
         path = data_dir / filename
@@ -769,9 +989,10 @@ def runtime_descriptions() -> dict[str, list[str]]:
         for row in rows:
             if not isinstance(row, dict):
                 continue
-            description = row.get("description", "")
-            if description:
-                messages.setdefault(description, []).append(reference)
+            for field in RUNTIME_LOCALIZED_FIELDS:
+                message = row.get(field, "")
+                if message:
+                    messages.setdefault(message, []).append(reference)
 
     return messages
 
@@ -809,7 +1030,7 @@ def update_block(block: str) -> tuple[str, bool]:
 
 
 def main() -> int:
-    catalog = Path(sys.argv[1] if len(sys.argv) > 1 else "themes/default/lang/ru.po")
+    catalog = Path(sys.argv[1] if len(sys.argv) > 1 else "themes/classic/lang/ru.po")
     source = catalog.read_text(encoding="utf-8")
     blocks = re.split(r"\n{2,}", source)
     is_template = catalog.suffix == ".pot"
@@ -832,7 +1053,7 @@ def main() -> int:
         updated += int(changed)
 
     added = 0
-    for msgid, references in runtime_descriptions().items():
+    for msgid, references in runtime_messages(catalog).items():
         if msgid in existing:
             continue
         translation = "" if is_template else (translation_for(msgid) or "")

@@ -1,0 +1,42 @@
+{
+    "cursor":           "hardware",
+    "background":       { "id": "screen5", "type": "file", "file": "mapsummary.png", "colorkey": "#ffd2d2" },
+    "music":            [ "win" ],
+    "default:font":     "dejavus22",
+    "default:color":    "#efe4ae",
+    "color:winner":     "#f2c96d",
+    "color:victory_panel": "#090807",
+    "color:victory_border": "#b8944f",
+    "alpha:victory_panel": 226,
+    "area:victory_panel": [ 0, 594, 1024, 174 ],
+    "area:summary_portraits": [ 6, 6, 500, 138 ],
+    "area:summary_winner": [ 518, 6, 500, 138 ],
+
+    "buttons":      [
+                      { "id": "but_done", "position": [ 926, 710 ], "sprites": [ "but_done1", "but_done2" ] }
+                ],
+
+    "textinfo:category":  { "position": [ 152, 252 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:score1":    { "position": [ 356, 252 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:rank1":     { "position": [ 444, 252 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:score2":    { "position": [ 544, 252 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:rank2":     { "position": [ 624, 252 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:score3":    { "position": [ 716, 252 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:rank3":     { "position": [ 804, 252 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:score4":    { "position": [ 896, 252 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:rank4":     { "position": [ 986, 252 ], "align": "center", "font": "dejavus18", "color": "#efe4ae" },
+    "textinfo:territory": { "position": [ 10, 286 ], "align": "left", "font": "dejavus22", "color": "#efe4ae" },
+    "textinfo:summon":    { "position": [ 10, 320 ], "align": "left", "font": "dejavus22", "color": "#efe4ae" },
+    "textinfo:unit":      { "position": [ 10, 374 ], "align": "left", "font": "dejavus22", "color": "#efe4ae" },
+    "textinfo:spell":     { "position": [ 10, 410 ], "align": "left", "font": "dejavus22", "color": "#efe4ae" },
+    "textinfo:land":      { "position": [ 10, 446 ], "align": "left", "font": "dejavus22", "color": "#efe4ae" },
+    "textinfo:total":     { "position": [ 10, 638 ], "align": "left", "font": "dejavus26", "color": "#efe4ae" },
+    "textinfo:summary_title":   { "position": [ 768, 28 ], "align": "center", "font": "dejavus20", "color": "#f2c96d" },
+    "textinfo:summary_winners": { "position": [ 768, 72 ], "align": "center", "font": "dejavus28", "color": "#efe4ae" },
+    "textinfo:summary_details": { "position": [ 768, 114 ], "align": "center", "font": "dejavus16", "color": "#d8c9a5" },
+    "textinfo:victory_title":   { "position": [ 512, 606 ], "align": "center", "font": "dejavus30", "color": "#f2c96d" },
+    "textinfo:victory_name":    { "position": [ 512, 642 ], "align": "center", "font": "dejavus26", "color": "#efe4ae" },
+    "textinfo:victory_details": { "position": [ 512, 674 ], "align": "center", "font": "dejavus18", "color": "#d8c9a5" },
+    "textinfo:victory_winners": { "position": [ 512, 700 ], "align": "center", "font": "dejavus16", "color": "#d8c9a5" },
+    "textinfo:victory_hint":    { "position": [ 512, 738 ], "align": "center", "font": "dejavus14", "color": "#9c9078" }
+}

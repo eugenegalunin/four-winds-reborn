@@ -1,0 +1,6 @@
+[
+    { "id": "east", "name": "East", "image": "stone_large41" },
+    { "id": "south", "name": "South", "image": "stone_large42" },
+    { "id": "west", "name": "West", "image": "stone_large43" },
+    { "id":  "north", "name": "North", "image": "stone_large44" }
+]
