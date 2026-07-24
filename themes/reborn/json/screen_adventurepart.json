@@ -1,6 +1,6 @@
 {
     "cursor":		"hardware",
-    "background":	{ "id": "screen4", "type": "file", "file": "map.png", "crop": [0, 0, 1024, 768], "colorkey": "#ffd2d2" },
+    "background":	{ "id": "screen4", "type": "file", "file": "adventure_map_background.png" },
     "music":		[ "map" ],
     "default:font":	"dejavus26",
     "default:color":	"#efe4ae",
@@ -28,10 +28,10 @@
 		"delay": 300,
 		"loop": true,
 		"sprites": [
-			    { "id": "town_power1", "type": "file", "file": "map.png", "crop": [430, 1054, 41, 41], "colorkey": "#ffd2d2" },
-			    { "id": "town_power2", "type": "file", "file": "map.png", "crop": [471, 1054, 41, 41], "colorkey": "#ffd2d2" },
-			    { "id": "town_power3", "type": "file", "file": "map.png", "crop": [512, 1054, 41, 41], "colorkey": "#ffd2d2" },
-			    { "id": "town_power4", "type": "file", "file": "map.png", "crop": [553, 1054, 41, 41], "colorkey": "#ffd2d2" }
+			    { "id": "town_power1", "type": "file", "file": "summoning_circle_1.png" },
+			    { "id": "town_power2", "type": "file", "file": "summoning_circle_2.png" },
+			    { "id": "town_power3", "type": "file", "file": "summoning_circle_3.png" },
+			    { "id": "town_power4", "type": "file", "file": "summoning_circle_4.png" }
 		    ]
 		},
 
@@ -51,9 +51,9 @@
 		"loop": true,
 		"offset": [428, 328],
 		"sprites": [
-			{ "id": "lava11", "type": "file", "file": "map.png", "crop": [318, 1018, 32, 38] },
-			{ "id": "lava12", "type": "file", "file": "map.png", "crop": [350, 1018, 32, 38] },
-			{ "id": "lava13", "type": "file", "file": "map.png", "crop": [382, 1018, 32, 38] }
+			{ "id": "lava11", "type": "file", "file": "map.png", "crop": [318, 1018, 32, 38], "colorkey": "#ffd2d2" },
+			{ "id": "lava12", "type": "file", "file": "map.png", "crop": [350, 1018, 32, 38], "colorkey": "#ffd2d2" },
+			{ "id": "lava13", "type": "file", "file": "map.png", "crop": [382, 1018, 32, 38], "colorkey": "#ffd2d2" }
 		    ]
 		},
 
@@ -62,9 +62,9 @@
 		"loop": true,
 		"offset": [402, 244],
 		"sprites": [
-			{ "id": "lava21", "type": "file", "file": "map.png", "crop": [318, 1056, 35, 35] },
-			{ "id": "lava22", "type": "file", "file": "map.png", "crop": [353, 1056, 35, 35] },
-			{ "id": "lava23", "type": "file", "file": "map.png", "crop": [388, 1056, 35, 35] }
+			{ "id": "lava21", "type": "file", "file": "map.png", "crop": [318, 1056, 35, 35], "colorkey": "#ffd2d2" },
+			{ "id": "lava22", "type": "file", "file": "map.png", "crop": [353, 1056, 35, 35], "colorkey": "#ffd2d2" },
+			{ "id": "lava23", "type": "file", "file": "map.png", "crop": [388, 1056, 35, 35], "colorkey": "#ffd2d2" }
 		    ]
 		},
 
@@ -73,9 +73,9 @@
 		"loop": true,
 		"offset": [406, 206],
 		"sprites": [
-			{ "id": "lava31", "type": "file", "file": "map.png", "crop": [414, 1018, 23, 20] },
-			{ "id": "lava32", "type": "file", "file": "map.png", "crop": [437, 1018, 23, 20] },
-			{ "id": "lava33", "type": "file", "file": "map.png", "crop": [460, 1018, 23, 20] }
+			{ "id": "lava31", "type": "file", "file": "map.png", "crop": [414, 1018, 23, 20], "colorkey": "#ffd2d2" },
+			{ "id": "lava32", "type": "file", "file": "map.png", "crop": [437, 1018, 23, 20], "colorkey": "#ffd2d2" },
+			{ "id": "lava33", "type": "file", "file": "map.png", "crop": [460, 1018, 23, 20], "colorkey": "#ffd2d2" }
 		    ]
 		},
 
@@ -84,25 +84,15 @@
 		"loop": true,
 		"offset": [372, 338],
 		"sprites": [
-			{ "id": "lava41", "type": "file", "file": "map.png", "crop": [414, 1038, 18, 16] },
-			{ "id": "lava42", "type": "file", "file": "map.png", "crop": [432, 1038, 18, 16] },
-			{ "id": "lava43", "type": "file", "file": "map.png", "crop": [450, 1038, 18, 16] }
-		    ]
-		},
-
-    "animation:maps5":   {
-		"delay": 300,
-		"loop": true,
-		"offset": [564, 240],
-		"sprites": [
-			{ "id": "land11", "type": "file", "file": "map.png", "crop": [0, 1018, 106, 77] },
-			{ "id": "land12", "type": "file", "file": "map.png", "crop": [106, 1018, 106, 77] },
-			{ "id": "land13", "type": "file", "file": "map.png", "crop": [212, 1018, 106, 77] }
+			{ "id": "lava41", "type": "file", "file": "map.png", "crop": [414, 1038, 18, 16], "colorkey": "#ffd2d2" },
+			{ "id": "lava42", "type": "file", "file": "map.png", "crop": [432, 1038, 18, 16], "colorkey": "#ffd2d2" },
+			{ "id": "lava43", "type": "file", "file": "map.png", "crop": [450, 1038, 18, 16], "colorkey": "#ffd2d2" }
 		    ]
 		},
 
     "offset:topclan": [ 776, 116 ],
     "offset:botclan": [ 776, 176 ],
+    "offset:clanicon": [ 4, 0 ],
     "offset:nameland": [ 898, 10 ],
     "offset:info1": [ 898, 428 ],
     "offset:info2": [ 898, 484 ],

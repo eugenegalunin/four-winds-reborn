@@ -1,0 +1,42 @@
+===== License for Use and Distribution =================
+
+TRIAL USE LICENSE
+
+The Isle of Four Winds: Rune War (or Rune War) is NOT a 
+public domain program.  It is copyrighted by Arcanium Productions.
+This software and accompanying documentation are protected by 
+Canadian copyright law and also by international treaty provisions.
+
+You may not use, copy, rent, lease, sell, modify, decompile,
+disassemble, otherwise reverse engineer, or transfer the licensed
+program except as provided in this agreement.  Any such 
+unauthorized use shall result in immediate and automatic 
+termination of this license.
+All rights not expressly granted here are reserved by Arcanium
+Productions.
+
+
+LIMITED DISTRIBUTION LICENSE
+
+You are hereby allowed to distribute Rune War freely if the following
+conditions are met:
+
+1. You do not change any of the components accompanying Rune War, the 
+   documents, data, sounds, or the binary itself.
+2. You distribute Rune War as a whole, and on its own (not as part of
+   a bundle of software).
+3. You do not sell the software on its own, or as part of a bundle
+   of software.
+
+If you wish to distribute the rwdemo12.zip package beyond the 
+conditions of this license, you must contact Arcanium Productions 
+and gain permission. (See the ReadMe.txt for contact information).
+
+Permission to distribute the rwdemo package is not transferable, 
+assignable, saleable, or franchisable.  All who wish to 
+distribute the package must independently satisfy the terms of 
+this limited distribution license.
+
+Arcanium Productions may revoke any permissions granted here, by
+notifying you in writing.  All rights not expressly granted here
+are reserved to Arcanium Productions.

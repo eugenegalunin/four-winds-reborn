@@ -113,6 +113,31 @@ RUSSIAN_SOUND_RESOURCE_IDS = {
     "round_north": 1204,
 }
 
+HERO_CALL_SOUND_IDS = tuple(
+    f"{avatar}_{call}"
+    for avatar in (
+        "orachi", "lakkho", "dayla", "ziag", "niana",
+        "kierac", "logun", "nucrus", "javed",
+    )
+    for call in ("chao", "pung", "kong", "game")
+)
+
+REBORN_ANNOUNCER_SOUND_IDS = {
+    "begin": 1,
+    "round_east": 2,
+    "round_south": 3,
+    "round_west": 4,
+    "round_north": 5,
+    **{name: 6 + offset for offset, name in enumerate((
+        "orachi_name", "lakkho_name", "dayla_name", "ziag_name", "niana_name",
+        "kierac_name", "logun_name", "nucrus_name", "javed_name",
+    ))},
+    "red_name": 15,
+    "yellow_name": 16,
+    "aqua_name": 17,
+    "purple_name": 18,
+}
+
 
 class ThemeValidator:
     def __init__(self, repository: Path, documents: dict[Path, object]):
@@ -324,8 +349,8 @@ class ThemeValidator:
         if provenance.get("schema") != 1:
             self.error(path, "schema must be 1")
         status = provenance.get("status")
-        if status not in {"preview", "standalone"}:
-            self.error(path, "status must be preview or standalone")
+        if status not in {"preview", "release", "standalone"}:
+            self.error(path, "status must be preview, release or standalone")
 
         source_name = provenance.get("sourceTheme")
         if (not isinstance(source_name, str) or not source_name or
@@ -381,6 +406,62 @@ class ThemeValidator:
             extensions = []
         extensions = {item.lower() for item in extensions}
 
+        shared_identical = provenance.get("sharedIdenticalMedia", [])
+        if not isinstance(shared_identical, list):
+            self.error(path, "sharedIdenticalMedia must be an array")
+            shared_identical = []
+        shared_names: Counter[str] = Counter()
+        valid_shared: set[str] = set()
+        for offset, item in enumerate(shared_identical, start=1):
+            if (not isinstance(item, str) or not item or "\\" in item or
+                    Path(item).is_absolute() or ".." in Path(item).parts):
+                self.error(path, f"sharedIdenticalMedia entry #{offset} "
+                           "must be a safe theme-relative POSIX path")
+                continue
+            normalized = Path(item).as_posix()
+            if normalized != item:
+                self.error(path, f"sharedIdenticalMedia entry #{offset} "
+                           "must be a normalized theme-relative POSIX path")
+                continue
+            shared_names[item] += 1
+            valid_shared.add(item)
+        duplicates = sorted(name for name, count in shared_names.items() if count > 1)
+        if duplicates:
+            self.error(path, "sharedIdenticalMedia contains duplicate paths: " +
+                       ", ".join(duplicates))
+
+        retained_compatibility = provenance.get("retainedCompatibilityMedia", [])
+        if not isinstance(retained_compatibility, list):
+            self.error(path, "retainedCompatibilityMedia must be an array")
+            retained_compatibility = []
+        retained_names: Counter[str] = Counter()
+        valid_retained: set[str] = set()
+        for offset, item in enumerate(retained_compatibility, start=1):
+            if (not isinstance(item, str) or not item or "\\" in item or
+                    Path(item).is_absolute() or ".." in Path(item).parts):
+                self.error(path, f"retainedCompatibilityMedia entry #{offset} "
+                           "must be a safe theme-relative POSIX path")
+                continue
+            normalized = Path(item).as_posix()
+            if normalized != item:
+                self.error(path, f"retainedCompatibilityMedia entry #{offset} "
+                           "must be a normalized theme-relative POSIX path")
+                continue
+            if Path(item).suffix.lower() not in {".ogg", ".wav", ".mid"}:
+                self.error(path, f"retainedCompatibilityMedia entry #{offset} "
+                           "must be an audio file")
+                continue
+            retained_names[item] += 1
+            valid_retained.add(item)
+        duplicates = sorted(name for name, count in retained_names.items() if count > 1)
+        if duplicates:
+            self.error(path, "retainedCompatibilityMedia contains duplicate paths: " +
+                       ", ".join(duplicates))
+        overlap = sorted(valid_shared & valid_retained)
+        if overlap:
+            self.error(path, "media paths cannot be both shared and retained compatibility: " +
+                       ", ".join(overlap))
+
         source_media: defaultdict[str, list[str]] = defaultdict(list)
         for media in source_theme.rglob("*"):
             if media.is_file() and media.suffix.lower() in extensions:
@@ -393,6 +474,20 @@ class ThemeValidator:
                 continue
             if self.file_digest(media) in source_media:
                 identical_media.append(media.relative_to(theme).as_posix())
+
+        identical_media_set = set(identical_media)
+        invalid_shared = sorted(valid_shared - identical_media_set)
+        if invalid_shared:
+            self.error(path, "sharedIdenticalMedia paths must exist in both themes "
+                       "with byte-identical content: " + ", ".join(invalid_shared))
+        invalid_retained = sorted(valid_retained - identical_media_set)
+        if invalid_retained:
+            self.error(path, "retainedCompatibilityMedia paths must exist in both themes "
+                       "with byte-identical content: " + ", ".join(invalid_retained))
+        inherited_media = [
+            item for item in identical_media
+            if item not in valid_shared and item not in valid_retained
+        ]
 
         narrative_tables = provenance.get("narrativeTables")
         if (not isinstance(narrative_tables, list) or
@@ -424,16 +519,22 @@ class ThemeValidator:
 
         self.audit_notes.append(
             f"{theme.name}: provenance status={status}, inherited media="
-            f"{len(identical_media)}, inherited narrative fields="
+            f"{len(inherited_media)}, shared identical media="
+            f"{len(valid_shared)}, retained compatibility media="
+            f"{len(valid_retained)}, inherited narrative fields="
             f"{len(identical_narrative)}")
-        if status == "standalone" and identical_media:
-            sample = ", ".join(identical_media[:5])
-            self.error(path, f"standalone package retains {len(identical_media)} "
-                       f"inherited media files (for example: {sample})")
-        if status == "standalone" and identical_narrative:
+        if status in {"release", "standalone"} and inherited_media:
+            sample = ", ".join(inherited_media[:5])
+            self.error(path, f"{status} package retains {len(inherited_media)} "
+                       f"unclassified inherited media files (for example: {sample})")
+        if status in {"release", "standalone"} and identical_narrative:
             sample = ", ".join(identical_narrative[:5])
-            self.error(path, f"standalone package retains {len(identical_narrative)} "
+            self.error(path, f"{status} package retains {len(identical_narrative)} "
                        f"inherited narrative fields (for example: {sample})")
+        if status == "standalone" and valid_retained:
+            sample = ", ".join(sorted(valid_retained)[:5])
+            self.error(path, f"standalone package retains {len(valid_retained)} "
+                       f"compatibility media files (for example: {sample})")
 
     def validate_theme(self, theme: Path) -> None:
         index_path = theme / "index.json"
@@ -533,6 +634,42 @@ class ThemeValidator:
 
         ids = {name: set(records) for name, records in tables.items()}
         clan_ids = ids["clans"] | {"none"}
+
+        mahjong_screen_path = theme / "json" / "screen_mahjongpart.json"
+        mahjong_screen = self.document(mahjong_screen_path, dict)
+        if mahjong_screen is not None:
+            music_keys = sorted(
+                key for key in mahjong_screen
+                if isinstance(key, str) and key.startswith("music:")
+            )
+            for key in music_keys:
+                playlist = mahjong_screen.get(key)
+                if (not isinstance(playlist, list) or not playlist or
+                        any(not isinstance(track, str) or not track for track in playlist)):
+                    self.error(mahjong_screen_path,
+                               f"{key} must be a non-empty array of music ids")
+                    continue
+                duplicates = sorted(
+                    track for track, count in Counter(playlist).items() if count > 1
+                )
+                if duplicates:
+                    self.error(mahjong_screen_path,
+                               f"{key} contains duplicate music ids: {', '.join(duplicates)}")
+                unknown = sorted(set(playlist) - ids["musics"])
+                if unknown:
+                    self.error(mahjong_screen_path,
+                               f"{key} references unknown music ids: {', '.join(unknown)}")
+
+            if theme.name == "reborn":
+                required_music_keys = {
+                    "music:common", "music:red", "music:yellow",
+                    "music:aqua", "music:purple",
+                }
+                missing_music_keys = sorted(required_music_keys - set(music_keys))
+                if missing_music_keys:
+                    self.error(mahjong_screen_path,
+                               "reborn Mahjong playlists are missing: "
+                               + ", ".join(missing_music_keys))
 
         tooltips = index.get("tooltips")
         if not isinstance(tooltips, dict):
@@ -692,7 +829,7 @@ class ThemeValidator:
                 self.error(creature_path, f"{speciality} grantor '{grantors[0]}' must be a unique creature")
 
         translation_contracts: dict[str, tuple[str, ...]] = {}
-        if theme.name == "default":
+        if theme.name == "classic":
             translation_contracts = {
                 table_name: ("description",)
                 for table_name in ("avatars", "creatures", "spells", "specials", "abilities")
@@ -724,9 +861,36 @@ class ThemeValidator:
                                     f"{record_id}.{field} has no exact Russian runtime translation",
                                 )
 
-        if theme.name == "default":
+        intro_path = theme / "json" / "screen_intro.json"
+        if intro_path.is_file():
+            intro = self.document(intro_path, dict)
+            if intro is not None:
+                tail_hold = intro.get("frame:tail_hold_ms", 0)
+                if isinstance(tail_hold, bool) or not isinstance(tail_hold, int) or tail_hold < 0:
+                    self.error(
+                        intro_path,
+                        "frame:tail_hold_ms must be a non-negative integer",
+                    )
 
-            intro_path = theme / "json" / "screen_intro.json"
+                frames = intro.get("frames")
+                if isinstance(frames, list):
+                    for offset, frame in enumerate(frames, start=1):
+                        if not isinstance(frame, dict):
+                            continue
+
+                        fallback = frame.get("duration_ms")
+                        for language in ("en", "ru"):
+                            key = f"duration_ms:{language}"
+                            duration = frame.get(key, fallback)
+                            if isinstance(duration, bool) or not isinstance(duration, int) or duration < 1000:
+                                self.error(
+                                    intro_path,
+                                    f"intro frame #{offset}.{key} (or duration_ms fallback) "
+                                    "must be an integer of at least 1000",
+                                )
+
+        if theme.name == "classic":
+
             intro = self.document(intro_path, dict)
             if intro is not None:
                 frames = intro.get("frames")
@@ -820,6 +984,43 @@ class ThemeValidator:
                     self.error(avatar_path, f"canonical owners of creature '{creature_id}' must be {sorted(expected)}, got {sorted(actual)}")
             if tables["avatars"].get("ziag", {}).get("ability") != "monacle":
                 self.error(avatar_path, "Ziag must retain the documented Monocle ability")
+
+        if theme.name == "reborn":
+            localized_sounds = {
+                record_id: record.get("file:ru")
+                for record_id, record in tables["sounds"].items()
+                if record.get("file:ru") is not None
+            }
+            expected_localized_sounds = {
+                record_id: f"announcer_ru_{scene:02d}.ogg"
+                for record_id, scene in REBORN_ANNOUNCER_SOUND_IDS.items()
+            }
+            expected_localized_sounds.update({
+                f"creature{scene:02d}": f"creature_name_ru_{scene:02d}.ogg"
+                for scene in range(1, 30)
+            })
+            expected_localized_sounds.update({
+                record_id: f"hero_ru_{record_id}.ogg"
+                for record_id in HERO_CALL_SOUND_IDS
+            })
+            if localized_sounds != expected_localized_sounds:
+                missing = sorted(set(expected_localized_sounds) - set(localized_sounds))
+                stale = sorted(set(localized_sounds) - set(expected_localized_sounds))
+                wrong = sorted(
+                    record_id for record_id in set(localized_sounds) & set(expected_localized_sounds)
+                    if localized_sounds[record_id] != expected_localized_sounds[record_id]
+                )
+                details = []
+                if missing:
+                    details.append(f"missing: {', '.join(missing)}")
+                if stale:
+                    details.append(f"unexpected: {', '.join(stale)}")
+                if wrong:
+                    details.append(f"wrong file: {', '.join(wrong)}")
+                self.error(
+                    paths["sounds"],
+                    "Reborn Russian localized sound contract differs (" + "; ".join(details) + ")",
+                )
 
 
 def main() -> int:

@@ -376,16 +376,16 @@ void testInstalledContentCatalog()
     const auto original = std::find_if(installed.begin(), installed.end(),
         [](const InstalledContentPackage & package)
         {
-            return package.theme == "default";
+            return package.theme == "classic";
         });
     std::string error;
     expect(original != installed.end() && original->compatible &&
            original->manifest.identity.id == ClassicContentPackageId &&
            original->manifest.identity.version == ClassicContentPackageVersion &&
-           original->displayName() == "Original Theme" &&
+           original->displayName() == "Classic" &&
            ContentCatalog::isAvailable(sourceProgram,
                                        "four-winds-catalog-source-test",
-                                       "default", &error) && error.empty(),
+                                       "classic", &error) && error.empty(),
            "the installed Classic package must pass catalog validation");
 
     const auto reborn = std::find_if(installed.begin(), installed.end(),
@@ -397,11 +397,11 @@ void testInstalledContentCatalog()
     expect(reborn != installed.end() && reborn->compatible &&
            reborn->manifest.identity.id == "reborn-community" &&
            reborn->manifest.identity.version == 1 &&
-           reborn->displayName() == "Reborn Community Package (Preview)" &&
+           reborn->displayName() == "Reborn Community Package" &&
            ContentCatalog::isAvailable(sourceProgram,
                                        "four-winds-catalog-source-test",
                                        "reborn", &error) && error.empty(),
-           "the installed Reborn preview package must pass catalog validation");
+           "the installed Reborn content package must pass catalog validation");
 
     const std::filesystem::path fixtureRoot =
         std::filesystem::temp_directory_path() / "four-winds-content-catalog-test";
@@ -410,7 +410,7 @@ void testInstalledContentCatalog()
     std::filesystem::create_directories(fixtureRoot / "themes" / "broken",
                                         filesystemError);
     const std::string sourceIndex =
-        (std::filesystem::path(sourceRoot) / "themes" / "default" / "index.json").string();
+        (std::filesystem::path(sourceRoot) / "themes" / "classic" / "index.json").string();
     std::string indexText;
     const std::string brokenIndex =
         (fixtureRoot / "themes" / "broken" / "index.json").string();
@@ -602,7 +602,7 @@ BattleCreature combatCreature(const Clan & clan, const Creature & id, int uid,
 template<class T>
 std::vector<T> loadIndexed(const char* filename)
 {
-    JsonContentFile file(std::string(FOUR_WINDS_SOURCE_DIR) + "/themes/default/json/gamedata/" + filename);
+    JsonContentFile file(std::string(FOUR_WINDS_SOURCE_DIR) + "/themes/classic/json/gamedata/" + filename);
     expect(file.isValid(), "game data JSON must parse");
 
     const std::list<T> values = file.toArray().toStdList<T>();
@@ -1542,6 +1542,11 @@ int runSettingsPersistenceSelfTest()
     Settings::setLanguage("en");
     Settings::setGameSpeed("normal");
     Settings::setContentTheme("default");
+    if(Settings::contentTheme() != "classic")
+    {
+        std::cerr << "FAIL: legacy default theme alias must migrate to classic\n";
+        return 1;
+    }
     Settings::setAIDifficulty(AI::Difficulty::Easy);
     Settings::setMusicVolume(100);
     Settings::setEffectsVolume(100);
@@ -1579,13 +1584,14 @@ int runSettingsPersistenceSelfTest()
 
     JsonObject legacy;
     legacy.addString("language", "en");
+    legacy.addString("content:theme", "default");
     legacy.addBoolean("music", false);
     legacy.addBoolean("sound", false);
     if(!Systems::saveString2File(legacy.toString(), settingsFile) || !Settings::read() ||
        Settings::musicVolume() != 0 || Settings::effectsVolume() != 0 ||
        Settings::voiceVolume() != 0 || Settings::music() || Settings::sound() ||
        Settings::windowScale() != 100 ||
-       Settings::contentTheme() != "default" ||
+       Settings::contentTheme() != "classic" ||
        Settings::aiDifficulty() != AI::Difficulty::Normal)
     {
         std::cerr << "FAIL: legacy boolean audio settings are not load compatible\n";
@@ -4731,9 +4737,9 @@ int runHeadlessMatchSelfTest()
     }
 
     Settings::setContentTheme("../unsafe");
-    if(Settings::contentTheme() != "default")
+    if(Settings::contentTheme() != "classic")
     {
-        std::cerr << "FAIL: unsafe content theme names must fall back to default\n";
+        std::cerr << "FAIL: unsafe content theme names must fall back to classic\n";
         return 1;
     }
 
@@ -5158,7 +5164,7 @@ int main(int argc, char** argv)
     expect(UnicodeString(unicodeSample).toString() == unicodeSample,
            "engine UTF-8/UTF-16 conversion must preserve Cyrillic and supplementary characters");
 
-    JsonContentFile indexFile(std::string(FOUR_WINDS_SOURCE_DIR) + "/themes/default/index.json");
+    JsonContentFile indexFile(std::string(FOUR_WINDS_SOURCE_DIR) + "/themes/classic/index.json");
     expect(indexFile.isValid(), "theme index JSON must parse");
     std::string bootstrapPackageError;
     expect(activateContentPackage(indexFile.toObject(), &bootstrapPackageError) &&
@@ -5166,12 +5172,12 @@ int main(int argc, char** argv)
            activeContentPackageManifest().gameData == "content.json",
            "theme content package manifest must activate");
     JsonContentFile contentFile(std::string(FOUR_WINDS_SOURCE_DIR) +
-        "/themes/default/content.json");
+        "/themes/classic/content.json");
     expect(contentFile.isValid(), "authoritative theme content JSON must parse");
     expect(GameData::loadIndexes(contentFile.toObject()), "theme content indexes must load");
 
     JsonContentFile soundsFile(std::string(FOUR_WINDS_SOURCE_DIR) +
-        "/themes/default/json/gamedata/sounds.json");
+        "/themes/classic/json/gamedata/sounds.json");
     expect(soundsFile.isValid() && soundsFile.isArray(), "theme sound JSON must parse");
     const std::list<FileInfo> soundRecords = soundsFile.toArray().toStdList<FileInfo>();
     const auto localizedSound = std::find_if(soundRecords.begin(), soundRecords.end(),
@@ -5182,6 +5188,35 @@ int main(int argc, char** argv)
         expect(GameTheme::localizedSoundFile(*localizedSound, "en") == "1053.ogg" &&
                GameTheme::localizedSoundFile(*localizedSound, "ru_RU") == "voice_ru_1053.ogg",
                "sound resources must follow the selected English/Russian language");
+    }
+
+    JsonContentFile rebornSoundsFile(std::string(FOUR_WINDS_SOURCE_DIR) +
+        "/themes/reborn/json/gamedata/sounds.json");
+    expect(rebornSoundsFile.isValid() && rebornSoundsFile.isArray(),
+           "Reborn theme sound JSON must parse");
+    const std::list<FileInfo> rebornSoundRecords =
+        rebornSoundsFile.toArray().toStdList<FileInfo>();
+    const auto localizedRebornAnnouncer =
+        std::find_if(rebornSoundRecords.begin(), rebornSoundRecords.end(),
+            [](const FileInfo & info) { return info.id == "begin"; });
+    const auto localizedRebornCreature =
+        std::find_if(rebornSoundRecords.begin(), rebornSoundRecords.end(),
+            [](const FileInfo & info) { return info.id == "creature01"; });
+    expect(localizedRebornAnnouncer != rebornSoundRecords.end() &&
+           localizedRebornCreature != rebornSoundRecords.end(),
+           "Reborn localized voice fixtures must exist");
+    if(localizedRebornAnnouncer != rebornSoundRecords.end() &&
+       localizedRebornCreature != rebornSoundRecords.end())
+    {
+        expect(GameTheme::localizedSoundFile(*localizedRebornAnnouncer, "en_US") ==
+                   "announcer_en_01.ogg" &&
+               GameTheme::localizedSoundFile(*localizedRebornAnnouncer, "ru_RU") ==
+                   "announcer_ru_01.ogg" &&
+               GameTheme::localizedSoundFile(*localizedRebornCreature, "en") ==
+                   "creature_name_en_01.ogg" &&
+               GameTheme::localizedSoundFile(*localizedRebornCreature, "ru") ==
+                   "creature_name_ru_01.ogg",
+               "Reborn announcer and creature voices must follow the selected language");
     }
     expect(GameTheme::isVoiceSound("orachi_chao") &&
            GameTheme::isVoiceSound("creature01") &&
@@ -5194,7 +5229,7 @@ int main(int argc, char** argv)
            "voice and effect sound IDs must use separate volume groups");
 
     JsonContentFile imagesFile(std::string(FOUR_WINDS_SOURCE_DIR) +
-        "/themes/default/json/gamedata/images.json");
+        "/themes/classic/json/gamedata/images.json");
     expect(imagesFile.isValid() && imagesFile.isArray(), "theme image JSON must parse");
     const std::list<ImageInfo> imageRecords = imagesFile.toArray().toStdList<ImageInfo>();
     const auto localizedPassButton = std::find_if(imageRecords.begin(), imageRecords.end(),
@@ -5235,7 +5270,7 @@ int main(int argc, char** argv)
         localizationOwnerSnapshot.push_back(info.clan);
 
     const std::string russianCatalog = std::string(FOUR_WINDS_SOURCE_DIR) +
-        "/themes/default/lang/ru.mo";
+        "/themes/classic/lang/ru.mo";
     Translation::reset();
     Translation::setStripContext('|');
     expect(Translation::bindDomain("four-winds-localization-test", russianCatalog),
@@ -5283,7 +5318,7 @@ int main(int argc, char** argv)
            GameData::clanInfo(Clan::Yellow).name == "Yellow" &&
            GameData::clanInfo(Clan::Aqua).name == "Aqua" &&
            GameData::clanInfo(Clan::Purple).name == "Purple",
-           "default theme clan names must match the canonical identity contract");
+           "Classic theme clan names must match the canonical identity contract");
 
     expect(GameData::creatureInfo(Creature::Tornado).cost == 240,
            "Tornado must use the canonical 240-point price");
@@ -5449,7 +5484,7 @@ int main(int argc, char** argv)
            "legacy named-clan land claims must remain loadable");
 
     JsonContentFile spellFile(std::string(FOUR_WINDS_SOURCE_DIR) +
-                              "/themes/default/json/gamedata/spells.json");
+                              "/themes/classic/json/gamedata/spells.json");
     expect(spellFile.isValid(), "spell theme JSON must parse");
     const std::list<SpellInfo> spellInfos = spellFile.toArray().toStdList<SpellInfo>();
 
@@ -5517,7 +5552,7 @@ int main(int argc, char** argv)
            "Guidance must reject creatures without a ranged attack");
 
     JsonContentFile avatarFile(std::string(FOUR_WINDS_SOURCE_DIR) +
-                               "/themes/default/json/gamedata/avatars.json");
+                               "/themes/classic/json/gamedata/avatars.json");
     expect(avatarFile.isValid(), "avatar theme JSON must parse");
     const std::list<AvatarInfo> avatarInfos = avatarFile.toArray().toStdList<AvatarInfo>();
 

@@ -21,8 +21,9 @@ On Windows, unpack the archive and launch `four-winds-reborn.exe`.
 
 - Complete v0.3.0 with a player-facing replay viewer, versioned content and
   theme manifests, in-menu package selection and clear compatibility checks.
-- Add an optional legally distinct Reborn content set with its own art, music
-  and names while keeping the classic presentation available as a package.
+- Complete the optional Reborn content set with its own art, music and names.
+  Classic remains the default presentation for v0.3.0; Reborn is a fully
+  supported package that players can enable in Settings.
 - Make Android the focus of v0.4.0, with native touch controls, safe app
   lifecycle handling and compatible saves.
 - Prove the shared ruleset contract with additional local Rune Game rules,
@@ -58,6 +59,8 @@ On Windows, unpack the archive and launch `four-winds-reborn.exe`.
 - Independent music, effects and voice volume controls, plus Classic, Normal
   and Fast presentation speeds.
 - Restored story intro and separate menu, faction, map and summary music.
+- Two complete presentation packages: the default Classic theme and the
+  optional Reborn theme, selectable in Settings without changing game rules.
 - Five deliberately distinct AI levels, selected in Settings for new games:
   peaceful Training, honest Easy, Normal and Hard, and an openly unfair
   economy-boosted challenge. No level receives favorable RNG or access to
@@ -92,14 +95,9 @@ On Windows, install [MSYS2](https://www.msys2.org/) and run:
 
 ## Documentation
 
-- [Changelog](CHANGELOG.md)
-- [Battle and Adventure rules](docs/BattleAndAdventureRules.md)
-- [Spell lifecycle](docs/SpellLifecycle.md)
-- [Localization and source provenance](docs/Localization.md)
-- [Preserved Arcanium archive material](docs/ArcaniumArchive.md)
-- [Balance laboratory](docs/BalanceLab.md) and
-  [current balance tiers](docs/BalanceTiers.md)
-- [Branch and release process](docs/ReleaseProcess.md)
+Rules, balance evidence, localization/provenance, archived original sources and
+the release workflow are indexed in [the documentation guide](docs/README.md).
+Completed player-facing work is recorded in the [changelog](CHANGELOG.md).
 
 ## License and attribution
 

@@ -86,7 +86,6 @@ protected:
                                StringFormat(_("The checkpoint was loaded, but the current autosave could not be replaced: %1"))
                                    .arg(error), *this, false).exec();
             }
-            MessageTop(_("Info"), _("Game data rendering..."), *this);
 	    CrashReport::breadcrumb(std::string("Game load stage=end status=ok source=").append(sourceFile));
 	    setResultCode(1);
         }
@@ -170,10 +169,15 @@ const char* menuName(int menu)
         default: return "Unknown";
     }
 }
+
+std::string normalizedThemeAlias(const std::string & value)
+{
+    return String::toLower(value) == "default" ? "classic" : value;
+}
 }
 
 RuneWarsClient::RuneWarsClient(int argc, char** argv) :
-    Application(argv[0], false, Size(0, 0), "default"), part(0),
+    Application(argv[0], false, Size(0, 0), "classic"), part(0),
     themeCommandOverride(false)
 {
     CrashReport::breadcrumb("Startup stage=engine_log_init status=begin");
@@ -193,6 +197,7 @@ RuneWarsClient::RuneWarsClient(int argc, char** argv) :
 
     savefile = Settings::fileSaveGame();
     parseCommandOptions(argc, argv);
+    theme = normalizedThemeAlias(theme);
 
     // A stale user preference must never make the game unbootable. Explicit
     // command-line/environment themes remain strict diagnostic overrides.
@@ -202,8 +207,8 @@ RuneWarsClient::RuneWarsClient(int argc, char** argv) :
 	if(!ContentCatalog::isAvailable(program, domain(), theme, &error))
 	{
 	    ERROR("stored content package unavailable: " << theme << ": " << error
-	          << "; falling back to default");
-	    theme = "default";
+	          << "; falling back to classic");
+	    theme = "classic";
 	}
     }
 }

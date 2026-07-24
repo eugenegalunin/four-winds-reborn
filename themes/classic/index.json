@@ -1,0 +1,21 @@
+{
+    "name":		"classic",
+    "description":	"Classic",
+    "author":		"Arcanium Productions",
+    "size":		[ 1024, 768 ],
+    "contentPackage":	{
+			    "schema": 1,
+			    "id": "classic-original",
+			    "version": 1,
+			    "engineContract": "four-winds-classic-v1",
+			    "gameData": "content.json",
+			    "compatibleVersions": [ 1 ]
+			},
+
+    "tooltips":		{
+			    "bgcolor":	"wheat",
+			    "fncolor":	"midnightblue",
+			    "rtcolor":	"black",
+			    "font":	"tooltips"
+			}
+}

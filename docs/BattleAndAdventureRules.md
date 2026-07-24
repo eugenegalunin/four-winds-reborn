@@ -1,7 +1,8 @@
 # Battle and Adventure Rules
 
 This document is the implementation contract for the current battle and map
-phase. The original game rules remain in `docs/Manual.txt`.
+phase. The original game rules remain in
+`docs/reference/classic/Manual.txt`.
 
 ## Combat order
 

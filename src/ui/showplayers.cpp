@@ -24,7 +24,6 @@
 
 #include "gametheme.h"
 #include "actions.h"
-#include "dialogs.h"
 #include "showplayers.h"
 
 bool sortPersonsByWind(const Person & p1, const Person & p2)
@@ -69,7 +68,6 @@ bool ShowPlayersScreen::actionButtonStart(void)
     playSound("button");
     setResultCode(Menu::MahjongInitPart);
     setVisible(false);
-    MessageTop(_("Info"), _("Game data rendering..."), *this);
     return true;
 }
 

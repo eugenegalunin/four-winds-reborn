@@ -425,7 +425,15 @@ std::string GameTheme::localizedSoundFile(const FileInfo & info, const std::stri
     const bool russian = language == "ru" || language == "russian" ||
         language.rfind("ru_", 0) == 0 || language.rfind("ru-", 0) == 0 ||
         language.rfind("russian_", 0) == 0;
-    return russian && ! info.fileRu.empty() ? info.fileRu : info.file;
+    const bool english = language == "en" || language == "english" ||
+        language.rfind("en_", 0) == 0 || language.rfind("en-", 0) == 0 ||
+        language.rfind("english_", 0) == 0;
+
+    if(russian && ! info.fileRu.empty())
+        return info.fileRu;
+    if(english && ! info.fileEn.empty())
+        return info.fileEn;
+    return info.file;
 }
 
 const BinaryBuf & GameTheme::music(const std::string & name)
@@ -440,6 +448,7 @@ const JsonValue & operator>> (const JsonValue & jv, ImageInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 	st.id = jo->getString("id");
 	st.file = jo->getString("file");
+	st.fileEn = jo->getString("file:en");
 	st.fileRu = jo->getString("file:ru");
 	st.crop = JsonUnpack::rect(*jo, "crop");
 	st.colorkey = jo->getString("colorkey");
@@ -455,6 +464,7 @@ const JsonValue & operator>> (const JsonValue & jv, FileInfo & st)
 	auto jo = static_cast<const JsonObject*>(& jv);
 	st.id = jo->getString("id");
 	st.file = jo->getString("file");
+	st.fileEn = jo->getString("file:en");
 	st.fileRu = jo->getString("file:ru");
     }
 
@@ -527,7 +537,8 @@ Sprite GameTheme::sprite(const std::string & key)
     ImageInfo & info = (*it).second;
 
     const std::string file = localizedSoundFile(info, Settings::language());
-    const std::string cacheKey = info.fileRu.empty() ? key : key + "\x1f" + file;
+    const std::string cacheKey = info.fileEn.empty() && info.fileRu.empty() ?
+        key : key + "\x1f" + file;
     Sprite res = cacheSprites[cacheKey];
     if(res.isValid()) return res;
 

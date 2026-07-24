@@ -41,7 +41,10 @@ IntroScreen::IntroScreen() :
     progressBackColor = GameTheme::jsonColor(jobject, "color:progress_back");
     progressColor = GameTheme::jsonColor(jobject, "color:progress");
     fadeDuration = static_cast<u32>(std::max(0, jobject.getInteger("frame:fade_ms", 350)));
-    const std::string soundKey = isRussianLanguage(Settings::language()) ? "sound:ru" : "sound:en";
+    const bool russian = isRussianLanguage(Settings::language());
+    const std::string soundKey = russian ? "sound:ru" : "sound:en";
+    const std::string durationKey = russian ? "duration_ms:ru" : "duration_ms:en";
+    const int tailHold = std::max(0, jobject.getInteger("frame:tail_hold_ms", 0));
 
     const JsonArray* encodedFrames = jobject.getArray("frames");
     if(encodedFrames)
@@ -57,7 +60,9 @@ IntroScreen::IntroScreen() :
             Frame frame;
             frame.image = GameTheme::jsonSprite(*image);
             frame.sound = encoded->getString(soundKey);
-            frame.duration = static_cast<u32>(std::max(1, encoded->getInteger("duration_ms", 3000)));
+            const int fallbackDuration = encoded->getInteger("duration_ms", 3000);
+            const int narrationDuration = encoded->getInteger(durationKey, fallbackDuration);
+            frame.duration = static_cast<u32>(std::max(1, narrationDuration + tailHold));
             if(frame.image.isValid()) frames.push_back(frame);
         }
     }

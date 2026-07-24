@@ -142,7 +142,7 @@ MahjongPartScreen::MahjongPartScreen() : JsonWindow("screen_mahjongpart.json", n
     resolvingLuckChoice(false), turnTimeoutPending(false)
 {
     ld = GameData::toLocalData(myAvatar);
-    playMusic(GameData::myPerson().clan.toString());
+    restoreMahjongMusic();
 
     stonesPos.reserve(GAME_SET_COUNT);
     stoneActiveSprite = GameTheme::jsonSprite(jobject, "stone:active");
@@ -438,7 +438,28 @@ void MahjongPartScreen::actionQuit(void)
 void MahjongPartScreen::restoreMahjongMusic(void)
 {
 #ifndef SWE_DISABLE_AUDIO
-    if(Settings::music()) playMusic(GameData::myPerson().clan.toString());
+    if(Settings::music())
+    {
+	const std::string clan = GameData::myPerson().clan.toString();
+	const std::string clanKey = std::string("music:").append(clan);
+	StringList playlist;
+
+	if(jobject.hasKey(clanKey))
+	    playlist = jobject.getStdList<std::string>(clanKey);
+	else
+	    playlist.push_back(clan);
+
+	if(jobject.hasKey("music:common"))
+	{
+	    const StringList common = jobject.getStdList<std::string>("music:common");
+	    for(const auto & track : common)
+		if(std::find(playlist.begin(), playlist.end(), track) == playlist.end())
+		    playlist.push_back(track);
+	}
+
+	const std::string preferred = playlist.empty() ? clan : playlist.front();
+	setMusicPlaylist(playlist, preferred);
+    }
 #endif
 }
 

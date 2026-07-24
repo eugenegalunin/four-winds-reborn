@@ -1,8 +1,9 @@
 # Rules Decisions
 This ledger records intentional Four Winds: Reborn behavior where the original
-`Manual.txt`, inherited theme data, and the implemented rules disagree. A data
-change is not canonical merely because it appears in the current JSON: changing
-one of these decisions requires updating this document and its focused test.
+`reference/classic/Manual.txt`, inherited theme data, and the implemented rules
+disagree. A data change is not canonical merely because it appears in the
+current JSON: changing one of these decisions requires updating this document
+and its focused test.
 
 ## RD-001: Tornado and Griffon prices
 
@@ -75,7 +76,7 @@ biography now describes the implemented global reveal and no longer promises
 the unimplemented passive.
 
 Compatibility contract: the corrected player-facing spelling is `Monocle`, but
-the historical data/save identifier remains `monacle`. The default theme must
+the historical data/save identifier remains `monacle`. The Classic theme must
 assign Ziag `monacle`, and
 `gameplay_regressions` proves that he receives invisible units anywhere on the
 map without changing authoritative army state.

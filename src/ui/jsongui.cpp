@@ -400,6 +400,7 @@ namespace
 {
 #ifndef SWE_DISABLE_AUDIO
     StringList  tracks;
+    std::string lastTrack;
 #endif
 }
 
@@ -466,14 +467,7 @@ JsonWindow::JsonWindow(const std::string & res, Window* win) : Window(win), defa
 	if(Settings::music() && jobject.hasKey("music"))
 	{
 #ifndef SWE_DISABLE_AUDIO
-	    tracks = jobject.getStdList<std::string>("music");
-            auto mus = Tools::random_n(tracks.begin(), tracks.end());
-
-	    if(mus != tracks.end())
-	    {
-		playMusic(*mus);
-		Music::setHookFinished(playRandomMusic);
-	    }
+	    setMusicPlaylist(jobject.getStdList<std::string>("music"));
 #endif
 	}
     }
@@ -549,8 +543,48 @@ void JsonWindow::playMusic(const std::string & name)
 
 void JsonWindow::playRandomMusic(void)
 {
-    auto mus = Tools::random_n(tracks.begin(), tracks.end());
-    if(mus != tracks.end()) playMusic(*mus);
+#ifndef SWE_DISABLE_AUDIO
+    if(tracks.empty()) return;
+
+    StringList candidates;
+    for(const auto & track : tracks)
+	if(tracks.size() == 1 || track != lastTrack)
+	    candidates.push_back(track);
+
+    auto mus = Tools::random_n(candidates.begin(), candidates.end());
+    if(mus != candidates.end())
+    {
+	lastTrack = *mus;
+	playMusic(lastTrack);
+	Music::setHookFinished(playRandomMusic);
+    }
+#endif
+}
+
+void JsonWindow::setMusicPlaylist(const StringList & playlist, const std::string & preferred)
+{
+#ifndef SWE_DISABLE_AUDIO
+    tracks = playlist;
+    lastTrack.clear();
+
+    if(tracks.empty())
+    {
+	Music::setHookFinished(nullptr);
+	return;
+    }
+
+    auto mus = preferred.empty() ? tracks.end() :
+	std::find(tracks.begin(), tracks.end(), preferred);
+    if(mus == tracks.end())
+	mus = Tools::random_n(tracks.begin(), tracks.end());
+
+    if(mus != tracks.end())
+    {
+	lastTrack = *mus;
+	playMusic(lastTrack);
+	Music::setHookFinished(playRandomMusic);
+    }
+#endif
 }
 
 Rect JsonWindow::renderTextInfo(const JsonTextInfo & info)

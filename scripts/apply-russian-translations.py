@@ -11,7 +11,6 @@ from pathlib import Path
 
 
 TRANSLATIONS: dict[str, str] = {
-    "Original Theme": "Оригинальная тема",
     "Select Wizard & Clan": "Колдун и Клан",
     "Wizard:": "Колдун:",
     "Clan:": "Клан:",
@@ -706,7 +705,7 @@ RUNTIME_DESCRIPTION_FILES = (
 RUNTIME_LOCALIZED_FIELDS = ("name", "dignity", "description")
 
 TRANSLATIONS.update({
-    "Reborn Community Package (Preview)": "Reborn (предпросмотр)",
+    "Reborn Community Package": "Reborn",
     "Morvane": "Морвейн",
     "Grave Sovereign": "Повелитель Могил",
     "Morvane hears counsel in the final breath of kings. He enters the war with patient cruelty, raising disciplined hosts from every forgotten battlefield.": "Морвейн слышит советы в последнем вздохе королей. Он вступает в войну с терпеливой жестокостью, поднимая дисциплинированные легионы на каждом забытом поле боя.",
@@ -1031,7 +1030,7 @@ def update_block(block: str) -> tuple[str, bool]:
 
 
 def main() -> int:
-    catalog = Path(sys.argv[1] if len(sys.argv) > 1 else "themes/default/lang/ru.po")
+    catalog = Path(sys.argv[1] if len(sys.argv) > 1 else "themes/classic/lang/ru.po")
     source = catalog.read_text(encoding="utf-8")
     blocks = re.split(r"\n{2,}", source)
     is_template = catalog.suffix == ".pot"

@@ -73,6 +73,7 @@ class PartyCreaturesBar : public Window
 {
     Clan		clan;
     Land		land;
+    Point		clanIconOffset;
 
     BattleParty*	currentParty(void) const;
 
@@ -84,6 +85,7 @@ public:
 
     void        	renderWindow(void) override;
     void		setParty(const Clan &, const Land &);
+    void		setClanIconOffset(const Point & value) { clanIconOffset = value; }
     void		reset(void) { clan = Clan(); land = Land(); }
 
     const Clan &	currentClan(void) const { return clan; }

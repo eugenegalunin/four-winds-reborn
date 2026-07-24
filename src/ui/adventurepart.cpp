@@ -252,7 +252,7 @@ void LandPolygon::renderWindow(void)
     }
 }
 
-PartyCreaturesBar::PartyCreaturesBar(Window & win) : Window(&win)
+PartyCreaturesBar::PartyCreaturesBar(Window & win) : Window(&win), clanIconOffset(0, 0)
 {
     resetState(FlagModality);
     setVisible(false);
@@ -271,7 +271,7 @@ bool PartyCreaturesBar::mouseClickEvent(const ButtonsEvent & be)
     BattleParty* party = currentParty();
 
     // click clan icon
-    if(be.isClick(Rect(Point(0, 0), icon.size())))
+    if(be.isClick(Rect(clanIconOffset, icon.size())))
     {
 	pushEventAction(be.isButtonLeft() ? ClanIconClickLeft : ClanIconClickRight, parent(), party);
 	return true;
@@ -322,7 +322,7 @@ void PartyCreaturesBar::renderWindow(void)
     if(clan.isValid())
     {
 	const Texture & textureClan = GameTheme::texture(GameData::clanInfo(clan).button);
-	renderTexture(textureClan, Point(0, 0));
+	renderTexture(textureClan, clanIconOffset);
     }
 
     if(party)
@@ -417,6 +417,7 @@ MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("
 
     Point topClanPos = GameTheme::jsonPoint(jobject, "offset:topclan");
     Point botClanPos = GameTheme::jsonPoint(jobject, "offset:botclan");
+    Point clanIconOffset = GameTheme::jsonPoint(jobject, "offset:clanicon");
     landNamePos = GameTheme::jsonPoint(jobject, "offset:nameland");
     info1NamePos = GameTheme::jsonPoint(jobject, "offset:info1");
     info2NamePos = GameTheme::jsonPoint(jobject, "offset:info2");
@@ -438,6 +439,8 @@ MapScreenBase::MapScreenBase(const LocalData & data, Window* win) : JsonWindow("
 
     bar1.setPosition(topClanPos);
     bar2.setPosition(botClanPos);
+    bar1.setClanIconOffset(clanIconOffset);
+    bar2.setClanIconOffset(clanIconOffset);
 
     bar1.setSize(Size(238, 56));
     bar2.setSize(Size(238, 56));

@@ -257,9 +257,9 @@ Verify one retained replay, one scenario, or a complete matrix after the run:
 
 The verifier restores the replay's initial authoritative state, reapplies every
 recorded validated action and system transition, checks every intermediate state
-hash, and requires the final hash to match the retained match record. This is a
-development integrity check; a future player-facing replay viewer is a separate
-feature.
+hash, and requires the final hash to match the retained match record. This
+specialized development verifier remains separate from the implemented
+player-facing replay library and viewer.
 
 ## Published baseline 1
 

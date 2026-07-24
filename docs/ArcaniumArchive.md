@@ -15,13 +15,14 @@ The original site used a 750x550 frameset and split its content into Tales,
 Denizens, Wizards, Oracle, Scry, Herald and Main. Reborn preserves it in three
 layers:
 
-1. `docs/Backgrnd.txt`, `docs/Chars.txt` and `docs/Manual.txt` contain the
-   surviving original long-form manuscripts, biographies, rules and unit
-   descriptions.
-2. `themes/default/json/gamedata/*.json` contains the playable wizard,
+1. `docs/reference/classic/Backgrnd.txt`,
+   `docs/reference/classic/Chars.txt` and
+   `docs/reference/classic/Manual.txt` contain the surviving original
+   long-form manuscripts, biographies, rules and unit descriptions.
+2. `themes/classic/json/gamedata/*.json` contains the playable wizard,
    creature, spell and ability records. The Encyclopedia reads these live so
    displayed statistics always match the installed theme.
-3. `themes/default/json/encyclopedia.json` preserves bilingual, player-facing
+3. `themes/classic/json/encyclopedia.json` preserves bilingual, player-facing
    articles for the archive-only framing, clan pages, FAQ, gallery and Herald
    material. It labels historical behaviour and continuity differences instead
    of presenting them as current Reborn rules.
@@ -50,6 +51,11 @@ disappears, the factual and narrative corpus still remains in the repository.
 - `Tales/ClanIz.shtml` — Iz history, adaptability and tactical culture.
 - `Tales/FourWindsBackground.shtml` — Isle of Four Winds background.
 - `Tales/BirthOfTower.shtml` — origin of the Tower and its four mages.
+
+Maitha, Kartha, Iz and Marz are preserved here as vocabulary from the original
+lore. Current saves, UI and emitted game state identify the four factions by the
+neutral colours Red, Yellow, Aqua and Purple; see
+[RD-006](RulesDecisions.md#rd-006-canonical-clan-identities).
 
 The website's 2991/3016/3416 chronology differs from dates in another surviving
 Arcanium background manuscript. Both are preserved as separate historical
@@ -80,7 +86,8 @@ specialities and descriptions from current theme data.
 - `Wizards/Nucrus.shtml`
 - `Wizards/Javed.shtml`
 
-The complete biographies survive in `docs/Chars.txt` and avatar theme data.
+The complete biographies survive in `docs/reference/classic/Chars.txt` and
+avatar theme data.
 Reborn additionally displays each wizard's current clans, AI strategy and
 special ability.
 
@@ -106,7 +113,7 @@ they differ from Reborn.
 - `Scry/VictoryScreen.shtml` — `Scry/img/VictoryScreen2.JPG`
 
 The gallery composition is preserved in the Legacy article. The corresponding
-classic screens and art are already represented by the original default theme;
+classic screens and art are already represented by the Classic theme;
 current README screenshots document the restored build itself.
 
 ### Herald

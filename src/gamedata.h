@@ -62,6 +62,7 @@ struct FileInfo
 {
     std::string			id;
     std::string 		file;
+    std::string                 fileEn;
     std::string                 fileRu;
 
     FileInfo() {}

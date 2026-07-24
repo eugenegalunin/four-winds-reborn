@@ -38,7 +38,7 @@ namespace
     bool guardianRulesSound = true;
     std::string lang;
     std::string speed = "classic";
-    std::string selectedContentTheme = "default";
+    std::string selectedContentTheme = "classic";
     AI::Difficulty defaultAiDifficulty = AI::Difficulty::Normal;
 
     int normalizedVolume(int value)
@@ -70,12 +70,13 @@ namespace
     }
 
     std::string normalizedContentTheme(const std::string & value,
-                                       const std::string & fallback = "default")
+                                       const std::string & fallback = "classic")
     {
 	if(value.empty() || value == "." || value == ".." ||
 	   value.find('/') != std::string::npos ||
 	   value.find('\\') != std::string::npos)
-	    return fallback;
+	    return normalizedContentTheme(fallback, "classic");
+	if(String::toLower(value) == "default") return "classic";
 	return value;
     }
 
@@ -99,7 +100,7 @@ bool Settings::read(void)
     lang = normalizedLanguage(Systems::messageLocale(1));
     speed = "classic";
     defaultAiDifficulty = AI::Difficulty::Normal;
-    selectedContentTheme = "default";
+    selectedContentTheme = "classic";
 
     JsonObject jo = GameTheme::jsonResource("config.json").toObject();
 
@@ -215,7 +216,8 @@ void Settings::setContentTheme(const std::string & value)
 std::string Settings::preferredContentTheme(const std::string & fallback)
 {
     const JsonObject user = JsonContentFile(userSettingsFile()).toObject();
-    if(!user.isValid() || !user.hasKey("content:theme")) return fallback;
+    if(!user.isValid() || !user.hasKey("content:theme"))
+        return normalizedContentTheme(fallback);
     return normalizedContentTheme(user.getString("content:theme"), fallback);
 }
 

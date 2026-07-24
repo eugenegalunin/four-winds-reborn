@@ -1,6 +1,6 @@
 {
     "name":		"reborn",
-    "description":	"Reborn Community Package (Preview)",
+    "description":	"Reborn Community Package",
     "author":		"Four Winds Reborn contributors",
     "size":		[ 1024, 768 ],
     "contentPackage":	{

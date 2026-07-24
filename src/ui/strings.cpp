@@ -1,6 +1,6 @@
 #ifdef BUILD_STRINGS
 const char* messages[] = {
-_("Original Theme"),
+_("Classic"),
 // JSON-only select person labels
 _("Select Wizard & Clan"),
 _("Wizard:"),

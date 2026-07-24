@@ -252,8 +252,8 @@ std::vector<InstalledContentPackage> ContentCatalog::discover(
         [](const InstalledContentPackage & first,
            const InstalledContentPackage & second)
         {
-            if(first.theme == "default") return second.theme != "default";
-            if(second.theme == "default") return false;
+            if(first.theme == "classic") return second.theme != "classic";
+            if(second.theme == "classic") return false;
             return String::toLower(first.displayName()) <
                    String::toLower(second.displayName());
         });

@@ -270,6 +270,7 @@ protected:
 
     void		signalReceive(int, const SignalMember*) override;
     static void		playRandomMusic(void);
+    static void		setMusicPlaylist(const StringList &, const std::string & = std::string());
 
 public:
     JsonWindow(const std::string &, Window*);

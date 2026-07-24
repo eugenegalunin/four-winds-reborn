@@ -47,7 +47,7 @@ namespace Settings
     void                setContentTheme(const std::string &);
     // Bootstrap read used before GameTheme is initialized. Theme defaults are
     // unavailable at that point, so only the per-user preference is read.
-    std::string         preferredContentTheme(const std::string & fallback = "default");
+    std::string         preferredContentTheme(const std::string & fallback = "classic");
     AI::Difficulty      aiDifficulty(void);
     void                setAIDifficulty(AI::Difficulty);
     int                 presentationDelay(int);
