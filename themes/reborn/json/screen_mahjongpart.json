@@ -74,11 +74,11 @@
 			},
 
     "windcompass:positions": {
-				"center": [ 185, 335 ],
-				"right": [ 245, 335 ],
-				"left": [ 125, 335 ],
-				"top": [ 185, 275 ],
-				"bottom": [ 185, 395 ]
+				"center": [ 192, 334 ],
+				"right": [ 252, 334 ],
+				"left": [ 132, 334 ],
+				"top": [ 192, 274 ],
+				"bottom": [ 192, 394 ]
 			},
 
     "animation:turn":	{
