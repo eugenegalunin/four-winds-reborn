@@ -102,7 +102,7 @@ jobs:
         run: |
           bundle="four-winds-reborn-${GITHUB_REF_NAME}-${{ matrix.package }}"
           mkdir -p "release/${bundle}"
-          cp four-winds-reborn README.md LICENSE "release/${bundle}/"
+          cp four-winds-reborn README.md CHANGELOG.md LICENSE "release/${bundle}/"
           cp -R themes "release/${bundle}/"
           tar -czf "release/${bundle}.tar.gz" -C release "${bundle}"
 
@@ -155,7 +155,7 @@ jobs:
           $bundleRoot = Join-Path release $bundle
           New-Item -ItemType Directory -Force $bundleRoot | Out-Null
           Copy-Item dist/windows/* $bundleRoot -Recurse
-          Copy-Item README.md, LICENSE $bundleRoot
+          Copy-Item README.md, CHANGELOG.md, LICENSE $bundleRoot
           Compress-Archive -Path $bundleRoot -DestinationPath "release/$bundle.zip"
 
       - name: Upload Windows Release package

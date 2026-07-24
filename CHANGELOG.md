@@ -13,6 +13,15 @@ Reborn work only; they do not claim authorship of inherited code or assets.
 
 ## [Unreleased]
 
+_No changes yet._
+
+## [0.3.0] - 2026-07-24
+
+This release completes the v0.3.0 player-facing slice: deterministic replay
+recording and playback, versioned content packages, the complete optional
+Reborn presentation, expanded difficulty and developer-testing support,
+clearer combat and final screens, and the R1-R12 architecture refactor.
+
 ### Added - Reborn content package
 
 - Expanded the optional Reborn package into a substantially complete alternate presentation

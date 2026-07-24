@@ -13,17 +13,12 @@ LGPL-3.0-or-later license and upstream attribution.
 ## Download
 
 The latest stable release is
-[Four Winds Reborn v0.2.0](https://github.com/jaskes/four-winds-reborn/releases/latest),
+[Four Winds Reborn v0.3.0](https://github.com/jaskes/four-winds-reborn/releases/latest),
 with ready-to-run Windows, Linux and macOS x64 archives plus SHA-256 checksums.
 On Windows, unpack the archive and launch `four-winds-reborn.exe`.
 
 ## Roadmap
 
-- Complete v0.3.0 with a player-facing replay viewer, versioned content and
-  theme manifests, in-menu package selection and clear compatibility checks.
-- Complete the optional Reborn content set with its own art, music and names.
-  Classic remains the default presentation for v0.3.0; Reborn is a fully
-  supported package that players can enable in Settings.
 - Make Android the focus of v0.4.0, with native touch controls, safe app
   lifecycle handling and compatible saves.
 - Prove the shared ruleset contract with additional local Rune Game rules,
